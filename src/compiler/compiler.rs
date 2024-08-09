@@ -48,7 +48,7 @@ impl Builder {
                         Expression::Value(_value) => todo!(),
                         Expression::GetVariable(name) => {
                             scope.content.add_operation(format!(
-                                "mov qword rax, qword [rbp-{}]",
+                                "mov  rax, [rbp-{}]",
                                 scope.variables.get(&name)
                             ));
                         }
@@ -57,7 +57,7 @@ impl Builder {
                         Expression::Value(_value) => todo!(),
                         Expression::GetVariable(name) => {
                             scope.content.add_operation(format!(
-                                "mov qword rbx, qword [rbp-{}]",
+                                "mov  rbx, [rbp-{}]",
                                 scope.variables.get(&name)
                             ));
                         }
@@ -65,12 +65,12 @@ impl Builder {
 
                     scope.content.add_operation_str("cmp rax, rbx");
                     let end_label = self.labels.increment();
-          
+
                     match else_body {
                         None => {
                             scope.content.add_operation(format!("jne {}", end_label));
                             self.scope(body, scope);
-                        },
+                        }
                         Some(else_body) => {
                             let else_label = self.labels.increment();
                             scope.content.add_operation(format!("jne {}", else_label));
@@ -93,7 +93,7 @@ impl Builder {
                             Expression::Value(_value) => todo!(),
                             Expression::GetVariable(name) => {
                                 scope.content.add_operation(format!(
-                                    "mov qword rax, qword [rbp-{}]",
+                                    "mov rax, [rbp-{}]",
                                     scope.variables.get(&name)
                                 ));
                             }
@@ -101,12 +101,16 @@ impl Builder {
 
                         scope
                             .content
-                            .add_operation(format!("mov qword [r8+{}], rax", argument_offset));
+                            .add_operation(format!("mov [r8+{}], rax", argument_offset));
                     }
 
-                    scope
+                    if name == "print" {
+                        scope.content.add_operation_str("call print");
+                    } else {
+                        scope
                         .content
                         .add_operation(format!("call {}", self.labels.get(name).unwrap()));
+                    }
                 }
                 Node::DefineVariable {
                     name,
@@ -127,12 +131,12 @@ impl Builder {
                         }
                         Expression::GetVariable(name) => {
                             scope.content.add_operation(format!(
-                                "mov qword rax, qword [rbp-{}]",
+                                "mov rax, [rbp-{}]",
                                 scope.variables.get(&name)
                             ));
                             scope
                                 .content
-                                .add_operation(format!("mov qword [rbp-{}], rax", variable.offset));
+                                .add_operation(format!("mov [rbp-{}], rax", variable.offset));
                         }
                     };
                 }
@@ -146,7 +150,7 @@ impl Builder {
     }
     pub fn build(&mut self, name: String) -> Result<String, BuildError> {
         self.body
-            .push_str("global main\nextern exit\nsection .text\n");
+            .push_str("global main\nextern exit, printf\nsection .text\n");
 
         let path = PathBuf::from(&self.project_path).join(format!("src/main.{}", FILE_EXTENSION));
         let source = match eclipse::read_file(path.to_str().unwrap()) {
@@ -183,10 +187,10 @@ impl Builder {
 
                         scope
                             .content
-                            .add_operation(format!("mov r9, qword [r8+{}]", param_offset));
+                            .add_operation(format!("mov r9, [r8+{}]", param_offset));
                         scope
                             .content
-                            .add_operation(format!("mov qword [rbp-{}], r9", variable.offset));
+                            .add_operation(format!("mov [rbp-{}], r9", variable.offset));
                     }
 
                     self.scope(body, &mut scope);
@@ -198,6 +202,29 @@ impl Builder {
         }
 
         // Generate assembly
+        self.body.push_str(
+            "print:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 64
+	mov r9, [r8+8]
+	mov qword [rbp-8], r9
+
+    mov rax, qword [rbp-8]
+    mov rdx, rax
+    mov byte [rbp-13], 0
+    mov byte [rbp-14], 10
+    mov byte [rbp-15], 100
+    mov byte [rbp-16], 37
+    lea rcx, byte [rbp-16]
+    call printf
+
+	add rsp, 64
+	mov rsp, rbp
+	pop rbp
+	ret\n\n",
+        );
+
         let main_label = match self.labels.get(String::from("main")) {
             Some(key) => key,
             None => return Err(BuildError::Building),

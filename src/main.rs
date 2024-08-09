@@ -31,6 +31,7 @@ fn main() {
         Some(a) => match a.to_lowercase().as_str() {
             "run" => Action::BuildAndRun,
             "build" => Action::Build,
+            "new" => Action::New,
             arg => panic!("No such command: {:?}", arg),
         },
         None => {
@@ -84,7 +85,7 @@ mod tests {
     #[test]
     fn build_test() {
         const SOURCE: &str = "C:/Users/Gebruiker/Documents/eclipse/first_project";
-        const NAME: &str = "test";
+        const NAME: &str = "app";
 
         let executable_path = match build(SOURCE.to_string(), NAME.to_string()) {
             Ok(path) => path,
