@@ -29,3 +29,18 @@ pub enum Token {
     Integer(isize),
     Identifier(String),
 }
+
+#[derive(Debug, Clone)]
+pub struct TokenInfo {
+    pub token: Token,
+    pub line: usize,
+    // file_path: String
+}
+impl TokenInfo {
+    pub fn new(token: Token, line: usize) -> Self {
+        Self {
+            token,
+            line
+        }
+    }
+}

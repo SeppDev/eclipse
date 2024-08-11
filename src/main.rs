@@ -4,8 +4,8 @@ use std::{
     process::{Command, Stdio},
 };
 mod compiler;
-mod lexer;
 mod parser;
+mod lexer;
 
 pub const FILE_EXTENSION: &str = "eclipse";
 

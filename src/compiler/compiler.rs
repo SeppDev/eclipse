@@ -1,10 +1,7 @@
-use std::{collections::HashMap, fmt::format, io::Write, path::PathBuf};
+use std::{io::Write, path::PathBuf};
 
 use crate::{
-    parser::{
-        node::{Expression, Node},
-        parser,
-    },
+    parser::{self, node::{Expression, Node}},
     FILE_EXTENSION,
 };
 use code::Code;
@@ -48,7 +45,7 @@ impl Builder {
                         Expression::Value(_value) => todo!(),
                         Expression::GetVariable(name) => {
                             scope.content.add_operation(format!(
-                                "mov  rax, [rbp-{}]",
+                                "mov rax, [rbp-{}]",
                                 scope.variables.get(&name)
                             ));
                         }
@@ -57,7 +54,7 @@ impl Builder {
                         Expression::Value(_value) => todo!(),
                         Expression::GetVariable(name) => {
                             scope.content.add_operation(format!(
-                                "mov  rbx, [rbp-{}]",
+                                "mov rbx, [rbp-{}]",
                                 scope.variables.get(&name)
                             ));
                         }
@@ -108,8 +105,8 @@ impl Builder {
                         scope.content.add_operation_str("call print");
                     } else {
                         scope
-                        .content
-                        .add_operation(format!("call {}", self.labels.get(name).unwrap()));
+                            .content
+                            .add_operation(format!("call {}", self.labels.get(name).unwrap()));
                     }
                 }
                 Node::DefineVariable {
@@ -157,7 +154,7 @@ impl Builder {
             Ok(source) => source,
             Err(error) => return Err(error),
         };
-        let nodes = match parser::parse(source) {
+        let nodes = match parser::parser::parse(source) {
             Ok(path) => path,
             Err(_) => return Err(BuildError::Parsing),
         };
@@ -209,7 +206,6 @@ impl Builder {
 	sub rsp, 64
 	mov r9, [r8+8]
 	mov qword [rbp-8], r9
-
     mov rax, qword [rbp-8]
     mov rdx, rax
     mov byte [rbp-13], 0
@@ -218,7 +214,6 @@ impl Builder {
     mov byte [rbp-16], 37
     lea rcx, byte [rbp-16]
     call printf
-
 	add rsp, 64
 	mov rsp, rbp
 	pop rbp

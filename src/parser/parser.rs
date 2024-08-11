@@ -1,12 +1,11 @@
-use crate::lexer::{self, token::Token};
+use eclipse::BuildError;
 
-use super::{
-    node::{Expression, Node, Type},
-    tokens::Tokens,
-};
+use crate::lexer::{lexer::tokenize, token::Token, tokens::Tokens};
+
+use super::node::{Expression, Node, Type};
 
 fn parse_type(tokens: &mut Tokens) -> Type {
-    let string = match tokens.next_token().unwrap() {
+    let string = match tokens.next_token().unwrap().token {
         Token::Identifier(string) => string,
         _ => panic!(),
     };
@@ -17,7 +16,7 @@ fn parse_type(tokens: &mut Tokens) -> Type {
 }
 
 fn result(tokens: &mut Tokens) -> Expression {
-    return match tokens.next_token().unwrap() {
+    return match tokens.next_token().unwrap().token {
         Token::Integer(integer) => Expression::Value(integer),
         Token::Identifier(name) => {
             let expression = Expression::GetVariable(name.clone());
@@ -33,22 +32,22 @@ fn result(tokens: &mut Tokens) -> Expression {
 }
 
 fn function(tokens: &mut Tokens) -> Node {
-    let name = match tokens.next_token().unwrap() {
+    let name = match tokens.next_token().unwrap().token {
         Token::Identifier(name) => name,
         _ => panic!(),
     };
 
-    match tokens.next_token().unwrap() {
+    match tokens.next_token().unwrap().token {
         Token::OpenParen => {}
         _ => panic!(),
     }
 
     let mut parameters = Vec::new();
     loop {
-        match tokens.next_token().unwrap() {
+        match tokens.next_token().unwrap().token {
             Token::CloseParen => break,
             Token::Identifier(name) => {
-                match tokens.next_token().unwrap() {
+                match tokens.next_token().unwrap().token {
                     Token::Colon => {}
                     token => panic!("Expected ':' got: {:?}", token),
                 }
@@ -56,7 +55,7 @@ fn function(tokens: &mut Tokens) -> Node {
             }
             _ => todo!(),
         }
-        match tokens.peek().unwrap() {
+        match tokens.peek().unwrap().token {
             Token::Comma => {
                 tokens.next_token();
             }
@@ -72,7 +71,7 @@ fn function(tokens: &mut Tokens) -> Node {
         name: name,
         parameters,
         return_types: None,
-        body: match tokens.next_token().unwrap() {
+        body: match tokens.next_token().unwrap().token {
             Token::StartScope => scope(tokens),
             _ => panic!(),
         },
@@ -80,25 +79,25 @@ fn function(tokens: &mut Tokens) -> Node {
 }
 
 fn variable(tokens: &mut Tokens) -> Node {
-    let mutable = match tokens.peek().unwrap() {
+    let mutable = match tokens.peek().unwrap().token {
         Token::Mutable => {
             tokens.next_token();
             true
         }
         _ => false,
     };
-    let name = match tokens.next_token().unwrap() {
+    let name = match tokens.next_token().unwrap().token {
         Token::Identifier(name) => name,
         _ => panic!(),
     };
-    let var_type = match tokens.peek().unwrap() {
+    let var_type = match tokens.peek().unwrap().token {
         Token::Colon => {
             tokens.next_token();
             Some(parse_type(tokens))
         }
         _ => None,
     };
-    let expression: Option<Expression> = match tokens.peek().unwrap() {
+    let expression: Option<Expression> = match tokens.peek().unwrap().token {
         Token::Equals => {
             tokens.next_token();
             Some(result(tokens))
@@ -112,7 +111,7 @@ fn variable(tokens: &mut Tokens) -> Node {
     };
 
     Node::DefineVariable {
-        name: name,
+        name: name.to_owned(),
         mutable: mutable,
         var_type: var_type,
         expression: expression,
@@ -122,14 +121,14 @@ fn variable(tokens: &mut Tokens) -> Node {
 fn call_function(tokens: &mut Tokens) -> Vec<Expression> {
     let mut arguments = Vec::new();
     loop {
-        match tokens.peek().unwrap() {
+        match tokens.peek().unwrap().token {
             Token::CloseParen => {
                 tokens.next_token().unwrap();
                 break;
             }
             _ => {
                 arguments.push(result(tokens));
-                match tokens.next_token().unwrap() {
+                match tokens.next_token().unwrap().token {
                     Token::Comma => {}
                     Token::CloseParen => break,
                     _ => panic!(),
@@ -142,32 +141,32 @@ fn call_function(tokens: &mut Tokens) -> Vec<Expression> {
 }
 
 fn conditional(tokens: &mut Tokens) -> Node {
-    match tokens.next_token().unwrap() {
+    match tokens.next_token().unwrap().token {
         Token::OpenParen => {}
         token => panic!("Expected '(' got, {:?}", token),
     }
 
     let a = result(tokens);
-    match tokens.next_token().unwrap() {
+    match tokens.next_token().unwrap().token {
         Token::Compare => {}
         token => panic!("Expected '==' got, {:?}", token),
     }
     let b = result(tokens);
-    match tokens.next_token().unwrap() {
+    match tokens.next_token().unwrap().token {
         Token::CloseParen => {}
         token => panic!("Expected ')' got, {:?}", token),
     }
 
-    match tokens.next_token().unwrap() {
+    match tokens.next_token().unwrap().token {
         Token::StartScope => {}
         _ => panic!(),
     }
 
     let body = scope(tokens);
-    let else_body: Option<Vec<Node>> = match tokens.peek().unwrap() {
+    let else_body: Option<Vec<Node>> = match tokens.peek().unwrap().token {
         Token::Else => {
             tokens.next_token().unwrap();
-            match tokens.next_token().unwrap() {
+            match tokens.next_token().unwrap().token {
                 Token::StartScope => Some(scope(tokens)),
                 _ => panic!(),
             }
@@ -180,7 +179,7 @@ fn conditional(tokens: &mut Tokens) -> Node {
 
 fn scope(tokens: &mut Tokens) -> Vec<Node> {
     let nodes = parse_tokens(tokens);
-    match tokens.next_token().unwrap() {
+    match tokens.next_token().unwrap().token {
         Token::EndScope => {}
         token => panic!("Expected '{}' got {:?}", '}', token),
     }
@@ -191,7 +190,8 @@ fn parse_tokens(tokens: &mut Tokens) -> Vec<Node> {
     let mut tree: Vec<Node> = Vec::new();
 
     loop {
-        let token = match tokens.peek().unwrap() {
+        let info = tokens.peek().unwrap();
+        let info = match info.token {
             Token::StartScope => {
                 tokens.next_token();
                 tree.push(Node::Scope(scope(tokens)));
@@ -200,7 +200,7 @@ fn parse_tokens(tokens: &mut Tokens) -> Vec<Node> {
             Token::EndScope => break,
             _ => tokens.next_token().unwrap(),
         };
-        let node = match token {
+        let node = match info.token {
             Token::EndOfFile => break,
             Token::Function => function(tokens),
             Token::Variable => variable(tokens),
@@ -213,12 +213,12 @@ fn parse_tokens(tokens: &mut Tokens) -> Vec<Node> {
         };
         tree.push(node);
     }
-    
+
     return tree;
 }
 
-pub fn parse(source: String) -> Result<Vec<Node>, String> {
-    let tokens = match lexer::lexer::tokenize(source) {
+pub fn parse(source: String) -> Result<Vec<Node>, BuildError> {
+    let tokens = match tokenize(source) {
         Ok(tokens) => tokens,
         Err(error) => return Err(error),
     };
