@@ -1,63 +1,23 @@
-use eclipse::{self, BuildError};
-use std::{
-    io::{BufRead, BufReader},
-    process::{Command, Stdio},
-};
-mod compiler;
+use std::{io::{BufRead, BufReader}, panic, process::{Command, Stdio}};
+use builder::compile;
+use eclipse::CompileError;
+
 mod parser;
-mod lexer;
+mod builder;
+mod analyzer;
 
 pub const FILE_EXTENSION: &str = "eclipse";
 
-use std::env;
-
-enum Action {
-    Build,
-    BuildAndRun,
-    New,
-}
-
-fn help() {
-    // print all commands
-    todo!()
-}
-
 fn main() {
-    let mut args = env::args().into_iter();
-    let _run_path = args.next().unwrap();
-
-    // TODO handle exceptions
-    let action: Action = match args.next() {
-        Some(a) => match a.to_lowercase().as_str() {
-            "run" => Action::BuildAndRun,
-            "build" => Action::Build,
-            "new" => Action::New,
-            arg => panic!("No such command: {:?}", arg),
-        },
-        None => {
-            help();
-            todo!()
-        }
+    let executable = match build(String::new()) {
+        Ok(path) => path,
+        Err(error) => return handle_error(error)
     };
-    let path = match args.next() {
-        Some(path) => path,
-        None => panic!("Expected path"),
-    };
-
-    match action {
-        Action::Build => {
-            build(path, String::from("app")).unwrap();
-        }
-        Action::BuildAndRun => {
-            let executable = build(path, String::from("app")).unwrap();
-            run(executable);
-        },
-        Action::New => todo!()
-    }
+    run(executable);
 }
 
-fn build(project_path: String, name: String) -> Result<String, BuildError> {
-    return compiler::compiler::build(project_path, name);
+fn build(project_path: String) -> Result<String, CompileError> {
+    return compile(project_path);
 }
 
 fn run(executable_path: String) {
@@ -78,6 +38,20 @@ fn run(executable_path: String) {
     thread.wait().unwrap();
 }
 
+fn handle_error(error: CompileError) {
+    panic!("{:?}", error);
+
+
+    // match error {
+    //     CompileError::OpenFile(error) => panic!("{:?}", error),
+    //     CompileError::Parsing(error) => panic!("{:#?}", error),
+    //     CompileError::Building => panic!("Building error"),
+    //     CompileError::GCC(response) => panic!("{}", response),
+    //     CompileError::NASM(response) => panic!("{}", response),
+    // }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,11 +59,14 @@ mod tests {
     #[test]
     fn build_test() {
         const SOURCE: &str = "C:/Users/Gebruiker/Documents/eclipse/first_project";
-        const NAME: &str = "app";
+        // const NAME: &str = "app";
 
-        let executable_path = match build(SOURCE.to_string(), NAME.to_string()) {
+        let executable_path = match build(SOURCE.to_string()) {
             Ok(path) => path,
-            Err(a) => panic!("{:?}", a),
+            Err(a) => {
+                handle_error(a);
+                panic!("Build failed")
+            }
         };
         run(executable_path);
     }

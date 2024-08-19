@@ -1,14 +1,14 @@
 use std::io::Read;
 
-pub fn open_file(path: &str) -> Result<std::fs::File, BuildError> {
+pub fn open_file(path: &str) -> Result<std::fs::File, CompileError> {
     let file = match std::fs::File::open(path) {
         Ok(file) => file,
-        Err(error) => return Err(BuildError::OpenFile(error)),
+        Err(error) => return Err(CompileError::OpenFile(error)),
     };
     return Ok(file);
 }
 
-pub fn read_file(path: &str) -> Result<String, BuildError> {
+pub fn read_file(path: &str) -> Result<String, CompileError> {
     let mut file = match open_file(path) {
         Ok(file) => file,
         Err(error) => return Err(error),
@@ -18,7 +18,7 @@ pub fn read_file(path: &str) -> Result<String, BuildError> {
 
     match file.read_to_string(&mut buf) {
         Ok(_) => {}
-        Err(error) => return Err(BuildError::OpenFile(error)),
+        Err(error) => return Err(CompileError::OpenFile(error)),
     }
 
     return Ok(buf);
@@ -44,10 +44,33 @@ pub fn execute(command: String) -> Result<String, String> {
 }
 
 #[derive(Debug)]
+pub enum ParseError {
+    TokenExpected(String),
+    NoTokenFound,
+    Function,
+    Scope,
+    Type,
+}
+
+#[derive(Debug)]
 pub enum BuildError {
+    TooFewOrManyArguments,
+    AlreadyDefined(String),
+    NotDefined(String),
+    NotMutable(String),
+    WrongMutableType(String),
+    WrongReturnType,
+    WrongType,
+    Unkown
+}
+
+#[derive(Debug)]
+pub enum CompileError {
     OpenFile(std::io::Error),
-    Parsing,
-    Building,
+    
+    Building(BuildError),
+    Parsing(ParseError),
+
     GCC(String),
     NASM(String)
 }
