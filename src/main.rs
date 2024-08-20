@@ -1,4 +1,4 @@
-use std::{io::{BufRead, BufReader}, panic, process::{Command, Stdio}};
+use std::{env, io::{BufRead, BufReader}, panic, process::{Command, Stdio}};
 use builder::compile;
 use eclipse::CompileError;
 
@@ -9,11 +9,14 @@ mod analyzer;
 pub const FILE_EXTENSION: &str = "eclipse";
 
 fn main() {
-    let executable = match build(String::new()) {
-        Ok(path) => path,
-        Err(error) => return handle_error(error)
-    };
-    run(executable);
+
+    println!("{:#?}", env::current_dir());
+    println!("{:#?}", env::args().into_iter());
+    // let executable = match build(String::new()) {
+    //     Ok(path) => path,
+    //     Err(error) => return handle_error(error)
+    // };
+    // run(executable);
 }
 
 fn build(project_path: String) -> Result<String, CompileError> {

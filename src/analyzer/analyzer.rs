@@ -279,7 +279,7 @@ fn scope(
     return Ok(tree);
 }
 
-pub fn analyze(nodes: Vec<Node>, path: PathBuf, program: &Program) -> Result<Vec<Node>, CompileError> {
+pub fn analyze(nodes: Vec<Node>, path: PathBuf) -> Result<Vec<Node>, CompileError> {
     todo!()
 }
 

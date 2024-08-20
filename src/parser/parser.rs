@@ -42,7 +42,7 @@ pub fn parse(path: PathBuf) -> Result<Vec<Node>, CompileError> {
 
     let nodes = match analyze(nodes, path) {
         Ok(nodes) => nodes,
-        Err(error) => return Err(CompileError::Building(error))
+        Err(error) => return Err(error)
     };
 
     return Ok(nodes);
