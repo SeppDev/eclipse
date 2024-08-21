@@ -1,5 +1,5 @@
-// pub fn type_size(enum_type: &Type) -> usize {
 //     match enum_type {
+    // pub fn type_size(enum_type: &Type) -> usize {
 //         Type::Tuple(types) => {
 //             let mut total = 0;
 //             for t in types {
@@ -86,6 +86,7 @@ pub enum Node {
     // Include(),
     
     Function {
+        public: bool,
         name: String,
         parameters: Vec<(String, Type)>,
         return_type: Option<Type>,

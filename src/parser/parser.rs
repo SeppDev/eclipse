@@ -3,8 +3,6 @@ use std::path::PathBuf;
 use eclipse::{read_file, CompileError, ParseError};
 use tokens::parse_tokens;
 
-use crate::analyzer::analyzer::analyze;
-
 use super::lexer::{tokenize, Token, TokenInfo};
 use super::node::Node;
 use super::tokens_group::TokensGroup;
@@ -19,7 +17,7 @@ mod call;
 mod conditional;
 mod module;
 
-pub fn parse(path: PathBuf) -> Result<Vec<Node>, CompileError> {
+pub fn parse(path: &PathBuf) -> Result<Vec<Node>, CompileError> {
     let path_str = match path.to_str() {
         Some(s) => s,
         None => panic!("Path not found!?"),
@@ -40,10 +38,6 @@ pub fn parse(path: PathBuf) -> Result<Vec<Node>, CompileError> {
         Err(error) => return Err(CompileError::Parsing(error)),
     };
 
-    let nodes = match analyze(nodes, path) {
-        Ok(nodes) => nodes,
-        Err(error) => return Err(error)
-    };
 
     return Ok(nodes);
 }

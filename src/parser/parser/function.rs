@@ -3,7 +3,8 @@ use eclipse::ParseError;
 use super::{parse_type::parse_type, scope::scope, token_expected, Node};
 use crate::parser::{lexer::Token, node::Type, tokens_group::TokensGroup};
 
-pub fn function(group: &mut TokensGroup) -> Result<Node, ParseError> {
+pub fn function(group: &mut TokensGroup, public: bool) -> Result<Node, ParseError> {
+
     let name = match group.next_token() {
         Some(tokeninfo) => match tokeninfo.token.clone() {
             Token::Identifier(name) => name,
@@ -107,7 +108,8 @@ pub fn function(group: &mut TokensGroup) -> Result<Node, ParseError> {
     };
 
     let function = Node::Function {
-        name: name,
+        public,
+        name,
         parameters,
         return_type: return_type,
         body: body,

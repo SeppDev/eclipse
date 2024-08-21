@@ -153,38 +153,6 @@ fn is_identifier(source: &str) -> Option<Token> {
     return Some(Token::Identifier(source.to_string()));
 }
 
-// fn match_word(word: &str) -> Option<Token> {
-//     match word {
-//         "fn" => Some(Token::Function),
-//         "{" => Some(Token::StartScope),
-//         "}" => Some(Token::EndScope),
-//         "(" => Some(Token::OpenParen),
-//         ")" => Some(Token::CloseParen),
-//         "[" => Some(Token::OpenBracket),
-//         "]" => Some(Token::CloseBracket),
-//         "," => Some(Token::Comma),
-//         ":" => Some(Token::Colon),
-//         ";" => Some(Token::SemiColon),
-//         "=" => Some(Token::Equals),
-//         "==" => Some(Token::Compare),
-//         "mut" => Some(Token::Mutable),
-//         "&" => Some(Token::Reference),
-//         "_" => Some(Token::Underscore),
-//         "if" => Some(Token::If),
-//         "else" => Some(Token::Else),
-//         "+" => Some(Token::Operator(Operator::Plus)),
-//         "-" => Some(Token::Operator(Operator::Minus)),
-//         "*" => Some(Token::Operator(Operator::Multiply)),
-//         "/" => Some(Token::Operator(Operator::Division)),
-//         "return" => Some(Token::Return),
-//         "let" => Some(Token::Variable),
-//         "true" => Some(Token::Boolean(true)),
-//         "false" => Some(Token::Boolean(false)),
-//         "mod" => Some(Token::Module),
-//         _ => None,
-//     }
-// }
-
 fn match_word(word: &str) -> Option<Token> {
     let token = match word {
         "fn" => Token::Function,
@@ -208,6 +176,7 @@ fn match_word(word: &str) -> Option<Token> {
         "-" => Token::Operator(Operator::Minus),
         "*" => Token::Operator(Operator::Multiply),
         "/" => Token::Operator(Operator::Division),
+        "pub" => Token::Pub,
         "return" => Token::Return,
         "let" => Token::Variable,
         "true" => Token::Boolean(true),

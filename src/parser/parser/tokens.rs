@@ -27,7 +27,14 @@ pub fn parse_tokens(group: &mut TokensGroup) -> Result<Vec<Node>, ParseError> {
         let node = match info.token {
             Token::EndOfFile => break,
             Token::Module => module(group),
-            Token::Function => function(group),
+            Token::Pub => match group.next_token() {
+                Some(info) => match info.token {
+                    Token::Function => function(group, true),
+                    _ => return Err(token_expected(Token::Function, info))
+                }
+                None => return Err(ParseError::NoTokenFound),
+            }
+            Token::Function => function(group, false),
             Token::Variable => variable(group),
             Token::If => conditional(group),
             Token::Identifier(name) => match group.next_token() {

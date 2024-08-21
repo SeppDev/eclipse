@@ -54,11 +54,13 @@ pub enum ParseError {
 
 #[derive(Debug)]
 pub enum BuildError {
-    TooFewOrManyArguments,
     AlreadyDefined(String),
     NotDefined(String),
     NotMutable(String),
     WrongMutableType(String),
+    ModuleNotFound,
+    NoNodeFound,
+    TooFewOrManyArguments,
     WrongReturnType,
     WrongType,
     Unkown

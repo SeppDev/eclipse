@@ -13,7 +13,7 @@ pub enum Token {
 
     Module,
     Use,
-
+    Pub,
     Reference,
     SemiColon,
     Return,
