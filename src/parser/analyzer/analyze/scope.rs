@@ -4,7 +4,8 @@ use eclipse::BuildError;
 
 use crate::parser::{Expression, Node, Type, Value};
 
-use super::{call::call, expression_type::expression_type, Function, Scope, Variable};
+use super::{Function, Scope};
+
 
 pub fn scope(
     nodes: Vec<Node>,

@@ -19,6 +19,9 @@ impl Writer {
     pub fn add_operation(&mut self, operation: &String) {
         self.body.push_str(&format!("\t{}\n", operation))
     }
+    pub fn add_operation_str(&mut self, operation: &str) {
+        self.body.push_str(&format!("\t{}\n", operation))
+    }
     pub fn writer(&mut self, writer: Self) {
         self.body.push_str(&writer.body);
     }

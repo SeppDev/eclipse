@@ -2,11 +2,8 @@ use std::str::Chars;
 
 // #[derive(Debug)]
 // pub enum TokenError {}
-use super::token::{Operator, Token, TokenInfo};
+use super::{reader::Reader, token::{Operator, Token, TokenInfo}};
 use eclipse::CompileError;
-use reader::Reader;
-
-mod reader;
 
 
 

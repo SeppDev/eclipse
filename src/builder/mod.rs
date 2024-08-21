@@ -1,4 +1,5 @@
 mod codegen;
-mod variables;
 mod writer;
+mod labels;
+mod function;
 pub use codegen::compile;

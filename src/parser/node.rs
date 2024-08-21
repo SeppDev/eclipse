@@ -36,10 +36,17 @@ pub enum Integer {
     i64,
 }
 
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Struct {
+    body: Vec<Type>
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     String,
     Boolean,
+    Struct(String),
     Integer(Integer),
     // Tuple(Vec<Type>),
     // Char,

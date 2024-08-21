@@ -1,30 +1,17 @@
-use crate::{
-    builder::{variables::Variables, writer::Writer},
-    parser::Node,
-};
+use crate::{builder::function::Function, parser::Node};
 
-pub struct Function {
-    stack_size: usize,
-    variables: Variables,
-}
-impl Function {
-    pub fn new() -> Self {
-        Self {
-            stack_size: 8,
-            variables: Variables::new(),
-        }
-    }
-}
+use super::Program;
 
-pub fn scope(nodes: Vec<Node>, writer: &mut Writer, Function: &mut Function) {
+pub fn scope(nodes: Vec<Node>, function: &mut Function, program: &mut Program) {
     for node in nodes {
         match node {
+            #[allow(unused)]
             Node::DefineVariable {
                 name,
                 mutable,
                 var_type,
                 expression,
-            } => {}
+            } => function.define_variable(&name, var_type.unwrap(), expression.unwrap()),
             _ => todo!("{:#?}", node),
         }
     }

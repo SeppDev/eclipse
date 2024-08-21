@@ -4,7 +4,6 @@ use eclipse::CompileError;
 
 mod parser;
 mod builder;
-mod analyzer;
 
 pub const FILE_EXTENSION: &str = "eclipse";
 
