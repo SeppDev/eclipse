@@ -75,7 +75,7 @@ fn main() {
         // Create the main file
         match std::fs::write(
             path.join(format!("main.{}", FILE_EXTENSION)),
-            "fn main() {\n\tprint(\"Hello, world\"!)\n}",
+            "fn main() {\n\tprint(\"Hello, world!\");\n}",
         ) {
             Ok(_) => {}
             Err(error) => return println!("{:?}", error),
