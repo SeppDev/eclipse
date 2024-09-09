@@ -1,63 +1,47 @@
-use eclipse::{self, BuildError};
+use eclipse::build;
 use std::{
+    env,
     io::{BufRead, BufReader},
+    panic,
     process::{Command, Stdio},
 };
-mod compiler;
-mod lexer;
-mod parser;
 
-pub const FILE_EXTENSION: &str = "eclipse";
-
-use std::env;
-
-enum Action {
-    Build,
-    BuildAndRun,
-    New,
-}
-
-fn help() {
-    // print all commands
-    todo!()
-}
 
 fn main() {
-    let mut args = env::args().into_iter();
-    let _run_path = args.next().unwrap();
+    #[derive(PartialEq, Eq)]
+    enum Action {
+        Build,
+        BuildAndRun,
+    } 
 
-    // TODO handle exceptions
-    let action: Action = match args.next() {
-        Some(a) => match a.to_lowercase().as_str() {
-            "run" => Action::BuildAndRun,
-            "build" => Action::Build,
-            "new" => Action::New,
-            arg => panic!("No such command: {:?}", arg),
-        },
-        None => {
-            help();
-            todo!()
-        }
+    let project_dir = env::current_dir().unwrap();
+    let mut arguments = env::args().into_iter().peekable();
+    arguments.next().unwrap();
+
+    let action = match arguments.next() {
+        Some(action) => action,
+        None => return println!("No argument was found."),
     };
-    let path = match args.next() {
-        Some(path) => path,
-        None => panic!("Expected path"),
+    let action = match action.as_str() {
+        "build" => Action::Build,
+        "run" => Action::BuildAndRun,
+        _ => return println!("{:?} is not a valid argument", action),
     };
 
-    match action {
-        Action::Build => {
-            build(path, String::from("app")).unwrap();
-        }
-        Action::BuildAndRun => {
-            let executable = build(path, String::from("app")).unwrap();
+    if action == Action::Build || action == Action::BuildAndRun {
+        let executable = match build(project_dir) {
+            Ok(path) => path,
+            Err(a) => {
+                a.print();
+                panic!()
+            }
+        };
+
+        if action == Action::BuildAndRun {
             run(executable);
-        },
-        Action::New => todo!()
+        }
     }
-}
-
-fn build(project_path: String, name: String) -> Result<String, BuildError> {
-    return compiler::compiler::build(project_path, name);
+    // math::add_one(1);
 }
 
 fn run(executable_path: String) {
@@ -74,22 +58,26 @@ fn run(executable_path: String) {
             Err(a) => println!("{:?}", a),
         }
     }
-
     thread.wait().unwrap();
 }
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
 
     #[test]
     fn build_test() {
-        const SOURCE: &str = "C:/Users/Gebruiker/Documents/eclipse/first_project";
-        const NAME: &str = "app";
+        const SOURCE: &str = "C:/Users/Gebruiker/Documents/eclipse/first_project/";
+        // const NAME: &str = "app";
 
-        let executable_path = match build(SOURCE.to_string(), NAME.to_string()) {
+        let executable_path = match build(PathBuf::from(SOURCE)) {
             Ok(path) => path,
-            Err(a) => panic!("{:?}", a),
+            Err(a) => {
+                a.print();
+                panic!()
+            }
         };
         run(executable_path);
     }

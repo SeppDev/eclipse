@@ -1,229 +1,140 @@
-use crate::lexer::{self, token::Token};
+use crate::{lexer::TokenInfo, BuildError, BuildProblem, CompileError};
 
 use super::{
-    node::{Expression, Node, Type},
-    tokens::Tokens,
+    after_identifier::{parse_after_identifier, parse_identifer_string}, enums::parse_enum, export::parse_export,
+    expression::parse_expression, function::parse_function, node::*, scope::parse_scope,
+    structs::parse_struct, variable::parse_define_variable,
 };
+use crate::lexer::{Token, TokensGroup};
 
-fn parse_type(tokens: &mut Tokens) -> Type {
-    let string = match tokens.next_token().unwrap() {
-        Token::Identifier(string) => string,
-        _ => panic!(),
-    };
-    return match string.as_str() {
-        "i64" => Type::i64,
-        _ => todo!(),
-    };
-}
+pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
+    let mut tree: Vec<ASTNode> = Vec::new();
 
-fn result(tokens: &mut Tokens) -> Expression {
-    return match tokens.next_token().unwrap() {
-        Token::Integer(integer) => Expression::Value(integer),
-        Token::Identifier(name) => {
-            let expression = Expression::GetVariable(name.clone());
-            // let is_reference = match tokens.peek().unwrap() {
-            //     Token::Reference => true,
-            //     _ => false,
-            // };
-
-            expression
-        }
-        token => panic!("{:?}", token),
-    };
-}
-
-fn function(tokens: &mut Tokens) -> Node {
-    let name = match tokens.next_token().unwrap() {
-        Token::Identifier(name) => name,
-        _ => panic!(),
-    };
-
-    match tokens.next_token().unwrap() {
-        Token::OpenParen => {}
-        _ => panic!(),
-    }
-
-    let mut parameters = Vec::new();
     loop {
-        match tokens.next_token().unwrap() {
-            Token::CloseParen => break,
-            Token::Identifier(name) => {
-                match tokens.next_token().unwrap() {
-                    Token::Colon => {}
-                    token => panic!("Expected ':' got: {:?}", token),
+        let info = match tokens.peek() {
+            Ok(info) => info,
+            Err(error) => return Err(error),
+        };
+        match info.token {
+            Token::EndScope => break,
+            _ => {}
+        }
+
+        let info = match tokens.advance() {
+            Ok(info) => info,
+            Err(error) => return Err(error),
+        };
+
+        let node = match info.token {
+            Token::EndOfFile => break,
+            Token::SemiColon => continue,
+            Token::Variable => parse_define_variable(tokens),
+            Token::Identifier(name) => parse_after_identifier(tokens, name),
+            Token::StartScope => Ok(ASTNode::new(
+                tokens.current.line,
+                Node::Scope {
+                    is_unsafe: false,
+                    body: match parse_scope(tokens) {
+                        Ok(body) => body,
+                        Err(error) => return Err(error),
+                    },
+                },
+            )),
+            Token::Import => {
+                let name = match parse_identifer_string(tokens) {
+                    Ok(str) => str,
+                    Err(error) => return Err(error)
+                };
+                Ok(ASTNode::new(tokens.current.line, Node::Import(name, false)))
+            },
+            //--------------[[Function]]--------------
+            Token::Pub => parse_export(tokens),
+            Token::Unsafe => match tokens.advance() {
+                Ok(info) => match info.token {
+                    Token::Function => parse_function(tokens, false, true),
+                    Token::StartScope => Ok(ASTNode::new(
+                        tokens.current.line,
+                        Node::Scope {
+                            is_unsafe: true,
+                            body: match parse_scope(tokens) {
+                                Ok(body) => body,
+                                Err(error) => return Err(error),
+                            },
+                        },
+                    )),
+                    _ => return Err(tokens_expected_got(tokens, vec![Token::Function], info)),
+                },
+                Err(error) => return Err(error),
+            },
+            Token::Struct => parse_struct(tokens, false),
+            Token::Enum => parse_enum(tokens, false),
+            Token::Function => parse_function(tokens, false, false),
+            Token::Return => {
+                let expression = match parse_expression(tokens) {
+                    Ok(expression) => expression,
+                    Err(error) => return Err(error),
+                };
+
+                match tokens.advance() {
+                    Ok(info) => match info.token {
+                        Token::SemiColon => {}
+                        _ => return Err(tokens_expected_got(tokens, vec![Token::SemiColon], info)),
+                    },
+                    Err(error) => return Err(error),
                 }
-                parameters.push((name, parse_type(tokens)));
+
+                Ok(ASTNode::new(tokens.current.line, Node::Return(expression)))
             }
-            _ => todo!(),
-        }
-        match tokens.peek().unwrap() {
-            Token::Comma => {
-                tokens.next_token();
-            }
-            Token::CloseParen => {
-                tokens.next_token();
-                break;
-            }
-            token => panic!("Expected ',' got: {:?}", token),
-        }
-    }
+            //--------------[[FUNCTION-END]]--------------
+            // Token::OpenParen
+            Token::Loop => {
+                match tokens.advance() {
+                    Ok(info) => match info.token {
+                        Token::StartScope => {}
+                        _ => {
+                            return Err(tokens_expected_got(tokens, vec![Token::StartScope], info))
+                        }
+                    },
+                    Err(error) => return Err(error),
+                }
 
-    Node::Function {
-        name: name,
-        parameters,
-        return_types: None,
-        body: match tokens.next_token().unwrap() {
-            Token::StartScope => scope(tokens),
-            _ => panic!(),
-        },
-    }
-}
+                let body = match parse_scope(tokens) {
+                    Ok(body) => body,
+                    Err(error) => return Err(error),
+                };
 
-fn variable(tokens: &mut Tokens) -> Node {
-    let mutable = match tokens.peek().unwrap() {
-        Token::Mutable => {
-            tokens.next_token();
-            true
-        }
-        _ => false,
-    };
-    let name = match tokens.next_token().unwrap() {
-        Token::Identifier(name) => name,
-        _ => panic!(),
-    };
-    let var_type = match tokens.peek().unwrap() {
-        Token::Colon => {
-            tokens.next_token();
-            Some(parse_type(tokens))
-        }
-        _ => None,
-    };
-    let expression: Option<Expression> = match tokens.peek().unwrap() {
-        Token::Equals => {
-            tokens.next_token();
-            Some(result(tokens))
-        }
-        _ => None,
-    };
-
-    let var_type = match var_type {
-        Some(t) => t,
-        None => todo!(),
-    };
-
-    Node::DefineVariable {
-        name: name,
-        mutable: mutable,
-        var_type: var_type,
-        expression: expression,
-    }
-}
-
-fn call_function(tokens: &mut Tokens) -> Vec<Expression> {
-    let mut arguments = Vec::new();
-    loop {
-        match tokens.peek().unwrap() {
-            Token::CloseParen => {
-                tokens.next_token().unwrap();
-                break;
+                Ok(ASTNode::new(tokens.current.line, Node::Loop { body: body }))
             }
             _ => {
-                arguments.push(result(tokens));
-                match tokens.next_token().unwrap() {
-                    Token::Comma => {}
-                    Token::CloseParen => break,
-                    _ => panic!(),
-                }
+                return Err(tokens_expected_got(
+                    tokens,
+                    vec![
+                        Token::EndOfFile,
+                        Token::Identifier(String::from("name")),
+                        Token::Function,
+                        Token::Import,
+                    ],
+                    info,
+                ))
             }
+        };
+        match node {
+            Ok(node) => tree.push(node),
+            Err(error) => return Err(error),
         }
     }
 
-    arguments
+    return Ok(tree);
 }
 
-fn conditional(tokens: &mut Tokens) -> Node {
-    match tokens.next_token().unwrap() {
-        Token::OpenParen => {}
-        token => panic!("Expected '(' got, {:?}", token),
-    }
-
-    let a = result(tokens);
-    match tokens.next_token().unwrap() {
-        Token::Compare => {}
-        token => panic!("Expected '==' got, {:?}", token),
-    }
-    let b = result(tokens);
-    match tokens.next_token().unwrap() {
-        Token::CloseParen => {}
-        token => panic!("Expected ')' got, {:?}", token),
-    }
-
-    match tokens.next_token().unwrap() {
-        Token::StartScope => {}
-        _ => panic!(),
-    }
-
-    let body = scope(tokens);
-    let else_body: Option<Vec<Node>> = match tokens.peek().unwrap() {
-        Token::Else => {
-            tokens.next_token().unwrap();
-            match tokens.next_token().unwrap() {
-                Token::StartScope => Some(scope(tokens)),
-                _ => panic!(),
-            }
-        }
-        _ => None,
-    };
-
-    Node::Conditional((a, b), body, else_body)
-}
-
-fn scope(tokens: &mut Tokens) -> Vec<Node> {
-    let nodes = parse_tokens(tokens);
-    match tokens.next_token().unwrap() {
-        Token::EndScope => {}
-        token => panic!("Expected '{}' got {:?}", '}', token),
-    }
-    return nodes;
-}
-
-fn parse_tokens(tokens: &mut Tokens) -> Vec<Node> {
-    let mut tree: Vec<Node> = Vec::new();
-
-    loop {
-        let token = match tokens.peek().unwrap() {
-            Token::StartScope => {
-                tokens.next_token();
-                tree.push(Node::Scope(scope(tokens)));
-                continue;
-            }
-            Token::EndScope => break,
-            _ => tokens.next_token().unwrap(),
-        };
-        let node = match token {
-            Token::EndOfFile => break,
-            Token::Function => function(tokens),
-            Token::Variable => variable(tokens),
-            Token::If => conditional(tokens),
-            Token::Identifier(name) => {
-                tokens.next_token();
-                Node::Call(name, call_function(tokens))
-            }
-            token => todo!("{:?}", token),
-        };
-        tree.push(node);
-    }
-    
-    return tree;
-}
-
-pub fn parse(source: String) -> Result<Vec<Node>, String> {
-    let tokens = match lexer::lexer::tokenize(source) {
-        Ok(tokens) => tokens,
-        Err(error) => return Err(error),
-    };
-
-    return Ok(parse_tokens(&mut Tokens::new(
-        &mut tokens.iter().peekable(),
-    )));
+pub fn tokens_expected_got(
+    tokens: &TokensGroup,
+    expected: Vec<Token>,
+    got: TokenInfo,
+) -> CompileError {
+    return CompileError::BuildProblem(BuildProblem::new(
+        BuildError::TokensExpectedGot(expected, got),
+        tokens.relative_path.clone(),
+        tokens.current.line,
+    ));
 }

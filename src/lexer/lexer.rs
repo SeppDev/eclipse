@@ -1,116 +1,158 @@
+use std::{path::PathBuf, str::Chars};
+
 // #[derive(Debug)]
 // pub enum TokenError {}
+use super::{reader::Reader, token::Token, TokensGroup};
 
-use super::token::Token;
+pub fn tokenize(source: String, relative_path: PathBuf) -> Result<TokensGroup, (String, Reader)> {
+    let mut reader;
+    {
+        let split = source.chars();
+        let mut vec: Vec<char> = Vec::new();
+        for char in split {
+            vec.push(char);
+        }
 
-pub fn tokenize(source: String) -> Result<Vec<Token>, String> {
-    let mut tokens = Vec::new();
-
-    let mut words = source.split(" ");
-    let mut word = words.next().unwrap();
+        reader = Reader::new(vec);
+    }
+    // let mut word = tokens.next().unwrap();
 
     loop {
-        if word.is_empty() {
-            word = match words.next() {
-                Some(a) => a,
-                None => break,
-            };
-            continue;
-        }
+        let mut string = match reader.next() {
+            Some(token) => token,
+            None => break,
+        };
 
-        {
-            let firstchar = word.chars().next().unwrap();
-            let string = firstchar.to_string();
-            let str = string.as_str();
+        loop {
+            let length = string.len();
 
-            if match str {
-                "\n" => true,
-                "\r" => true,
-                "\t" => true,
-                _ => false,
-            } {
-                word = word.get(1..).unwrap_or_default();
-                continue;
+            if length == 0 {
+                break;
             }
-            if firstchar == '"' {
-                let mut chars = word.chars();
-                chars.next();
-
-                let mut string = String::new();
+            if string == "//" {
                 loop {
-                    let char = match chars.next() {
-                        Some(a) => a,
-                        None => {
-                            word = words.next().unwrap();
-                            chars = word.chars();
-                            string.push_str(" ");
-                            continue;
+                    match reader.next() {
+                        Some(str) => {
+                            if str == "\n" {
+                                break;
+                            }
                         }
-                    };
-                    if char == '"' {
-                        break;
+                        None => break,
                     }
-                    string.push(char);
                 }
-                tokens.push(Token::String(string));
-
-                let length = word.len();
-                let count = chars.count();
-                word = word.get(length - count..).unwrap_or_default();
-                continue;
+                break;
             }
-        }
 
-        let length: usize = word.len();
-        let mut offset: usize = 1;
+            match string.as_str() {
+                "\n" => break,
+                "\t" => break,
+                "\r" => break,
+                " " => break,
+                _ => {}
+            }
 
-        for i in 0..length {
-            let substring = match word.get(..(length - i)) {
-                Some(a) => a,
-                None => break,
-            };
-            match match_word(substring) {
-                Some(token) => {
-                    tokens.push(token);
-                    offset = substring.len();
+            for offset in 0..length {
+                let match_string = string.get(..length - offset).unwrap();
+                let token;
+
+                if match_string == "//" {
+                    string = match_string.to_string();
                     break;
                 }
-                None => match is_identifier(substring) {
-                    Some(token) => {
-                        tokens.push(token);
-                        offset = substring.len();
+
+                match match_word(match_string) {
+                    Some(t) => token = Some(t),
+                    None => match is_identifier(match_string) {
+                        Ok(t) => match t {
+                            Some(t) => token = Some(t),
+                            None => match match_string {
+                                "\"" => {
+                                    let mut token_string = String::new();
+                                    string = string.get(1..).unwrap().to_string();
+
+                                    let mut offset: usize = 0;
+                                    let mut chars: Chars = string.chars();
+
+                                    loop {
+                                        let ch = match chars.next() {
+                                            Some(ch) => ch,
+                                            None => {
+                                                offset = 0;
+                                                string = reader.next().unwrap();
+                                                chars = string.chars();
+                                                continue;
+                                            }
+                                        };
+
+                                        if ch == '"' {
+                                            break;
+                                        } else if ch == '\\' {
+                                            offset += 2;
+                                            match chars.next() {
+                                                Some(chr) => match chr {
+                                                    'n' => token_string.push('\n'),
+                                                    't' => token_string.push('\t'),
+                                                    'r' => token_string.push('\r'),
+                                                    '\\' => token_string.push('\\'),
+                                                    '"' => token_string.push('"'),
+                                                    _ => todo!(),
+                                                },
+                                                None => {
+                                                    return Err((
+                                                        String::from("Expected n,t"),
+                                                        reader,
+                                                    ))
+                                                }
+                                            }
+                                            continue;
+                                        }
+                                        offset += 1;
+                                        token_string.push(ch);
+                                    }
+                                    token = Some(Token::String(token_string));
+                                    string = string.get(offset..).unwrap().to_string();
+                                }
+                                _ => {
+                                    assert!(match_string.len() > 1);
+                                    continue;
+                                }
+                            },
+                        },
+                        Err(error) => return Err((error, reader)),
+                    },
+                }
+
+                string = match string.get(length - offset..) {
+                    Some(s) => s.to_string(),
+                    None => return Err((String::from("Unsuported token"), reader)),
+                };
+
+                match token {
+                    Some(t) => {
+                        reader.push(t);
                         break;
                     }
-                    None => {}
-                },
+                    None => panic!(),
+                }
             }
-        }
-
-        if !word.is_empty() {
-            if offset == 0 {
-                panic!("No token found: {:?}", word);
-            };
-            word = word.get(offset..).unwrap_or_default();
-            continue;
         }
     }
 
-    // println!("{:#?}", tokens.tokens);
-    tokens.push(Token::EndOfFile);
-    return Ok(tokens);
+    reader.push(Token::EndOfFile);
+    return Ok(TokensGroup::new(reader.tokens, relative_path));
 }
 
-fn is_integer(source: &String) -> Option<Token> {
+fn is_integer(source: &String) -> Result<Option<Token>, String> {
     for char in source.chars() {
         if char.is_ascii_digit() {
             continue;
         }
-        return None;
+        return Ok(None);
     }
     let string = source.to_string();
-    return match string.parse::<isize>() {
-        Ok(integer) => Some(Token::Integer(integer)),
-        Err(a) => panic!("{:?}", a),
+    return match string.parse::<usize>() {
+        Ok(integer) => Ok(Some(Token::Integer(integer))),
+        Err(a) => Err(format!("{:?}", a)),
     };
 }
 
@@ -121,7 +163,7 @@ fn is_valid_char(char: char) -> bool {
         || char.is_ascii_digit();
 }
 
-fn is_identifier(source: &str) -> Option<Token> {
+fn is_identifier(source: &str) -> Result<Option<Token>, String> {
     let mut chars = source.chars();
 
     match chars.next() {
@@ -130,47 +172,60 @@ fn is_identifier(source: &str) -> Option<Token> {
                 return is_integer(&source.to_string());
             }
             if !is_valid_char(char) {
-                return None;
+                return Ok(None);
             }
         }
-        None => return None,
+        None => return Ok(None),
     }
     for char in chars {
         if is_valid_char(char) {
             continue;
         }
-        return None;
+        return Ok(None);
     }
-    return Some(Token::Identifier(source.to_string()));
+    return Ok(Some(Token::Identifier(source.to_string())));
 }
 
 fn match_word(word: &str) -> Option<Token> {
-    match word {
-        "fn" => Some(Token::Function),
-        "{" => Some(Token::StartScope),
-        "}" => Some(Token::EndScope),
-        "(" => Some(Token::OpenParen),
-        ")" => Some(Token::CloseParen),
-        "[" => Some(Token::OpenBracket),
-        "]" => Some(Token::CloseBracket),
-        "," => Some(Token::Comma),
-        ":" => Some(Token::Colon),
-        ";" => Some(Token::SemiColon),
-        "=" => Some(Token::Equals),
-        "==" => Some(Token::Compare),
-        "mut" => Some(Token::Mutable),
-        "&" => Some(Token::Reference),
-        "_" => Some(Token::Underscore),
-        "if" => Some(Token::If),
-        "else" => Some(Token::Else),
-        // "+" => Some(Token::Operator(Operator::Plus)),
-        // "-" => Some(Token::Operator(Operator::Minus)),
-        // "*" => Some(Token::Operator(Operator::Multiply)),
-        // "/" => Some(Token::Operator(Operator::Division)),
-        "return" => Some(Token::Return),
-        "let" => Some(Token::Variable),
-        "true" => Some(Token::Boolean(true)),
-        "false" => Some(Token::Boolean(false)),
-        _ => None,
-    }
+    let token = match word {
+        "fn" => Token::Function,
+        "{" => Token::StartScope,
+        "}" => Token::EndScope,
+        "(" => Token::OpenParen,
+        ")" => Token::CloseParen,
+        "[" => Token::OpenBracket,
+        "]" => Token::CloseBracket,
+        "," => Token::Comma,
+        ":" => Token::Colon,
+        ";" => Token::SemiColon,
+        "=" => Token::Equals,
+        "==" => Token::Compare,
+        "mut" => Token::Mutable,
+        "&" => Token::Reference,
+        "_" => Token::Underscore,
+        "if" => Token::If,
+        "else" => Token::Else,
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "*" => Token::Asterisk,
+        "/" => Token::Slash,
+        "return" => Token::Return,
+        "let" => Token::Variable,
+        "true" => Token::Boolean(true),
+        "false" => Token::Boolean(false),
+        "pub" => Token::Pub,
+        "import" => Token::Import,
+        "use" => Token::Use,
+        "." => Token::Dot,
+        "::" => Token::DoubleColon,
+        "unsafe" => Token::Unsafe,
+        "enum" => Token::Enum,
+        "struct" => Token::Struct,
+        "give" => Token::Give,
+        "loop" => Token::Loop,
+        "while" => Token::While,
+        _ => return None,
+    };
+
+    return Some(token);
 }
