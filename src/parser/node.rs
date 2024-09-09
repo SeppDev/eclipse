@@ -1,59 +1,43 @@
-//     match enum_type {
-    // pub fn type_size(enum_type: &Type) -> usize {
-//         Type::Tuple(types) => {
-//             let mut total = 0;
-//             for t in types {
-//                 total += type_size(t);
-//             }
-//             return total
-//         }
-//         Type::String => 16,
-//         Type::Integer(integer) => match integer {
-//             Integer::u8 => 1,
-//             Integer::i8 => 1,
-//             Integer::u16 => 2,
-//             Integer::i16 => 2,
-//             Integer::u32 => 4,
-//             Integer::i32 => 4,
-//             Integer::u64 => 8,
-//             Integer::i64 => 8,
-//         }
-//         // Type::Char => 4,
-//     }
-// }
+#[derive(Debug, PartialEq, Eq)]
+pub enum BaseType {
+    Int64,
+    UInt64,
 
+    Int32,
+    UInt32,
 
-#[allow(non_camel_case_types)]
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub enum Integer {
-    // u8,
-    // i8,
-    // u16,
-    // i16,
-    // u32,
-    // i32,
-    // u64,
-    i64,
-}
+    Int16,
+    UInt16,
 
+    Int8,
+    UInt8,
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Struct {
-    body: Vec<Type>
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Type {
-    String,
     Boolean,
-    Struct(String),
-    Integer(Integer),
-    // Tuple(Vec<Type>),
-    // Char,
+
+    Float64,
+    Float32,
+
+    // Intsize,
+    // UIntsize,
 }
 
-#[allow(unused)]
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum Type {
+    Custom(String),
+    Base(BaseType),
+    // StaticString,
+    Tuple(Vec<Type>),
+}
+
+#[derive(Debug)]
+pub enum Value {
+    Integer(isize),
+    UInteger(usize),
+    // String(String),
+    // Boolean(bool),
+}
+
+#[derive(Debug)]
 pub enum Operator {
     Plus,
     Minus,
@@ -61,52 +45,83 @@ pub enum Operator {
     Division,
 }
 
-#[allow(unused)]
-#[derive(Debug, Clone)]
-pub enum Value {
-    Integer(isize),
-    String(String),
-    Boolean(bool)
-}
-
-
-#[allow(unused)]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Expression {
-    Value(Value, Type),
-    GetVariable(String),
-    Call(String, Vec<Expression>),
-    BinaryOperation(Box<Expression>, Operator, Box<Expression>)
+    Value(Value),
+    GetVariable(Path),
+    Call(Path, Vec<Expression>),
+    BinaryOperation(Box<Expression>, Operator, Box<Expression>),
+    // Tuple(Vec<Expression>),
 }
 
-
-
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Node {
-    // EndOfFile,
-    Scope(Vec<Node>),
-    Call(String, Vec<Expression>),
+    Call(Path, Vec<Expression>),
     Return(Option<Expression>),
-    Conditional((Expression, Expression), Vec<Node>, Option<Vec<Node>>),
-
-    Module(String),
-    // Include(),
-    
+    // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
+    SetVariable(Path, Expression),
+    Struct {
+        export: bool,
+        name: String,
+        generics: Vec<String>,
+        body: Vec<(bool, String, Type)>,
+    },
+    Enum {
+        export: bool,
+        name: String,
+        generics: Vec<String>,
+        body: Vec<(String, Vec<Type>)>,
+    },
+    Import(String, bool),
+    Loop {
+        // condition
+        body: Vec<ASTNode>,
+    },
+    Scope {
+        is_unsafe: bool,
+        body: Vec<ASTNode>,
+    },
     Function {
-        public: bool,
+        export: bool,
+        is_unsafe: bool,
         name: String,
         parameters: Vec<(String, Type)>,
         return_type: Option<Type>,
-        body: Vec<Node>,
+        body: Vec<ASTNode>,
     },
     DefineVariable {
-        name: String,
         mutable: bool,
+        name: String,
         var_type: Option<Type>,
         expression: Option<Expression>,
     },
-    SetVariable {
-        name: String,
-        expression: Expression
-    },
+}
+
+#[derive(Debug)]
+pub struct ASTNode {
+    // indent: usize,
+    pub line: usize,
+    pub node: Node,
+}
+impl ASTNode {
+    pub fn new(line: usize, node: Node) -> Self {
+        Self { node, line }
+    }
+}
+
+#[derive(Debug)]
+pub struct Path {
+    pub root: String,
+    pub location: Vec<String>,
+}
+impl Path {
+    pub fn new(root: String) -> Self {
+        Self {
+            root,
+            location: Vec::new(),
+        }
+    }
+    pub fn add(&mut self, name: String) {
+        self.location.push(name)
+    }
 }

@@ -1,5 +1,5 @@
-mod codegen;
-mod writer;
-mod labels;
-mod function;
-pub use codegen::compile;
+mod builder;
+mod module;
+
+pub use module::*;
+pub use builder::build;

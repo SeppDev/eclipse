@@ -1,10 +1,19 @@
-mod lexer;
+mod parser;
 mod node;
-mod tokens_group;
-mod analyzer;
+mod function;
+mod scope;
+mod types;
+mod variable;
+mod expression;
+mod arguments;
+mod path;
+mod after_identifier;
+mod program;
+mod structs;
+mod enums;
+mod export;
 
-pub mod parser;
-
-pub use analyzer::analyze;
-pub use parser::parse;
+pub use program::Program;
 pub use node::*;
+pub use node::Type;
+pub use parser::*;
