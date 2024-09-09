@@ -1,15 +1,13 @@
 use eclipse::build;
 use std::{
-    env,
-    io::{BufRead, BufReader},
-    panic,
-    process::{Command, Stdio},
+    env, io::{BufRead, BufReader}, panic, path::PathBuf, process::{Command, Stdio}
 };
 
 
 fn main() {
     #[derive(PartialEq, Eq)]
     enum Action {
+        New,
         Build,
         BuildAndRun,
     } 
@@ -25,6 +23,7 @@ fn main() {
     let action = match action.as_str() {
         "build" => Action::Build,
         "run" => Action::BuildAndRun,
+        "new" => Action::New,
         _ => return println!("{:?} is not a valid argument", action),
     };
 
@@ -40,6 +39,34 @@ fn main() {
         if action == Action::BuildAndRun {
             run(executable);
         }
+    } else if action == Action::New {
+        let name = match arguments.next() {
+            Some(name) => name,
+            None => panic!("No name specified")
+        };
+
+
+        let mut path: PathBuf = match arguments.next() {
+            Some(path) => {
+                PathBuf::from(path)
+            },
+            None => {
+                project_dir.to_path_buf()
+            }
+        };
+
+        path = path.join(format!("/{}", name));
+
+        if path.exists() == true {
+            panic!("{:?} already exists", path);
+        }
+
+        match std::fs::create_dir(path) {
+            Ok(_) => {},
+            Err(error) => panic!("{:?}", error)
+        };
+
+        println!("")
     }
     // math::add_one(1);
 }
