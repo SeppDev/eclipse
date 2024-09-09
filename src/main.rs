@@ -1,8 +1,11 @@
-use eclipse::build;
+use eclipse::{build, FILE_EXTENSION};
 use std::{
-    env, io::{BufRead, BufReader}, panic, path::PathBuf, process::{Command, Stdio}
+    env,
+    io::{BufRead, BufReader},
+    panic,
+    path::PathBuf,
+    process::{Command, Stdio},
 };
-
 
 fn main() {
     #[derive(PartialEq, Eq)]
@@ -10,7 +13,7 @@ fn main() {
         New,
         Build,
         BuildAndRun,
-    } 
+    }
 
     let project_dir = env::current_dir().unwrap();
     let mut arguments = env::args().into_iter().peekable();
@@ -42,33 +45,42 @@ fn main() {
     } else if action == Action::New {
         let name = match arguments.next() {
             Some(name) => name,
-            None => panic!("No name specified")
+            None => return println!("No name specified"),
         };
-
 
         let mut path: PathBuf = match arguments.next() {
-            Some(path) => {
-                PathBuf::from(path)
-            },
-            None => {
-                project_dir.to_path_buf()
-            }
+            Some(path) => PathBuf::from(path),
+            None => project_dir.to_path_buf(),
         };
+        
 
-        path = path.join(format!("/{}", name));
-
+        // Check if the project already exists
+        path = path.join(format!("{}", name));
         if path.exists() == true {
-            panic!("{:?} already exists", path);
+            return println!("{:?} already exists", path);
         }
 
-        match std::fs::create_dir(path) {
-            Ok(_) => {},
-            Err(error) => panic!("{:?}", error)
+        match std::fs::create_dir(&path) {
+            Ok(_) => {}
+            Err(error) => return println!("{:?}", error),
+        };
+        
+        // Create the src directory
+        path = path.join("src");
+        match std::fs::create_dir(&path) {
+            Ok(_) => {}
+            Err(error) => return println!("{:?}", error),
         };
 
-        println!("")
+        // Create the main file
+        match std::fs::write(
+            path.join(format!("main.{}", FILE_EXTENSION)),
+            "fn main() {\nprint(\"Hello, world\"!)\n}",
+        ) {
+            Ok(_) => {}
+            Err(error) => return println!("{:?}", error),
+        };
     }
-    // math::add_one(1);
 }
 
 fn run(executable_path: String) {
