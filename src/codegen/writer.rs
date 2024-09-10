@@ -3,9 +3,16 @@ pub struct Writer {
 }
 impl Writer {
     pub fn new() -> Self {
-        Self {
+        let mut writer = Self {
             body: String::new(),
-        }
+        };
+        
+        writer.push_str("bits 64\n");
+        writer.push_str("global main\n");
+        writer.push_str("extern printf, puts, exit\n\n");    
+        writer.push_str("section .text\n"); 
+        
+        writer
     }
     pub fn push(&mut self, body: &String) {
         self.body.push_str(&body);

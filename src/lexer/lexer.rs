@@ -84,6 +84,8 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> Result<TokensGroup, (
                                             }
                                         };
 
+                                        // println!("{:?}", token_string);
+
                                         if ch == '"' {
                                             break;
                                         } else if ch == '\\' {

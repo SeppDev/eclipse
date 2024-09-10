@@ -1,6 +1,9 @@
-#[derive(Debug, PartialEq, Eq, Clone)]
+
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[allow(dead_code)]
 pub enum Token {
+    #[default]
     None,
     EndOfFile,
 
@@ -92,7 +95,7 @@ impl Token {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TokenInfo {
     pub token: Token,
     pub line: usize,
@@ -100,17 +103,12 @@ pub struct TokenInfo {
 }
 impl TokenInfo {
     pub fn new(token: Token, line: usize, column: usize) -> Self {
+        // let a = column - token.len();
+        // assert!(a <= token.len());
         Self {
-            column: column - token.len(),
+            column: column,
             token,
             line,
-        }
-    }
-    pub fn default() -> Self {
-        Self {
-            token: Token::None,
-            line: 0,
-            column: 0,
         }
     }
 }

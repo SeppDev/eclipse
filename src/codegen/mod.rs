@@ -1,3 +1,5 @@
-// mod codegen;
-// mod action;
-// mod writer;
+mod codegen;
+mod action;
+mod writer;
+
+pub use codegen::generate;

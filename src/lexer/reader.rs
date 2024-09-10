@@ -29,6 +29,8 @@ impl Reader {
                     self.index += 1;
                     self.column += 1;
 
+                    // println!("{}, {}", self.index, self.column);
+
                     match schar {
                         '\n' => {
                             self.line += 1;
@@ -50,7 +52,6 @@ impl Reader {
         return Some(string);
     }
     pub fn push(&mut self, token: Token) {
-        // let len = token.len();
         self.tokens.push(TokenInfo::new(token, self.line, self.column))
     }
 }

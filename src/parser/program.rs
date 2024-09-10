@@ -1,11 +1,11 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    builder::Module, lexer::tokenize, read_file, BuildError, BuildProblem, CompileError,
+    lexer::tokenize, read_file, BuildError, BuildProblem, CompileError,
     FILE_EXTENSION,
 };
 
-use super::{parse, Node};
+use super::{module::Module, parse, Node};
 
 fn get_path(project_path: &PathBuf, paths: [PathBuf; 2]) -> Result<PathBuf, ()> {
     for path in paths {
@@ -51,6 +51,7 @@ impl Program {
                 )))
             }
         };
+
         let nodes = match parse(&mut tokens) {
             Ok(nodes) => nodes,
             Err(error) => return Err(error),

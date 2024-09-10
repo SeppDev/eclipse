@@ -12,6 +12,7 @@ mod program;
 mod structs;
 mod enums;
 mod export;
+mod module;
 
 pub use program::Program;
 pub use node::*;

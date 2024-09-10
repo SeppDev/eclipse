@@ -83,7 +83,7 @@ fn main() {
     }
 }
 
-fn run(executable_path: String) {
+fn run(executable_path: PathBuf) {
     let mut thread = Command::new(executable_path)
         .stdout(Stdio::piped())
         .spawn()
