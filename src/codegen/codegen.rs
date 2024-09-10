@@ -7,6 +7,10 @@ const NAME: &str = "app";
 pub fn generate(program: IRProgram, build_path: PathBuf) -> Result<PathBuf, CompileError> {
     let mut writer = Writer::new();
 
+    for function in program.functions {
+        writer.label(&function.path);
+    }
+
     writer.push_str("main:\n");
     writer.add_operation_str("push rbp");
     writer.add_operation_str("mov rbp, rsp");

@@ -14,7 +14,10 @@ use super::{
 pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
     let mutable = match tokens.peek() {
         Ok(info) => match info.token {
-            Token::Mutable => true,
+            Token::Mutable => {
+                tokens.advance().unwrap();
+                true
+            },
             _ => false,
         },
         Err(error) => return Err(error),

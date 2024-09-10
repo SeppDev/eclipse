@@ -3,17 +3,22 @@ pub enum IRNode {
 }
 
 pub struct IRFunction {
-    path: String,
+    pub path: String,
 }
 
 pub struct IRProgram {
-    functions: Vec<IRFunction>
+    pub functions: Vec<IRFunction>
 }
 
 impl IRProgram {
     pub fn new() -> Self {
         Self {
             functions: Vec::new()
+        }
+    }
+    pub fn push_functions(&mut self, functions: Vec<IRFunction>) {
+        for func in functions {
+            self.functions.push(func);
         }
     }
 }
