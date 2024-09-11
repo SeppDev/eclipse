@@ -52,6 +52,8 @@ impl Program {
             }
         };
 
+        println!("{:#?}", tokens);
+
         let nodes = match parse(&mut tokens) {
             Ok(nodes) => nodes,
             Err(error) => return Err(error),
