@@ -6,7 +6,7 @@ use crate::{
 use super::{
     after_identifier::parse_identifer_string, enums::parse_enum, function::parse_function,
     structs::parse_struct, tokens_expected_got, ASTNode, Node,
-};  
+};
 
 pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
     match tokens.peek() {
@@ -27,7 +27,14 @@ pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
                 };
                 return Ok(ASTNode::new(tokens.current.line, Node::Import(name, true)));
             }
-            _ => {}
+            Token::Function => {}
+            _ => {
+                return Err(tokens_expected_got(
+                    tokens,
+                    vec![Token::Enum, Token::Struct, Token::Import, Token::Function],
+                    info,
+                ))
+            }
         },
         Err(error) => return Err(error),
     };

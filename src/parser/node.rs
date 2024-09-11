@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
     Int64,
     UInt64,
@@ -21,7 +21,7 @@ pub enum BaseType {
     // UIntsize,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
     Custom(String),
     Base(BaseType),

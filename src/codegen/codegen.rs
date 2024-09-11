@@ -7,8 +7,8 @@ const NAME: &str = "app";
 pub fn generate(program: IRProgram, build_path: PathBuf) -> Result<PathBuf, CompileError> {
     let mut writer = Writer::new();
 
-    for function in program.functions {
-        writer.label(&function.path);
+    for (path, (parameter, return_type)) in program.functions {
+        writer.label(&path);
     }
 
     writer.push_str("main:\n");

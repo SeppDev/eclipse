@@ -1,24 +1,22 @@
-pub enum IRNode {
-    
-}
+use std::collections::HashMap;
+
+use crate::parser::Type;
+
+pub enum IRNode {}
 
 pub struct IRFunction {
-    pub path: String,
+    pub body: Vec<IRNode>,
 }
 
+#[derive(Default)]
 pub struct IRProgram {
-    pub functions: Vec<IRFunction>
+    // pub types: HashMap<String, >
+    pub functions: HashMap<String, (Vec<(String, Type)>, Option<Type>)>,
+    pub body: HashMap<String, IRFunction>,
 }
 
 impl IRProgram {
     pub fn new() -> Self {
-        Self {
-            functions: Vec::new()
-        }
-    }
-    pub fn push_functions(&mut self, functions: Vec<IRFunction>) {
-        for func in functions {
-            self.functions.push(func);
-        }
+        Self::default()
     }
 }
