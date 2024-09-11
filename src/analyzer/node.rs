@@ -5,6 +5,7 @@ use crate::parser::Type;
 pub enum IRNode {}
 
 pub struct IRFunction {
+    pub stack_size: usize,
     pub body: Vec<IRNode>,
 }
 

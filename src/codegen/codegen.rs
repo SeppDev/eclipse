@@ -7,9 +7,20 @@ const NAME: &str = "app";
 pub fn generate(program: IRProgram, build_path: PathBuf) -> Result<PathBuf, CompileError> {
     let mut writer = Writer::new();
 
-    for (path, (parameter, return_type)) in program.functions {
+    for (path, function) in program.body {
         writer.label(&path);
+        writer.add_operation_str("push rbp");
+        writer.add_operation_str("mov rbp, rsp");
+        writer.add_operation(format!("sub rsp, {}", function.stack_size.max(16)));
+
+        writer.add_operation(format!("add rsp, {}", function.stack_size.max(16)));
+        writer.add_operation_str("leave");
+        writer.add_operation_str("ret");
     }
+
+    /*    push rbp
+    mov rbp, rsp
+    sub rsp, 32 */
 
     writer.push_str("main:\n");
     writer.add_operation_str("push rbp");

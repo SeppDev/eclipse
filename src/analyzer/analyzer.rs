@@ -7,7 +7,7 @@ use crate::{
 
 use super::{node::IRProgram, IRFunction, IRNode};
 
-fn create_function_path(relative_path: &PathBuf, name: &String) -> String {
+fn create_function_path(relative_path: &PathBuf, name: String) -> String {
     let mut function_path = relative_path
         .to_str()
         .unwrap()
@@ -23,8 +23,8 @@ pub fn analyze(program: Program) -> Result<IRProgram, CompileError> {
     let mut ir_program = IRProgram::new();
 
     for (path, module) in program.modules {
-        for node in module.body.iter() {
-            match &node.node {
+        for node in module.body {
+            match node.node {
                 #[allow(unused)]
                 Node::Function {
                     export,
@@ -65,7 +65,10 @@ pub fn parse_root(
                 return_type,
                 body,
             } => match parse_body(body, is_unsafe.to_owned()) {
-                Ok(nodes) => functions.push(IRFunction { body: nodes }),
+                Ok(nodes) => functions.push(IRFunction {
+                    body: nodes,
+                    stack_size: 16,
+                }),
                 Err(error) => return Err(error),
             }, //functions.push(IRFunction {
             // path: format!("{}.{}", function_path, name),,
@@ -83,10 +86,16 @@ pub fn parse_body(body: Vec<ASTNode>, is_unsafe: bool) -> Result<Vec<IRNode>, Co
     for node in body {
         match node.node {
             Node::Scope { is_unsafe, body } => match parse_body(body, is_unsafe) {
-                Ok(body) => {},
-                Err(error) => return Err(error)
+                Ok(body) => {}
+                Err(error) => return Err(error),
             },
-            _ => todo!()
+            Node::DefineVariable {
+                mutable,
+                name,
+                var_type,
+                expression,
+            } => {}
+            _ => todo!(),
         }
     }
 
