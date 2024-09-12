@@ -1,0 +1,2 @@
+cargo test -- --nocapture
+pause

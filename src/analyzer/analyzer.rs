@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use crate::{parser::{ASTNode, Module, Node, Program}, CompileError};
 
 pub fn analyze(program: Program) -> Result<Program, CompileError> {
-    let mut new_program = Program::new(program.project_path);
+    let mut new_program = Program::new(program.project_path.clone());
 
-    for (path, module) in &program.modules {
+    for (path, module) in program.modules.iter() {
         match analyze_module(&program, path, module) {
             Ok(nodes) => {
                 let new_module = Module {
@@ -29,4 +29,5 @@ fn analyze_module(program: &Program, relative_path: &PathBuf, module: &Module) -
 fn analyze_body() -> Result<Vec<ASTNode>, CompileError> {
 
     todo!()
-}
+}  
+
