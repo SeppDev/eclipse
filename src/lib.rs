@@ -5,6 +5,7 @@ use lexer::{Token, TokenInfo};
 mod builder;
 mod lexer;
 mod parser;
+mod assembler;
 mod codegen;
 mod analyzer;
 

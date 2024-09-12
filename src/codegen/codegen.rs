@@ -1,57 +1,148 @@
 use std::path::PathBuf;
 
-use crate::{analyzer::IRProgram, codegen::writer::Writer, execute, CompileError};
+use crate::{
+    parser::{ASTNode, Expression, Node, Program, Value},
+    CompileError, FILE_EXTENSION,
+};
 
-const NAME: &str = "app";
+use super::{function::FunctionInfo, node::IRProgram, IRFunction, IRNode};
 
-pub fn generate(program: IRProgram, build_path: PathBuf) -> Result<PathBuf, CompileError> {
-    let mut writer = Writer::new();
+fn create_function_path(relative_path: &PathBuf, name: &String) -> String {
+    let mut function_path = relative_path
+        .to_str()
+        .unwrap()
+        .replace(format!(".{}", FILE_EXTENSION).as_str(), "")
+        .replace("/", ".");
 
-    println!("{:#?}", program);
+    function_path.push_str(format!(".{}", name).as_str());
 
-    for (path, function) in program.body {
-        writer.label(&path);
-        writer.add_operation_str("push rbp");
-        writer.add_operation_str("mov rbp, rsp");
-        writer.add_operation(format!("sub rsp, {}", function.stack_size.max(16)));
-
-        writer.add_operation(format!("add rsp, {}", function.stack_size.max(16)));
-        writer.add_operation_str("leave");
-        writer.add_operation_str("ret");
-    }
-
-    /*    push rbp
-    mov rbp, rsp
-    sub rsp, 32 */
-
-    writer.push_str("main:\n");
-    writer.add_operation_str("push rbp");
-    writer.add_operation_str("mov rbp, rsp");
-    writer.add_operation_str("sub rsp, 16");
-    writer.add_operation_str("mov rcx, 0");
-    writer.add_operation_str("call exit");
-
-    let assembly_file = build_path.clone().join("app.s");
-    match std::fs::write(&assembly_file, writer.body) {
-        Ok(()) => {}
-        Err(error) => return Err(CompileError::OpenFile(error)),
-    };
-
-    match execute(format!(
-        "nasm -f win64 {}",
-        String::from(assembly_file.to_str().unwrap())
-    )) {
-        Ok(_out) => {}
-        Err(error) => return Err(CompileError::NASM(error)),
-    }
-
-    let object_file = String::from(build_path.join(format!("{}.obj", &NAME)).to_str().unwrap());
-    let executable = String::from(build_path.join(format!("{}", &NAME)).to_str().unwrap());
-
-    match execute(format!("gcc -o {}.exe {} -m64", executable, object_file)) {
-        Ok(_out) => {}
-        Err(error) => return Err(CompileError::GCC(error)),
-    }
-
-    return Ok(build_path.join(format!("{}.exe", NAME)));
+    return function_path;
 }
+
+pub fn generate(program: Program) -> Result<IRProgram, CompileError> {
+    let mut ir_program = IRProgram::new();
+
+    for (path, module) in program.modules.iter() {
+        for node in &module.body {
+            match &node.node {
+                #[allow(unused)]
+                Node::Function {
+                    export,
+                    is_unsafe,
+                    name,
+                    parameters,
+                    return_type,
+                    body,
+                } => {
+                    ir_program.functions.insert(
+                        create_function_path(&path, &name),
+                        (parameters.clone(), return_type.clone()),
+                    );
+                }
+                Node::Import(_, _) => continue,
+                node => panic!("Expected function got: {:?}", node),
+            }
+        }
+    }
+
+    for (path, module) in program.modules {
+        match parse_root(module.body, path, &mut ir_program) {
+            Ok(()) => {}
+            Err(error) => return Err(error),
+        }
+    }
+
+    return Ok(ir_program);
+}
+
+pub fn parse_root(
+    nodes: Vec<ASTNode>,
+    relative_path: PathBuf,
+    ir_program: &mut IRProgram,
+) -> Result<(), CompileError> {
+    let function_path = relative_path
+        .to_str()
+        .unwrap()
+        .replace(format!(".{}", FILE_EXTENSION).as_str(), "")
+        .replace("/", ".");
+
+    for ast_node in nodes {
+        let node = ast_node.node;
+        match node {
+            Node::Function {
+                export,
+                is_unsafe,
+                name,
+                parameters,
+                return_type,
+                body,
+            } => {
+                let mut function = FunctionInfo::new();
+                match parse_body(body, is_unsafe.to_owned(), &mut function) {
+                    Ok(nodes) => {
+                        let result = ir_program.body.insert(
+                            format!("{}.{}", function_path, name),
+                            IRFunction {
+                                stack_size: 16,
+                                body: nodes,
+                            },
+                        );
+    
+                        match result {
+                            Some(_) => panic!(),
+                            None => continue,
+                        }
+                    }
+                    Err(error) => panic!("{:?}", error),
+                }
+            },
+            Node::Import(_, _) => continue,
+            _ => panic!("Expected function"),
+        }
+    }
+
+    return Ok(());
+}
+
+pub fn parse_body(body: Vec<ASTNode>, is_unsafe: bool, function: &mut FunctionInfo) -> Result<Vec<IRNode>, CompileError> {
+    let mut tree = Vec::new();
+
+    for node in body {
+        match node.node {
+            Node::Scope { is_unsafe, body } => match parse_body(body, is_unsafe, function) {
+                Ok(body) => {}
+                Err(error) => return Err(error),
+            },
+            Node::DefineVariable {
+                mutable,
+                name,
+                var_type,
+                expression,
+            } => {
+                match parse_expression(expression.unwrap(), &is_unsafe, function) {
+                    Ok(node) => tree.push(node),
+                    Err(error) => return Err(error)
+                }
+                // tree.push(IRNode::StoreValue {
+                //     offset: 8,
+                //     value: 4321,
+                // };
+            },
+            // node => todo!("{:#?}", node),
+            _ => continue,
+        }
+    }
+
+    return Ok(tree);
+}
+
+pub fn parse_expression(expression: Expression, is_unsafe: &bool, function: &mut FunctionInfo) -> Result<IRNode, CompileError> {
+    // match expression {
+    //     Expression::Value(value) => match value {
+    //         Value::Integer(integer) => 
+    //     }
+    //     expr => todo!("{:#?}", expr)
+    // }
+
+    todo!()
+}   

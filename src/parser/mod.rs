@@ -18,3 +18,4 @@ pub use program::Program;
 pub use node::*;
 pub use node::Type;
 pub use parser::*;
+pub use module::*;
