@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
-    parser::{ASTNode, Expression, Node, Program, Value},
+    parser::{ASTNode, Expression, Node, Program},
     CompileError, FILE_EXTENSION,
 };
 
