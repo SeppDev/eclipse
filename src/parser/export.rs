@@ -12,20 +12,20 @@ pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
     match tokens.peek() {
         Ok(info) => match info.token {
             Token::Enum => {
-                tokens.advance().unwrap();
+                tokens.advance()?;
                 return parse_enum(tokens, true);
             }
             Token::Struct => {
-                tokens.advance().unwrap();
+                tokens.advance()?;
                 return parse_struct(tokens, true);
             }
             Token::Import => {
-                tokens.advance().unwrap();
+                tokens.advance()?;
                 let name = match parse_identifer_string(tokens) {
                     Ok(str) => str,
                     Err(error) => return Err(error),
                 };
-                return Ok(ASTNode::new(tokens.current.lines.clone(), Node::Import(name, true)));
+                return Ok(tokens.generate(Node::Import(name, true)));
             }
             Token::Function => {}
             _ => {
@@ -42,7 +42,7 @@ pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
     let is_unsafe = match tokens.peek() {
         Ok(info) => match info.token {
             Token::Unsafe => {
-                tokens.advance().unwrap();
+                tokens.advance()?;
                 true
             }
             _ => false,

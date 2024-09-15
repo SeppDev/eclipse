@@ -1,6 +1,6 @@
 use crate::{
     lexer::{Token, TokensGroup},
-    BuildError, BuildProblem, CompileError,
+    CompileError,
 };
 
 use super::{
@@ -12,89 +12,64 @@ use super::{
 };
 
 pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
-    let mutable = match tokens.peek() {
-        Ok(info) => match info.token {
-            Token::Mutable => {
-                tokens.advance().unwrap();
-                true
-            },
-            _ => false,
-        },
-        Err(error) => return Err(error),
+    let info = tokens.peek()?;
+    let mutable = match info.token {
+        Token::Mutable => {
+            tokens.advance()?;
+            true
+        }
+        _ => false,
     };
 
-    let name = match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::Identifier(name) => name,
-            _ => {
-                return Err(tokens_expected_got(
-                    tokens,
-                    vec![Token::Identifier(String::from("variable"))],
-                    info,
-                ))
-            }
-        },
-        Err(error) => return Err(error),
+    let info = tokens.advance()?;
+    let name = match info.token {
+        Token::Identifier(name) => name,
+        _ => {
+            return Err(tokens_expected_got(
+                tokens,
+                vec![Token::Identifier(String::from("variable"))],
+                info,
+            ))
+        }
     };
 
-    let data_type = match tokens.peek() {
-        Ok(info) => match info.token {
-            Token::Equals => None,
-            Token::Colon => {
-                tokens.advance().unwrap();
-                match parse_type(tokens) {
-                    Ok(t) => Some(t),
-                    Err(error) => return Err(error),
-                }
-            }
-            _ => {
-                return Err(tokens_expected_got(
-                    tokens,
-                    vec![Token::Colon, Token::Equals],
-                    info,
-                ))
-            }
-        },
-        Err(error) => return Err(error),
-    };
-
-    let expression: Option<Expression> = match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::Equals => match parse_expression(tokens) {
-                Ok(expression) => match expression {
-                    Some(expression) => Some(expression),
-                    None => {
-                        return Err(CompileError::BuildProblem(BuildProblem::new(
-                            BuildError::ExpressionExpected,
-                            tokens.relative_path.clone(),
-                            tokens.current.lines.clone(),
-                        )))
-                    }
-                },
+    let info = tokens.peek()?;
+    let data_type = match info.token {
+        Token::Equals => None,
+        Token::Colon => {
+            tokens.advance()?;
+            match parse_type(tokens) {
+                Ok(t) => Some(t),
                 Err(error) => return Err(error),
-            },
-            _ => None,
-        },
-        Err(error) => return Err(error),
+            }
+        }
+        _ => {
+            return Err(tokens_expected_got(
+                tokens,
+                vec![Token::Colon, Token::Equals],
+                info,
+            ))
+        }
     };
 
-    match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::SemiColon => {}
-            _ => return Err(tokens_expected_got(tokens, vec![Token::SemiColon], info)),
-        },
-        Err(error) => return Err(error),
+    let info = tokens.advance()?;
+    let expression: Option<Expression> = match info.token {
+        Token::Equals => parse_expression(tokens)?,
+        _ => None,
+    };
+
+    let info = tokens.advance()?;
+    match info.token {
+        Token::SemiColon => {}
+        _ => return Err(tokens_expected_got(tokens, vec![Token::SemiColon], info)),
     }
 
-    return Ok(ASTNode::new(
-        tokens.current.lines.clone(),
-        Node::DefineVariable {
-            mutable,
-            name,
-            data_type,
-            expression,
-        },
-    ));
+    return Ok(tokens.generate(Node::DefineVariable {
+        mutable,
+        name,
+        data_type,
+        expression,
+    }));
 }
 
 // pub fn parse_set_variable(tokens: &mut TokensGroup, name: String) -> Result<ASTNode, CompileError> {

@@ -1,22 +1,20 @@
-use std::{io::Read, ops::Range, path::PathBuf, process::exit};
+use std::{io::Read, path::PathBuf, process::exit};
 
-use lexer::{Token, TokenInfo};
-
+mod analyzer;
+mod assembler;
 mod builder;
+mod codegen;
 mod lexer;
 mod parser;
-mod assembler;
-mod codegen;
-mod analyzer;
 
 pub use builder::build;
 
 pub const FILE_EXTENSION: &str = "eclipse";
 
-pub fn open_file(path: &PathBuf) -> Result<std::fs::File, CompileError> {
+pub fn open_file(path: &PathBuf) -> Result<std::fs::File, BuildError> {
     let file = match std::fs::File::open(path) {
         Ok(file) => file,
-        Err(error) => return Err(CompileError::OpenFile(error)),
+        Err(error) => return Err(BuildError::OpenFile(error)),
     };
     return Ok(file);
 }
@@ -31,7 +29,7 @@ pub fn read_file(path: &PathBuf) -> Result<String, CompileError> {
 
     match file.read_to_string(&mut buf) {
         Ok(_) => {}
-        Err(error) => return Err(CompileError::OpenFile(error)),
+        Err(error) => return Err(BuildError::OpenFile(error)),
     }
 
     return Ok(buf);
@@ -55,7 +53,6 @@ pub fn execute(command: String) -> Result<String, String> {
 
     return Ok(String::from_utf8(cmd.stdout).unwrap());
 }
-
 
 // #[derive(Debug)]
 // pub enum BuildError {
@@ -123,22 +120,37 @@ pub fn execute(command: String) -> Result<String, String> {
 //     }
 // }
 
-#[derive(Debug)]
+pub struct ParseError {
+    error: String
+}
+impl ParseError {
+    fn print(&self) {
+
+    }
+}
+
 pub enum CompileError {
+
+}
+
+pub enum BuildError {
     OpenFile(std::io::Error),
     // BuildProblem(BuildProblem),
-    BuildProblem,
+    
+    ParseError(ParseError),
     GCC(String),
     NASM(String),
 }
-impl CompileError {
+impl BuildError {
     pub fn print(self) {
         match self {
-            CompileError::BuildProblem(problem) => problem.print(),
-            CompileError::GCC(msg) => panic!("{}", msg),
-            CompileError::NASM(msg) => panic!("{}", msg),
-            CompileError::OpenFile(error) => panic!("{:?}", error),
+            // CompileError::BuildProblem(problem) => problem.print(),
+            BuildError::ParseError(parse_error) =>  parse_error.print(),
+            BuildError::GCC(msg) => panic!("{}", msg),
+            BuildError::NASM(msg) => panic!("{}", msg),
+            BuildError::OpenFile(error) => panic!("{:?}", error),
         }
+        exit(1);
     }
 }
 

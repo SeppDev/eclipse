@@ -4,6 +4,7 @@ use crate::{
 };
 
 use super::{
+    after_identifier::parse_identifer_string,
     node::{ASTNode, Node},
     scope::parse_scope,
     tokens_expected_got,
@@ -16,98 +17,55 @@ pub fn parse_function(
     export: bool,
     is_unsafe: bool,
 ) -> Result<ASTNode, CompileError> {
-    let name = match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::Identifier(name) => name,
-            _ => {
-                return Err(tokens_expected_got(
-                    tokens,
-                    vec![Token::Identifier(String::from("function_name"))],
-                    info,
-                ))
-            }
-        },
-        Err(error) => return Err(error),
-    };
+    let name = parse_identifer_string(tokens)?;
 
-    match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::OpenParen => {}
-            _ => return Err(tokens_expected_got(tokens, vec![Token::OpenParen], info)),
-        },
-        Err(error) => return Err(error),
+    let info = tokens.advance()?;
+    match info.token {
+        Token::OpenParen => {}
+        _ => return Err(tokens_expected_got(tokens, vec![Token::OpenParen], info)),
     }
 
     let mut parameters = Vec::new();
     loop {
-        match tokens.advance() {
-            Ok(info) => match info.token {
-                Token::Identifier(name) => {
-                    parameters.push((
-                        name,
-                        match parse_type(tokens) {
-                            Ok(t) => t,
-                            Err(error) => return Err(error),
-                        },
-                    ));
-                    match tokens.advance() {
-                        Ok(info) => match info.token {
-                            Token::Comma => {}
-                            Token::CloseParen => break,
-                            _ => return Err(tokens_expected_got(tokens, vec![Token::Comma], info)),
-                        },
-                        Err(error) => return Err(error),
-                    }
+        let info = tokens.advance()?;
+        match info.token {
+            Token::Identifier(name) => {
+                parameters.push((name, parse_type(tokens)?));
+                let info = tokens.advance()?;
+                match info.token {
+                    Token::Comma => {}
+                    Token::CloseParen => break,
+                    _ => return Err(tokens_expected_got(tokens, vec![Token::Comma], info)),
                 }
-                Token::CloseParen => break,
-                _ => return Err(tokens_expected_got(tokens, vec![Token::OpenParen], info)),
-            },
-            Err(error) => return Err(error),
+            }
+            Token::CloseParen => break,
+            _ => return Err(tokens_expected_got(tokens, vec![Token::OpenParen], info)),
         }
     }
 
-    let return_type: Option<Type> = match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::StartScope => None,
-            Token::Colon => match parse_type(tokens) {
-                Ok(t) => {
-                    match tokens.advance() {
-                        Ok(info) => match info.token {
-                            Token::StartScope => {}
-                            _ => {
-                                return Err(tokens_expected_got(
-                                    tokens,
-                                    vec![Token::StartScope],
-                                    info,
-                                ))
-                            }
-                        },
-                        Err(error) => return Err(error),
-                    };
-
-                    Some(t)
-                }
-                Err(error) => return Err(error),
-            },
-            _ => return Err(tokens_expected_got(tokens, vec![Token::StartScope], info)),
-        },
-        Err(error) => return Err(error),
+    let info = tokens.advance()?;
+    let return_type: Option<Type> = match info.token {
+        Token::StartScope => None,
+        Token::Colon => {
+            let data_type = parse_type(tokens)?;
+            let info = tokens.advance()?;
+            match info.token {
+                Token::StartScope => {}
+                _ => return Err(tokens_expected_got(tokens, vec![Token::StartScope], info)),
+            }
+            Some(data_type)
+        }
+        _ => return Err(tokens_expected_got(tokens, vec![Token::StartScope], info)),
     };
 
-    let body = match parse_scope(tokens) {
-        Ok(body) => body,
-        Err(error) => return Err(error),
-    };
+    let body = parse_scope(tokens)?;
 
-    return Ok(ASTNode::new(
-        tokens.current.lines.clone(),
-        Node::Function {
-            export,
-            is_unsafe,
-            name,
-            parameters,
-            return_type: return_type,
-            body: body,
-        },
-    ));
+    return Ok(tokens.generate(Node::Function {
+        export,
+        is_unsafe,
+        name,
+        parameters,
+        return_type: return_type,
+        body: body,
+    }));
 }

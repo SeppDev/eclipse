@@ -1,4 +1,4 @@
-use std::{num::ParseIntError, path::PathBuf};
+use std::path::PathBuf;
 
 // #[derive(Debug)]
 // pub enum TokenError {}
@@ -35,15 +35,12 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
                 None => {}
             }
 
-            match is_integer(&string) {
-                Ok(t) => match t {
-                    Some(t) => {
-                        token = Some(t);
-                        break;
-                    }
-                    None => {}
-                },
-                Err(error) => panic!("{:?}", error),
+            match is_number(&string) {
+                Some(t) => {
+                    token = Some(t);
+                    break;
+                }
+                None => {}
             }
 
             match is_identifier(&string) {
@@ -109,24 +106,41 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
         }
     }
 
-
     reader.push(TokenInfo::new(Token::EndOfFile, reader.lines.len(), 0));
     return TokensGroup::new(reader.tokens, relative_path);
 }
 
-fn is_integer(source: &String) -> Result<Option<Token>, ParseIntError> {
+fn is_float(source: &String) -> Option<Token> {
+    let mut dot = false;
     for chr in source.chars() {
         if chr.is_ascii_digit() {
             continue;
         }
-        return Ok(None);
+        if chr == '.' && dot == false {
+            dot = true;
+            continue;
+        }
+        return None;
     }
-    let string = source.to_string();
-    return match string.parse::<usize>() {
-        Ok(integer) => Ok(Some(Token::Integer(integer))),
-        Err(a) => Err(a),
-    };
+    return Some(Token::Float(source.clone()));
 }
+
+fn is_number(source: &String) -> Option<Token> {
+    for chr in source.chars() {
+        if chr == '.' {
+            return is_float(source);
+        }
+        if chr.is_ascii_digit() {
+            continue;
+        }
+        return None;
+    }
+    return Some(Token::Integer(source.clone()));
+}
+// return match string.parse::<usize>() {
+//     Ok(integer) => Ok(Some(Token::Integer(integer))),
+//     Err(a) => Err(a),
+// };
 
 fn is_valid_char(chr: char) -> bool {
     return chr == '_'

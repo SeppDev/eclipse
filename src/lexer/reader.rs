@@ -1,4 +1,4 @@
-use super::{Token, TokenInfo};
+use super::TokenInfo;
 
 #[derive(Debug)]
 pub struct Char {

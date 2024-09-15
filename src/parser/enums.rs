@@ -8,12 +8,7 @@ use super::{
 };
 
 pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, CompileError> {
-    let line = tokens.current.lines.clone();
-
-    let name = match parse_identifer_string(tokens) {
-        Ok(str) => str,
-        Err(error) => return Err(error),
-    };
+    let name = parse_identifer_string(tokens)?;
 
     match tokens.advance() {
         Ok(info) => match info.token {
@@ -26,50 +21,11 @@ pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, Com
     let mut body = Vec::new();
 
     loop {
-        let info = match tokens.advance() {
-            Ok(info) => info,
-            Err(error) => return Err(error),
-        };
-        match info.token {
+        let info = tokens.advance()?;
+        let name = match info.token {
             Token::EndScope => break,
             Token::Comma => continue,
-            Token::Identifier(name) => {
-                let mut types = Vec::new();
-
-                let info = match tokens.peek() {
-                    Ok(info) => info,
-                    Err(error) => return Err(error),
-                };
-                match info.token {
-                    Token::OpenParen => {
-                        tokens.advance().unwrap();
-                        loop {
-                            types.push(match parse_type(tokens) {
-                                Ok(t) => t,
-                                Err(error) => return Err(error),
-                            });
-                            let info = match tokens.advance() {
-                                Ok(info) => info,
-                                Err(error) => return Err(error),
-                            };
-                            match info.token {
-                                Token::Comma => continue,
-                                Token::CloseParen => break,
-                                _ => {
-                                    return Err(tokens_expected_got(
-                                        tokens,
-                                        vec![Token::Comma],
-                                        info,
-                                    ))
-                                }
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-
-                body.push((name, types))
-            }
+            Token::Identifier(name) => name,
             _ => {
                 return Err(tokens_expected_got(
                     tokens,
@@ -77,16 +33,33 @@ pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, Com
                     info,
                 ))
             }
+        };
+        let mut types = Vec::new();
+
+        let info = tokens.peek()?;
+        match info.token {
+            Token::OpenParen => {
+                tokens.advance()?;
+                loop {
+                    types.push(parse_type(tokens)?);
+                    let info = tokens.advance()?;
+                    match info.token {
+                        Token::Comma => continue,
+                        Token::CloseParen => break,
+                        _ => return Err(tokens_expected_got(tokens, vec![Token::Comma], info)),
+                    }
+                }
+            }
+            _ => {}
         }
+
+        body.push((name, types))
     }
 
-    return Ok(ASTNode::new(
-        line,
-        Node::Enum {
-            export,
-            name,
-            generics: Vec::new(),
-            body: body,
-        },
-    ));
+    return Ok(tokens.generate(Node::Enum {
+        export,
+        name,
+        generics: Vec::new(),
+        body: body,
+    }));
 }

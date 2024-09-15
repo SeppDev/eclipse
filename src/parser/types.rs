@@ -12,35 +12,31 @@ pub fn parse_type(tokens: &mut TokensGroup) -> Result<Type, CompileError> {
                 let mut types = Vec::new();
 
                 loop {
-                    match tokens.peek() {
-                        Ok(info) => match info.token {
-                            Token::CloseParen => {
-                                tokens.advance().unwrap();
-                                break
-                            },
-                            _ => {}
+                    let info = tokens.peek()?; 
+                    match info.token {
+                        Token::CloseParen => {
+                            tokens.advance()?;
+                            break
                         },
-                        Err(error) => return Err(error)
-                    };
+                        _ => {}
+                    }
 
                     types.push(match parse_type(tokens) {
                         Ok(t) => t,
                         Err(error) => return Err(error),
                     });
 
-                    match tokens.advance() {
-                        Ok(info) => match info.token {
-                            Token::CloseParen => break,
-                            Token::Comma => continue,
-                            _ => {
-                                return Err(tokens_expected_got(
-                                    tokens,
-                                    vec![Token::CloseParen, Token::Comma],
-                                    info,
-                                ))
-                            }
-                        },
-                        Err(error) => return Err(error),
+                    let info = tokens.advance()?;
+                    match info.token {
+                        Token::CloseParen => break,
+                        Token::Comma => continue,
+                        _ => {
+                            return Err(tokens_expected_got(
+                                tokens,
+                                vec![Token::CloseParen, Token::Comma],
+                                info,
+                            ))
+                        }
                     }
                 }
 
