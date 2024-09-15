@@ -1,6 +1,6 @@
 use crate::{
     lexer::{Token, TokensGroup},
-    BuildError, BuildProblem, CompileError,
+    CompileError,
 };
 
 use super::{
@@ -28,17 +28,13 @@ pub fn parse_after_identifier(
                 Ok(expression) => match expression {
                     Some(expression) => expression,
                     None => {
-                        return Err(CompileError::BuildProblem(BuildProblem::new(
-                            BuildError::ExpressionExpected,
-                            tokens.relative_path.clone(),
-                            tokens.current.line,
-                        )))
+                        return Err(CompileError::BuildProblem)
                     }
                 },
                 Err(error) => return Err(error),
             };
 
-            ASTNode::new(tokens.current.line, Node::SetVariable(path, expression))
+            ASTNode::new(tokens.current.lines.clone(), Node::SetVariable(path, expression))
         }
         Token::OpenParen => {
             let arguments = match parse_arguments(tokens) {
@@ -46,7 +42,7 @@ pub fn parse_after_identifier(
                 Err(error) => return Err(error),
             };
 
-            ASTNode::new(tokens.current.line, Node::Call(path, arguments))
+            ASTNode::new(tokens.current.lines.clone(), Node::Call(path, arguments))
         }
         _ => {
             return Err(tokens_expected_got(

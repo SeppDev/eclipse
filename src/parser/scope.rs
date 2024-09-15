@@ -10,12 +10,14 @@ pub fn parse_scope(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileErro
         Err(error) => return Err(error)
     };
 
-    match tokens.advance() {
-        Ok(info) => match info.token {
-            Token::EndScope => {},
-            _ => return Err(tokens_expected_got(tokens, vec![Token::EndScope], info))
-        },
+    let info = match tokens.advance() {
+        Ok(info) => info,
         Err(error) => return Err(error)
+    };
+
+    match info.token {
+        Token::EndScope => {},
+        _ => return Err(tokens_expected_got(tokens, vec![Token::EndScope], info))
     }
 
     

@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -99,14 +101,14 @@ impl Token {
 pub struct TokenInfo {
     pub token: Token,
     pub line: usize,
-    pub column: usize,
+    pub column: usize
+    // pub lines: Range<usize>,
+    // pub column: Range<usize>,
 }
 impl TokenInfo {
     pub fn new(token: Token, line: usize, column: usize) -> Self {
-        // let a = column - token.len();
-        // assert!(a <= token.len());
         Self {
-            column: column,
+            column,
             token,
             line,
         }

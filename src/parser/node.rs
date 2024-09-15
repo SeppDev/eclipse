@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
     Int64,
@@ -16,7 +18,6 @@ pub enum BaseType {
 
     Float64,
     Float32,
-
     // Intsize,
     // UIntsize,
 }
@@ -92,20 +93,19 @@ pub enum Node {
     DefineVariable {
         mutable: bool,
         name: String,
-        var_type: Option<Type>,
+        data_type: Option<Type>,
         expression: Option<Expression>,
     },
 }
 
 #[derive(Debug)]
 pub struct ASTNode {
-    // indent: usize,
-    pub line: usize,
+    pub lines: Range<usize>,
     pub node: Node,
 }
 impl ASTNode {
-    pub fn new(line: usize, node: Node) -> Self {
-        Self { node, line }
+    pub fn new(lines: Range<usize>, node: Node) -> Self {
+        Self { node, lines }
     }
 }
 

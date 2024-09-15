@@ -8,7 +8,7 @@ use super::{
 };
 
 pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, CompileError> {
-    let line = tokens.current.line;
+    let line = tokens.current.lines.clone();
 
     let name = match parse_identifer_string(tokens) {
         Ok(str) => str,

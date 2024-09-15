@@ -100,7 +100,7 @@ pub fn parse_function(
     };
 
     return Ok(ASTNode::new(
-        tokens.current.line,
+        tokens.current.lines.clone(),
         Node::Function {
             export,
             is_unsafe,

@@ -1,4 +1,4 @@
-use std::{io::Read, path::PathBuf, process::exit};
+use std::{io::Read, ops::Range, path::PathBuf, process::exit};
 
 use lexer::{Token, TokenInfo};
 
@@ -56,16 +56,6 @@ pub fn execute(command: String) -> Result<String, String> {
     return Ok(String::from_utf8(cmd.stdout).unwrap());
 }
 
-// #[derive(Debug)]
-// pub enum ParseError {
-//     TokensExpectedGot(String),
-//     TokensExpected(String),
-//     ExpectedExpression,
-//     NoTokenFound,
-//     Function,
-//     Scope,
-//     Type,
-// }
 
 // #[derive(Debug)]
 // pub enum BuildError {
@@ -81,60 +71,63 @@ pub fn execute(command: String) -> Result<String, String> {
 //     Unkown
 // }
 
-#[derive(Debug)]
-pub enum BuildError {
-    Unkown(String),
-    Tokenize(String),
-    DuplicateModifier(TokenInfo),
-    TokensExpectedGot(Vec<Token>, TokenInfo),
-    AlreadyImported(String),
-    CannotFindModules([PathBuf; 2]),
-    ImportInBlock,
-    ExpressionExpected,
-    Peekfail,
-    NoTokenFound,
-}
-impl BuildError {
-    fn stringify(self) -> String {
-        return match self {
-            BuildError::TokensExpectedGot(expected, got) => format!(
-                "expected: {:?} got: {:?}:{}:{}",
-                expected, got.token, got.line, got.column
-            ),
-            token => format!("{:?}", token),
-        };
-    }
-}
+// #[derive(Debug)]
+// pub enum BuildError {
+//     Unkown(String),
+//     Tokenize(String),
+//     DuplicateModifier(TokenInfo),
+//     TokensExpectedGot(Vec<Token>, TokenInfo),
+//     AlreadyImported(String),
+//     CannotFindModules([PathBuf; 2]),
+//     ImportInBlock,
+//     ExpressionExpected,
+//     Peekfail,
+//     NoTokenFound,
+// }
+// impl BuildError {
+//     fn stringify(self) -> String {
+//         return match self {
+//             BuildError::TokensExpectedGot(expected, got) => format!(
+//                 "expected: {:?} got: {:?}:{}:{}",
+//                 expected, got.token, got.line, got.column
+//             ),
+//             token => format!("{:?}", token),
+//         };
+//     }
+// }
 
-#[derive(Debug)]
-pub struct BuildProblem {
-    relative_path: PathBuf,
-    line: usize,
-    error: BuildError,
-}
-impl BuildProblem {
-    pub fn new(error: BuildError, relative_path: PathBuf, line: usize) -> Self {
-        Self {
-            relative_path,
-            line,
-            error,
-        }
-    }
-    pub fn print(self) {
-        println!("error: {}", self.error.stringify());
-        println!(
-            "   --> {}:{}",
-            self.relative_path.to_string_lossy(),
-            self.line
-        );
-        exit(1)
-    }
-}
+// #[derive(Debug)]
+// pub struct BuildProblem {
+//     relative_path: PathBuf,
+//     lines: Range<usize>,
+//     column: usize,
+//     error: BuildError,
+// }
+// impl BuildProblem {
+//     pub fn new(error: BuildError, relative_path: PathBuf, lines: Range<usize>, column: usize) -> Self {
+//         Self {
+//             relative_path,
+//             lines,
+//             column,
+//             error,
+//         }
+//     }
+//     pub fn print(self) {
+//         println!("error: {}", self.error.stringify());
+//         println!(
+//             "   --> {}:{}",
+//             self.relative_path.to_string_lossy(),
+//             self.lines.start
+//         );
+//         exit(1)
+//     }
+// }
 
 #[derive(Debug)]
 pub enum CompileError {
     OpenFile(std::io::Error),
-    BuildProblem(BuildProblem),
+    // BuildProblem(BuildProblem),
+    BuildProblem,
     GCC(String),
     NASM(String),
 }

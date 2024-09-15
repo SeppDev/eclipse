@@ -1,21 +1,24 @@
 use std::path::PathBuf;
 
 use crate::{
-    parser::{ASTNode, Module, Node, Program},
+    parser::{ASTNode, Node, Program},
     CompileError,
 };
 
+use super::info::{Function, IRNode};
+
 pub fn analyze(program: Program) -> Result<Program, CompileError> {
-    let mut new_program = Program::new(program.project_path.clone());
+    println!("{:#?}", program);
 
     for (path, module) in program.modules.iter() {
+        #[allow(unused)]
         match analyze_module(&program, &path, &module.body) {
             Ok(nodes) => {
-                let new_module = Module { body: nodes };
-                new_program
-                    .modules
-                    .insert(path.clone(), new_module)
-                    .unwrap();
+                // let new_module = Module { body: nodes };
+                // new_program
+                //     .modules
+                //     .insert(path.clone(), new_module)
+                //     .unwrap();
             }
             Err(error) => return Err(error),
         }
@@ -24,15 +27,17 @@ pub fn analyze(program: Program) -> Result<Program, CompileError> {
     todo!()
 }
 
+#[allow(unused)]
 fn analyze_module(
     program: &Program,
     relative_path: &PathBuf,
     body: &Vec<ASTNode>,
-) -> Result<Vec<Node>, CompileError> {
-    let mut tree: Vec<Node> = Vec::new();
+) -> Result<Vec<Function>, CompileError> {
+    let mut tree: Vec<Function> = Vec::new();
 
     for node in body {
         match &node.node {
+            #[allow(unused)]
             Node::Function {
                 export,
                 is_unsafe,
@@ -41,18 +46,12 @@ fn analyze_module(
                 return_type,
                 body,
             } => {
-                let new = match analyze_body(body) {
+                let nodes = match analyze_body(body) {
                     Ok(b) => b,
                     Err(error) => return Err(error),
                 };
-                tree.push(Node::Function {
-                    export: export.to_owned(),
-                    is_unsafe: is_unsafe.to_owned(),
-                    name: name.to_owned(),
-                    parameters: parameters.to_owned(),
-                    return_type: return_type.to_owned(),
-                    body: new,
-                });
+
+                tree.push(Function { body: nodes });
             }
             Node::Import(_, _) => {}
             _ => panic!("Expected function"),
@@ -62,6 +61,7 @@ fn analyze_module(
     return Ok(tree);
 }
 
-fn analyze_body(nodes: &Vec<ASTNode>) -> Result<Vec<Node>, CompileError> {
+#[allow(unused)]
+fn analyze_body(nodes: &Vec<ASTNode>) -> Result<Vec<IRNode>, CompileError> {
     todo!()
 }

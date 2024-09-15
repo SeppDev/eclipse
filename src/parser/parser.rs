@@ -15,7 +15,9 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
             Ok(info) => info,
             Err(error) => return Err(error),
         };
+
         match info.token {
+            Token::EndOfFile => break,
             Token::EndScope => break,
             _ => {}
         }
@@ -31,7 +33,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
             Token::Variable => parse_define_variable(tokens),
             Token::Identifier(name) => parse_after_identifier(tokens, name),
             Token::StartScope => Ok(ASTNode::new(
-                tokens.current.line,
+                tokens.current.lines.clone(),
                 Node::Scope {
                     is_unsafe: false,
                     body: match parse_scope(tokens) {
@@ -45,7 +47,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                     Ok(str) => str,
                     Err(error) => return Err(error)
                 };
-                Ok(ASTNode::new(tokens.current.line, Node::Import(name, false)))
+                Ok(ASTNode::new(tokens.current.lines.clone(), Node::Import(name, false)))
             },
             //--------------[[Function]]--------------
             Token::Pub => parse_export(tokens),
@@ -53,7 +55,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                 Ok(info) => match info.token {
                     Token::Function => parse_function(tokens, false, true),
                     Token::StartScope => Ok(ASTNode::new(
-                        tokens.current.line,
+                        tokens.current.lines.clone(),
                         Node::Scope {
                             is_unsafe: true,
                             body: match parse_scope(tokens) {
@@ -83,7 +85,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                     Err(error) => return Err(error),
                 }
 
-                Ok(ASTNode::new(tokens.current.line, Node::Return(expression)))
+                Ok(ASTNode::new(tokens.current.lines.clone(), Node::Return(expression)))
             }
             //--------------[[FUNCTION-END]]--------------
             // Token::OpenParen
@@ -103,7 +105,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                     Err(error) => return Err(error),
                 };
 
-                Ok(ASTNode::new(tokens.current.line, Node::Loop { body: body }))
+                Ok(ASTNode::new(tokens.current.lines.clone(), Node::Loop { body: body }))
             }
             _ => {
                 return Err(tokens_expected_got(
@@ -135,6 +137,6 @@ pub fn tokens_expected_got(
     return CompileError::BuildProblem(BuildProblem::new(
         BuildError::TokensExpectedGot(expected, got),
         tokens.relative_path.clone(),
-        tokens.current.line,
+        tokens.current.lines.clone(),
     ));
 }

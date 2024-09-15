@@ -37,7 +37,7 @@ pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, Compil
         Err(error) => return Err(error),
     };
 
-    let var_type = match tokens.peek() {
+    let data_type = match tokens.peek() {
         Ok(info) => match info.token {
             Token::Equals => None,
             Token::Colon => {
@@ -67,7 +67,7 @@ pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, Compil
                         return Err(CompileError::BuildProblem(BuildProblem::new(
                             BuildError::ExpressionExpected,
                             tokens.relative_path.clone(),
-                            tokens.current.line,
+                            tokens.current.lines.clone(),
                         )))
                     }
                 },
@@ -87,11 +87,11 @@ pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, Compil
     }
 
     return Ok(ASTNode::new(
-        tokens.current.line,
+        tokens.current.lines.clone(),
         Node::DefineVariable {
             mutable,
             name,
-            var_type,
+            data_type,
             expression,
         },
     ));

@@ -100,6 +100,7 @@ fn run(executable_path: PathBuf) {
     thread.wait().unwrap();
 }
 
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -109,8 +110,7 @@ mod tests {
     #[test]
     fn build_test() {
         const SOURCE: &str = "C:/Users/Gebruiker/Documents/eclipse/first_project/";
-        // const NAME: &str = "app";
-
+        
         let executable_path = match build(PathBuf::from(SOURCE)) {
             Ok(path) => path,
             Err(a) => {

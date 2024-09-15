@@ -6,7 +6,7 @@ use crate::{
 use super::{after_identifier::parse_identifer_string, tokens_expected_got, types::parse_type, ASTNode, Node};
 
 pub fn parse_struct(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, CompileError> {
-    let line = tokens.current.line;
+    let line = tokens.current.lines.clone();
 
     let name = match parse_identifer_string(tokens) {
         Ok(str) => str,

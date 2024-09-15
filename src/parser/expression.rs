@@ -88,7 +88,7 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> Result<Option<Expression>, 
                             return Err(CompileError::BuildProblem(BuildProblem::new(
                                 BuildError::ExpressionExpected,
                                 tokens.relative_path.clone(),
-                                tokens.current.line,
+                                tokens.current.lines.clone(),
                             )))
                         }
                     },

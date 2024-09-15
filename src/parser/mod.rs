@@ -18,4 +18,6 @@ pub use program::Program;
 pub use node::*;
 pub use node::Type;
 pub use parser::*;
+
+#[allow(unused)]
 pub use module::*;

@@ -1,9 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::{
-    lexer::tokenize, read_file, BuildError, BuildProblem, CompileError,
-    FILE_EXTENSION,
-};
+use crate::{lexer::tokenize, read_file, BuildError, BuildProblem, CompileError, FILE_EXTENSION};
 
 use super::{module::Module, parse, Node};
 
@@ -41,17 +38,7 @@ impl Program {
             Ok(source) => source,
             Err(error) => return Err(error),
         };
-        let mut tokens = match tokenize(source, relative_path.clone()) {
-            Ok(tokens) => tokens,
-            Err((message, reader)) => {
-                return Err(CompileError::BuildProblem(BuildProblem::new(
-                    BuildError::Tokenize(message),
-                    relative_path,
-                    reader.line,
-                )))
-            }
-        };
-
+        let mut tokens = tokenize(source, relative_path.clone());
         println!("{:#?}", tokens);
 
         let nodes = match parse(&mut tokens) {
@@ -93,7 +80,7 @@ impl Program {
                             return Err(CompileError::BuildProblem(BuildProblem::new(
                                 BuildError::CannotFindModules(file_paths),
                                 relative_path,
-                                ast.line,
+                                ast.lines.clone(),
                             )))
                         }
                     };

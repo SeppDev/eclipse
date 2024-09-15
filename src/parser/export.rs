@@ -25,7 +25,7 @@ pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
                     Ok(str) => str,
                     Err(error) => return Err(error),
                 };
-                return Ok(ASTNode::new(tokens.current.line, Node::Import(name, true)));
+                return Ok(ASTNode::new(tokens.current.lines.clone(), Node::Import(name, true)));
             }
             Token::Function => {}
             _ => {

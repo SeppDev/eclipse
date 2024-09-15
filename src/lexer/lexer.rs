@@ -1,152 +1,122 @@
-use std::{path::PathBuf, str::Chars};
+use std::{num::ParseIntError, path::PathBuf};
 
 // #[derive(Debug)]
 // pub enum TokenError {}
-use super::{reader::Reader, token::Token, TokensGroup};
+use super::{
+    reader::{Char, Reader},
+    token::Token,
+    TokenInfo, TokensGroup,
+};
 
-pub fn tokenize(source: String, relative_path: PathBuf) -> Result<TokensGroup, (String, Reader)> {
-    let mut reader;
-    {
-        let split = source.chars();
-        let mut vec: Vec<char> = Vec::new();
-        for char in split {
-            vec.push(char);
-        }
+pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
+    let mut reader = Reader::new(source);
 
-        reader = Reader::new(vec);
-    }
-    // let mut word = tokens.next().unwrap();
+    //println!("{:#?}", reader);
 
+    let mut cursor: usize = 0;
     loop {
-        let mut string = match reader.next() {
-            Some(token) => token,
+        let mut chars = match reader.next(&cursor) {
+            Some(chrs) => chrs,
             None => break,
         };
+        let mut token: Option<Token> = None;
 
         loop {
-            let length = string.len();
+            let string = match Char::to_string(&chars) {
+                Some(s) => s,
+                None => break,
+            };
 
-            if length == 0 {
-                break;
-            }
-            if string == "//" {
-                loop {
-                    match reader.next() {
-                        Some(str) => {
-                            if str == "\n" {
-                                break;
-                            }
-                        }
-                        None => break,
-                    }
+            match match_word(&string) {
+                Some(t) => {
+                    token = Some(t);
+                    break;
                 }
-                break;
+                None => {}
+            }
+
+            match is_integer(&string) {
+                Ok(t) => match t {
+                    Some(t) => {
+                        token = Some(t);
+                        break;
+                    }
+                    None => {}
+                },
+                Err(error) => panic!("{:?}", error),
+            }
+
+            match is_identifier(&string) {
+                Some(t) => {
+                    token = Some(t);
+                    break;
+                }
+                None => {}
             }
 
             match string.as_str() {
-                "\n" => break,
-                "\t" => break,
-                "\r" => break,
-                " " => break,
+                "\"" => {
+                    let mut string = String::new();
+                    loop {
+                        cursor += 1;
+                        let chr = match reader.get(cursor) {
+                            Some(c) => c,
+                            None => break,
+                        };
+                        match chr.char {
+                            '"' => break,
+                            '\\' => {
+                                cursor += 1;
+                                let chr = match reader.get(cursor) {
+                                    Some(c) => c,
+                                    None => break,
+                                };
+                                match chr.char {
+                                    'n' => string.push('\n'),
+                                    'r' => string.push('\r'),
+                                    't' => string.push('\t'),
+                                    '\\' => string.push('\\'),
+                                    c => panic!("Unrecognized character: {:?}", c),
+                                }
+                            }
+                            _ => string.push(chr.char),
+                        }
+                    }
+
+                    token = Some(Token::String(string));
+                    break;
+                }
                 _ => {}
             }
 
-            for offset in 0..length {
-                let match_string = string.get(..length - offset).unwrap();
-                let token;
+            chars.pop();
+        }
 
-                if match_string == "//" {
-                    string = match_string.to_string();
-                    break;
-                }
+        match token {
+            Some(token) => {
+                let start = chars.first().unwrap();
+                // let end = chars.last().unwrap();
 
-                match match_word(match_string) {
-                    Some(t) => token = Some(t),
-                    None => match is_identifier(match_string) {
-                        Ok(t) => match t {
-                            Some(t) => token = Some(t),
-                            None => match match_string {
-                                "\"" => {
-                                    let mut token_string = String::new();
-                                    string = string.get(1..).unwrap().to_string();
+                let line = start.line;
+                let column = start.column;
 
-                                    let mut offset: usize = 0;
-                                    let mut chars: Chars = string.chars();
-
-                                    loop {
-                                        let ch = match chars.next() {
-                                            Some(ch) => ch,
-                                            None => {
-                                                offset = 0;
-                                                string = reader.next().unwrap();
-                                                chars = string.chars();
-                                                continue;
-                                            }
-                                        };
-
-                                        // println!("{:?}", token_string);
-
-                                        if ch == '"' {
-                                            break;
-                                        } else if ch == '\\' {
-                                            offset += 2;
-                                            match chars.next() {
-                                                Some(chr) => match chr {
-                                                    'n' => token_string.push('\n'),
-                                                    't' => token_string.push('\t'),
-                                                    'r' => token_string.push('\r'),
-                                                    '\\' => token_string.push('\\'),
-                                                    '"' => token_string.push('"'),
-                                                    _ => todo!(),
-                                                },
-                                                None => {
-                                                    return Err((
-                                                        String::from("Expected n,t"),
-                                                        reader,
-                                                    ))
-                                                }
-                                            }
-                                            continue;
-                                        }
-                                        offset += 1;
-                                        token_string.push(ch);
-                                    }
-                                    token = Some(Token::String(token_string));
-                                    string = string.get(offset..).unwrap().to_string();
-                                }
-                                _ => {
-                                    assert!(match_string.len() > 1);
-                                    continue;
-                                }
-                            },
-                        },
-                        Err(error) => return Err((error, reader)),
-                    },
-                }
-
-                string = match string.get(length - offset..) {
-                    Some(s) => s.to_string(),
-                    None => return Err((String::from("Unsuported token"), reader)),
-                };
-
-                match token {
-                    Some(t) => {
-                        reader.push(t);
-                        break;
-                    }
-                    None => panic!(),
-                }
+                cursor += chars.len().max(1);
+                reader.push(TokenInfo::new(token, line, column));
+            }
+            None => {
+                cursor += chars.len().max(1);
             }
         }
     }
 
-    reader.push(Token::EndOfFile);
-    return Ok(TokensGroup::new(reader.tokens, relative_path));
+
+    reader.push(TokenInfo::new(Token::EndOfFile, reader.lines.len(), 0));
+    return TokensGroup::new(reader.tokens, relative_path);
 }
 
-fn is_integer(source: &String) -> Result<Option<Token>, String> {
-    for char in source.chars() {
-        if char.is_ascii_digit() {
+fn is_integer(source: &String) -> Result<Option<Token>, ParseIntError> {
+    for chr in source.chars() {
+        if chr.is_ascii_digit() {
             continue;
         }
         return Ok(None);
@@ -154,42 +124,43 @@ fn is_integer(source: &String) -> Result<Option<Token>, String> {
     let string = source.to_string();
     return match string.parse::<usize>() {
         Ok(integer) => Ok(Some(Token::Integer(integer))),
-        Err(a) => Err(format!("{:?}", a)),
+        Err(a) => Err(a),
     };
 }
 
-fn is_valid_char(char: char) -> bool {
-    return char == '_'
-        || char.is_ascii_lowercase()
-        || char.is_ascii_uppercase()
-        || char.is_ascii_digit();
+fn is_valid_char(chr: char) -> bool {
+    return chr == '_'
+        || chr.is_ascii_lowercase()
+        || chr.is_ascii_uppercase()
+        || chr.is_ascii_digit();
 }
 
-fn is_identifier(source: &str) -> Result<Option<Token>, String> {
+fn is_identifier(source: &String) -> Option<Token> {
     let mut chars = source.chars();
 
     match chars.next() {
         Some(char) => {
             if char.is_ascii_digit() {
-                return is_integer(&source.to_string());
+                return None;
+                // return is_integer(&source.to_string());
             }
             if !is_valid_char(char) {
-                return Ok(None);
+                return None;
             }
         }
-        None => return Ok(None),
+        None => return None,
     }
     for char in chars {
         if is_valid_char(char) {
             continue;
         }
-        return Ok(None);
+        return None;
     }
-    return Ok(Some(Token::Identifier(source.to_string())));
+    return Some(Token::Identifier(source.to_string()));
 }
 
-fn match_word(word: &str) -> Option<Token> {
-    let token = match word {
+fn match_word(word: &String) -> Option<Token> {
+    let token = match word.as_str() {
         "fn" => Token::Function,
         "{" => Token::StartScope,
         "}" => Token::EndScope,
