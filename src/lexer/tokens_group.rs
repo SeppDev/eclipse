@@ -3,7 +3,6 @@ use std::{iter::Peekable, path::PathBuf, vec::IntoIter};
 // use crate::{BuildError, BuildProblem, CompileError};
 
 use crate::{
-    parser::{ASTNode, Node},
     BuildError, CompileError,
 };
 
@@ -26,9 +25,9 @@ impl TokensGroup {
         let peekable: Peekable<IntoIter<TokenInfo>> = tokens.into_iter().peekable();
 
         return Self {
-            start: start,
-            current: current,
-            relative_path: relative_path,
+            start,
+            current,
+            relative_path,
             tokens: peekable,
         };
     }
@@ -37,18 +36,11 @@ impl TokensGroup {
         let end = self.current.line;
         return BuildError::CompileError(CompileError::new(message, start..end));
     }
-    pub fn generate(&mut self, node: Node) -> Result<ASTNode, BuildError> {
-        let start = self.start.line;
-        let end = self.current.line;
-        let ast = ASTNode {
-            lines: start..end,
-            node: node,
-        };
 
+    pub fn reset_start(&mut self) -> Result<(), BuildError> {
         let info = self.peek()?;
         self.start = info;
-
-        return Ok(ast);
+        Ok(())
     }
     pub fn peek(&mut self) -> Result<TokenInfo, BuildError> {
         return match self.tokens.peek() {

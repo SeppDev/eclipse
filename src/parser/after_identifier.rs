@@ -1,5 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup}, BuildError, CompileError
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{
@@ -27,10 +27,7 @@ pub fn parse_after_identifier(
             tokens.generate(Node::SetVariable(path, expression))?
         }
         Token::OpenParen => {
-            let arguments = match parse_arguments(tokens) {
-                Ok(args) => args,
-                Err(error) => return Err(error),
-            };
+            let arguments = parse_arguments(tokens)?;
 
             tokens.generate(Node::Call(path, arguments))?
         }
@@ -41,7 +38,9 @@ pub fn parse_after_identifier(
                 info,
             ))
         }
-    };
+    };  
+    
+
 
     let info = tokens.advance()?;
     match info.token {

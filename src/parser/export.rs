@@ -1,5 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup}, BuildError, CompileError
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{
@@ -24,7 +24,7 @@ pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, BuildError> {
                     Ok(str) => str,
                     Err(error) => return Err(error),
                 };
-                return Ok(tokens.generate(Node::Import(name, true)));
+                return Ok(tokens.generate(Node::Import(name, true))?);
             }
             Token::Function => {}
             _ => {

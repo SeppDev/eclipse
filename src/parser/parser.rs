@@ -1,4 +1,4 @@
-use crate::{lexer::TokenInfo, BuildError, CompileError};
+use crate::{lexer::TokenInfo, BuildError};
 
 use super::{
     after_identifier::{parse_after_identifier, parse_identifer_string},
@@ -71,7 +71,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, BuildError> {
                     _ => return Err(tokens_expected_got(tokens, vec![Token::SemiColon], info)),
                 }
 
-                Ok(tokens.generate(Node::Return(expression))?)
+                Ok(ASTNode::new(0..0, Node::Return(expression)))
             }
             //--------------[[FUNCTION-END]]--------------
             Token::Loop => {
@@ -105,9 +105,9 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, BuildError> {
 }
 
 pub fn tokens_expected_got(
-    _tokens: &TokensGroup,
-    _expected: Vec<Token>,
-    _got: TokenInfo,
+    tokens: &TokensGroup,
+    expected: Vec<Token>,
+    got: TokenInfo,
 ) -> BuildError {
-    return BuildError::CompileError(CompileError::new(format!("Tokens expected")));
+    return tokens.create_error(format!("Expected: {:?}, got: {:?}", expected, got));
 }

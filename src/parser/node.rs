@@ -32,6 +32,7 @@ pub enum Type {
 
 #[derive(Debug)]
 pub enum Value {
+    String(String),
     Float(f64),
     Integer(isize),
     UInteger(usize),
@@ -103,6 +104,14 @@ pub enum Node {
 pub struct ASTNode {
     pub lines: Range<usize>,
     pub node: Node,
+}
+impl ASTNode {
+    pub fn new(lines: Range<usize>, node: Node) -> Self {
+        Self {
+            lines,
+            node
+        }
+    }
 }
 
 #[derive(Debug)]

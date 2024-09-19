@@ -1,13 +1,12 @@
 use std::path::PathBuf;
 
 use crate::{
-    parser::{ASTNode, Node, Program},
-    CompileError,
+    parser::{ASTNode, Node, Program}, BuildError
 };
 
 use super::info::{Function, IRNode};
 
-pub fn analyze(program: Program) -> Result<Program, CompileError> {
+pub fn analyze(program: Program) -> Result<Program, BuildError> {
     println!("{:#?}", program);
 
     for (path, module) in program.modules.iter() {
@@ -32,7 +31,7 @@ fn analyze_module(
     program: &Program,
     relative_path: &PathBuf,
     body: &Vec<ASTNode>,
-) -> Result<Vec<Function>, CompileError> {
+) -> Result<Vec<Function>, BuildError> {
     let mut tree: Vec<Function> = Vec::new();
 
     for node in body {
@@ -62,6 +61,6 @@ fn analyze_module(
 }
 
 #[allow(unused)]
-fn analyze_body(nodes: &Vec<ASTNode>) -> Result<Vec<IRNode>, CompileError> {
+fn analyze_body(nodes: &Vec<ASTNode>) -> Result<Vec<IRNode>, BuildError> {
     todo!()
 }

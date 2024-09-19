@@ -1,5 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup}, BuildError, CompileError
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{
@@ -60,5 +60,5 @@ pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, Bui
         name,
         generics: Vec::new(),
         body: body,
-    }));
+    })?);
 }

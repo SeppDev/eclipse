@@ -7,7 +7,7 @@ use crate::parser::{Expression, Type};
 
 #[allow(unused)]
 #[derive(Debug)]
-pub enum IRNode {
+pub enum IRNode { 
     Expression(Expression),
     DefineVariable {
         name: String,

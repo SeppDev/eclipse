@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::{lexer::tokenize, read_file, BuildError, CompileError, FILE_EXTENSION};
+use crate::{lexer::tokenize, read_file, BuildError, FILE_EXTENSION};
 
 use super::{module::Module, parse, Node};
 
@@ -71,7 +71,7 @@ impl Program {
                     let path = match get_path(&self.project_path, file_paths.clone()) {
                         Ok(path) => path,
                         Err(_) => {
-                            return Err(CompileError::EarlyEndOfFile)
+                            return Err(tokens.create_error(format!("Failed to get_path")))
                         }
                     };
 

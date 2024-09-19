@@ -1,4 +1,4 @@
-use std::{io::Read, ops::Range, path::PathBuf, process::exit};
+use std::{io::Read, path::PathBuf, process::exit};
 
 mod analyzer;
 mod assembler;
@@ -122,21 +122,23 @@ pub fn execute(command: String) -> Result<String, String> {
 //     EarlyEndOfFile
 // }
 
-
 #[derive(Debug)]
 pub struct CompileError {
     error: String,
-    lines: Range<usize>
+    line: usize
 }
 impl CompileError {
-    pub fn new(error: String, lines: Range<usize>) -> Self {
+    pub fn new(error: String, line: usize) -> Self {
         Self {
-            lines,
+            line,
             error
         }
     }
     fn print(&self) {
-        panic!("{:?}", self)
+        println!("error: {}", self.error);
+        println!("line: {:?}", self.line);
+
+        exit(1)
     }
 }
 

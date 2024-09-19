@@ -1,5 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup}, BuildError, CompileError
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{
@@ -66,5 +66,5 @@ pub fn parse_function(
         parameters,
         return_type: return_type,
         body: body,
-    }));
+    })?);
 }

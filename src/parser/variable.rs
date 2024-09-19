@@ -37,10 +37,7 @@ pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, BuildE
         Token::Equals => None,
         Token::Colon => {
             tokens.advance()?;
-            match parse_type(tokens) {
-                Ok(t) => Some(t),
-                Err(error) => return Err(error),
-            }
+            Some(parse_type(tokens)?)
         }
         _ => {
             return Err(tokens_expected_got(
@@ -63,12 +60,12 @@ pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, BuildE
         _ => return Err(tokens_expected_got(tokens, vec![Token::SemiColon], info)),
     }
 
-    return Ok(tokens.generate(Node::DefineVariable {
+    return Ok(ASTNode::new(lines, Node::DefineVariable {
         mutable,
         name,
         data_type,
         expression,
-    })?);
+    }));
 }
 
 // pub fn parse_set_variable(tokens: &mut TokensGroup, name: String) -> Result<ASTNode, CompileError> {

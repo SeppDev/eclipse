@@ -1,5 +1,6 @@
 use crate::{
-    lexer::{Token, TokensGroup}, BuildError, CompileError
+    lexer::{Token, TokensGroup},
+    BuildError,
 };
 
 use super::{
@@ -27,6 +28,7 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> Result<Option<Expression>, 
 
     let info = tokens.advance()?;
     let expression: Expression = match info.token {
+        Token::String(string) => Expression::Value(Value::String(string)),
         Token::Float(string) => {
             let float = match string.parse::<f64>() {
                 Ok(f) => f,
@@ -94,7 +96,7 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> Result<Option<Expression>, 
             let second = match parse_expression(tokens) {
                 Ok(expression) => match expression {
                     Some(expression) => expression,
-                    None => return Err(CompileError),
+                    None => return Err(tokens.create_error(format!("Expression expected"))),
                 },
                 Err(error) => return Err(error),
             };
