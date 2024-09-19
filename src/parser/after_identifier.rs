@@ -1,6 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError, CompileError
 };
 
 use super::{
@@ -11,7 +10,7 @@ use super::{
 pub fn parse_after_identifier(
     tokens: &mut TokensGroup,
     name: String,
-) -> Result<ASTNode, CompileError> {
+) -> Result<ASTNode, BuildError> {
     let path = parse_path(tokens, name)?;
     let info = tokens.advance()?;
 
@@ -21,11 +20,11 @@ pub fn parse_after_identifier(
             let expression = match expression {
                 Some(expression) => expression,
                 None => {
-                    return Err(CompileError)
+                    return Err(tokens.create_error(format!("")))
                 }
             };
 
-            tokens.generate(Node::SetVariable(path, expression))
+            tokens.generate(Node::SetVariable(path, expression))?
         }
         Token::OpenParen => {
             let arguments = match parse_arguments(tokens) {
@@ -33,7 +32,7 @@ pub fn parse_after_identifier(
                 Err(error) => return Err(error),
             };
 
-            tokens.generate(Node::Call(path, arguments))
+            tokens.generate(Node::Call(path, arguments))?
         }
         _ => {
             return Err(tokens_expected_got(
@@ -53,7 +52,7 @@ pub fn parse_after_identifier(
     return Ok(node);
 }
 
-pub fn parse_identifer_string(tokens: &mut TokensGroup) -> Result<String, CompileError> {
+pub fn parse_identifer_string(tokens: &mut TokensGroup) -> Result<String, BuildError> {
     let info = tokens.advance()?;
     match info.token {
         Token::Identifier(str) => Ok(str),

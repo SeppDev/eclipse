@@ -1,11 +1,10 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{expression::parse_expression, tokens_expected_got, Expression};
 
-pub fn parse_arguments(tokens: &mut TokensGroup) -> Result<Vec<Expression>, CompileError> {
+pub fn parse_arguments(tokens: &mut TokensGroup) -> Result<Vec<Expression>, BuildError> {
     let mut expressions = Vec::new();
     loop {
         expressions.push(match parse_expression(tokens)? {

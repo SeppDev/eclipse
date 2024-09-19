@@ -1,13 +1,12 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError, CompileError
 };
 
 use super::{
     after_identifier::parse_identifer_string, tokens_expected_got, types::parse_type, ASTNode, Node,
 };
 
-pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, CompileError> {
+pub fn parse_enum(tokens: &mut TokensGroup, export: bool) -> Result<ASTNode, BuildError> {
     let name = parse_identifer_string(tokens)?;
 
     match tokens.advance() {

@@ -1,6 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError, CompileError
 };
 
 use super::{
@@ -8,7 +7,7 @@ use super::{
     structs::parse_struct, tokens_expected_got, ASTNode, Node,
 };
 
-pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
+pub fn parse_export(tokens: &mut TokensGroup) -> Result<ASTNode, BuildError> {
     match tokens.peek() {
         Ok(info) => match info.token {
             Token::Enum => {

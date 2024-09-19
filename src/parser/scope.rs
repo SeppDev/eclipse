@@ -1,11 +1,10 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{parse, tokens_expected_got, ASTNode};
 
-pub fn parse_scope(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
+pub fn parse_scope(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, BuildError> {
     let tree: Vec<ASTNode> = parse(tokens)?;
     let info = tokens.advance()?;
     match info.token {

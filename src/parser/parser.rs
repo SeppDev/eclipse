@@ -1,4 +1,4 @@
-use crate::{lexer::TokenInfo, CompileError};
+use crate::{lexer::TokenInfo, BuildError, CompileError};
 
 use super::{
     after_identifier::{parse_after_identifier, parse_identifer_string},
@@ -13,7 +13,7 @@ use super::{
 };
 use crate::lexer::{Token, TokensGroup};
 
-pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
+pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, BuildError> {
     let mut tree: Vec<ASTNode> = Vec::new();
 
     loop {
@@ -24,10 +24,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
             _ => {}
         }
 
-        let info = match tokens.advance() {
-            Ok(info) => info,
-            Err(error) => return Err(error),
-        };
+        let info = tokens.advance()?;
 
         let node = match info.token {
             Token::EndOfFile => break,
@@ -39,11 +36,11 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                 Ok(tokens.generate(Node::Scope {
                     is_unsafe: false,
                     body,
-                }))
+                })?)
             }
             Token::Import => {
                 let name = parse_identifer_string(tokens)?;
-                Ok(tokens.generate(Node::Import(name, false)))
+                Ok(tokens.generate(Node::Import(name, false))?)
             }
             //--------------[[Function]]--------------
             Token::Pub => parse_export(tokens),
@@ -56,7 +53,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                         Ok(tokens.generate(Node::Scope {
                             is_unsafe: true,
                             body,
-                        }))
+                        })?)
                     }
                     _ => return Err(tokens_expected_got(tokens, vec![Token::Function], info)),
                 },
@@ -74,7 +71,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                     _ => return Err(tokens_expected_got(tokens, vec![Token::SemiColon], info)),
                 }
 
-                Ok(tokens.generate(Node::Return(expression)))
+                Ok(tokens.generate(Node::Return(expression))?)
             }
             //--------------[[FUNCTION-END]]--------------
             Token::Loop => {
@@ -86,7 +83,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
 
                 let body = parse_scope(tokens)?;
 
-                Ok(tokens.generate(Node::Loop { body: body }))
+                Ok(tokens.generate(Node::Loop { body: body })?)
             }
             _ => {
                 return Err(tokens_expected_got(
@@ -101,10 +98,7 @@ pub fn parse(tokens: &mut TokensGroup) -> Result<Vec<ASTNode>, CompileError> {
                 ))
             }
         };
-        match node {
-            Ok(node) => tree.push(node),
-            Err(error) => return Err(error),
-        }
+        tree.push(node?)
     }
 
     return Ok(tree);
@@ -114,6 +108,6 @@ pub fn tokens_expected_got(
     _tokens: &TokensGroup,
     _expected: Vec<Token>,
     _got: TokenInfo,
-) -> CompileError {
-    return CompileError;
+) -> BuildError {
+    return BuildError::CompileError(CompileError::new(format!("Tokens expected")));
 }

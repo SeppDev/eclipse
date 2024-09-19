@@ -1,11 +1,10 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::Path;
 
-pub fn parse_path(tokens: &mut TokensGroup, root: String) -> Result<Path, CompileError> {
+pub fn parse_path(tokens: &mut TokensGroup, root: String) -> Result<Path, BuildError> {
     let mut path = Path::new(root);
 
     loop {

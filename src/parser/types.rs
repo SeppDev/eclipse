@@ -1,11 +1,10 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{node::Type, tokens_expected_got, BaseType};
 
-pub fn parse_type(tokens: &mut TokensGroup) -> Result<Type, CompileError> {
+pub fn parse_type(tokens: &mut TokensGroup) -> Result<Type, BuildError> {
     let name = match tokens.advance() {
         Ok(info) => match info.token {
             Token::OpenParen => {

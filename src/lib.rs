@@ -1,4 +1,4 @@
-use std::{io::Read, path::PathBuf, process::exit};
+use std::{io::Read, ops::Range, path::PathBuf, process::exit};
 
 mod analyzer;
 mod assembler;
@@ -19,11 +19,8 @@ pub fn open_file(path: &PathBuf) -> Result<std::fs::File, BuildError> {
     return Ok(file);
 }
 
-pub fn read_file(path: &PathBuf) -> Result<String, CompileError> {
-    let mut file = match open_file(path) {
-        Ok(file) => file,
-        Err(error) => return Err(error),
-    };
+pub fn read_file(path: &PathBuf) -> Result<String, BuildError> {
+    let mut file = open_file(path)?;
 
     let mut buf = String::new();
 
@@ -120,32 +117,40 @@ pub fn execute(command: String) -> Result<String, String> {
 //     }
 // }
 
-pub struct ParseError {
-    error: String
-}
-impl ParseError {
-    fn print(&self) {
+// #[derive(Debug)]
+// pub enum ParseError {
+//     EarlyEndOfFile
+// }
 
+
+#[derive(Debug)]
+pub struct CompileError {
+    error: String,
+    lines: Range<usize>
+}
+impl CompileError {
+    pub fn new(error: String, lines: Range<usize>) -> Self {
+        Self {
+            lines,
+            error
+        }
     }
-}
-
-pub enum CompileError {
-
+    fn print(&self) {
+        panic!("{:?}", self)
+    }
 }
 
 pub enum BuildError {
     OpenFile(std::io::Error),
-    // BuildProblem(BuildProblem),
-    
-    ParseError(ParseError),
+    CompileError(CompileError),
+    // ParseError(ParseError),
     GCC(String),
     NASM(String),
 }
-impl BuildError {
+impl BuildError { 
     pub fn print(self) {
         match self {
-            // CompileError::BuildProblem(problem) => problem.print(),
-            BuildError::ParseError(parse_error) =>  parse_error.print(),
+            BuildError::CompileError(problem) => problem.print(),
             BuildError::GCC(msg) => panic!("{}", msg),
             BuildError::NASM(msg) => panic!("{}", msg),
             BuildError::OpenFile(error) => panic!("{:?}", error),

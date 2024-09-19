@@ -1,6 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError, CompileError
 };
 
 use super::{
@@ -10,7 +9,7 @@ use super::{
     tokens_expected_got, Operator,
 };
 
-pub fn parse_expression(tokens: &mut TokensGroup) -> Result<Option<Expression>, CompileError> {
+pub fn parse_expression(tokens: &mut TokensGroup) -> Result<Option<Expression>, BuildError> {
     let info = tokens.peek()?;
     match info.token {
         Token::SemiColon => return Ok(None),

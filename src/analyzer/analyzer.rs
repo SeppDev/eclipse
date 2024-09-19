@@ -57,7 +57,7 @@ fn analyze_module(
             _ => panic!("Expected function"),
         }
     }
-
+ 
     return Ok(tree);
 }
 

@@ -1,6 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError
 };
 
 use super::{
@@ -11,7 +10,7 @@ use super::{
     Expression,
 };
 
-pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, CompileError> {
+pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, BuildError> {
     let info = tokens.peek()?;
     let mutable = match info.token {
         Token::Mutable => {
@@ -69,7 +68,7 @@ pub fn parse_define_variable(tokens: &mut TokensGroup) -> Result<ASTNode, Compil
         name,
         data_type,
         expression,
-    }));
+    })?);
 }
 
 // pub fn parse_set_variable(tokens: &mut TokensGroup, name: String) -> Result<ASTNode, CompileError> {

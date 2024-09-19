@@ -1,6 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    CompileError,
+    lexer::{Token, TokensGroup}, BuildError, CompileError
 };
 
 use super::{
@@ -16,7 +15,7 @@ pub fn parse_function(
     tokens: &mut TokensGroup,
     export: bool,
     is_unsafe: bool,
-) -> Result<ASTNode, CompileError> {
+) -> Result<ASTNode, BuildError> {
     let name = parse_identifer_string(tokens)?;
 
     let info = tokens.advance()?;
