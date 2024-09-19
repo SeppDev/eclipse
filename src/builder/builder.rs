@@ -1,35 +1,27 @@
 use std::path::PathBuf;
 
-use crate::analyzer::analyze;
-// use crate::codegen::generate;
-// use crate::assembler::assemble;
-use crate::parser::Program;
+use crate::lexer::tokenize;
+use crate::lexer::TokensGroup;
+use crate::parser::parse;
+use crate::read_file;
 use crate::BuildError;
 use crate::FILE_EXTENSION;
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, BuildError> {
-    let mut program = Program::new(project_path.clone());
-    program.parse(PathBuf::from(format!("src/main.{}", FILE_EXTENSION)))?;
-    let program = analyze(program)?;
+    let relative_path = PathBuf::from(format!("src/main.{}", FILE_EXTENSION));
+    let main_path = project_path.join(&relative_path);
 
-    println!("{:#?}", program);
+    let source = read_file(&main_path)?;
+    
+    let tokens = tokenize(source);
+
+    // let mut tokensgroup = TokensGroup::new(tokens, relative_path);
+    // let nodes = match parse(&mut tokensgroup) {
+    //     Ok(nodes) => nodes,
+    //     Err(error) => return Err(BuildError::CompileError(error))
+    // };
+    // println!("{:#?}", nodes);
+
 
     todo!()
-    // let ir_program = match generate(program) {
-    //     Ok(p) => p,
-    //     Err(error) => return Err(error)
-    // };
-
-    // let build_path = project_path.join("build");
-    // match std::fs::create_dir_all(&build_path) {
-    // Ok(()) => {},
-    // Err(error) => panic!("{:?}", error)
-    // };
-    //
-    // let executable = match assemble(ir_program, build_path) {
-    // Ok(path) => path,
-    // Err(error) => return Err(error)
-    // };
-    //
-    // return Ok(executable);
 }

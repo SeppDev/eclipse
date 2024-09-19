@@ -1,9 +1,7 @@
 use std::{io::Read, path::PathBuf, process::exit};
 
-mod analyzer;
-mod assembler;
+// mod analyzer;
 mod builder;
-mod codegen;
 mod lexer;
 mod parser;
 
@@ -121,6 +119,8 @@ pub fn execute(command: String) -> Result<String, String> {
 // pub enum ParseError {
 //     EarlyEndOfFile
 // }
+
+pub type ParseResult<T> = Result<T, CompileError>;
 
 #[derive(Debug)]
 pub struct CompileError {

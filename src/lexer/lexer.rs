@@ -1,32 +1,28 @@
-use std::path::PathBuf;
-
-// #[derive(Debug)]
-// pub enum TokenError {}
 use super::{
     reader::{Char, Reader},
     token::Token,
-    TokenInfo, TokensGroup,
+    TokenInfo,
 };
 
-pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
+pub fn tokenize(source: String) -> Vec<TokenInfo> {
     let mut reader = Reader::new(source);
 
-    //println!("{:#?}", reader);
-
     let mut cursor: usize = 0;
+
     loop {
         let mut chars = match reader.next(&cursor) {
             Some(chrs) => chrs,
             None => break,
         };
         let mut token: Option<Token> = None;
-
+        
+        
         loop {
             let string = match Char::to_string(&chars) {
                 Some(s) => s,
                 None => break,
             };
-
+            
             match match_word(&string) {
                 Some(t) => {
                     token = Some(t);
@@ -34,7 +30,7 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
                 }
                 None => {}
             }
-
+            
             match is_number(&string) {
                 Some(t) => {
                     token = Some(t);
@@ -42,7 +38,7 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
                 }
                 None => {}
             }
-
+            
             match is_identifier(&string) {
                 Some(t) => {
                     token = Some(t);
@@ -50,7 +46,7 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
                 }
                 None => {}
             }
-
+            
             match string.as_str() {
                 "\"" => {
                     let mut string = String::new();
@@ -79,24 +75,24 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
                             _ => string.push(chr.char),
                         }
                     }
-
+                    
                     token = Some(Token::String(string));
                     break;
                 }
                 _ => {}
             }
-
+            
             chars.pop();
         }
-
+        
         match token {
             Some(token) => {
                 let start = chars.first().unwrap();
                 // let end = chars.last().unwrap();
-
+                
                 let line = start.line;
                 let column = start.column;
-
+                
                 cursor += chars.len().max(1);
                 reader.push(TokenInfo::new(token, line, column));
             }
@@ -106,8 +102,9 @@ pub fn tokenize(source: String, relative_path: PathBuf) -> TokensGroup {
         }
     }
 
+
     reader.push(TokenInfo::new(Token::EndOfFile, reader.lines.len(), 0));
-    return TokensGroup::new(reader.tokens, relative_path);
+    return reader.tokens;
 }
 
 fn is_float(source: &String) -> Option<Token> {
@@ -137,10 +134,6 @@ fn is_number(source: &String) -> Option<Token> {
     }
     return Some(Token::Integer(source.clone()));
 }
-// return match string.parse::<usize>() {
-//     Ok(integer) => Ok(Some(Token::Integer(integer))),
-//     Err(a) => Err(a),
-// };
 
 fn is_valid_char(chr: char) -> bool {
     return chr == '_'

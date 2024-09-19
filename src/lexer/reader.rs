@@ -34,14 +34,16 @@ impl Reader {
     pub fn new(source: String) -> Self {
         let source = source.replace("\r\n", "\n");
         let source = source.replace("\r", "\n");
-        let split = source.chars();
-        let mut vec = Vec::new();
 
+        let split = source.chars();
+        
+        let mut vec = Vec::new();
+        
         let mut lines = Vec::new();
         let mut line_string = String::new();
         let mut line: usize = 1;
         let mut column: usize = 0;
-
+        
         for chr in split {
             match &chr {
                 '\n' => {
@@ -65,6 +67,7 @@ impl Reader {
                 line,
             });
         }
+    
 
         vec.push(Char {
             char: ' ',

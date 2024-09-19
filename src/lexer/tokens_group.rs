@@ -1,9 +1,7 @@
 use std::{iter::Peekable, path::PathBuf, vec::IntoIter};
 
-// use crate::{BuildError, BuildProblem, CompileError};
-
 use crate::{
-    BuildError, CompileError,
+    CompileError, ParseResult,
 };
 
 use super::{Token, TokenInfo};
@@ -31,28 +29,19 @@ impl TokensGroup {
             tokens: peekable,
         };
     }
-    pub fn create_error(&self, message: String) -> BuildError {
+    pub fn create_error(&self, message: String) -> CompileError {
         let start = self.start.line;
-        let end = self.current.line;
-        return BuildError::CompileError(CompileError::new(message, start..end));
+        return CompileError::new(message, start);
     }
-
-    pub fn reset_start(&mut self) -> Result<(), BuildError> {
-        let info = self.peek()?;
-        self.start = info;
-        Ok(())
-    }
-    pub fn peek(&mut self) -> Result<TokenInfo, BuildError> {
+    pub fn peek(&mut self) -> ParseResult<TokenInfo> {
         return match self.tokens.peek() {
             Some(token) => Ok(token.to_owned()),
             None => return Err(self.create_error(format!("Early EndOfFile"))),
         };
     }
-    pub fn advance(&mut self) -> Result<TokenInfo, BuildError> {
+    pub fn advance(&mut self) -> ParseResult<TokenInfo> {
         match self.current.token {
-            Token::EndOfFile => {
-                panic!("Failed to handle EndOFile")
-            }
+            Token::EndOfFile => return Err(CompileError::new(format!("Failed to handle EndOfFile"), self.current.line)),
             _ => {}
         }
 
