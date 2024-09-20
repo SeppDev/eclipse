@@ -14,6 +14,13 @@ pub fn build(project_path: PathBuf) -> Result<PathBuf, BuildError> {
     let source = read_file(&main_path)?;
     
     let tokens = tokenize(source);
+    let mut tokengroup = TokensGroup::new(tokens, relative_path);
+
+    let nodes = match parse(&mut tokengroup) {
+        Ok(nodes) => nodes,
+        Err(error) => return Err(BuildError::CompileError(error))
+    };
+    println!("{:#?}", nodes);
 
     // let mut tokensgroup = TokensGroup::new(tokens, relative_path);
     // let nodes = match parse(&mut tokensgroup) {

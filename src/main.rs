@@ -109,9 +109,12 @@ mod tests {
 
     #[test]
     fn build_test() {
-        const SOURCE: &str = "C:/Users/Gebruiker/Documents/eclipse/first_project/";
-        
-        let executable_path = match build(PathBuf::from(SOURCE)) {
+        let mut path = PathBuf::from("C:/Users/Gebruiker/Documents/eclipse/first_project/");
+        if !path.exists() {
+            path = PathBuf::from("C:/Users/seppd/OneDrive/Documenten/Eclipse/first_project/");
+        }
+
+        let executable_path = match build(path) {
             Ok(path) => path,
             Err(a) => {
                 a.print();

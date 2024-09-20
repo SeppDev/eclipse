@@ -1,7 +1,7 @@
 use std::{iter::Peekable, path::PathBuf, vec::IntoIter};
 
 use crate::{
-    CompileError, ParseResult,
+    parser::{ASTNode, Node}, CompileError, ParseResult
 };
 
 use super::{Token, TokenInfo};
@@ -10,8 +10,8 @@ use super::{Token, TokenInfo};
 pub struct TokensGroup {
     pub relative_path: PathBuf,
 
-    current: TokenInfo,
-    start: TokenInfo,
+    pub current: TokenInfo,
+    pub start: TokenInfo,
 
     tokens: Peekable<IntoIter<TokenInfo>>,
 }
@@ -33,11 +33,19 @@ impl TokensGroup {
         let start = self.start.line;
         return CompileError::new(message, start);
     }
+    pub fn create_AST(&self, node: Node) -> ASTNode {
+        return ASTNode::new(self.start.line..self.current.line, node);
+    }
     pub fn peek(&mut self) -> ParseResult<TokenInfo> {
         return match self.tokens.peek() {
             Some(token) => Ok(token.to_owned()),
             None => return Err(self.create_error(format!("Early EndOfFile"))),
         };
+    }
+    pub fn start(&mut self) -> ParseResult<TokenInfo> {
+        let token = self.advance()?;
+        self.start = token.clone();
+        return Ok(token);
     }
     pub fn advance(&mut self) -> ParseResult<TokenInfo> {
         match self.current.token {
