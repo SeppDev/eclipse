@@ -24,5 +24,6 @@ pub enum IRNode {
 #[derive(Debug)]
 pub struct Function {
     pub return_type: Type,
+    pub parameters: Vec<(String, Type)>,
     pub body: Vec<IRNode>,
 }
