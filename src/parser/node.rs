@@ -22,6 +22,7 @@ pub enum BaseType {
     // UIntsize,
 }
 
+#[allow(unused)]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
     Custom(String),
@@ -30,14 +31,14 @@ pub enum Type {
     Tuple(Vec<Type>),
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum Value {
     String(String),
     Float(f64),
     Integer(isize),
     UInteger(usize),
-    // String(String),
-    // Boolean(bool),
+    Boolean(bool),
 }
 
 #[derive(Debug)]
@@ -48,6 +49,7 @@ pub enum Operator {
     Division,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum Expression {
     Value(Value),
@@ -57,8 +59,10 @@ pub enum Expression {
     // Tuple(Vec<Expression>),
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum Node {
+    Import(String),
     Call(Path, Vec<Expression>),
     Return(Option<Expression>),
     // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
@@ -75,7 +79,6 @@ pub enum Node {
         generics: Vec<String>,
         body: Vec<(String, Vec<Type>)>,
     },
-    Import(String, bool),
     Loop {
         // condition
         body: Vec<ASTNode>,
@@ -88,6 +91,7 @@ pub enum Node {
         export: bool,
         is_unsafe: bool,
         name: String,
+        generics: Vec<String>,
         parameters: Vec<(String, Type)>,
         return_type: Option<Type>,
         body: Vec<ASTNode>,
@@ -102,14 +106,16 @@ pub enum Node {
 
 #[derive(Debug)]
 pub struct ASTNode {
+    pub indent: usize,
     pub lines: Range<usize>,
     pub node: Node,
 }
 impl ASTNode {
-    pub fn new(lines: Range<usize>, node: Node) -> Self {
+    pub fn new(indent: usize, lines: Range<usize>, node: Node) -> Self {
         Self {
+            indent,
             lines,
-            node
+            node,
         }
     }
 }

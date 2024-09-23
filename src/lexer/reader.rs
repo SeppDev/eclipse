@@ -35,16 +35,24 @@ impl Reader {
         let source = source.replace("\r\n", "\n");
         let source = source.replace("\r", "\n");
 
-        let split = source.chars();
-        
+        let mut chars = source.chars().peekable();
+
         let mut vec = Vec::new();
-        
+
         let mut lines = Vec::new();
         let mut line_string = String::new();
         let mut line: usize = 1;
         let mut column: usize = 0;
+
+        let mut previous = char::default();
         
-        for chr in split {
+
+        loop {
+            let chr = match chars.next() {
+                Some(chr) => chr,
+                None => break,
+            };
+
             match &chr {
                 '\n' => {
                     lines.push(line_string);
@@ -58,16 +66,37 @@ impl Reader {
                 }
                 ch => {
                     line_string.push(ch.clone());
-                    column += chr.len_utf8();
+                    column += 1//chr.len_utf8();
                 }
             }
+            if previous == '/' {
+                if chr == '/' {
+                    vec.pop();
+
+                    loop {
+                        let chr = match chars.peek() {
+                            Some(chr) => chr,
+                            None => break,
+                        };
+                        if chr == &'\n' {
+                            break;
+                        }
+                        chars.next().unwrap();
+                    }
+                    
+                    previous = char::default();
+                    continue;
+                } else if chr == '*' {
+                    todo!()
+                }
+            }
+            previous = chr;
             vec.push(Char {
                 char: chr,
                 column,
                 line,
             });
         }
-    
 
         vec.push(Char {
             char: ' ',
@@ -83,14 +112,14 @@ impl Reader {
             // index: 0
         }
     }
-    pub fn get(&self, index: usize) -> Option<&Char> {
-        return self.chars.get(index);
+    pub fn get(&self, cursor: &usize) -> Option<&Char> {
+        return self.chars.get(cursor.clone());
     }
     pub fn next(&self, cursor: &usize) -> Option<Vec<&Char>> {
         let mut chars = Vec::new();
 
         loop {
-            let chr = match self.get(cursor + chars.len()) {
+            let chr = match self.get(&(cursor + chars.len())) {
                 Some(chr) => chr,
                 None => break,
             };
@@ -112,14 +141,6 @@ impl Reader {
                 }
                 _ => continue,
             }
-            // let string = Char::to_string(chars);
-
-            // match string.as_str() {
-            //     "//" => {
-
-            //     },
-            //     _ => continue
-            // }
         }
 
         return Some(chars);

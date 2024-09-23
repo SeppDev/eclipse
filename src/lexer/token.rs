@@ -35,16 +35,20 @@ pub enum Token {
     Else,
     Plus,
     Minus,
-    Slash,
+    ForwardSlash,
     Asterisk,
     Loop,
     While,
+    LessThan,
+    GreaterThan,
     Boolean(bool),
     String(String),
     Integer(String),
     Float(String),
     Identifier(String),
 }
+
+
 // impl Token {
 //     pub fn len(&self) -> usize {
 //         match self {

@@ -1,9 +1,10 @@
 use crate::{
     lexer::{Token, TokensGroup},
+    parser::{parser::peek_expect_tokens, Operator},
     CompileError, ParseResult,
 };
 
-use super::node::{ASTNode, Expression};
+use super::{node::Expression, Path, Value};
 
 pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expression>> {
     let info = tokens.peek()?;
@@ -12,7 +13,47 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
         _ => {}
     };
 
-    
+    let info = tokens.advance()?;
+    let expression: Option<Expression> = match info.token {
+        Token::String(string) => Some(Expression::Value(Value::String(string))),
+        Token::Integer(value) => {
+            let integer = match value.parse::<usize>() {
+                Ok(int) => int,
+                Err(_) => panic!(),
+            };
+            Some(Expression::Value(Value::UInteger(integer)))
+        }
+        Token::Identifier(name) => Some(Expression::GetVariable(Path::new(name))),
+        _ => None,
+    };
+
+    let info = match peek_expect_tokens(
+        tokens,
+        vec![
+            Token::Plus,
+            Token::Minus,
+            Token::Asterisk,
+            Token::ForwardSlash,
+        ],
+        true,
+    )? {
+        Some(info) => info,
+        None => return Ok(expression),
+    };
+
+    let operator = match info.token {
+        Token::Plus => Operator::Plus,
+        Token::Minus => Operator::Minus,
+        Token::Asterisk => Operator::Multiply,
+        Token::ForwardSlash => Operator::Division,
+        token => todo!("{:?}", token),
+    };
+
+    let other = parse_expected_expression(tokens)?;
+    let expression =
+        Expression::BinaryOperation(Box::new(expression.unwrap()), operator, Box::new(other));
+
+    return Ok(Some(expression));
 }
 
 pub fn parse_expected_expression(tokens: &mut TokensGroup) -> ParseResult<Expression> {

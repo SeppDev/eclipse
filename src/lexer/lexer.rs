@@ -15,14 +15,13 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
             None => break,
         };
         let mut token: Option<Token> = None;
-        
-        
+
         loop {
             let string = match Char::to_string(&chars) {
                 Some(s) => s,
                 None => break,
             };
-            
+
             match match_word(&string) {
                 Some(t) => {
                     token = Some(t);
@@ -30,7 +29,7 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
                 }
                 None => {}
             }
-            
+
             match is_number(&string) {
                 Some(t) => {
                     token = Some(t);
@@ -38,7 +37,7 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
                 }
                 None => {}
             }
-            
+
             match is_identifier(&string) {
                 Some(t) => {
                     token = Some(t);
@@ -46,13 +45,13 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
                 }
                 None => {}
             }
-            
+
             match string.as_str() {
                 "\"" => {
                     let mut string = String::new();
                     loop {
                         cursor += 1;
-                        let chr = match reader.get(cursor) {
+                        let chr = match reader.get(&cursor) {
                             Some(c) => c,
                             None => break,
                         };
@@ -60,7 +59,7 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
                             '"' => break,
                             '\\' => {
                                 cursor += 1;
-                                let chr = match reader.get(cursor) {
+                                let chr = match reader.get(&cursor) {
                                     Some(c) => c,
                                     None => break,
                                 };
@@ -75,24 +74,24 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
                             _ => string.push(chr.char),
                         }
                     }
-                    
+
                     token = Some(Token::String(string));
                     break;
                 }
                 _ => {}
             }
-            
+
             chars.pop();
         }
-        
+
         match token {
             Some(token) => {
                 let start = chars.first().unwrap();
                 // let end = chars.last().unwrap();
-                
+
                 let line = start.line;
                 let column = start.column;
-                
+
                 cursor += chars.len().max(1);
                 reader.push(TokenInfo::new(token, line, column));
             }
@@ -102,8 +101,7 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
         }
     }
 
-
-    reader.push(TokenInfo::new(Token::EndOfFile, reader.lines.len(), 0));
+    reader.push(TokenInfo::new(Token::EndOfFile, reader.lines.len() + 1, 0));
     return reader.tokens;
 }
 
@@ -188,7 +186,7 @@ fn match_word(word: &String) -> Option<Token> {
         "+" => Token::Plus,
         "-" => Token::Minus,
         "*" => Token::Asterisk,
-        "/" => Token::Slash,
+        "/" => Token::ForwardSlash,
         "return" => Token::Return,
         "let" => Token::Variable,
         "true" => Token::Boolean(true),
@@ -204,6 +202,8 @@ fn match_word(word: &String) -> Option<Token> {
         "give" => Token::Give,
         "loop" => Token::Loop,
         "while" => Token::While,
+        "<" => Token::LessThan,
+        ">" => Token::GreaterThan,
         _ => return None,
     };
 

@@ -1,11 +1,14 @@
 use std::{io::Read, path::PathBuf, process::exit};
 
+use analyzer::analyze;
+use parser::parse_modules;
+
 // mod analyzer;
-mod builder;
 mod lexer;
 mod parser;
-
-pub use builder::build;
+mod analyzer;
+mod codegen;
+mod builder;
 
 pub const FILE_EXTENSION: &str = "eclipse";
 
@@ -49,78 +52,22 @@ pub fn execute(command: String) -> Result<String, String> {
     return Ok(String::from_utf8(cmd.stdout).unwrap());
 }
 
-// #[derive(Debug)]
-// pub enum BuildError {
-//     AlreadyDefined(String),
-//     NotDefined(String),
-//     NotMutable(String),
-//     WrongMutableType(String),
-//     ModuleNotFound,
-//     NoNodeFound,
-//     TooFewOrManyArguments,
-//     WrongReturnType,
-//     WrongType,
-//     Unkown
-// }
+pub fn build(project_path: PathBuf) -> Result<PathBuf, BuildError> {
+    let modules = parse_modules(project_path)?;
+    let program = match analyze(modules) {
+        Ok(p) => p,
+        Err(error) => return Err(BuildError::CompileError(error))
+    };
+    
+    println!("{:#?}", program);
 
-// #[derive(Debug)]
-// pub enum BuildError {
-//     Unkown(String),
-//     Tokenize(String),
-//     DuplicateModifier(TokenInfo),
-//     TokensExpectedGot(Vec<Token>, TokenInfo),
-//     AlreadyImported(String),
-//     CannotFindModules([PathBuf; 2]),
-//     ImportInBlock,
-//     ExpressionExpected,
-//     Peekfail,
-//     NoTokenFound,
-// }
-// impl BuildError {
-//     fn stringify(self) -> String {
-//         return match self {
-//             BuildError::TokensExpectedGot(expected, got) => format!(
-//                 "expected: {:?} got: {:?}:{}:{}",
-//                 expected, got.token, got.line, got.column
-//             ),
-//             token => format!("{:?}", token),
-//         };
-//     }
-// }
+    todo!()
+}
 
-// #[derive(Debug)]
-// pub struct BuildProblem {
-//     relative_path: PathBuf,
-//     lines: Range<usize>,
-//     column: usize,
-//     error: BuildError,
-// }
-// impl BuildProblem {
-//     pub fn new(error: BuildError, relative_path: PathBuf, lines: Range<usize>, column: usize) -> Self {
-//         Self {
-//             relative_path,
-//             lines,
-//             column,
-//             error,
-//         }
-//     }
-//     pub fn print(self) {
-//         println!("error: {}", self.error.stringify());
-//         println!(
-//             "   --> {}:{}",
-//             self.relative_path.to_string_lossy(),
-//             self.lines.start
-//         );
-//         exit(1)
-//     }
-// }
-
-// #[derive(Debug)]
-// pub enum ParseError {
-//     EarlyEndOfFile
-// }
-
+pub type AnalyzeResult<T> = Result<T, CompileError>;
 pub type ParseResult<T> = Result<T, CompileError>;
+
+// let relative_path = PathBuf::from(relative_path.to_string_lossy().replace("\\", "/"));
 
 #[derive(Debug)]
 pub struct CompileError {

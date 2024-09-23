@@ -2,9 +2,8 @@ use eclipse::{build, FILE_EXTENSION};
 use std::{
     env,
     io::{BufRead, BufReader},
-    panic,
     path::PathBuf,
-    process::{Command, Stdio},
+    process::{exit, Command, Stdio},
 };
 
 fn main() {
@@ -35,7 +34,7 @@ fn main() {
             Ok(path) => path,
             Err(a) => {
                 a.print();
-                panic!()
+                exit(1)
             }
         };
 
@@ -52,7 +51,6 @@ fn main() {
             Some(path) => PathBuf::from(path),
             None => project_dir.to_path_buf(),
         };
-        
 
         // Check if the project already exists
         path = path.join(format!("{}", name));
@@ -64,7 +62,7 @@ fn main() {
             Ok(_) => {}
             Err(error) => return println!("{:?}", error),
         };
-        
+
         // Create the src directory
         path = path.join("src");
         match std::fs::create_dir(&path) {
@@ -99,7 +97,6 @@ fn run(executable_path: PathBuf) {
     }
     thread.wait().unwrap();
 }
-
 
 #[cfg(test)]
 mod tests {

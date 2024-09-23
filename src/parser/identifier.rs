@@ -20,10 +20,7 @@ pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
 
-            ASTNode::new(
-                tokens.start.line..tokens.current.line,
-                Node::Call(Path::new(string), arguments),
-            )
+            tokens.create_ast(Node::Call(Path::new(string), arguments))
         }
         _ => panic!(),
     };

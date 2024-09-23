@@ -8,6 +8,9 @@ mod types;
 mod identifier;
 mod path;
 mod variable;
+mod generics;
+mod module;
 
-pub use parser::parse;
+pub use module::*;
+pub use parser::*;
 pub use node::*;

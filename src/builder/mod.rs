@@ -1,3 +1,3 @@
 mod builder;
 
-pub use builder::build;
+pub use builder::*;

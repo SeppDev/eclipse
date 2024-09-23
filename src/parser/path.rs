@@ -5,6 +5,7 @@ use crate::{
 
 use super::node::Path;
 
+#[allow(unused)]
 pub fn parse_path(tokens: &mut TokensGroup, root: String) -> ParseResult<Path> {
     let mut path = Path::new(root);
     loop {

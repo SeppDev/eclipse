@@ -1,34 +1,81 @@
-use crate::{lexer::{Token, TokenInfo, TokensGroup}, parser::function::parse_function, CompileError, ParseResult};
+use crate::{
+    lexer::{Token, TokenInfo, TokensGroup},
+    CompileError, ParseResult,
+};
 
-use super::{identifier::parse_identifier, node::ASTNode, variable::parse_variable};
+use super::{
+    expression::parse_expression, function::parse_function, identifier::parse_identifier,
+    node::ASTNode, variable::parse_variable, Node,
+};
+
+pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
+    let info = tokens.advance()?;
+
+    match info.token {
+        Token::Identifier(name) => return Ok(name),
+        token => {
+            return Err(CompileError::new(
+                format!("Expected identifier got: {:?}", token),
+                tokens.current.line,
+            ))
+        }
+    }
+}
 
 pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
     let mut tree = Vec::new();
 
     loop {
+        if tokens.is_eof()? == true {
+            break;
+        }
+        peek_expect_tokens(tokens, vec![Token::SemiColon], true)
+            .is_ok()
+            .then(|| {});
+
+        let info = tokens.peek()?;
+        match info.token {
+            Token::EndScope => break,
+            _ => {}
+        }
+
         let info = tokens.start()?;
 
         let node: ASTNode = match info.token {
-            Token::EndOfFile => break,
+            Token::Import => {
+                if tokens.indent > 0 {
+                    return Err(tokens.create_error(format!("Cannot import within scopes")));
+                }
+                let name = get_identifier(tokens)?;
+                tokens.create_ast(Node::Import(name))
+            }
+            Token::StartScope => {
+                let body = parse(tokens)?;
+                expect_tokens(tokens, vec![Token::EndScope])?;
+                tokens.create_ast(Node::Scope {
+                    is_unsafe: false,
+                    body,
+                })
+            }
             Token::Function => parse_function(tokens, false, false)?,
             Token::Identifier(string) => parse_identifier(tokens, string)?,
             Token::Variable => parse_variable(tokens)?,
-            token => return Err(CompileError::new(format!("Unhandled token: {:?}", token), tokens.current.line))
+            Token::Return => {
+                let expression = parse_expression(tokens)?;
+                tokens.create_ast(Node::Return(expression))
+            }
+            token => {
+                return Err(CompileError::new(
+                    format!("Unhandled token: {:?}", token),
+                    tokens.current.line,
+                ))
+            }
         };
 
         tree.push(node);
     }
 
     return Ok(tree);
-} 
-
-pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
-    let info = tokens.start()?;
-
-    match info.token {
-        Token::Identifier(name) => return Ok(name),
-        _ => return Err(CompileError::new(String::from("Unhandled token"), tokens.current.line))
-    }
 }
 
 pub fn expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>) -> ParseResult<TokenInfo> {
@@ -40,13 +87,20 @@ pub fn expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>) -> ParseRes
             break;
         }
     }
-    
+
     if found {
-        return Ok(info)
+        return Ok(info);
     }
-    return Err(CompileError::new(format!("Expected tokens: {:?}", expected), tokens.current.line))
+    return Err(CompileError::new(
+        format!("Expected tokens: {:?}, got: {:?}", expected, info),
+        tokens.current.line,
+    ));
 }
-pub fn peek_expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>, advance_if_found: bool) -> ParseResult<TokenInfo> {
+pub fn peek_expect_tokens(
+    tokens: &mut TokensGroup,
+    expected: Vec<Token>,
+    advance_if_found: bool,
+) -> ParseResult<Option<TokenInfo>> {
     let info = tokens.peek()?;
     let mut found = false;
     for token in &expected {
@@ -55,12 +109,16 @@ pub fn peek_expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>, advanc
             break;
         }
     }
-    
+
     if found {
         if advance_if_found {
             tokens.advance()?;
         }
-        return Ok(info)
+        return Ok(Some(info));
     }
-    return Err(CompileError::new(format!("Expected tokens: {:?}", expected), tokens.current.line))
+    return Ok(None);
+    // return Err(CompileError::new(
+    //     format!("Expected tokens: {:?}, got: {:?}", expected, info),
+    //     tokens.current.line,
+    // ));
 }
