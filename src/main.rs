@@ -115,7 +115,7 @@ mod tests {
             Ok(path) => path,
             Err(a) => {
                 a.print();
-                panic!()
+                exit(1)
             }
         };
         run(executable_path);
