@@ -6,9 +6,16 @@ use crate::{
 use std::{collections::HashMap, path::PathBuf};
 
 pub fn analyze(modules: HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Program> {
+
+    todo!()
+}
+
+pub fn types(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<()> {
+    
+    
     for (path, body) in modules {
         for ast in body {
-            match ast.node {
+            match &ast.node {
                 Node::Function {
                     export,
                     is_unsafe,
@@ -33,5 +40,6 @@ pub fn analyze(modules: HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Program
             }
         }
     }
-    todo!()
+
+    return Ok(())
 }
