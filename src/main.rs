@@ -106,6 +106,7 @@ mod tests {
 
     #[test]
     fn build_test() {
+
         let mut path = PathBuf::from("C:/Users/Gebruiker/Documents/eclipse/first_project/");
         if !path.exists() {
             path = PathBuf::from("C:/Users/seppd/OneDrive/Documenten/Eclipse/first_project/");

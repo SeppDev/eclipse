@@ -120,7 +120,7 @@ impl ASTNode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Path {
     pub root: String,
     pub location: Vec<String>,

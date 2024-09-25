@@ -1,18 +1,23 @@
 use super::Program;
 use crate::{
-    parser::{ASTNode, Node},
+    parser::{ASTNode, Node, Path, Type},
     AnalyzeResult, CompileError,
 };
 use std::{collections::HashMap, path::PathBuf};
 
-pub fn analyze(modules: HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Program> {
+pub type Function = (Vec<(String, Type)>, Option<Type>);
+pub type FunctionTypes = HashMap<Path, Function>;
 
-    todo!()
+pub fn analyze(modules: HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Program> {
+    let types = parse_functions(&modules)?;
+
+
+    todo!();
 }
 
-pub fn types(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<()> {
-    
-    
+pub fn parse_functions(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<FunctionTypes> {
+    let mut functions: FunctionTypes = HashMap::new();
+
     for (path, body) in modules {
         for ast in body {
             match &ast.node {
@@ -28,7 +33,10 @@ pub fn types(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<()> {
                     if generics.len() > 0 {
                         continue;
                     }
-                    println!("{:?}", name)
+
+                    let mut path = convert_pathbuf(path);
+                    path.add(name.clone());
+                    functions.insert(path, (parameters.clone(), return_type.clone()));
                 }
                 Node::Import(_) => continue,
                 _ => {
@@ -41,5 +49,26 @@ pub fn types(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<()> {
         }
     }
 
-    return Ok(())
+    return Ok(functions);
+}
+
+pub fn recursive_function(path: &PathBuf, nodes: Vec<ASTNode>) {
+
+}
+
+pub fn convert_pathbuf(pathbuf: &PathBuf) -> Path {
+    let mut components = pathbuf.components();
+    let mut path = Path::new(String::from(
+        components.next().unwrap().as_os_str().to_str().unwrap(),
+    ));
+
+    loop {
+        let cmp = match components.next() {
+            Some(a) => a,
+            None => break,
+        };
+        path.add(String::from(cmp.as_os_str().to_str().unwrap()));
+    }
+
+    return path;
 }
