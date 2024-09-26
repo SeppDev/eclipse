@@ -10,6 +10,8 @@ mod path;
 mod variable;
 mod generics;
 mod module;
+mod structs;
+mod enums;
 
 pub use module::*;
 pub use parser::*;

@@ -4,7 +4,7 @@ use crate::{
     CompileError, ParseResult,
 };
 
-use super::{node::Expression, Path, Value};
+use super::{arguments::parse_arguments, node::Expression, path::parse_path, Path, Value};
 
 pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expression>> {
     let info = tokens.peek()?;
@@ -23,7 +23,22 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
             };
             Some(Expression::Value(Value::UInteger(integer)))
         }
-        Token::Identifier(name) => Some(Expression::GetVariable(Path::new(name))),
+        Token::Identifier(name) => {
+            let extend = peek_expect_tokens(tokens, vec![Token::DoubleColon], true)?;
+            let path = if extend.is_none() {
+                Path::new(name)
+            } else {
+                parse_path(tokens, name)?
+            };
+
+            let info = peek_expect_tokens(tokens, vec![Token::OpenParen], true)?;
+            if info.is_none() {
+                Some(Expression::GetVariable(path))
+            } else {
+                let arguments = parse_arguments(tokens)?;
+                Some(Expression::Call(path, arguments))
+            }
+        }
         _ => None,
     };
 

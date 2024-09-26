@@ -1,17 +1,14 @@
-use super::Program;
+use super::{FunctionTypes, Program};
 use crate::{
     parser::{ASTNode, Node, Path, Type},
     AnalyzeResult, CompileError,
 };
 use std::{collections::HashMap, path::PathBuf};
 
-pub type Function = (Vec<(String, Type)>, Option<Type>);
-pub type FunctionTypes = HashMap<Path, Function>;
-
 pub fn analyze(modules: HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Program> {
     let types = parse_functions(&modules)?;
 
-
+    println!("{:#?}", types);
     todo!();
 }
 
@@ -49,11 +46,45 @@ pub fn parse_functions(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResul
         }
     }
 
+    for (path, body) in modules {
+        for ast in body {
+            match &ast.node {
+                Node::Function {
+                    export,
+                    is_unsafe,
+                    name,
+                    generics,
+                    parameters,
+                    return_type,
+                    body,
+                } => recursive_function(&convert_pathbuf(&path), &body),
+                Node::Import(_) => continue,
+                _ => {
+                    return Err(CompileError::new(
+                        format!("Function expected"),
+                        ast.lines.start,
+                    ))
+                }
+            }
+        }
+    }
+
     return Ok(functions);
 }
 
-pub fn recursive_function(path: &PathBuf, nodes: Vec<ASTNode>) {
-
+pub fn recursive_function(module_path: &Path, nodes: &Vec<ASTNode>) {
+    for ast in nodes {
+        match &ast.node {
+            Node::Call(local_path, arguments) => {
+                let mut call_path = module_path.clone();
+                call_path.push(local_path);
+            }
+            Node::Scope { is_unsafe, body } => {
+                recursive_function(module_path, body);
+            }
+            _ => continue,
+        }
+    }
 }
 
 pub fn convert_pathbuf(pathbuf: &PathBuf) -> Path {

@@ -27,7 +27,6 @@ pub enum BaseType {
 pub enum Type {
     Custom(String),
     Base(BaseType),
-    // StaticString,
     Tuple(Vec<Type>),
 }
 
@@ -70,7 +69,7 @@ pub enum Node {
     Struct {
         export: bool,
         name: String,
-        generics: Vec<String>,
+        generics: Option<Vec<String>>,
         body: Vec<(bool, String, Type)>,
     },
     Enum {
@@ -104,6 +103,7 @@ pub enum Node {
     },
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct ASTNode {
     pub indent: usize,
@@ -120,7 +120,7 @@ impl ASTNode {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Path {
     pub root: String,
     pub location: Vec<String>,
@@ -134,5 +134,11 @@ impl Path {
     }
     pub fn add(&mut self, name: String) {
         self.location.push(name)
+    }
+    pub fn push(&mut self, path: &Self) {
+        self.location.push(path.root.clone());
+        for path in &path.location {
+            self.location.push(path.clone());
+        }
     }
 }
