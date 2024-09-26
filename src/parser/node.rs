@@ -75,8 +75,8 @@ pub enum Node {
     Enum {
         export: bool,
         name: String,
-        generics: Vec<String>,
-        body: Vec<(String, Vec<Type>)>,
+        generics: Option<Vec<String>>,
+        body: Vec<(String, Option<Type>)>,
     },
     Loop {
         // condition

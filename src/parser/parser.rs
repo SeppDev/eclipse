@@ -4,7 +4,7 @@ use crate::{
 };
 
 use super::{
-    expression::parse_expression, function::parse_function, identifier::parse_identifier, node::ASTNode, structs::parse_struct, variable::parse_variable, Node
+    enums::parse_enum, expression::parse_expression, function::parse_function, identifier::parse_identifier, node::ASTNode, structs::parse_struct, variable::parse_variable, Node
 };
 
 pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
@@ -67,7 +67,7 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
             Token::Identifier(string) => parse_identifier(tokens, string)?,
             Token::Variable => parse_variable(tokens)?,
             Token::Struct => parse_struct(tokens)?,
-            Token::Enum => parse_
+            Token::Enum => parse_enum(tokens)?,
             Token::Return => {
                 let expression = parse_expression(tokens)?;
                 tokens.create_ast(Node::Return(expression))

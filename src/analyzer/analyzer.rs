@@ -1,12 +1,14 @@
 use super::{FunctionTypes, Program};
 use crate::{
-    parser::{ASTNode, Node, Path, Type},
-    AnalyzeResult, CompileError,
+    analyzer::Types, parser::{ASTNode, Node, Path, Type}, AnalyzeResult, CompileError
 };
 use std::{collections::HashMap, path::PathBuf};
 
 pub fn analyze(modules: HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Program> {
-    let types = parse_functions(&modules)?;
+    println!("{:#?}", modules);
+
+    // let types = parse_functions(&modules)?;
+    let types = Types::new();
 
     println!("{:#?}", types);
     todo!();
@@ -64,7 +66,7 @@ pub fn parse_functions(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResul
                         format!("Function expected"),
                         ast.lines.start,
                     ))
-                }
+                } 
             }
         }
     }
