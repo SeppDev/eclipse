@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use crate::{
     lexer::{Token, TokensGroup},
-    ParseResult,
+    CompileError, ParseResult,
 };
 
 use super::{
@@ -10,7 +12,7 @@ use super::{
 
 pub fn parse_enum(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {
     let name = get_identifier(tokens)?;
-    
+
     let generics = if peek_expect_tokens(tokens, vec![Token::LessThan], true)?.is_some() {
         Some(parse_generics(tokens)?)
     } else {
@@ -18,13 +20,29 @@ pub fn parse_enum(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {
     };
     expect_tokens(tokens, vec![Token::StartScope])?;
 
+    let mut map: HashMap<String, usize> = HashMap::new();
     let mut body: Vec<(String, Option<Type>)> = Vec::new();
+
     loop {
         let info = tokens.advance()?;
         match info.token {
             Token::EndScope => break,
             Token::Identifier(name) => {
-                let types = if peek_expect_tokens(tokens, vec![Token::OpenParen], false)?.is_some() {
+                match map.insert(name.clone(), info.line) {
+                    Some(defined_line) => {
+                        return Err(CompileError::new(
+                            format!(
+                                "{}:{} is already defined on line: {}",
+                                name, info.line, defined_line
+                            ),
+                            info.line,
+                        ))
+                    }
+                    None => {}
+                }
+
+                let types = if peek_expect_tokens(tokens, vec![Token::OpenParen], false)?.is_some()
+                {
                     Some(parse_type(tokens)?)
                 } else {
                     None
@@ -41,5 +59,10 @@ pub fn parse_enum(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {
         }
     }
 
-    return Ok(tokens.create_ast(Node::Enum { export: false, name, generics, body }))
+    return Ok(tokens.create_ast(Node::Enum {
+        export: false,
+        name,
+        generics,
+        body,
+    }));
 }

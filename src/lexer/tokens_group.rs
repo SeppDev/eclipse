@@ -50,6 +50,12 @@ impl TokensGroup {
             _ => false,
         });
     }
+    // pub fn get_last(&self) -> ParseResult<&TokenInfo> {
+    //     match self.starts.last() {
+    //         Some(t) => return Ok(t),
+    //         None => return Err(CompileError::new(String::from("Missing last"), 0))
+    //     }
+    // }
     pub fn start(&mut self) -> ParseResult<TokenInfo> {
         let info = self.advance()?;
         self.starts.push(info.clone());

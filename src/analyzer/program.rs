@@ -1,15 +1,12 @@
-use std::{collections::HashMap, default, task::Context};
+use std::collections::HashMap;
 
 use crate::{
     parser::{BaseType, Path, Type, Value},
-    AnalyzeResult, CompileError,
+    AnalyzeResult,
 };
 
 #[derive(Debug)]
 pub struct Program {}
-
-pub type Function = (Vec<(String, Type)>, Option<Type>);
-pub type FunctionTypes = HashMap<Path, Function>;
 
 #[derive(Debug)]
 pub struct IRFunction {
@@ -37,12 +34,14 @@ pub enum IRNode {
 #[derive(Debug, Default)]
 pub struct Types {
     pub custom: HashMap<Path, CustomType>,
-    pub generic_functions: HashMap<Path, Function>,
+    pub generic_custom: HashMap<Path, CustomType>,
+
+    pub generic_functions: HashMap<Path, IRFunction>,
     pub functions: HashMap<Path, IRFunction>,
 }
 impl Types {
     pub fn new() -> Self {
-        return Self::default()
+        return Self::default();
     }
     pub fn get_type(&self, path: &Path) -> AnalyzeResult<&CustomType> {
         return match self.custom.get(path) {
@@ -50,33 +49,6 @@ impl Types {
             None => todo!(),
         };
     }
-    // pub fn push_struct(
-    //     &mut self,
-    //     path: Path,
-    //     name: String,
-    //     fields: Vec<(String, Type)>,
-    // ) -> AnalyzeResult<()> {
-    //     let mut map = HashMap::new();
-    //     for (name, _) in &fields {
-    //         if map.insert(name, true).is_some() {
-    //             return Err(CompileError::new(format!("{} was already declared"), line))
-    //         }
-    //     }
-
-    //     self.custom
-    //         .insert(path, CustomType::Struct(IRStruct { name, fields }));
-    //     return Ok(());
-    // }
-    // pub fn push_enum(
-    //     &mut self,
-    //     path: Path,
-    //     name: String,
-    //     enums: Vec<(String, Option<Vec<Type>>)>,
-    // ) -> AnalyzeResult<()> {
-    //     self.custom
-    //         .insert(path, CustomType::Enum(IREnum { name, enums }));
-    //     return Ok(());
-    // }
 }
 
 #[derive(Debug)]
@@ -88,12 +60,14 @@ pub enum CustomType {
 #[derive(Debug)]
 pub struct IREnum {
     pub name: String,
+    pub generics: Option<Vec<String>>,
     pub enums: Vec<(String, Option<Vec<Type>>)>,
 }
 
 #[derive(Debug)]
 pub struct IRStruct {
     pub name: String,
+    pub generics: Option<Vec<String>>,
     pub fields: Vec<(String, Type)>,
     // pub implmentations
 }
