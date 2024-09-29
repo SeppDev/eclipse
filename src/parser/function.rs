@@ -1,7 +1,5 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    parser::parser::get_identifier,
-    ParseResult,
+    analyzer::Fields, lexer::{Token, TokensGroup}, parser::parser::get_identifier, ParseResult
 };
 
 use super::{
@@ -22,11 +20,14 @@ pub fn parse_function(
     }
 
     expect_tokens(tokens, vec![Token::OpenParen])?;
+    let mut fields = Fields::new();
     let mut parameters = Vec::new();
     loop {
         let info = tokens.advance()?;
         match info.token {
             Token::Identifier(name) => {
+                fields.insert(name.clone(), info.line)?;
+
                 let data_type = parse_type(tokens)?;
                 parameters.push((name, data_type));
                 let info = expect_tokens(tokens, vec![Token::Comma, Token::CloseParen])?;

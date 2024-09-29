@@ -1,9 +1,4 @@
-use std::collections::HashMap;
-
-use crate::{
-    parser::{BaseType, Path, Type, Value},
-    AnalyzeResult,
-};
+use crate::parser::{BaseType, Path, Type, Value};
 
 #[derive(Debug)]
 pub struct Program {}
@@ -31,26 +26,6 @@ pub enum IRNode {
     // }
 }
 
-#[derive(Debug, Default)]
-pub struct Types {
-    pub custom: HashMap<Path, CustomType>,
-    pub generic_custom: HashMap<Path, CustomType>,
-
-    pub generic_functions: HashMap<Path, IRFunction>,
-    pub functions: HashMap<Path, IRFunction>,
-}
-impl Types {
-    pub fn new() -> Self {
-        return Self::default();
-    }
-    pub fn get_type(&self, path: &Path) -> AnalyzeResult<&CustomType> {
-        return match self.custom.get(path) {
-            Some(t) => Ok(t),
-            None => todo!(),
-        };
-    }
-}
-
 #[derive(Debug)]
 pub enum CustomType {
     Struct(IRStruct),
@@ -61,7 +36,7 @@ pub enum CustomType {
 pub struct IREnum {
     pub name: String,
     pub generics: Option<Vec<String>>,
-    pub enums: Vec<(String, Option<Vec<Type>>)>,
+    pub enums: Vec<(String, Option<Type>)>,
 }
 
 #[derive(Debug)]

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-
 use crate::{
+    analyzer::Fields,
     lexer::{Token, TokensGroup},
-    CompileError, ParseResult,
+    ParseResult,
 };
 
 use super::{
@@ -20,7 +19,7 @@ pub fn parse_enum(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {
     };
     expect_tokens(tokens, vec![Token::StartScope])?;
 
-    let mut map: HashMap<String, usize> = HashMap::new();
+    let mut fields = Fields::new();
     let mut body: Vec<(String, Option<Type>)> = Vec::new();
 
     loop {
@@ -28,19 +27,7 @@ pub fn parse_enum(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {
         match info.token {
             Token::EndScope => break,
             Token::Identifier(name) => {
-                match map.insert(name.clone(), info.line) {
-                    Some(defined_line) => {
-                        return Err(CompileError::new(
-                            format!(
-                                "{}:{} is already defined on line: {}",
-                                name, info.line, defined_line
-                            ),
-                            info.line,
-                        ))
-                    }
-                    None => {}
-                }
-
+                fields.insert(name.clone(), info.line)?;
                 let types = if peek_expect_tokens(tokens, vec![Token::OpenParen], false)?.is_some()
                 {
                     Some(parse_type(tokens)?)

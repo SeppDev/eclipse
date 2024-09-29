@@ -1,11 +1,11 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    parser::{ASTNode, Node, Path, Type},
+    parser::{ASTNode, Node, Path},
     AnalyzeResult, CompileError,
 };
 
-use super::{CustomType, IRFunction, IRStruct, Types};
+use super::{CustomType, IREnum, IRFunction, IRStruct};
 
 pub fn parse_types(modules: &HashMap<PathBuf, Vec<ASTNode>>) -> AnalyzeResult<Types> {
     let mut types = Types::new();
@@ -21,7 +21,7 @@ pub fn parse_functions(
 
     for (pathbuf, body) in modules {
         for ast in body {
-            handle_node(pathbuf, &mut bodies, ast)?;
+            handle_node(pathbuf, types, &mut bodies, ast)?;
         }
     }
 
@@ -32,7 +32,12 @@ pub fn parse_functions(
     return Ok(());
 }
 
-fn handle_node(pathbuf: &PathBuf, bodies: &mut Vec<(Path, &Vec<ASTNode>)>, ast: &ASTNode) -> AnalyzeResult<()> {
+fn handle_node(
+    pathbuf: &PathBuf,
+    types: &mut Types,
+    bodies: &mut Vec<(Path, &Vec<ASTNode>)>,
+    ast: &ASTNode,
+) -> AnalyzeResult<()> {
     match &ast.node {
         Node::Function {
             export,
@@ -85,7 +90,7 @@ fn handle_node(pathbuf: &PathBuf, bodies: &mut Vec<(Path, &Vec<ASTNode>)>, ast: 
 
             let custom_struct = IRStruct {
                 generics: generics.clone(),
-                name: name.to_owned(),
+                name: name.clone(),
                 fields: Vec::new(),
             };
 
@@ -96,7 +101,18 @@ fn handle_node(pathbuf: &PathBuf, bodies: &mut Vec<(Path, &Vec<ASTNode>)>, ast: 
             name,
             generics,
             body,
-        } => {}
+        } => {
+            let mut path = convert_pathbuf(&pathbuf);
+            path.add(name.clone());
+
+            let custom_struct = IREnum {
+                generics: generics.clone(),
+                name: name.clone(),
+                enums: body.clone()
+            };
+
+            types.custom.insert(path, CustomType::Enum(custom_struct));
+        }
         _ => {
             return Err(CompileError::new(
                 format!("Function expected"),
@@ -138,4 +154,25 @@ pub fn convert_pathbuf(pathbuf: &PathBuf) -> Path {
     }
 
     return path;
+}
+
+
+#[derive(Debug, Default)]
+pub struct Types {
+    pub custom: HashMap<Path, CustomType>,
+    pub generic_custom: HashMap<Path, CustomType>,
+
+    pub generic_functions: HashMap<Path, IRFunction>,
+    pub functions: HashMap<Path, IRFunction>,
+}
+impl Types {
+    pub fn new() -> Self {
+        return Self::default();
+    }
+    pub fn get_type(&self, path: &Path) -> AnalyzeResult<&CustomType> {
+        return match self.custom.get(path) {
+            Some(t) => Ok(t),
+            None => todo!(),
+        };
+    }
 }
