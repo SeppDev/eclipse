@@ -129,7 +129,7 @@ impl Path {
     pub fn new(root: String) -> Self {
         Self {
             root,
-            location: Vec::new(),
+            location: Vec::new(), 
         }
     }
     pub fn add(&mut self, name: String) {
@@ -139,6 +139,12 @@ impl Path {
         self.location.push(path.root.clone());
         for path in &path.location {
             self.location.push(path.clone());
+        }
+    }
+    pub fn name(&self) -> &String {
+        return match self.location.last() {
+            Some(a) => a,
+            None => &self.root
         }
     }
 }
