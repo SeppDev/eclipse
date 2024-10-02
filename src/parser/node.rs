@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, path::PathBuf};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
@@ -129,7 +129,7 @@ impl Path {
     pub fn new(root: String) -> Self {
         Self {
             root,
-            location: Vec::new(), 
+            location: Vec::new(),
         }
     }
     pub fn add(&mut self, name: String) {
@@ -144,7 +144,31 @@ impl Path {
     pub fn name(&self) -> &String {
         return match self.location.last() {
             Some(a) => a,
-            None => &self.root
+            None => &self.root,
+        };
+    }
+    pub fn to_pathbuf(&self) -> PathBuf {
+        let mut buf = PathBuf::new();
+        buf.push(&self.root);
+        for p in &self.location {
+            buf.push(p);
         }
+        return buf;
+    }
+    pub fn normalize(path: &PathBuf) -> Self {
+        let mut components = path.components();
+        let mut p = Path::new(String::from(
+            components.next().unwrap().as_os_str().to_str().unwrap(),
+        ));
+
+        loop {
+            let cmp = match components.next() {
+                Some(a) => a,
+                None => break,
+            };
+            p.add(String::from(cmp.as_os_str().to_str().unwrap()));
+        }
+
+        return p;
     }
 }

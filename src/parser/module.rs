@@ -5,9 +5,9 @@ use crate::{
     read_file, BuildError, CompileError, FILE_EXTENSION,
 };
 
-use super::{parse, ASTNode, Node};
+use super::{parse, ASTNode, Node, Path};
 
-type Modules = HashMap<PathBuf, Vec<ASTNode>>;
+pub type Modules = HashMap<Path, Vec<ASTNode>>;
 
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
@@ -83,17 +83,17 @@ fn parse_module(
             }
         };
         let nodes = parse_module(project_path, &found_path, modules)?;
-        modules.insert(found_path, nodes);
+        modules.insert(Path::normalize(&found_path), nodes);
     }
 
     return Ok(nodes);
 }
 
 pub fn parse_modules(project_path: PathBuf) -> Result<Modules, BuildError> {
-    let main_path = PathBuf::from("src/main");
+    let main_path = &PathBuf::from("src/main");
     let mut modules = HashMap::new();
     let nodes = parse_module(&project_path, &main_path, &mut modules)?;
-    modules.insert(main_path, nodes);
+    modules.insert(Path::normalize(&main_path), nodes);
 
     return Ok(modules);
 }
