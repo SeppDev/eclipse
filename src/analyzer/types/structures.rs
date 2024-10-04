@@ -13,8 +13,8 @@ impl Types {
             data_structures: HashMap::new(),
         }
     }
-    pub fn push_function(&mut self, path: &Path, generics: Vec<String>, parameters: Vec<>) -> AnalyzeResult<()> {
-        match self.functions.insert(path, Function {  }) {
+    pub fn push_function(&mut self, path: Path, generics: Vec<String>, parameters: Vec<(String, Type)>) -> AnalyzeResult<()> {
+        match self.functions.insert(path, Function { parameters }) {
             Some(p) => {},
             None => {}
         }
@@ -40,4 +40,5 @@ pub struct Struct {}
 pub enum DataStructure {
     Struct(Struct),
     Enum(Enum),
+    Type(),
 }

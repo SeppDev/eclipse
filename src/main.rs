@@ -27,7 +27,7 @@ fn main() {
         "run" => Action::BuildAndRun,
         "new" => Action::New,
         _ => return println!("{:?} is not a valid argument", action),
-    };
+    }; 
 
     if action == Action::Build || action == Action::BuildAndRun {
         let executable = match build(project_dir) {
