@@ -21,6 +21,21 @@ pub enum BaseType {
     // Intsize,
     // UIntsize,
 }
+impl BaseType {
+    fn is_integer(&self) -> bool {
+        match &self {
+            BaseType::Int8 => true,
+            BaseType::UInt8 => true,
+            BaseType::Int16 => true,
+            BaseType::UInt16 => true,
+            BaseType::Int32 => true,
+            BaseType::UInt32 => true,
+            BaseType::Int64 => true,
+            BaseType::UInt64 => true,
+            _ => false,
+        }
+    }
+}
 
 #[allow(unused)]
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -29,14 +44,21 @@ pub enum Type {
     Base(BaseType),
     Tuple(Vec<Type>),
 }
+impl Type {
+    pub fn is_integer(&self) -> bool {
+        match &self {
+            Type::Base(base) => base.is_integer(),
+            _ => false,
+        }
+    }
+}
 
 #[allow(unused)]
 #[derive(Debug)]
 pub enum Value {
     String(String),
     Float(f64),
-    Integer(isize),
-    UInteger(usize),
+    Integer(bool, usize),
     Boolean(bool),
 }
 

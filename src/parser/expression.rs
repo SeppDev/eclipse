@@ -21,7 +21,7 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
                 Ok(int) => int,
                 Err(_) => panic!(),
             };
-            Some(Expression::Value(Value::UInteger(integer)))
+            Some(Expression::Value(Value::Integer(false, integer)))
         }
         Token::Identifier(name) => {
             let extend = peek_expect_tokens(tokens, vec![Token::DoubleColon], true)?;

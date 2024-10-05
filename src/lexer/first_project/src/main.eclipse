@@ -1,0 +1,38 @@
+// import math
+
+struct MyStruct {
+	field_one i64,
+	field_two i64
+}
+enum MyEnum {
+	One,
+	Two,
+	Three
+}
+
+fn main(): i64 {
+	// This is a comment
+	add(69, 21);
+	add_i32(1234, 4321);
+ 
+	return 0;
+}
+
+fn square(x i64): i64 {
+	return x * x;
+}
+
+fn add(a i64, b i64): i64 {
+	return a + b;
+}
+fn add_i32(a i32, b i32): i32 {
+	return a + b;
+}
+
+// fn add(...x i32): i32 {
+	// 
+// }
+
+// fn add_one<T>(x T): T {
+// 	return x + 1;
+// }
