@@ -1,14 +1,8 @@
-use crate::parser::{BaseType, Path, Type, Value};
+use crate::parser::{Path, Type, Value};
 
 #[derive(Debug)]
 pub struct Program {}
 
-#[derive(Debug)]
-pub struct IRFunction {
-    pub generics: Option<Vec<String>>,
-    pub parameters: Vec<(String, Type)>,
-    pub return_type: Option<Type>,
-}
 
 #[derive(Debug)]
 pub enum IRExpression {
@@ -27,32 +21,6 @@ pub enum IRNode {
 }
 
 #[derive(Debug)]
-pub enum CustomType {
-    Struct(IRStruct),
-    Enum(IREnum),
-}
-
-#[derive(Debug)]
-pub struct IREnum {
-    pub name: String,
-    pub generics: Option<Vec<String>>,
-    pub enums: Vec<(String, Option<Type>)>,
-}
-
-#[derive(Debug)]
-pub struct IRStruct {
-    pub name: String,
-    pub generics: Option<Vec<String>>,
-    pub fields: Vec<(String, Type)>,
-    // pub implmentations
-}
-
-#[allow(unused)]
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum IRType {
-    Struct(String),
-    Enum(String),
-    Generic(String),
-    Base(BaseType),
-    Tuple(Vec<IRType>),
+pub struct Function {
+    
 }

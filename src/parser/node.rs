@@ -125,6 +125,8 @@ pub struct Path {
     pub root: String,
     pub location: Vec<String>,
 }
+
+#[allow(unused)]
 impl Path {
     pub fn new(root: String) -> Self {
         Self {

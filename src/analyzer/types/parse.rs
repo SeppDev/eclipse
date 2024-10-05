@@ -27,9 +27,7 @@ fn parse_module(
                 name,
                 generics,
                 body,
-            } => {
-                
-            }
+            } => {}
             Node::Struct {
                 export,
                 name,
@@ -45,7 +43,14 @@ fn parse_module(
                 return_type,
                 body,
             } => {
-                types.
+                let mut path = relative_path.clone();
+                path.push(&Path::new(name.to_owned()));
+                types.push_function(
+                    path,
+                    generics.clone(),
+                    parameters.clone(),
+                    return_type.clone(),
+                )?;
             }
             _ => continue,
         }
