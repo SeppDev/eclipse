@@ -24,6 +24,7 @@ pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
 pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
     let mut tree = Vec::new();
 
+    
     loop {
         if tokens.is_eof()? == true {
             break;
@@ -38,12 +39,13 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
             _ => {}
         }
 
+
         let info = tokens.start()?;
 
         let node: ASTNode = match info.token {
             Token::Import => {
                 if tokens.indent > 0 {
-                    return Err(tokens.create_error(format!("Cannot import within scopes")));
+                    return Err(tokens.create_error(format!("Cannot import inline")));
                 }
                 let name = get_identifier(tokens)?;
                 tokens.create_ast(Node::Import(name))

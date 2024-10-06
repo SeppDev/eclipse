@@ -83,9 +83,10 @@ pub enum Expression {
 #[allow(unused)]
 #[derive(Debug)]
 pub enum Node {
-    Import(String),
     Call(Path, Vec<Expression>),
     Return(Option<Expression>),
+    Use(bool, Path),
+    Import(bool, String),
     // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
     SetVariable(Path, Expression),
     Struct {

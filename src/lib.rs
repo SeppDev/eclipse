@@ -1,7 +1,7 @@
 use std::{io::Read, path::PathBuf, process::exit};
 
-use analyzer::analyze;
-use parser::parse_modules;
+use analyzer::*;
+use parser::*;
 
 // mod analyzer;
 mod lexer;
@@ -12,25 +12,25 @@ mod builder;
 
 pub const FILE_EXTENSION: &str = "eclipse";
 
-pub fn open_file(path: &PathBuf) -> Result<std::fs::File, BuildError> {
+pub fn open_file(path: &PathBuf) -> std::fs::File {
     let file = match std::fs::File::open(path) {
         Ok(file) => file,
-        Err(error) => return Err(BuildError::OpenFile(error)),
+        Err(error) => panic!("{:?}", error),
     };
-    return Ok(file);
+    return file;
 }
 
-pub fn read_file(path: &PathBuf) -> Result<String, BuildError> {
-    let mut file = open_file(path)?;
+pub fn read_file(path: &PathBuf) -> String {
+    let mut file = open_file(path);
 
     let mut buf = String::new();
 
     match file.read_to_string(&mut buf) {
         Ok(_) => {}
-        Err(error) => return Err(BuildError::OpenFile(error)),
+        Err(error) => panic!("{:?}", error),
     }
 
-    return Ok(buf);
+    return buf;
 }
 
 pub fn execute(command: String) -> Result<String, String> {
@@ -52,12 +52,9 @@ pub fn execute(command: String) -> Result<String, String> {
     return Ok(String::from_utf8(cmd.stdout).unwrap());
 }
 
-pub fn build(project_path: PathBuf) -> Result<PathBuf, BuildError> {
-    let modules = parse_modules(project_path)?;
-    let program = match analyze(modules) {
-        Ok(p) => p,
-        Err(error) => return Err(BuildError::CompileError(error))
-    };
+pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
+    let main = parse_modules(project_path)?;
+    let program = analyze(main)?;
     
     println!("{:#?}", program);
 
