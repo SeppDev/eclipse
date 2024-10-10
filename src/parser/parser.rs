@@ -4,7 +4,9 @@ use crate::{
 };
 
 use super::{
-    enums::parse_enum, expression::parse_expression, function::parse_function, identifier::parse_identifier, node::ASTNode, structs::parse_struct, variable::parse_variable, Node
+    enums::parse_enum, expression::parse_expression, function::parse_function,
+    identifier::parse_identifier, node::ASTNode, structs::parse_struct, variable::parse_variable,
+    Node,
 };
 
 pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
@@ -21,10 +23,10 @@ pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
     }
 }
 
-pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
+pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, String)>)> {
     let mut tree = Vec::new();
+    let mut imports = Vec::new();
 
-    
     loop {
         if tokens.is_eof()? == true {
             break;
@@ -39,19 +41,16 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
             _ => {}
         }
 
-
         let info = tokens.start()?;
 
         let node: ASTNode = match info.token {
             Token::Import => {
-                if tokens.indent > 0 {
-                    return Err(tokens.create_error(format!("Cannot import inline")));
-                }
                 let name = get_identifier(tokens)?;
-                tokens.create_ast(Node::Import(false, name))
+                imports.push((false, name));
+                continue;
             }
             Token::StartScope => {
-                let body = parse(tokens)?;
+                let (body, _) = parse(tokens)?;
                 expect_tokens(tokens, vec![Token::EndScope])?;
                 tokens.create_ast(Node::Scope {
                     is_unsafe: false,
@@ -86,7 +85,11 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
         tree.push(node);
     }
 
-    return Ok(tree);
+    if imports.len() > 0 && tokens.indent > 0 {
+        return Err(tokens.create_error(format!("Cannot import inline")));
+    }
+
+    return Ok((tree, imports));
 }
 
 pub fn expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>) -> ParseResult<TokenInfo> {
@@ -105,7 +108,7 @@ pub fn expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>) -> ParseRes
     return Err(CompileError::new(
         format!("Expected tokens: {:?}, got: {:?}", expected, info),
         tokens.current.line,
-    )); 
+    ));
 }
 pub fn peek_expect_tokens(
     tokens: &mut TokensGroup,

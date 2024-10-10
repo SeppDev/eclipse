@@ -86,7 +86,6 @@ pub enum Node {
     Call(Path, Vec<Expression>),
     Return(Option<Expression>),
     Use(bool, Path),
-    Import(bool, String),
     // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
     SetVariable(Path, Expression),
     Struct {

@@ -26,60 +26,57 @@ fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
     return found_path;
 }
 
-fn parse_tokens(
-    project_path: &PathBuf,
-    relative_path: &PathBuf,
-    nodes: Vec<ASTNode>,
-) -> ParseResult<Vec<ASTNode>> {
-    let main_path = PathBuf::from("src/main");
-    let file_name = relative_path
-        .file_stem()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
+// fn parse_tokens(
+//     project_path: &PathBuf,
+//     relative_path: &PathBuf,
+//     nodes: Vec<ASTNode>,
+// ) -> ParseResult<Vec<ASTNode>> {
+//     let main_path = PathBuf::from("src/main");
+//     let file_name = relative_path
+//         .file_stem()
+//         .unwrap()
+//         .to_str()
+//         .unwrap()
+//         .to_string();
 
-    let is_module = file_name == "mod" || relative_path == &main_path;
-    let parent = relative_path.parent().unwrap();
-    if file_name == "mod" && parent == PathBuf::from("src/") {
-        return Err(CompileError::new(
-            String::from("Cannot have a mod in the 'src' directory"),
-            0,
-        ));
-    }
+//     let is_module = file_name == "mod" || relative_path == &main_path;
+//     let parent = relative_path.parent().unwrap();
+//     if file_name == "mod" && parent == PathBuf::from("src/") {
+//         return Err(CompileError::new(
+//             String::from("Cannot have a mod in the 'src' directory"),
+//             0,
+//         ));
+//     }
 
-    for node in &nodes {
-        let name = match &node.node {
-            Node::Import(public, name) => name,
-            _ => continue,
-        };
-        let paths: [String; 2];
+//     for node in &nodes {
+//         let paths: [String; 2];
 
-        if is_module {
-            paths = [name.clone(), format!("{}/mod", name)]
-        } else {
-            paths = [
-                format!("{}/{}", file_name, name),
-                format!("{}/{}/mod", file_name, name),
-            ]
-        }
-        let found_path = match find_path(project_path, &paths) {
-            Some(p) => p,
-            None => {
-                return Err(CompileError::new(
-                    format!("Import path failed: {:#?}", paths),
-                    node.lines.start,
-                ))
-            }
-        };
+//         if is_module {
+//             paths = [name.clone(), format!("{}/mod", name)]
+//         } else {
+//             paths = [
+//                 format!("{}/{}", file_name, name),
+//                 format!("{}/{}/mod", file_name, name),
+//             ]
+//         }
+//         let found_path = match find_path(project_path, &paths) {
+//             Some(p) => p,
+//             None => {
+//                 return Err(CompileError::new(
+//                     format!("Import path failed: {:#?}", paths),
+//                     node.lines.start,
+//                 ))
+//             }
+//         };
 
-        // let nodes = parse_tokens(project_path, &found_path, modules)?;
-        // modules.insert(Path::normalize(&found_path), nodes);
-    }
+//         // let nodes = parse_tokens(project_path, &found_path, modules)?;
+//         // modules.insert(Path::normalize(&found_path), nodes);
+//     }
 
-    return Ok(nodes);
-}
+//     return Ok(nodes);
+// }
 
+#[derive(Debug)]
 pub struct Module {
     pub imports: HashMap<(bool, String), Module>,
 }

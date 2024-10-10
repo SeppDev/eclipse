@@ -1,9 +1,7 @@
 use std::{io::Read, path::PathBuf, process::exit};
 
-use analyzer::*;
 use parser::*;
 
-// mod analyzer;
 mod lexer;
 mod parser;
 mod analyzer;
@@ -53,10 +51,10 @@ pub fn execute(command: String) -> Result<String, String> {
 }
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
-    let main = parse_modules(project_path)?;
-    let program = analyze(main)?;
+    let main = Module::new(&project_path, &PathBuf::from("src/main"))?;
+    // let program = analyze(main)?;
     
-    println!("{:#?}", program);
+    println!("{:#?}", main);
 
     todo!()
 }
@@ -78,7 +76,7 @@ impl CompileError {
             error
         }
     }
-    fn print(&self) {
+    pub fn print(&self) {
         println!("error: {}", self.error);
         println!("line: {:?}", self.line);
 
