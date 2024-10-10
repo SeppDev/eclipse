@@ -11,14 +11,10 @@ fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
 }
 
-fn find_path(
-    project_path: &PathBuf,
-    paths: [String; 2],
-    line: usize,
-) -> ParseResult<PathBuf> {
+fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
     let mut found_path: Option<PathBuf> = None;
-    for p in &paths {
-        let path = clean_path(parent.join(p));
+    for p in paths {
+        let path = clean_path(project_path.join(p));
         if project_path
             .join(&path.with_extension(FILE_EXTENSION))
             .exists()
@@ -27,18 +23,14 @@ fn find_path(
             break;
         }
     }
-    let found_path = match found_path {
-        Some(p) => p,
-        None => {
-            return Err(CompileError::new(
-                format!("Import path failed: {:#?}", paths),
-                line,
-            ));
-        }
-    };
+    return found_path;
 }
 
-fn parse_tokens(project_path: &PathBuf, relative_path: &PathBuf, nodes: Vec<ASTNode>) -> ParseResult<Vec<ASTNode>> {
+fn parse_tokens(
+    project_path: &PathBuf,
+    relative_path: &PathBuf,
+    nodes: Vec<ASTNode>,
+) -> ParseResult<Vec<ASTNode>> {
     let main_path = PathBuf::from("src/main");
     let file_name = relative_path
         .file_stem()
@@ -71,7 +63,15 @@ fn parse_tokens(project_path: &PathBuf, relative_path: &PathBuf, nodes: Vec<ASTN
                 format!("{}/{}/mod", file_name, name),
             ]
         }
-        let found_path= find_path(project_path, paths, node.lines.start);
+        let found_path = match find_path(project_path, &paths) {
+            Some(p) => p,
+            None => {
+                return Err(CompileError::new(
+                    format!("Import path failed: {:#?}", paths),
+                    node.lines.start,
+                ))
+            }
+        };
 
         // let nodes = parse_tokens(project_path, &found_path, modules)?;
         // modules.insert(Path::normalize(&found_path), nodes);
@@ -85,7 +85,7 @@ pub struct Module {
 }
 impl Module {
     pub fn new(project_path: &PathBuf, relative_path: &PathBuf) -> ParseResult<Self> {
-        let mut imports = HashMap::new();
+        let imports = HashMap::new();
 
         let file_path = project_path.join(&relative_path);
         let source = read_file(&file_path.with_extension(FILE_EXTENSION));

@@ -48,7 +48,7 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
                     return Err(tokens.create_error(format!("Cannot import inline")));
                 }
                 let name = get_identifier(tokens)?;
-                tokens.create_ast(Node::Import(name))
+                tokens.create_ast(Node::Import(false, name))
             }
             Token::StartScope => {
                 let body = parse(tokens)?;
@@ -62,6 +62,7 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<Vec<ASTNode>> {
                 let info = tokens.advance()?;
                 match info.token {
                     Token::Function => parse_function(tokens, false, true)?,
+                    Token::Import => todo!(),
                     _ => panic!(),
                 }
             }
@@ -104,7 +105,7 @@ pub fn expect_tokens(tokens: &mut TokensGroup, expected: Vec<Token>) -> ParseRes
     return Err(CompileError::new(
         format!("Expected tokens: {:?}, got: {:?}", expected, info),
         tokens.current.line,
-    ));
+    )); 
 }
 pub fn peek_expect_tokens(
     tokens: &mut TokensGroup,
