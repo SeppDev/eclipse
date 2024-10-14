@@ -14,69 +14,18 @@ fn clean_path(path: PathBuf) -> PathBuf {
 
 #[allow(unused)]
 fn find_path(project_path: &PathBuf, paths: [String; 2]) -> Option<PathBuf> {
-    let mut found_path: Option<PathBuf> = None;
+    let mut found_path = None;
     for p in paths {
-        let path = clean_path(project_path.join(p));
-        if project_path
-            .join(&path.with_extension(FILE_EXTENSION))
-            .exists()
-        {
-            found_path = Some(path);
+        let file_path = clean_path(project_path.join(&p));
+        let full_file_path = project_path.join(&file_path.with_extension(FILE_EXTENSION));
+
+        if full_file_path.exists() {
+            found_path = Some(PathBuf::from(p));
             break;
         }
     }
     return found_path;
 }
-
-// fn parse_tokens(
-//     project_path: &PathBuf,
-//     relative_path: &PathBuf,
-//     nodes: Vec<ASTNode>,
-// ) -> ParseResult<Vec<ASTNode>> {
-//     let main_path = PathBuf::from("src/main");
-//     let file_name = relative_path
-//         .file_stem()
-//         .unwrap()
-//         .to_str()
-//         .unwrap()
-//         .to_string();
-
-//     let is_module = file_name == "mod" || relative_path == &main_path;
-//     let parent = relative_path.parent().unwrap();
-//     if file_name == "mod" && parent == PathBuf::from("src/") {
-//         return Err(CompileError::new(
-//             String::from("Cannot have a mod in the 'src' directory"),
-//             0,
-//         ));
-//     }
-
-//     for node in &nodes {
-//         let paths: [String; 2];
-
-//         if is_module {
-//             paths = [name.clone(), format!("{}/mod", name)]
-//         } else {
-//             paths = [
-//                 format!("{}/{}", file_name, name),
-//                 format!("{}/{}/mod", file_name, name),
-//             ]
-//         }
-//         let found_path = match find_path(project_path, &paths) {
-//             Some(p) => p,
-//             None => {
-//                 return Err(CompileError::new(
-//                     format!("Import path failed: {:#?}", paths),
-//                     node.lines.start,
-//                 ))
-//             }
-//         };
-
-//         // let nodes = parse_tokens(project_path, &found_path, modules)?;
-//         // modules.insert(Path::normalize(&found_path), nodes);
-//     }
-
-//     return Ok(nodes);
-// }
 
 #[derive(Debug)]
 pub struct Module {
@@ -114,16 +63,22 @@ impl Module {
         for (export, import) in imports {
             let paths: [String; 2];
             if is_module {
-                paths = [file_name.clone(), format!("{}/mod", file_name)]
+                paths = [import.clone(), format!("{}/mod", import)]
             } else {
                 paths = [
-                    format!("{}/{}", import, file_name),
-                    format!("{}/{}/mod", import, file_name),
+                    format!("{}/{}", file_name, import),
+                    format!("{}/{}/mod", file_name, import),
                 ]
             }
 
-            let path = find_path(project_path, paths);
-            todo!("{:?}", path);
+            let parent = relative_path.parent().unwrap();
+            let full_relative_path = project_path.join(&parent);
+
+            // TODO better error handling
+            let found_path = find_path(&full_relative_path, paths).unwrap();
+            let module = Self::new(project_path, &parent.join(&found_path))?;
+
+            submodules.insert(import, (export, module));
         }
 
         return Ok(Self {
