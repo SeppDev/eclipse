@@ -1,7 +1,0 @@
-import constants
-
-pub fn test(x i64): i64  {
-    let a = 4321;
-
-    return x;
-}

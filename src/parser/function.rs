@@ -47,7 +47,7 @@ pub fn parse_function(
     }
 
     expect_tokens(tokens, vec![Token::StartScope])?;
-    let body = parse(tokens)?;
+    let (body, _) = parse(tokens)?;
 
     expect_tokens(tokens, vec![Token::EndScope])?;
 

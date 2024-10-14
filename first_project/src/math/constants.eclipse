@@ -1,3 +1,0 @@
-pub fn number(): i64 {
-    return 1234;
-}

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     lexer::{Token, TokenInfo, TokensGroup},
     CompileError, ParseResult,
@@ -61,7 +63,11 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, 
                 let info = tokens.advance()?;
                 match info.token {
                     Token::Function => parse_function(tokens, false, true)?,
-                    Token::Import => todo!(),
+                    Token::Import => {
+                        let name = get_identifier(tokens)?;
+                        imports.push((true, name));
+                        continue;
+                    }
                     _ => panic!(),
                 }
             }
@@ -85,8 +91,18 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, 
         tree.push(node);
     }
 
-    if imports.len() > 0 && tokens.indent > 0 {
-        return Err(tokens.create_error(format!("Cannot import inline")));
+    if imports.len() > 0 {
+        if tokens.indent > 0 {
+            return Err(tokens.create_error(format!("Cannot import inline")));
+        }
+        let mut map: HashMap<&String, &bool> = HashMap::new();
+        for (public, key) in &imports {
+            match map.insert(key, public) {
+                Some(key) => return Err(CompileError::new(format!("{:?} is already imported", key), 0)),
+                _ => continue,
+            }
+        }
+
     }
 
     return Ok((tree, imports));

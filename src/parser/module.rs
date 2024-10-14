@@ -5,12 +5,14 @@ use crate::{
     read_file, CompileError, ParseResult, FILE_EXTENSION,
 };
 
-use super::{parse, ASTNode, Node, Path};
+use super::{parse, ASTNode};
 
+#[allow(unused)]
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
 }
 
+#[allow(unused)]
 fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
     let mut found_path: Option<PathBuf> = None;
     for p in paths {
@@ -78,20 +80,51 @@ fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
 
 #[derive(Debug)]
 pub struct Module {
-    pub imports: HashMap<(bool, String), Module>,
+    pub submodules: HashMap<String, (bool, Module)>,
+    pub body: Vec<ASTNode>
 }
+#[allow(unused)]
 impl Module {
     pub fn new(project_path: &PathBuf, relative_path: &PathBuf) -> ParseResult<Self> {
-        let imports = HashMap::new();
+        let is_module = {
+            let file_name = &relative_path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+
+            if relative_path.to_str().unwrap() == "src/mod" {
+                return Err(CompileError::new(
+                    "file cannot be named 'mod' and be parented to 'src/'".to_string(),
+                    0,
+                ));
+            }
+            relative_path.to_str().unwrap() == "src/main" || file_name == "mod"
+        };
 
         let file_path = project_path.join(&relative_path);
         let source = read_file(&file_path.with_extension(FILE_EXTENSION));
 
         let tokens = tokenize(source);
-        let mut tokengroup = TokensGroup::new(tokens);
+        let (nodes, imports) = parse(&mut TokensGroup::new(tokens))?;
 
-        let nodes = parse(&mut tokengroup)?;
+        let mut submodules = HashMap::new();
 
-        return Ok(Self { imports });
+        for (public, file_name) in imports {
+            // println!("{:?}: {:?}", public, file_name);
+            // if is_module {
+            //     paths = [name.clone(), format!("{}/mod", name)]
+            // } else {
+            //     paths = [
+            //         format!("{}/{}", file_name, name),
+            //         format!("{}/{}/mod", file_name, name),
+            //     ]
+            // }
+
+            // let path = find_path(project_path, paths);
+        }
+
+        return Ok(Self { body: nodes, submodules });
     }
 }

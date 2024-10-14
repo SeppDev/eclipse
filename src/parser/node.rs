@@ -23,15 +23,9 @@ pub enum BaseType {
 }
 impl BaseType {
     fn is_integer(&self) -> bool {
+        use BaseType::*;
         match &self {
-            BaseType::Int8 => true,
-            BaseType::UInt8 => true,
-            BaseType::Int16 => true,
-            BaseType::UInt16 => true,
-            BaseType::Int32 => true,
-            BaseType::UInt32 => true,
-            BaseType::Int64 => true,
-            BaseType::UInt64 => true,
+            Int8 | UInt8 | Int16 | UInt16 | Int32 | UInt32 | Int64 | UInt64 => true,
             _ => false,
         }
     }
@@ -44,6 +38,7 @@ pub enum Type {
     Base(BaseType),
     Tuple(Vec<Type>),
 }
+#[allow(unused)]
 impl Type {
     pub fn is_integer(&self) -> bool {
         match &self {
