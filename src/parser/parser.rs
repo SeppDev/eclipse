@@ -46,6 +46,7 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, 
         let info = tokens.start()?;
 
         let node: ASTNode = match info.token {
+            Token::EndOfFile => break,
             Token::Import => {
                 let name = get_identifier(tokens)?;
                 imports.push((false, name));

@@ -13,7 +13,7 @@ fn clean_path(path: PathBuf) -> PathBuf {
 }
 
 #[allow(unused)]
-fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
+fn find_path(project_path: &PathBuf, paths: [String; 2]) -> Option<PathBuf> {
     let mut found_path: Option<PathBuf> = None;
     for p in paths {
         let path = clean_path(project_path.join(p));
@@ -81,19 +81,19 @@ fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
 #[derive(Debug)]
 pub struct Module {
     pub submodules: HashMap<String, (bool, Module)>,
-    pub body: Vec<ASTNode>
+    pub body: Vec<ASTNode>,
 }
 #[allow(unused)]
 impl Module {
     pub fn new(project_path: &PathBuf, relative_path: &PathBuf) -> ParseResult<Self> {
-        let is_module = {
-            let file_name = &relative_path
-                .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
+        let file_name = &relative_path
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
 
+        let is_module = {
             if relative_path.to_str().unwrap() == "src/mod" {
                 return Err(CompileError::new(
                     "file cannot be named 'mod' and be parented to 'src/'".to_string(),
@@ -111,20 +111,24 @@ impl Module {
 
         let mut submodules = HashMap::new();
 
-        for (public, file_name) in imports {
-            // println!("{:?}: {:?}", public, file_name);
-            // if is_module {
-            //     paths = [name.clone(), format!("{}/mod", name)]
-            // } else {
-            //     paths = [
-            //         format!("{}/{}", file_name, name),
-            //         format!("{}/{}/mod", file_name, name),
-            //     ]
-            // }
+        for (export, import) in imports {
+            let paths: [String; 2];
+            if is_module {
+                paths = [file_name.clone(), format!("{}/mod", file_name)]
+            } else {
+                paths = [
+                    format!("{}/{}", import, file_name),
+                    format!("{}/{}/mod", import, file_name),
+                ]
+            }
 
-            // let path = find_path(project_path, paths);
+            let path = find_path(project_path, paths);
+            todo!("{:?}", path);
         }
 
-        return Ok(Self { body: nodes, submodules });
+        return Ok(Self {
+            body: nodes,
+            submodules,
+        });
     }
 }
