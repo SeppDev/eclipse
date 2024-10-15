@@ -42,18 +42,28 @@ fn handle_scope(
     return_type: &Option<Type>,
     body: Vec<ASTNode>,
 ) -> AnalyzeResult<()> {
+    variables.create_state();
+
     for ast in body {
         match ast.node {
             Node::Scope { is_unsafe, body } => {
                 handle_scope(types, variables, parameters, return_type, body)?
             }
-            Node::Return(expression) => {
-
+            Node::SetVariable(name, expression) => {}
+            Node::DefineVariable {
+                mutable,
+                name,
+                data_type,
+                expression,
+            } => {
+                variables.insert(name.clone(), mutable, data_type);
             }
+            Node::Return(expression) => {}
             // Node::SetVariable(, )
             _ => continue,
         }
     }
+
+    variables.pop_state();
     return Ok(());
 }
-

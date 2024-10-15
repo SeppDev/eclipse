@@ -31,14 +31,13 @@ impl BaseType {
     }
 }
 
-#[allow(unused)]
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
     Custom(String),
     Base(BaseType),
     Tuple(Vec<Type>),
 }
-#[allow(unused)]
 impl Type {
     pub fn is_integer(&self) -> bool {
         match &self {
@@ -48,7 +47,7 @@ impl Type {
     }
 }
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub enum Value {
     String(String),
@@ -81,7 +80,7 @@ pub enum Node {
     Return(Option<Expression>),
     Use(bool, Path),
     // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
-    SetVariable(Path, Expression),
+    SetVariable(String, Expression),
     Struct {
         export: bool,
         name: String,
