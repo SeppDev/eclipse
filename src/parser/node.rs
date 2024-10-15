@@ -75,7 +75,6 @@ pub enum Expression {
     // Tuple(Vec<Expression>),
 }
 
-#[allow(unused)]
 #[derive(Debug)]
 pub enum Node {
     Call(Path, Vec<Expression>),

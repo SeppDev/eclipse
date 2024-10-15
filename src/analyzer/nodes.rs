@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::parser::{Path, Type, Value};
+use crate::{parser::{Path, Type, Value}, AnalyzeResult};
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -36,15 +36,19 @@ pub struct Function {
     pub body: Vec<IRNode>
 }
 
-#[allow(unused)]
+#[derive(Debug)]
 pub struct Variables {
-    pub variables: HashMap<&'static String, Type>,
+    variables: HashMap<&'static String, Type>,
 }
-#[allow(unused)]
 impl Variables {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
         }
+    }
+    pub fn insert(&mut self, key: String, data_type: Option<Type>) -> AnalyzeResult<()> {
+        self.variables.insert(k, v);
+
+        return Ok(())
     }
 }

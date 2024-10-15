@@ -2,14 +2,13 @@ use std::collections::HashMap;
 
 use crate::{AnalyzeResult, Module, Node, Type};
 
-type Function = (Vec<(String, Type)>, Option<Type>);
 
 pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
     let mut module_types = ModuleTypes::default();
-
+    
     for (name, (_export, submodule)) in &module.submodules {
         module_types
-            .submodules
+        .submodules
             .insert(name.clone(), get_function_types(submodule)?);
     }
 
@@ -25,13 +24,30 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
                 return_type,
                 body,
             } => {
-                let function = (parameters.clone(), return_type.clone());
-                module_types.functions.insert(name.clone(), (export.clone(), function));
+                let function = Function {
+                    parameters: parameters.clone(),
+                    return_type: return_type.clone(),
+                };
+                module_types
+                    .functions
+                    .insert(name.clone(), (export.clone(), function));
             }
-            _ => panic!("Function expected got: {:#?}", ast),
+            Node::Struct {
+                export,
+                name,
+                generics,
+                body,
+            } => {}
+            Node::Enum {
+                export,
+                name,
+                generics,
+                body,
+            } => {}
+            _ => panic!("Function, Struct or Enum expected got: {:#?}", ast),
         }
     }
-
+    
     return Ok(module_types);
 }
 
@@ -39,4 +55,10 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
 pub struct ModuleTypes {
     pub submodules: HashMap<String, ModuleTypes>,
     pub functions: HashMap<String, (bool, Function)>,
+}
+
+#[derive(Debug)]
+pub struct Function {
+    pub parameters: Vec<(String, Type)>,
+    pub return_type: Option<Type>,
 }
