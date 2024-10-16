@@ -60,10 +60,22 @@ impl Variables {
         data_type: Option<Type>,
     ) -> AnalyzeResult<()> {
         let current_state = self.states.last_mut().unwrap();
-        current_state.push(key.clone());
 
-        self.variables
+        let result = self
+            .variables
             .insert(key.clone(), Variable { mutable, data_type });
+
+        match result {
+            Some(_) => {
+                return Err(CompileError::new(
+                    format!("{:?} is already defined", key.clone()),
+                    0,
+                ))
+            }
+            None => {}
+        }
+
+        current_state.push(key);
 
         return Ok(());
     }

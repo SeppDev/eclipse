@@ -10,12 +10,12 @@ pub fn analyze(module: Module) -> AnalyzeResult<()> {
     let types = get_function_types(&module)?;
     println!("{:#?}", types);
 
-    handle_module(module, &types);
+    handle_module(module, &types)?;
 
     todo!()
 }
 
-fn handle_module(module: Module, types: &ModuleTypes) {
+fn handle_module(module: Module, types: &ModuleTypes) -> AnalyzeResult<()> {
     for ast in module.body {
         match ast.node {
             Node::Function {
@@ -28,11 +28,13 @@ fn handle_module(module: Module, types: &ModuleTypes) {
                 body,
             } => {
                 let mut variables = Variables::new();
-                handle_scope(types, &mut variables, &parameters, &return_type, body).unwrap();
+                handle_scope(types, &mut variables, &parameters, &return_type, body)?;
             }
             _ => continue,
         }
     }
+
+    return Ok(())
 }
 
 fn handle_scope(
@@ -56,7 +58,7 @@ fn handle_scope(
                 data_type,
                 expression,
             } => {
-                variables.insert(name.clone(), mutable, data_type);
+                variables.insert(name.clone(), mutable, data_type)?;
             }
             Node::Return(expression) => {}
             // Node::SetVariable(, )
