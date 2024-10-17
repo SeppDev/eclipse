@@ -1,5 +1,6 @@
 use crate::{
-    analyzer::types::functions::get_function_types, ASTNode, AnalyzeResult, Module, Node, Type,
+    analyzer::types::functions::get_function_types, ASTNode, AnalyzeResult, CompileError,
+    Expression, Module, Node, Type, Value,
 };
 
 use super::{nodes::Variables, types::functions::ModuleTypes};
@@ -34,7 +35,7 @@ fn handle_module(module: Module, types: &ModuleTypes) -> AnalyzeResult<()> {
         }
     }
 
-    return Ok(())
+    return Ok(());
 }
 
 fn handle_scope(
@@ -51,7 +52,27 @@ fn handle_scope(
             Node::Scope { is_unsafe, body } => {
                 handle_scope(types, variables, parameters, return_type, body)?
             }
-            Node::SetVariable(name, expression) => {}
+            Node::SetVariable(name, expression) => {
+                let variable = variables.get(&name)?;
+                if variable.mutable == false {
+                    return Err(CompileError::new(
+                        format!("{:?} is not mutable", name),
+                        ast.lines.start,
+                    ));
+                }
+                let expr_type = handle_expression(
+                    types,
+                    variables,
+                    parameters,
+                    return_type,
+                    &false,
+                    expression,
+                )?;
+
+                // if variable.data_type.as_ref().unwrap() != expr_type {
+                // return Err(CompileError::new(format!("Wrong type {:?}", name), ast.lines.start))
+                // };
+            }
             Node::DefineVariable {
                 mutable,
                 name,
@@ -60,12 +81,48 @@ fn handle_scope(
             } => {
                 variables.insert(name.clone(), mutable, data_type)?;
             }
-            Node::Return(expression) => {}
-            // Node::SetVariable(, )
+            Node::Return(expression) => {
+                let expr = match expression {
+                    Some(e) => e,
+                    None => continue,
+                };
+                handle_expression(types, variables, parameters, return_type, &true, expr)?;
+            }
             _ => continue,
         }
     }
 
     variables.pop_state();
     return Ok(());
+}
+
+fn handle_expression(
+    types: &ModuleTypes,
+    variables: &Variables,
+    parameters: &Vec<(String, Type)>,
+    return_type: &Option<Type>,
+    is_return: &bool,
+    expression: Expression,
+) -> AnalyzeResult<Type> {
+    use crate::BaseType::*;
+
+    let var_type: Type = match expression {
+        Expression::Value(value) => match value {
+            Value::Integer(signed, int) => match return_type {
+                Some(t) => {
+                    if t.is_integer() {
+                        t.clone()
+                    } else {
+                        return Err(CompileError::new(format!("Wrong return type"), 0));
+                    }
+                }
+                None => Type::Base(Int32),
+            },
+            Value::Boolean(_) => Type::Base(Boolean),
+            v => todo!("{:#?}", v),
+        },
+        expr => todo!("{:#?}", expr),
+    };
+
+    return Ok(var_type);
 }

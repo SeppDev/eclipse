@@ -29,6 +29,13 @@ impl BaseType {
             _ => false,
         }
     }
+    fn is_signed(&self) -> bool {
+        use BaseType::*;
+        match &self {
+            Int8 | Int16 | Int32 | Int64 => true,
+            _ => false,
+        }
+    }
 }
 
 

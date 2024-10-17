@@ -12,9 +12,9 @@ use super::{
 };
 
 pub fn parse_variable(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {
-    let name = get_identifier(tokens)?;
     let mutable = peek_expect_tokens(tokens, vec![Token::Mutable], true)?.is_some();
-
+    let name = get_identifier(tokens)?;
+    
     let mut data_type: Option<Type> = None;
     if peek_expect_tokens(tokens, vec![Token::Colon], true)?.is_some() {
         data_type = Some(parse_type(tokens)?);

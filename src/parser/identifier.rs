@@ -6,23 +6,34 @@ use crate::{
 
 use super::{
     arguments::parse_arguments,
-    node::{ASTNode, Node, Path}, path::parse_path,
+    expression::parse_expected_expression,
+    node::{ASTNode, Node, Path},
+    path::parse_path,
 };
 
 pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult<ASTNode> {
     let info = expect_tokens(
         tokens,
-        vec![Token::Dot, Token::DoubleColon, Token::OpenParen],
+        vec![
+            Token::Dot,
+            Token::DoubleColon,
+            Token::OpenParen,
+            Token::Equals,
+        ],
     )?;
     let node: ASTNode = match info.token {
         Token::Dot => todo!(),
+        Token::Equals => {
+            let expression = parse_expected_expression(tokens)?;
+            tokens.create_ast(Node::SetVariable(string, expression))
+        }
         Token::DoubleColon => {
             let path = parse_path(tokens, string)?;
             let _info = expect_tokens(tokens, vec![Token::OpenParen])?;
             let arguments = parse_arguments(tokens)?;
 
             tokens.create_ast(Node::Call(path, arguments))
-        },
+        }
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
 

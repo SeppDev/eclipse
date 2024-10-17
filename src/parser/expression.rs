@@ -39,6 +39,7 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
                 Some(Expression::Call(path, arguments))
             }
         }
+        Token::Boolean(bool) => Some(Expression::Value(Value::Boolean(bool))),
         _ => None,
     };
 

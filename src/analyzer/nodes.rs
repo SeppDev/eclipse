@@ -5,11 +5,11 @@ use crate::{
     AnalyzeResult, CompileError,
 };
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub struct Program {}
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub enum IRExpression {
     Value(Value),
@@ -94,10 +94,10 @@ impl Variables {
             None => return Err(CompileError::new(format!("{:?} is not defined", key), 0)),
         };
     }
-    pub fn change_type(&mut self, key: &String, new_type: Type) -> AnalyzeResult<()> {
-        let variable = self.variables.get_mut(key).unwrap();
-        variable.data_type = Some(new_type);
+    // pub fn change_type(&mut self, key: &String, new_type: Type) -> AnalyzeResult<()> {
+    //     let variable = self.variables.get_mut(key).unwrap();
+    //     variable.data_type = Some(new_type);
 
-        return Ok(());
-    }
+    //     return Ok(());
+    // }
 }
