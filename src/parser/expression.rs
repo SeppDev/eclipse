@@ -33,6 +33,9 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
 
             let info = peek_expect_tokens(tokens, vec![Token::OpenParen], true)?;
             if info.is_none() {
+                if path.location.len() > 0 {
+                    
+                }
                 Some(Expression::GetVariable(path))
             } else {
                 let arguments = parse_arguments(tokens)?;

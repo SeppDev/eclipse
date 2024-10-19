@@ -1,15 +1,17 @@
 use std::collections::HashMap;
 
-use crate::{AnalyzeResult, Module, Node, Type};
-
+use crate::{AnalyzeResult, Module, Node, Path, Type};
 
 pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
     let mut module_types = ModuleTypes::default();
-    
-    for (name, (_export, submodule)) in &module.submodules {
-        module_types
-        .submodules
-            .insert(name.clone(), get_function_types(submodule)?);
+
+    for (name, (export, submodule)) in &module.submodules {
+        let types = get_function_types(submodule)?;
+
+        module_types.submodules.insert(
+            name.clone(),
+            (export.clone(), types),
+        );
     }
 
     for ast in &module.body {
@@ -47,14 +49,20 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
             _ => panic!("Function, Struct or Enum expected got: {:#?}", ast),
         }
     }
-    
+
     return Ok(module_types);
 }
 
 #[derive(Debug, Default)]
 pub struct ModuleTypes {
-    pub submodules: HashMap<String, ModuleTypes>,
+    pub submodules: HashMap<String, (bool, ModuleTypes)>,
     pub functions: HashMap<String, (bool, Function)>,
+}
+impl ModuleTypes {
+    pub fn get_type(&self, path: Path) -> AnalyzeResult<()> {
+
+        todo!()
+    }
 }
 
 #[derive(Debug)]

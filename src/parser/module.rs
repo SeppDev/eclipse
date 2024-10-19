@@ -7,12 +7,11 @@ use crate::{
 
 use super::{parse, ASTNode};
 
-#[allow(unused)]
+
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
 }
 
-#[allow(unused)]
 fn find_path(project_path: &PathBuf, paths: [String; 2]) -> Option<PathBuf> {
     let mut found_path = None;
     for p in paths {
@@ -32,7 +31,6 @@ pub struct Module {
     pub submodules: HashMap<String, (bool, Module)>,
     pub body: Vec<ASTNode>,
 }
-#[allow(unused)]
 impl Module {
     pub fn new(project_path: &PathBuf, relative_path: &PathBuf) -> ParseResult<Self> {
         let file_name = &relative_path
@@ -85,5 +83,5 @@ impl Module {
             body: nodes,
             submodules,
         });
-    }
+    } 
 }

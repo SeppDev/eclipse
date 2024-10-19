@@ -75,7 +75,7 @@ pub enum Operator {
 #[derive(Debug)]
 pub enum Expression {
     Value(Value),
-    GetVariable(Path),
+    GetVariable(String),
     Call(Path, Vec<Expression>),
     BinaryOperation(Box<Expression>, Operator, Box<Expression>),
     // Tuple(Vec<Expression>),

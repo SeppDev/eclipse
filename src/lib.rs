@@ -9,7 +9,7 @@ mod analyzer;
 mod codegen;
 mod builder;
 
-pub const FILE_EXTENSION: &str = "ecl";
+pub static FILE_EXTENSION: &str = "ecl";
 
 pub fn open_file(path: &PathBuf) -> std::fs::File {
     let file = match std::fs::File::open(path) {

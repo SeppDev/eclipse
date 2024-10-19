@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+
 use crate::{
     analyzer::types::functions::get_function_types, ASTNode, AnalyzeResult, CompileError,
-    Expression, Module, Node, Type, Value,
+    Expression, Module, Node, Path, Type, Value,
 };
 
-use super::{nodes::Variables, types::functions::ModuleTypes};
+use super::{nodes::IRModule, types::functions::ModuleTypes, variables::Variables};
 
 pub fn analyze(module: Module) -> AnalyzeResult<()> {
     println!("{:#?}", module);
@@ -11,12 +13,18 @@ pub fn analyze(module: Module) -> AnalyzeResult<()> {
     let types = get_function_types(&module)?;
     println!("{:#?}", types);
 
-    handle_module(module, &types)?;
+
+    let mut modules = HashMap::new();
+    handle_module(module, &types, &mut modules)?;
+    // println!("{:#?}", modules);
 
     todo!()
 }
 
-fn handle_module(module: Module, types: &ModuleTypes) -> AnalyzeResult<()> {
+fn handle_module(module: Module, types: &ModuleTypes, modules: &mut HashMap<String, IRModule>) -> AnalyzeResult<()> {
+    let ir_module = IRModule::new();
+
+
     for ast in module.body {
         match ast.node {
             Node::Function {
@@ -34,6 +42,8 @@ fn handle_module(module: Module, types: &ModuleTypes) -> AnalyzeResult<()> {
             _ => continue,
         }
     }
+
+
 
     return Ok(());
 }
