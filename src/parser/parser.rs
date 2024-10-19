@@ -99,11 +99,15 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, 
         let mut map: HashMap<&String, &bool> = HashMap::new();
         for (public, key) in &imports {
             match map.insert(key, public) {
-                Some(key) => return Err(CompileError::new(format!("{:?} is already imported", key), 0)),
+                Some(key) => {
+                    return Err(CompileError::new(
+                        format!("{:?} is already imported", key),
+                        0,
+                    ))
+                }
                 _ => continue,
             }
         }
-
     }
 
     return Ok((tree, imports));

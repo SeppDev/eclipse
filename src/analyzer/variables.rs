@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use crate::{AnalyzeResult, CompileError, Type};
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     pub mutable: bool,
     pub data_type: Option<Type>,
@@ -13,10 +12,12 @@ pub struct Variable {
 pub struct Variables {
     states: Vec<Vec<String>>,
     variables: HashMap<String, Variable>,
+    parameters: Parameters,
 }
 impl Variables {
-    pub fn new() -> Self {
+    pub fn new(parameters: Vec<(String, Type)>) -> Self {
         Self {
+            parameters: Parameters::new(parameters),
             states: Vec::new(),
             variables: HashMap::new(),
         }
@@ -56,9 +57,19 @@ impl Variables {
             self.variables.remove(&key);
         }
     }
-    pub fn get(&self, key: &String) -> AnalyzeResult<&Variable> {
+    pub fn get(&self, key: &String) -> AnalyzeResult<Variable> {
+        match self.parameters.get(key) {
+            Some(t) => {
+                let variable = Variable {
+                    mutable: false,
+                    data_type: Some(t.clone()),
+                };
+                return Ok(variable);
+            }
+            None => {}
+        }
         return match self.variables.get(key) {
-            Some(var) => Ok(var),
+            Some(var) => Ok(var.clone()),
             None => return Err(CompileError::new(format!("{:?} is not defined", key), 0)),
         };
     }
@@ -67,5 +78,23 @@ impl Variables {
         variable.data_type = Some(new_type);
 
         return Ok(());
+    }
+}
+
+#[derive(Debug)]
+struct Parameters {
+    values: HashMap<String, Type>,
+}
+impl Parameters {
+    pub fn new(parameters: Vec<(String, Type)>) -> Self {
+        let mut map = HashMap::new();
+        for (key, data_type) in parameters {
+            map.insert(key, data_type);
+        }
+
+        Self { values: map }
+    }
+    pub fn get(&self, name: &String) -> Option<&Type> {
+        return self.values.get(name);
     }
 }

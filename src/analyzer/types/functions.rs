@@ -13,10 +13,10 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
             (export.clone(), types),
         );
     }
-
+    
+    #[allow(unused)]
     for ast in &module.body {
         match &ast.node {
-            #[allow(unused)]
             Node::Function {
                 export,
                 is_unsafe,
@@ -28,7 +28,7 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
             } => {
                 let function = Function {
                     parameters: parameters.clone(),
-                    return_type: return_type.clone(),
+                    return_type: return_type.clone()
                 };
                 module_types
                     .functions
@@ -60,13 +60,21 @@ pub struct ModuleTypes {
 }
 impl ModuleTypes {
     pub fn get_type(&self, path: Path) -> AnalyzeResult<()> {
+        match path.location.last() {
+            Some(last) => {},
+            None => {
+
+            }
+        }
 
         todo!()
     }
 }
 
+
 #[derive(Debug)]
 pub struct Function {
+    // pub f_unsafe: bool
     pub parameters: Vec<(String, Type)>,
     pub return_type: Option<Type>,
 }
