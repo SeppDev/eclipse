@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::parser::{Path, Type, Value};
 
 #[derive(Debug)]
@@ -32,11 +34,13 @@ pub struct Function {
 }
 
 pub struct IRModule {
+    pub submodules: HashMap<String, (bool, IRModule)>,
     pub body: Vec<Function>
 }
 impl IRModule {
     pub fn new() -> Self {
         Self {
+            submodules: HashMap::new(),
             body: Vec::new()
         }
     }

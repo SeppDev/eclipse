@@ -23,8 +23,9 @@ pub fn analyze(module: Module) -> AnalyzeResult<()> {
 fn handle_module(
     module: Module,
     types: &ModuleTypes,
-    modules: &mut HashMap<String, IRModule>,
-) -> AnalyzeResult<()> {
+) -> AnalyzeResult<IRModule> {
+    let mut ir_module = IRModule::new();
+    63
     for ast in module.body {
         match ast.node {
             Node::Function {
@@ -43,7 +44,14 @@ fn handle_module(
         }
     }
 
-    return Ok(());
+    for (name, ) in module.submodules {
+        submodules.push(handle_module(submodule, types)?);
+    }
+
+    return Ok(IRModule {
+        submodules,
+        body: functions
+    });
 }
 
 fn handle_scope(
@@ -80,6 +88,7 @@ fn handle_scope(
                 // return Err(CompileError::new(format!("Wrong type {:?}", name), ast.lines.start))
                 // };
             }
+            
             Node::DefineVariable {
                 mutable,
                 name,
@@ -102,7 +111,8 @@ fn handle_scope(
                     None => continue,
                 };
 
-                todo!()
+                todo!();
+                break;
                 // handle_expression(types, variables, parameters, return_type, &true, expr)?;
             }
             _ => continue,
