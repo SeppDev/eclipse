@@ -33,6 +33,7 @@ pub struct Function {
     pub body: Vec<IRNode>,
 }
 
+#[derive(Debug)]
 pub struct IRModule {
     pub submodules: HashMap<String, (bool, IRModule)>,
     pub body: Vec<Function>

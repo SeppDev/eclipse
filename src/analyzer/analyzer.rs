@@ -13,19 +13,17 @@ pub fn analyze(module: Module) -> AnalyzeResult<()> {
     let types = get_function_types(&module)?;
     println!("{:#?}", types);
 
-    let mut modules = HashMap::new();
-    handle_module(module, &types, &mut modules)?;
+    // let mut modules = HashMap::new();
+    let main = handle_module(module, &types)?;
     // println!("{:#?}", modules);
+    println!("{:#?}", main);
 
     todo!()
 }
 
-fn handle_module(
-    module: Module,
-    types: &ModuleTypes,
-) -> AnalyzeResult<IRModule> {
+fn handle_module(module: Module, types: &ModuleTypes) -> AnalyzeResult<IRModule> {
     let mut ir_module = IRModule::new();
-    63
+
     for ast in module.body {
         match ast.node {
             Node::Function {
@@ -44,14 +42,13 @@ fn handle_module(
         }
     }
 
-    for (name, ) in module.submodules {
-        submodules.push(handle_module(submodule, types)?);
+    for (name, (export, submodule)) in module.submodules {
+        ir_module
+            .submodules
+            .insert(name, handle_module(submodule, types)?);
     }
 
-    return Ok(IRModule {
-        submodules,
-        body: functions
-    });
+    return Ok(ir_module);
 }
 
 fn handle_scope(
@@ -64,9 +61,7 @@ fn handle_scope(
 
     for ast in body {
         match ast.node {
-            Node::Scope { is_unsafe, body } => {
-                handle_scope(types, variables, return_type, body)?
-            }
+            Node::Scope { is_unsafe, body } => handle_scope(types, variables, return_type, body)?,
             Node::SetVariable(name, expression) => {
                 let variable = variables.get(&name)?;
                 if variable.mutable == false {
@@ -88,7 +83,7 @@ fn handle_scope(
                 // return Err(CompileError::new(format!("Wrong type {:?}", name), ast.lines.start))
                 // };
             }
-            
+
             Node::DefineVariable {
                 mutable,
                 name,
