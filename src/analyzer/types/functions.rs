@@ -1,20 +1,20 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Components};
 
-use crate::{AnalyzeResult, Module, Node, Path, Type};
+use crate::{AnalyzeResult, ASTModule, Node, Path, Type};
 
-pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
-    let mut module_types = ModuleTypes::default();
+pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
+    let mut function_types = FunctionTypes::default();
 
     for (name, (export, submodule)) in &module.submodules {
         let types = get_function_types(submodule)?;
 
-        module_types.submodules.insert(
+        function_types.submodules.insert(
             name.clone(),
             (export.clone(), types),
         );
     }
     
-    #[allow(unused)]
+
     for ast in &module.body {
         match &ast.node {
             Node::Function {
@@ -30,7 +30,7 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
                     parameters: parameters.clone(),
                     return_type: return_type.clone()
                 };
-                module_types
+                function_types
                     .functions
                     .insert(name.clone(), (export.clone(), function));
             }
@@ -50,21 +50,19 @@ pub fn get_function_types(module: &Module) -> AnalyzeResult<ModuleTypes> {
         }
     }
 
-    return Ok(module_types);
+    return Ok(function_types);
 }
 
 #[derive(Debug, Default)]
-pub struct ModuleTypes {
-    pub submodules: HashMap<String, (bool, ModuleTypes)>,
+pub struct FunctionTypes {
+    pub submodules: HashMap<String, (bool, FunctionTypes)>,
     pub functions: HashMap<String, (bool, Function)>,
 }
-impl ModuleTypes {
-    pub fn get_type(&self, path: Path) -> AnalyzeResult<()> {
-        match path.location.last() {
-            Some(last) => {},
-            None => {
+impl FunctionTypes {
+    pub fn get_function(&self, at: &Path, to: Path) -> AnalyzeResult<Option<Type>> {
+        // super, root
+        for name in &at.components {
 
-            }
         }
 
         todo!()

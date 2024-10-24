@@ -7,7 +7,6 @@ mod lexer;
 mod parser;
 mod analyzer;
 mod codegen;
-mod builder;
 
 pub static FILE_EXTENSION: &str = "ecl";
 
@@ -52,8 +51,8 @@ pub fn execute(command: String) -> Result<String, String> {
 }
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
-    let main = Module::new(&project_path, &PathBuf::from("src/main"))?;
-    let program = analyze(main)?;
+    let main = ASTModule::new(&project_path, &PathBuf::from("src/main"))?;
+    analyze(main)?;
     
     // println!("{:#?}", main);
 

@@ -9,6 +9,7 @@ use super::{
     expression::parse_expected_expression,
     node::{ASTNode, Node, Path},
     path::parse_path,
+    Expression,
 };
 
 pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult<ASTNode> {
@@ -29,15 +30,20 @@ pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult
         }
         Token::DoubleColon => {
             let path = parse_path(tokens, string)?;
-            let _info = expect_tokens(tokens, vec![Token::OpenParen])?;
-            let arguments = parse_arguments(tokens)?;
 
-            tokens.create_ast(Node::Call(path, arguments))
+            expect_tokens(tokens, vec![Token::OpenParen])?;
+
+            let arguments = parse_arguments(tokens)?;
+            let expression = Node::Expression(Expression::Call(path, arguments));
+
+            tokens.create_ast(expression)
         }
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
+            let path = Path::from(string);
+            let expression = Node::Expression(Expression::Call(path, arguments));
 
-            tokens.create_ast(Node::Call(Path::new(string), arguments))
+            tokens.create_ast(expression)
         }
         _ => panic!(),
     };

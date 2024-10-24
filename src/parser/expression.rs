@@ -26,17 +26,19 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
         Token::Identifier(name) => {
             let extend = peek_expect_tokens(tokens, vec![Token::DoubleColon], true)?;
             let path = if extend.is_none() {
-                Path::new(name)
+                Path::from(name)
             } else {
                 parse_path(tokens, name)?
             };
 
             let info = peek_expect_tokens(tokens, vec![Token::OpenParen], true)?;
             if info.is_none() {
-                if path.location.len() > 0 {
+                if path.components.len() > 0 {
                     todo!()
                 }
-                Some(Expression::GetVariable(path.root))
+                Some(Expression::GetVariable(
+                    path.components.first().unwrap().clone(),
+                ))
             } else {
                 let arguments = parse_arguments(tokens)?;
                 Some(Expression::Call(path, arguments))

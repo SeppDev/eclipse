@@ -71,7 +71,6 @@ pub enum Operator {
     Division,
 }
 
-#[allow(unused)]
 #[derive(Debug)]
 pub enum Expression {
     Value(Value),
@@ -83,11 +82,12 @@ pub enum Expression {
 
 #[derive(Debug)]
 pub enum Node {
-    Call(Path, Vec<Expression>),
-    Return(Option<Expression>),
-    Use(bool, Path),
+    // Use(bool, Path),
     // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
+    // Loop(Vec<ASTNode>),
+    Expression(Expression),
     SetVariable(String, Expression),
+    Return(Option<Expression>),
     Struct {
         export: bool,
         name: String,
@@ -99,10 +99,6 @@ pub enum Node {
         name: String,
         generics: Option<Vec<String>>,
         body: Vec<(String, Option<Type>)>,
-    },
-    Loop {
-        // condition
-        body: Vec<ASTNode>,
     },
     Scope {
         is_unsafe: bool,
@@ -125,7 +121,7 @@ pub enum Node {
     },
 }
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub struct ASTNode {
     pub indent: usize,
@@ -144,55 +140,43 @@ impl ASTNode {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Path {
-    pub root: String,
-    pub location: Vec<String>,
+    pub components: Vec<String>,
 }
-
-#[allow(unused)]
 impl Path {
-    pub fn new(root: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            root,
-            location: Vec::new(),
+            components: Vec::new(),
         }
     }
+    pub fn from(root: String) -> Self {
+        let mut path = Self::new();
+        path.add(root);
+        return path;
+    }
+
     pub fn add(&mut self, name: String) {
-        self.location.push(name)
+        self.components.push(name)
     }
     pub fn push(&mut self, path: &Self) {
-        self.location.push(path.root.clone());
-        for path in &path.location {
-            self.location.push(path.clone());
+        for path in &path.components {
+            self.components.push(path.clone());
         }
-    }
-    pub fn name(&self) -> &String {
-        return match self.location.last() {
-            Some(a) => a,
-            None => &self.root,
-        };
     }
     pub fn to_pathbuf(&self) -> PathBuf {
         let mut buf = PathBuf::new();
-        buf.push(&self.root);
-        for p in &self.location {
+        for p in &self.components {
             buf.push(p);
         }
         return buf;
     }
-    pub fn normalize(path: &PathBuf) -> Self {
-        let mut components = path.components();
-        let mut p = Path::new(String::from(
-            components.next().unwrap().as_os_str().to_str().unwrap(),
-        ));
+    pub fn from_pathbuf(path: &PathBuf) -> Self {
+        let components = path.components();
+        let mut path = Path::new();
 
-        loop {
-            let cmp = match components.next() {
-                Some(a) => a,
-                None => break,
-            };
-            p.add(String::from(cmp.as_os_str().to_str().unwrap()));
+        for component in components.into_iter() {
+            path.add(String::from(component.as_os_str().to_str().unwrap()));
         }
 
-        return p;
+        return path;
     }
 }

@@ -1,9 +1,9 @@
-use crate::{AnalyzeResult, CompileError, Expression, Type, Value};
+use crate::{AnalyzeResult, Expression, Type, Value};
 
-use super::{types::functions::ModuleTypes, variables::Variables};
+use super::{types::functions::FunctionTypes, variables::Variables};
 
 pub fn define_variable(
-    types: &ModuleTypes,
+    types: &FunctionTypes,
     variables: &Variables,
     expression: Expression,
 ) -> AnalyzeResult<Type> {
@@ -22,7 +22,11 @@ pub fn define_variable(
             Value::Boolean(_) => return Ok(Type::Base(Boolean)),
             v => todo!("{:#?}", v),
         },
-        e => todo!("{:?}", e),
+        Expression::Call(path, arguments) => {
+
+            todo!()
+        }
+        e => todo!("{:#?}", e),
     }
 }
 

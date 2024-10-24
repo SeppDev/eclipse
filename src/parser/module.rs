@@ -27,11 +27,11 @@ fn find_path(project_path: &PathBuf, paths: [String; 2]) -> Option<PathBuf> {
 }
 
 #[derive(Debug)]
-pub struct Module {
-    pub submodules: HashMap<String, (bool, Module)>,
+pub struct ASTModule {
+    pub submodules: HashMap<String, (bool, ASTModule)>,
     pub body: Vec<ASTNode>,
 }
-impl Module {
+impl ASTModule {
     pub fn new(project_path: &PathBuf, relative_path: &PathBuf) -> ParseResult<Self> {
         let file_name = &relative_path
             .file_stem()
@@ -50,7 +50,7 @@ impl Module {
             relative_path.to_str().unwrap() == "src/main" || file_name == "mod"
         };
 
-        let file_path = project_path.join(&relative_path);
+        let file_path = project_path.join(&relative_path); 
         let source = read_file(&file_path.with_extension(FILE_EXTENSION));
 
         let tokens = tokenize(source);
