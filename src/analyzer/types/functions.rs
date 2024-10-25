@@ -61,9 +61,17 @@ pub struct FunctionTypes {
 impl FunctionTypes {
     pub fn get_function(&self, at: &Path, to: Path) -> AnalyzeResult<Option<Type>> {
         // super, root
-        for name in &at.components {
+        let mut new_path = at.clone();
 
+        for name in at.components.clone() {
+            if name == "super" {
+                new_path.components.pop();
+            } else {
+                new_path.add(name);
+            }
         }
+
+        println!("{:?}", new_path);
 
         todo!()
     }
@@ -74,5 +82,5 @@ impl FunctionTypes {
 pub struct Function {
     // pub f_unsafe: bool
     pub parameters: Vec<(String, Type)>,
-    pub return_type: Option<Type>,
+    pub return_type: Type,
 }

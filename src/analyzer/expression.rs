@@ -1,6 +1,6 @@
 use crate::{AnalyzeResult, Expression, Type, Value};
 
-use super::{types::functions::FunctionTypes, variables::Variables};
+use super::{types::FunctionTypes, variables::Variables};
 
 pub fn define_variable(
     types: &FunctionTypes,

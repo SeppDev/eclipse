@@ -1,1 +1,3 @@
-pub mod functions;
+mod functions;
+
+pub use functions::*;

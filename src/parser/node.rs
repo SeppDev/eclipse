@@ -2,6 +2,8 @@ use std::{ops::Range, path::PathBuf};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
+    Void,
+
     Int64,
     UInt64,
 
@@ -110,7 +112,7 @@ pub enum Node {
         name: String,
         generics: Vec<String>,
         parameters: Vec<(String, Type)>,
-        return_type: Option<Type>,
+        return_type: Type,
         body: Vec<ASTNode>,
     },
     DefineVariable {
@@ -153,7 +155,9 @@ impl Path {
         path.add(root);
         return path;
     }
-
+    pub fn join(&self, seperator: String) -> String {
+        self.components.join(&seperator)
+    }
     pub fn add(&mut self, name: String) {
         self.components.push(name)
     }

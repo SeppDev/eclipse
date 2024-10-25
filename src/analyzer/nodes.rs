@@ -1,15 +1,25 @@
 use std::collections::HashMap;
 
-use crate::parser::{Path, Type, Value};
+use crate::parser::{Type, Value};
 
 #[derive(Debug)]
 pub struct Program {}
 
 #[derive(Debug)]
 pub enum IRExpression {
-    Value(Value),
+    Value(Type, Value),
     DefineVariable(Type, String),
-    GetVariable(Path),
+    GetVariable(Type, String),
+}
+impl IRExpression {
+    pub fn parse_type(&self) -> Type {
+        return match self {
+            IRExpression::Value(t, _) => t,
+            IRExpression::GetVariable(t, _) => t,
+            IRExpression::DefineVariable(t, _) => t,
+        }
+        .clone();
+    }
 }
 
 #[derive(Debug)]
@@ -21,7 +31,7 @@ pub enum IRNode {
     },
     DefineVariable {
         name: String,
-        data_type: Type,
+        // data_type: Type,
         expression: IRExpression,
     },
 }
@@ -29,21 +39,17 @@ pub enum IRNode {
 #[derive(Debug)]
 pub struct Function {
     pub parameters: Vec<(String, Type)>,
-    pub return_type: Option<Type>,
+    pub return_type: Type,
     pub nodes: Vec<IRNode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct IRModule {
     pub submodules: HashMap<String, (bool, IRModule)>,
-    pub body: Vec<Function>
+    pub body: HashMap<String, Function>,
 }
 impl IRModule {
     pub fn new() -> Self {
-        Self {
-            submodules: HashMap::new(),
-            body: Vec::new()
-        }
+        Self::default()
     }
 }
-

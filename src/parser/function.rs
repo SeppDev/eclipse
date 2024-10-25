@@ -41,9 +41,9 @@ pub fn parse_function(
         }
     }
 
-    let mut return_type: Option<Type> = None;
+    let mut return_type: Type = Type::Base(super::BaseType::Void);
     if peek_expect_tokens(tokens, vec![Token::Colon], true)?.is_some() {
-        return_type = Some(parse_type(tokens)?);
+        return_type = parse_type(tokens)?;
     }
 
     expect_tokens(tokens, vec![Token::StartScope])?;

@@ -1,6 +1,7 @@
 use std::{io::Read, path::PathBuf, process::exit};
 
 use analyzer::analyze;
+use codegen::generate;
 use parser::*;
 
 mod lexer;
@@ -52,8 +53,9 @@ pub fn execute(command: String) -> Result<String, String> {
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
     let main = ASTModule::new(&project_path, &PathBuf::from("src/main"))?;
-    analyze(main)?;
-    
+    let (module, types) = analyze(main)?;
+    generate(module, types);
+
     // println!("{:#?}", main);
 
     todo!()
