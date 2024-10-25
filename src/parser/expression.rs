@@ -33,7 +33,7 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
 
             let info = peek_expect_tokens(tokens, vec![Token::OpenParen], true)?;
             if info.is_none() {
-                if path.components.len() > 0 {
+                if path.components.len() > 1 {
                     todo!()
                 }
                 Some(Expression::GetVariable(

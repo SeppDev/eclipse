@@ -30,7 +30,7 @@ pub enum IRNode {
 pub struct Function {
     pub parameters: Vec<(String, Type)>,
     pub return_type: Option<Type>,
-    pub body: Vec<IRNode>,
+    pub nodes: Vec<IRNode>,
 }
 
 #[derive(Debug)]
