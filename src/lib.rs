@@ -53,8 +53,8 @@ pub fn execute(command: String) -> Result<String, String> {
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
     let main = ASTModule::new(&project_path, &PathBuf::from("src/main"))?;
-    let (module, types) = analyze(main)?;
-    generate(module, types);
+    analyze(main)?;
+    // generate(module, types);
 
     // println!("{:#?}", main);
 

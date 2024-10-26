@@ -1,29 +1,31 @@
 use std::collections::HashMap;
 
 use crate::{
-    analyzer::nodes::Function, ASTModule, ASTNode, AnalyzeResult, Expression, Node, Path, Type,
+    analyzer::nodes::IRFunction, ASTModule, ASTNode, AnalyzeResult, Expression, Node, Path, Type,
     Value,
 };
 
 use super::{
-    nodes::{IRExpression, IRModule, IRNode}, types::{get_function_types, FunctionTypes}, variables::Variables
+    nodes::{IRExpression, IRNode}, types::{get_function_types, FunctionTypes}, variables::Variables
 };
 
-pub fn analyze(module: ASTModule) -> AnalyzeResult<(IRModule, FunctionTypes)> {
+pub fn analyze(module: ASTModule) -> AnalyzeResult<()> {
     let types = get_function_types(&module)?;
 
     let main_path = Path::from(String::from("main"));
-    let main = handle_module(module, &types, main_path)?;
+    let mut modules = HashMap::new();
+    handle_module(&mut modules, module, &types, main_path)?;
 
-    return Ok((main, types));
+    panic!("{:#?}", modules);
+    // return Ok();
 }
 
 fn handle_module(
+    modules: &mut HashMap<Path, HashMap<String, IRFunction>>,
     module: ASTModule,
     types: &FunctionTypes,
     current_path: Path,
-) -> AnalyzeResult<IRModule> {
-    let mut submodules: HashMap<String, (bool, IRModule)> = HashMap::new();
+) -> AnalyzeResult<()> {
     let mut functions = HashMap::new();
 
     for node in module.body {
@@ -43,7 +45,7 @@ fn handle_module(
 
                 assert!(returned == return_type);
 
-                let function = Function {
+                let function = IRFunction {
                     parameters,
                     return_type,
                     nodes,
@@ -54,18 +56,17 @@ fn handle_module(
         }
     }
 
-    for (name, (export, ast_module)) in module.submodules {
-        let mut sub_path = current_path.clone();
-        sub_path.add(name.clone());
+    // for (name, (export, ast_module)) in module.submodules {
+    //     let mut sub_path = current_path.clone();
+    //     sub_path.add(name.clone());
 
-        let ir_module = handle_module(ast_module, types, sub_path)?;
-        submodules.insert(name, (export, ir_module));
-    }
+    //     let ir_module = handle_module(ast_module, types, sub_path)?;
+    //     submodules.insert(name, (export, ir_module));
+    // }
 
-    return Ok(IRModule {
-        submodules,
-        body: functions,
-    });
+    modules.insert(current_path, functions);
+    return Ok(())
+
 }
 
 fn handle_scope(

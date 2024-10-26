@@ -37,19 +37,19 @@ pub enum IRNode {
 }
 
 #[derive(Debug)]
-pub struct Function {
+pub struct IRFunction {
     pub parameters: Vec<(String, Type)>,
     pub return_type: Type,
     pub nodes: Vec<IRNode>,
 }
 
-#[derive(Debug, Default)]
-pub struct IRModule {
-    pub submodules: HashMap<String, (bool, IRModule)>,
-    pub body: HashMap<String, Function>,
-}
-impl IRModule {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
+// #[derive(Debug, Default)]
+// pub struct IRModule {
+//     pub submodules: HashMap<String, IRModule>,
+//     pub body: HashMap<String, IRFunction>,
+// }
+// impl IRModule {
+//     pub fn new() -> Self {
+//         Self::default()
+//     }
+// }
