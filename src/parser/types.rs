@@ -40,8 +40,10 @@ pub fn parse_type(tokens: &mut TokensGroup) -> ParseResult<Type> {
         "u16" => Type::Base(BaseType::UInt16),
         "i8" => Type::Base(BaseType::Int8),
         "u8" => Type::Base(BaseType::UInt8),
-        "f64" => Type::Base(BaseType::Float64),
+        "f16" => Type::Base(BaseType::Float16),
         "f32" => Type::Base(BaseType::Float32),
+        "f64" => Type::Base(BaseType::Float64),
+        "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
         a => Type::Custom(a.to_string()),
     });

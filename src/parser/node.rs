@@ -1,4 +1,4 @@
-use std::{ops::Range, path::PathBuf};
+use std::{fmt, ops::Range, path::PathBuf};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
@@ -18,8 +18,10 @@ pub enum BaseType {
 
     Boolean,
 
-    Float64,
+    Float16,
     Float32,
+    Float64,
+    Float128
     // Intsize,
     // UIntsize,
 }
@@ -144,6 +146,12 @@ impl ASTNode {
 pub struct Path {
     pub components: Vec<String>,
 }
+impl std::fmt::Display for Path {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.components.join("/"))
+    }
+}
+
 impl Path {
     pub fn new() -> Self {
         Self {

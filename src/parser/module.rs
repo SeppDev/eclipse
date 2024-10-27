@@ -12,7 +12,7 @@ fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
 }
 
-fn find_path(project_path: &PathBuf, paths: [String; 2]) -> Option<PathBuf> {
+fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
     let mut found_path = None;
     for p in paths {
         let file_path = clean_path(project_path.join(&p));
@@ -73,7 +73,10 @@ impl ASTModule {
             let full_relative_path = project_path.join(&parent);
 
             // TODO better error handling
-            let found_path = find_path(&full_relative_path, paths).unwrap();
+            let found_path = match find_path(&full_relative_path, &paths) {
+                Some(p) => p,
+                None => return Err(CompileError::new(format!("Failed to find {:#?}", paths), 0))
+            };
             let module = Self::new(project_path, &parent.join(&found_path))?;
 
             submodules.insert(import, (export, module));

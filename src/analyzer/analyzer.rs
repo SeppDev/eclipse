@@ -6,22 +6,24 @@ use crate::{
 };
 
 use super::{
-    nodes::{IRExpression, IRNode}, types::{get_function_types, FunctionTypes}, variables::Variables
+    nodes::{IRExpression, IRNode},
+    types::{get_function_types, FunctionTypes},
+    variables::Variables,
+    IRModule, IRProgram,
 };
 
-pub fn analyze(module: ASTModule) -> AnalyzeResult<()> {
+pub fn analyze(module: ASTModule) -> AnalyzeResult<IRProgram> {
     let types = get_function_types(&module)?;
 
     let main_path = Path::from(String::from("main"));
     let mut modules = HashMap::new();
     handle_module(&mut modules, module, &types, main_path)?;
 
-    panic!("{:#?}", modules);
-    // return Ok();
+    return Ok(IRProgram { modules, types });
 }
 
 fn handle_module(
-    modules: &mut HashMap<Path, HashMap<String, IRFunction>>,
+    modules: &mut HashMap<Path, IRModule>,
     module: ASTModule,
     types: &FunctionTypes,
     current_path: Path,
@@ -41,7 +43,7 @@ fn handle_module(
             } => {
                 let mut variables = Variables::new(parameters.clone());
                 let (nodes, returned) =
-                    handle_scope(types, &mut variables, &Some(return_type.clone()), body)?;
+                    handle_scope(&current_path, types, &mut variables, &Some(return_type.clone()), body)?;
 
                 assert!(returned == return_type);
 
@@ -56,20 +58,19 @@ fn handle_module(
         }
     }
 
-    // for (name, (export, ast_module)) in module.submodules {
-    //     let mut sub_path = current_path.clone();
-    //     sub_path.add(name.clone());
+    for (name, (_, ast_module)) in module.submodules {
+        let mut sub_path = current_path.clone();
+        sub_path.add(name.clone());
 
-    //     let ir_module = handle_module(ast_module, types, sub_path)?;
-    //     submodules.insert(name, (export, ir_module));
-    // }
+        handle_module(modules, ast_module, types, sub_path)?;
+    }
 
-    modules.insert(current_path, functions);
-    return Ok(())
-
+    modules.insert(current_path, IRModule { functions });
+    return Ok(());
 }
 
 fn handle_scope(
+    current_path: &Path,
     types: &FunctionTypes,
     variables: &mut Variables,
     return_type: &Option<Type>,
@@ -88,21 +89,21 @@ fn handle_scope(
                 data_type,
                 expression,
             } => {
-                let expression =
-                    handle_expression(types, variables, &data_type, expression.unwrap())?;
+                let (expression, expr_type) =
+                    handle_expression(types, variables, &data_type, expression.unwrap(), current_path)?;
 
-                variables.insert(
-                    name.clone(),
-                    mutable,
-                    Some(expression.parse_type()),
-                )?;
-                IRNode::DefineVariable { name, expression }
+                variables.insert(name.clone(), mutable, data_type.clone())?;
+                IRNode::DefineVariable {
+                    name,
+                    expression,
+                    data_type: expr_type,
+                }
             }
             Node::Return(expression) => {
                 let ir = match expression {
                     Some(expr) => {
-                        let expression = handle_expression(types, variables, return_type, expr)?;
-                        returned = expression.parse_type();
+                        let (expression, expr_type) = handle_expression(types, variables, return_type, expr, current_path)?;
+                        returned = expr_type;
                         IRNode::Return(Some(expression))
                     }
                     None => IRNode::Return(None),
@@ -124,7 +125,8 @@ fn handle_expression(
     variables: &mut Variables,
     return_type: &Option<Type>,
     expression: Expression,
-) -> AnalyzeResult<IRExpression> {
+    current_path: &Path
+) -> AnalyzeResult<(IRExpression, Type)> {
     return match expression {
         Expression::GetVariable(name) => {
             let var = variables.get(&name)?;
@@ -134,25 +136,30 @@ fn handle_expression(
                     &var.data_type, return_type
                 );
             }
-            Ok(IRExpression::GetVariable(
+            Ok((
+                IRExpression::GetVariable(name),
                 var.data_type.clone().unwrap(),
-                name,
             ))
         }
         Expression::Value(value) => match value {
             Value::Integer(signed, integer) => match return_type {
-                Some(t) => {
-                    let c = t.clone();
-                    assert!(c.is_integer());
-                    Ok(IRExpression::Value(c, value))
-                }
-                None => Ok(IRExpression::Value(
-                    Type::Base(crate::BaseType::Int32),
-                    value,
-                )),
+                Some(t) => Ok((IRExpression::Value(value), t.clone())),
+                None => Ok((IRExpression::Value(value), Type::Base(crate::BaseType::Int32))),
             },
+            Value::Float(_) => match return_type {
+                Some(t) => Ok((IRExpression::Value(value), t.clone())),
+                None => Ok((IRExpression::Value(value), Type::Base(crate::BaseType::Float64))),
+            }
             _ => todo!(),
         },
+        Expression::Call(relative_path, arguments) => {
+            let (full_path, function) = types.get_function(current_path, relative_path)?;
+            match return_type {
+                Some(t) => assert!(t == &function.return_type),
+                None => {}
+            }
+            Ok((IRExpression::Call(full_path, Vec::new()), function.return_type.clone()))
+        }
         _ => todo!(),
     };
 }

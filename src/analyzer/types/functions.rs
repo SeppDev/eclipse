@@ -1,6 +1,6 @@
-use std::{collections::HashMap, path::Components};
+use std::collections::HashMap;
 
-use crate::{AnalyzeResult, ASTModule, Node, Path, Type};
+use crate::{ASTModule, AnalyzeResult, Node, Path, Type};
 
 pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
     let mut function_types = FunctionTypes::default();
@@ -8,12 +8,10 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
     for (name, (export, submodule)) in &module.submodules {
         let types = get_function_types(submodule)?;
 
-        function_types.submodules.insert(
-            name.clone(),
-            (export.clone(), types),
-        );
+        function_types
+            .submodules
+            .insert(name.clone(), (export.clone(), types));
     }
-    
 
     for ast in &module.body {
         match &ast.node {
@@ -28,7 +26,7 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
             } => {
                 let function = Function {
                     parameters: parameters.clone(),
-                    return_type: return_type.clone()
+                    return_type: return_type.clone(),
                 };
                 function_types
                     .functions
@@ -55,15 +53,16 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
 
 #[derive(Debug, Default)]
 pub struct FunctionTypes {
-    pub submodules: HashMap<String, (bool, FunctionTypes)>,
-    pub functions: HashMap<String, (bool, Function)>,
+    submodules: HashMap<String, (bool, FunctionTypes)>,
+    functions: HashMap<String, (bool, Function)>,
 }
 impl FunctionTypes {
-    pub fn get_function(&self, at: &Path, to: Path) -> AnalyzeResult<Option<Type>> {
+    pub fn get_function(&self, relative: &Path, to: Path) -> AnalyzeResult<(Path, Function)> {
         // super, root
-        let mut new_path = at.clone();
+        let mut new_path = relative.clone();
+        let mut components = to.components.clone();
 
-        for name in at.components.clone() {
+        for name in components {
             if name == "super" {
                 new_path.components.pop();
             } else {
@@ -71,14 +70,33 @@ impl FunctionTypes {
             }
         }
 
-        println!("{:?}", new_path);
+        let mut find_path = new_path.clone().components;
+        find_path.reverse();
+        find_path.pop();
+        let name = find_path.pop().unwrap();
 
-        todo!()
+        let types = self.get_relative_function(&mut find_path, &new_path);
+        let (_, function) = types.functions.get(&name).unwrap();
+
+        return Ok((new_path, function.clone()))
     }
-} 
 
+    fn get_relative_function(&self, path: &mut Vec<String>, full_path: &Path) -> &FunctionTypes {
+        match path.pop() {
+            Some(a) => {
+                let (_, types) = match self.submodules.get(&a) {
+                    Some(a) => a,
+                    None => panic!("Could not find {}", full_path),
+                };
 
-#[derive(Debug)]
+                return types.get_relative_function(path, full_path);
+            },
+            None => return self
+        };
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Function {
     // pub f_unsafe: bool
     pub parameters: Vec<(String, Type)>,

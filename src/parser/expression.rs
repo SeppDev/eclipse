@@ -23,6 +23,13 @@ pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expressi
             };
             Some(Expression::Value(Value::Integer(false, integer)))
         }
+        Token::Float(value) => {
+            let float = match value.parse::<f64>() {
+                Ok(int) => int,
+                Err(_) => panic!(),
+            };
+            Some(Expression::Value(Value::Float(float)))
+        }
         Token::Identifier(name) => {
             let extend = peek_expect_tokens(tokens, vec![Token::DoubleColon], true)?;
             let path = if extend.is_none() {
