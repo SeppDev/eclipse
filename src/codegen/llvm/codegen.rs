@@ -22,14 +22,11 @@ fn handle_module(builder: &mut Builder, path: Path, module: IRModule) {
             function_path = String::from("main");
         }
         builder.pushln(format!(
-            "define {} @{}() local_unnamed_addr #0 {{",
+            "define {} @{}() local_unnamed_addr #0 {{\nentry:\n",
             convert_type(&function.return_type),
             function_path
         ));
-        if function_path == String::from("main") {
-            builder.pushln_str("entry:");
-        }
-
+        
         handle_scope(builder, function.nodes, &function.return_type);
         builder.pushln(format!("}}"));
     }

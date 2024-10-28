@@ -1,4 +1,4 @@
-use std::{fmt, ops::Range, path::PathBuf};
+use std::{fmt, ops::Range};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
@@ -6,13 +6,10 @@ pub enum BaseType {
 
     Int64,
     UInt64,
-
     Int32,
     UInt32,
-
     Int16,
     UInt16,
-
     Int8,
     UInt8,
 
@@ -169,26 +166,26 @@ impl Path {
     pub fn add(&mut self, name: String) {
         self.components.push(name)
     }
-    pub fn push(&mut self, path: &Self) {
-        for path in &path.components {
-            self.components.push(path.clone());
-        }
-    }
-    pub fn to_pathbuf(&self) -> PathBuf {
-        let mut buf = PathBuf::new();
-        for p in &self.components {
-            buf.push(p);
-        }
-        return buf;
-    }
-    pub fn from_pathbuf(path: &PathBuf) -> Self {
-        let components = path.components();
-        let mut path = Path::new();
+    // pub fn push(&mut self, path: &Self) {
+    //     for path in &path.components {
+    //         self.components.push(path.clone());
+    //     }
+    // }
+    // pub fn to_pathbuf(&self) -> PathBuf {
+    //     let mut buf = PathBuf::new();
+    //     for p in &self.components {
+    //         buf.push(p);
+    //     }
+    //     return buf;
+    // }
+    // pub fn from_pathbuf(path: &PathBuf) -> Self {
+    //     let components = path.components();
+    //     let mut path = Path::new();
 
-        for component in components.into_iter() {
-            path.add(String::from(component.as_os_str().to_str().unwrap()));
-        }
+    //     for component in components.into_iter() {
+    //         path.add(String::from(component.as_os_str().to_str().unwrap()));
+    //     }
 
-        return path;
-    }
+    //     return path;
+    // }
 }

@@ -4,6 +4,7 @@ use crate::{AnalyzeResult, CompileError, Type};
 
 #[derive(Debug, Clone)]
 pub struct Variable {
+    pub name: String,
     pub mutable: bool,
     pub data_type: Option<Type>,
 }
@@ -30,6 +31,11 @@ impl Variables {
     ) -> AnalyzeResult<()> {
         let current_state = self.states.last_mut().unwrap();
 
+        match self.parameters.get(&key) {
+            Some(_) => panic!("Duplicate key found '{}'", key),
+            None => {}
+        }
+
         let result = self
             .variables
             .insert(key.clone(), Variable { mutable, data_type });
@@ -37,7 +43,7 @@ impl Variables {
         match result {
             Some(_) => {
                 return Err(CompileError::new(
-                    format!("{:?} is already defined", key.clone()),
+                    format!("{:?} is already defined", key),
                     0,
                 ))
             }

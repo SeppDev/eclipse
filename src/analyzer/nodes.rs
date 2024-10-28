@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use crate::{parser::{Type, Value}, Path};
 
-use super::FunctionTypes;
-
-#[derive(Debug)]
-pub struct Program {}
+use super::ModuleTypes;
 
 #[derive(Debug)]
 pub enum IRExpression {
@@ -16,11 +13,11 @@ pub enum IRExpression {
 
 #[derive(Debug)]
 pub enum IRNode {
+    // Scope {
+    //     is_unsafe: bool,
+    //     body: Vec<IRNode>,
+    // },
     Return(Option<IRExpression>),
-    Scope {
-        is_unsafe: bool,
-        body: Vec<IRNode>,
-    },
     DefineVariable {
         name: String,
         data_type: Type,
@@ -43,7 +40,7 @@ pub struct IRModule {
 #[derive(Debug)]
 pub struct IRProgram {
     pub modules: HashMap<Path, IRModule>,
-    pub types: FunctionTypes,
+    pub types: ModuleTypes,
 }
 impl IRProgram {
     pub fn get_function(&self, path: Path) {
@@ -53,14 +50,3 @@ impl IRProgram {
 
     }
 }
-
-// #[derive(Debug, Default)]
-// pub struct IRModule {
-//     pub submodules: HashMap<String, IRModule>,
-//     pub body: HashMap<String, IRFunction>,
-// }
-// impl IRModule {
-//     pub fn new() -> Self {
-//         Self::default()
-//     }
-// }

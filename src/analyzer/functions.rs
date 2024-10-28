@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use crate::{ASTModule, AnalyzeResult, Node, Path, Type};
 
-pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
-    let mut function_types = FunctionTypes::default();
+pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<ModuleTypes> {
+    let mut function_types = ModuleTypes::default();
 
     for (name, (export, submodule)) in &module.submodules {
         let types = get_function_types(submodule)?;
 
         function_types
             .submodules
-            .insert(name.clone(), (export.clone(), types));
+            .insert(name.clone(), types);
     }
 
     for ast in &module.body {
@@ -30,7 +30,7 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
                 };
                 function_types
                     .functions
-                    .insert(name.clone(), (export.clone(), function));
+                    .insert(name.clone(), function);
             }
             Node::Struct {
                 export,
@@ -51,14 +51,26 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<FunctionTypes> {
     return Ok(function_types);
 }
 
-#[derive(Debug, Default)]
-pub struct FunctionTypes {
-    submodules: HashMap<String, (bool, FunctionTypes)>,
-    functions: HashMap<String, (bool, Function)>,
+#[derive(Debug, Clone)]
+pub struct Function {
+    // pub f_unsafe: bool
+    pub parameters: Vec<(String, Type)>,
+    pub return_type: Type,
 }
-impl FunctionTypes {
+#[derive(Debug)]
+pub enum Types {
+    Enum,
+    Struct
+}
+
+#[derive(Debug, Default)]
+pub struct ModuleTypes {
+    submodules: HashMap<String, ModuleTypes>,
+    types: HashMap<String, Type>,
+    functions: HashMap<String, Function>,
+}
+impl ModuleTypes {
     pub fn get_function(&self, relative: &Path, to: Path) -> AnalyzeResult<(Path, Function)> {
-        // super, root
         let mut new_path = relative.clone();
         let mut components = to.components.clone();
 
@@ -76,15 +88,15 @@ impl FunctionTypes {
         let name = find_path.pop().unwrap();
 
         let types = self.get_relative_function(&mut find_path, &new_path);
-        let (_, function) = types.functions.get(&name).unwrap();
+        let function = types.functions.get(&name).unwrap();
 
         return Ok((new_path, function.clone()))
     }
 
-    fn get_relative_function(&self, path: &mut Vec<String>, full_path: &Path) -> &FunctionTypes {
+    fn get_relative_function(&self, path: &mut Vec<String>, full_path: &Path) -> &ModuleTypes {
         match path.pop() {
             Some(a) => {
-                let (_, types) = match self.submodules.get(&a) {
+                let types = match self.submodules.get(&a) {
                     Some(a) => a,
                     None => panic!("Could not find {}", full_path),
                 };
@@ -96,9 +108,3 @@ impl FunctionTypes {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Function {
-    // pub f_unsafe: bool
-    pub parameters: Vec<(String, Type)>,
-    pub return_type: Type,
-}
