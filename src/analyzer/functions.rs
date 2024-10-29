@@ -2,15 +2,18 @@ use std::collections::HashMap;
 
 use crate::{ASTModule, AnalyzeResult, Node, Path, Type};
 
-pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<ModuleTypes> {
-    let mut function_types = ModuleTypes::default();
+use super::variables::RandomString;
+
+pub fn get_function_types(
+    module: &ASTModule,
+    random: &mut RandomString,
+) -> AnalyzeResult<ModuleTypes> {
+    let mut function_types = ModuleTypes::new();
 
     for (name, (export, submodule)) in &module.submodules {
-        let types = get_function_types(submodule)?;
+        let types = get_function_types(submodule, random)?;
 
-        function_types
-            .submodules
-            .insert(name.clone(), types);
+        function_types.submodules.insert(name.clone(), types);
     }
 
     for ast in &module.body {
@@ -24,13 +27,18 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<ModuleTypes> {
                 return_type,
                 body,
             } => {
+                let fname = if module.name == "main" && name == "main" {
+                    String::from("main")
+                } else {
+                    random.generate(20)
+                };
+
                 let function = Function {
+                    name: fname,
                     parameters: parameters.clone(),
                     return_type: return_type.clone(),
                 };
-                function_types
-                    .functions
-                    .insert(name.clone(), function);
+                function_types.functions.insert(name.clone(), function);
             }
             Node::Struct {
                 export,
@@ -54,57 +62,81 @@ pub fn get_function_types(module: &ASTModule) -> AnalyzeResult<ModuleTypes> {
 #[derive(Debug, Clone)]
 pub struct Function {
     // pub f_unsafe: bool
+    pub name: String,
     pub parameters: Vec<(String, Type)>,
     pub return_type: Type,
 }
 #[derive(Debug)]
 pub enum Types {
     Enum,
-    Struct
+    Struct,
 }
 
 #[derive(Debug, Default)]
 pub struct ModuleTypes {
-    submodules: HashMap<String, ModuleTypes>,
     types: HashMap<String, Type>,
+    submodules: HashMap<String, ModuleTypes>,
     functions: HashMap<String, Function>,
 }
 impl ModuleTypes {
-    pub fn get_function(&self, relative: &Path, to: Path) -> AnalyzeResult<(Path, Function)> {
-        let mut new_path = relative.clone();
-        let mut components = to.components.clone();
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn get_function(
+        &self,
+        relative: &Path,
+        to: Path,
+        name: &String,
+    ) -> AnalyzeResult<&Function> {
+        let mut new_path = convert_path(relative, to);
+        new_path.components.reverse();
 
-        for name in components {
-            if name == "super" {
-                new_path.components.pop();
-            } else {
-                new_path.add(name);
-            }
+        let mt = match self.get_relative_submodule(&mut new_path.components) {
+            Some(mt) => mt,
+            None => panic!("Failed to find {}/{}", new_path, name),
+        };
+
+        match mt.functions.get(name) {
+            Some(f) => Ok(f),
+            None => todo!(),
         }
+    }
+    pub fn get_type(&self, relative: &Path, to: Path, name: &String) -> AnalyzeResult<&Type> {
+        let mut new_path = convert_path(relative, to);
+        new_path.components.reverse();
 
-        let mut find_path = new_path.clone().components;
-        find_path.reverse();
-        find_path.pop();
-        let name = find_path.pop().unwrap();
+        let mt = match self.get_relative_submodule(&mut new_path.components) {
+            Some(mt) => mt,
+            None => panic!("Failed to find {}/{}", new_path, name),
+        };
 
-        let types = self.get_relative_function(&mut find_path, &new_path);
-        let function = types.functions.get(&name).unwrap();
-
-        return Ok((new_path, function.clone()))
+        match mt.types.get(name) {
+            Some(t) => Ok(t),
+            None => todo!(),
+        }
     }
 
-    fn get_relative_function(&self, path: &mut Vec<String>, full_path: &Path) -> &ModuleTypes {
-        match path.pop() {
-            Some(a) => {
-                let types = match self.submodules.get(&a) {
-                    Some(a) => a,
-                    None => panic!("Could not find {}", full_path),
-                };
-
-                return types.get_relative_function(path, full_path);
+    fn get_relative_submodule(&self, to: &mut Vec<String>) -> Option<&ModuleTypes> {
+        match to.pop() {
+            Some(key) => match self.submodules.get(&key) {
+                Some(mt) => mt.get_relative_submodule(to),
+                None => None,
             },
-            None => return self
-        };
+            None => Some(self),
+        }
     }
 }
 
+fn convert_path(relative: &Path, to: Path) -> Path {
+    let mut new_path = relative.clone();
+
+    for key in &to.components {
+        if key == "super" {
+            new_path.components.pop();
+        } else {
+            new_path.add(key.clone());
+        }
+    }
+
+    return new_path;
+}

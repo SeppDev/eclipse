@@ -1,34 +1,25 @@
 use crate::{
     analyzer::{IRExpression, IRModule, IRNode, IRProgram},
     codegen::builder::Builder,
-    Path, Type,
+    Type,
 };
 
 pub fn generate(program: IRProgram, builder: &mut Builder) {
-    for (path, module) in program.modules {
-        handle_module(builder, path, module);
+    for module in program.modules {
+        handle_module(builder, module);
     }
 }
 
-fn handle_module(builder: &mut Builder, path: Path, module: IRModule) {
-    let module_path = path.join(String::from("."));
-
-    for (name, function) in module.functions {
-        let mut function_path = module_path.clone();
-        function_path.push_str(format!(".{}", name).as_str());
-
-
-        if function_path == String::from("main.main") {
-            function_path = String::from("main");
-        }
+fn handle_module(builder: &mut Builder, module: IRModule) {
+    for function in module.functions {
         builder.pushln(format!(
             "define {} @{}() local_unnamed_addr #0 {{\nentry:\n",
             convert_type(&function.return_type),
-            function_path
+            function.name
         ));
-        
+
         handle_scope(builder, function.nodes, &function.return_type);
-        builder.pushln(format!("}}"));
+        builder.pushln(format!("}}\n"));
     }
 }
 
@@ -55,7 +46,6 @@ fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
                 builder.push_str("\tret ");
                 handle_return(builder, expression, return_type);
             }
-            _ => {}
         }
         builder.next_line();
     }
@@ -71,14 +61,14 @@ fn define_variable(builder: &mut Builder, expression: IRExpression, var_type: &T
             Value::Integer(signed, value) => {
                 builder.push(format!("add {} {}, 0", expr_type, value))
             }
-            Value::Float(value) => {
-                builder.push(format!("fadd {} {}, 0.0", expr_type, value))
-            }
+            Value::Float(value) => builder.push(format!("fadd {} {}, 0.0", expr_type, value)),
             _ => {}
         },
-        IRExpression::Call(path, arguments) => {
-            builder.push(format!("call {} @{}()", expr_type, path.join(".".to_string())))
-        }
+        IRExpression::Call(name, arguments) => builder.push(format!(
+            "call {} @{}()",
+            expr_type,
+            name
+        )),
         _ => todo!(),
     }
 }
@@ -112,6 +102,7 @@ fn convert_type(data_type: &Type) -> String {
             BaseType::Float32 => "float",
             BaseType::Float64 => "double",
             BaseType::Float128 => "fp128",
+            BaseType::Void => "void",
             _ => todo!(),
         }
         .to_string(),

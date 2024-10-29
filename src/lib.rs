@@ -53,7 +53,7 @@ pub fn execute(command: String) -> Result<String, String> {
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
     let main = ASTModule::new(&project_path, &PathBuf::from("src/main"))?;
-    let executable_path =builder::codegen(&project_path, analyze(main)?, builder::Mode::LLVM);
+    let executable_path = builder::codegen(&project_path, analyze(main)?, builder::Mode::LLVM);
 
     return Ok(executable_path);
 }

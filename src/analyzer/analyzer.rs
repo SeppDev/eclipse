@@ -1,33 +1,42 @@
-use std::collections::HashMap;
-
 use crate::{
-    analyzer::nodes::IRFunction, ASTModule, ASTNode, AnalyzeResult, Expression, Node, Path, Type,
-    Value,
+    analyzer::nodes::IRFunction, ASTModule, ASTNode, AnalyzeResult, BaseType, Expression, Node,
+    Path, Type, Value,
 };
 
 use super::{
-    get_function_types, nodes::{IRExpression, IRNode}, variables::Variables, ModuleTypes, IRModule, IRProgram
+    get_function_types,
+    nodes::{IRExpression, IRNode},
+    variables::{RandomString, Variables},
+    IRModule, IRProgram, ModuleTypes,
 };
 
 pub fn analyze(module: ASTModule) -> AnalyzeResult<IRProgram> {
-    let types = get_function_types(&module)?;
+    let mut random_string = RandomString::new();
+    let types = get_function_types(&module, &mut random_string)?;
 
-    let main_path = Path::from(String::from("main"));
-    let mut modules = HashMap::new();
-    handle_module(&mut modules, module, &types, main_path)?;
+    let mut modules = Vec::new();
+    handle_module(
+        &mut random_string,
+        &mut modules,
+        module,
+        &types,
+        Path::new(),
+    )?;
 
     return Ok(IRProgram { modules, types });
 }
 
 fn handle_module(
-    modules: &mut HashMap<Path, IRModule>,
+    random: &mut RandomString,
+    modules: &mut Vec<IRModule>,
     module: ASTModule,
     types: &ModuleTypes,
     current_path: Path,
 ) -> AnalyzeResult<()> {
-    let mut functions = HashMap::new();
+    let mut functions = Vec::new();
 
     for node in module.body {
+        #[allow(unused)]
         match node.node {
             Node::Function {
                 export,
@@ -38,15 +47,20 @@ fn handle_module(
                 return_type,
                 body,
             } => {
-                let mut variables = Variables::new(parameters.clone()); 
-                hanlde_scope(types, &current_path, nodes);
-       
-                // let function = IRFunction {
-                //     parameters,
-                //     return_type,
-                //     nodes,
-                // };
-                // functions.insert(name, function);
+                let mut variables = Variables::new(parameters.clone());
+                let fname = types
+                    .get_function(&Path::new(), current_path.clone(), &name)?
+                    .name
+                    .clone();
+                let nodes = handle_scope(types, &current_path, body, &return_type, &mut variables)?;
+
+                let function = IRFunction {
+                    name: fname,
+                    parameters,
+                    return_type,
+                    nodes,
+                };
+                functions.push(function);
             }
             _ => continue,
         }
@@ -54,15 +68,114 @@ fn handle_module(
 
     for (name, (_, ast_module)) in module.submodules {
         let mut sub_path = current_path.clone();
-        sub_path.add(name.clone());
+        sub_path.add(name);
 
-        handle_module(modules, ast_module, types, sub_path)?;
+        handle_module(random, modules, ast_module, types, sub_path)?;
     }
 
-    modules.insert(current_path, IRModule { functions });
+    modules.push(IRModule { functions });
     return Ok(());
 }
 
-fn hanlde_scope(types: &ModuleTypes, current_path: &Path, nodes: Vec<ASTNode>) {
+fn handle_scope(
+    types: &ModuleTypes,
+    current_path: &Path,
+    body: Vec<ASTNode>,
+    return_type: &Type,
+    variables: &mut Variables,
+) -> AnalyzeResult<Vec<IRNode>> {
+    variables.create_state();
+    let mut nodes = Vec::new();
 
+    for node in body {
+        let new_node: IRNode = match node.node {
+            Node::Return(expression) => match expression {
+                Some(expr) => {
+                    let (expression, _) = handle_expression(
+                        types,
+                        current_path,
+                        Some(return_type.clone()),
+                        variables,
+                        expr,
+                    )?;
+                    IRNode::Return(Some(expression))
+                }
+                None => {
+                    assert!(return_type.is_void());
+                    IRNode::Return(None)
+                }
+            },
+            Node::DefineVariable {
+                mutable,
+                name,
+                data_type,
+                expression,
+            } => {
+                variables.insert(name.clone(), mutable, data_type.clone())?;
+                
+                let (expression, var_type) = handle_expression(
+                    types,
+                    current_path,
+                    data_type,
+                    variables,
+                    expression.unwrap(),
+                )?;
+
+                IRNode::DefineVariable {
+                    name,
+                    data_type: var_type,
+                    expression: expression,
+                }
+            }
+            t => panic!("{:#?}", t),
+        };
+        nodes.push(new_node);
+    }
+
+    variables.pop_state();
+    return Ok(nodes);
+}
+
+fn handle_expression(
+    types: &ModuleTypes,
+    current_path: &Path,
+    return_type: Option<Type>,
+    variables: &Variables,
+    expression: Expression,
+) -> AnalyzeResult<(IRExpression, Type)> {
+    let (ir, data_type): (IRExpression, Type) = match expression {
+        Expression::Value(value) => {
+            let mut new_type = Type::Base(crate::BaseType::Void);
+            match value {
+                Value::Integer(_, _) => new_type = Type::Base(BaseType::Int32),
+                Value::Float(_) => new_type = Type::Base(BaseType::Float64),
+                _ => todo!(),
+            }
+
+            (IRExpression::Value(value), new_type)
+        }
+        Expression::Call(mut path, _arguments) => {
+            let name = path.components.pop().unwrap();
+            let function = types.get_function(current_path, path, &name)?;
+
+            (
+                IRExpression::Call(function.name.clone(), Vec::new()),
+                function.return_type.clone(),
+            )
+        }
+        Expression::GetVariable(name) => {
+            let variable = variables.get(&name)?;
+            let data_type = variable.clone().data_type.unwrap();
+
+            (IRExpression::GetVariable(name), data_type)
+        }
+        t => todo!("{:?}", t),
+    };
+
+    // match return_type {
+    //     Some(t) => assert!(t == data_type),
+    //     None => {}
+    // }
+
+    return Ok((ir, data_type));
 }

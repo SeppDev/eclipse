@@ -53,6 +53,15 @@ impl Type {
             _ => false,
         }
     }
+    pub fn is_void(&self) -> bool {
+        return match &self {
+            Self::Base(base) => match base {
+                BaseType::Void => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
 }
 
 

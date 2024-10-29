@@ -6,7 +6,6 @@ use super::llvm;
 
 pub fn codegen(project_dir: &PathBuf, program: IRProgram, mode: Mode) -> PathBuf {
     use std::fs;
-    panic!("{:#?}", program);
 
     let mut builder = Builder::new(mode.clone());
 
@@ -31,7 +30,10 @@ pub fn codegen(project_dir: &PathBuf, program: IRProgram, mode: Mode) -> PathBuf
             fs::write(&main_dir, builder.build()).unwrap();
             
 
-            execute(format!("clang -O3 {} -o {}/build.exe", &string_path, build_dir_path)).unwrap();
+            match execute(format!("clang -O3 {} -o {}/build.exe", &string_path, build_dir_path)) {
+                Ok(_) => {},
+                Err(error) => panic!("{}", error)
+            }
 
         },
     }

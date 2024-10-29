@@ -28,6 +28,7 @@ fn find_path(project_path: &PathBuf, paths: &[String; 2]) -> Option<PathBuf> {
 
 #[derive(Debug)]
 pub struct ASTModule {
+    pub name: String,
     pub submodules: HashMap<String, (bool, ASTModule)>,
     pub body: Vec<ASTNode>,
 }
@@ -83,6 +84,7 @@ impl ASTModule {
         }
 
         return Ok(Self {
+            name: file_name.clone(),
             body: nodes,
             submodules,
         });

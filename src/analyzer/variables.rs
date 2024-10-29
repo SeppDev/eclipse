@@ -2,6 +2,38 @@ use std::collections::HashMap;
 
 use crate::{AnalyzeResult, CompileError, Type};
 
+use super::Random;
+
+#[derive(Debug)]
+pub struct RandomString {
+    random: Random,
+    generated: HashMap<String, bool>
+}
+impl RandomString {
+    pub fn new() -> Self {
+        Self {
+            random: Random::new(),
+            generated: HashMap::new()
+        }
+    }
+    pub fn generate(&mut self, length: usize) -> String {
+        let mut numbers = Vec::new();
+        for _ in 0..length {
+            if self.random.bool() {
+                numbers.push(self.random.integer(97, 122) as u8);
+            } else {
+                numbers.push(self.random.integer(65, 90) as u8);
+            }
+        }
+
+        let value = String::from_utf8(numbers).unwrap();
+        match self.generated.insert(value.clone(), true) {
+            Some(_) => self.generate(length),
+            None => value,
+        }
+    } 
+}
+
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub name: String,
@@ -11,24 +43,44 @@ pub struct Variable {
 
 #[derive(Debug)]
 pub struct Variables {
+    random: RandomString,
+    generated: HashMap<String, bool>,
     states: Vec<Vec<String>>,
     variables: HashMap<String, Variable>,
-    parameters: Parameters,
+    parameters: HashMap<String, Variable>,
 }
 impl Variables {
     pub fn new(parameters: Vec<(String, Type)>) -> Self {
-        Self {
-            parameters: Parameters::new(parameters),
+        let mut vars = Self {
+            generated: HashMap::new(),
+            random: RandomString::new(),
+            parameters: HashMap::new(),
             states: Vec::new(),
             variables: HashMap::new(),
+        };
+
+        for (key, t) in parameters {
+            let name = vars.random.generate(15);
+            vars.parameters.insert(
+                key,
+                Variable {
+                    name,
+                    mutable: false,
+                    data_type: Some(t),
+                },
+            );
         }
+
+        return vars;
     }
+
     pub fn insert(
         &mut self,
         key: String,
         mutable: bool,
         data_type: Option<Type>,
     ) -> AnalyzeResult<()> {
+        let name = self.random.generate(15);
         let current_state = self.states.last_mut().unwrap();
 
         match self.parameters.get(&key) {
@@ -36,9 +88,14 @@ impl Variables {
             None => {}
         }
 
-        let result = self
-            .variables
-            .insert(key.clone(), Variable { mutable, data_type });
+        let result = self.variables.insert(
+            key.clone(),
+            Variable {
+                name,
+                mutable,
+                data_type,
+            },
+        );
 
         match result {
             Some(_) => {
@@ -63,20 +120,13 @@ impl Variables {
             self.variables.remove(&key);
         }
     }
-    pub fn get(&self, key: &String) -> AnalyzeResult<Variable> {
-        match self.parameters.get(key) {
-            Some(t) => {
-                let variable = Variable {
-                    mutable: false,
-                    data_type: Some(t.clone()),
-                };
-                return Ok(variable);
-            }
-            None => {}
-        }
-        return match self.variables.get(key) {
-            Some(var) => Ok(var.clone()),
-            None => return Err(CompileError::new(format!("{:?} is not defined", key), 0)),
+    pub fn get(&self, key: &String) -> AnalyzeResult<&Variable> {
+        return match self.parameters.get(key) {
+            Some(t) => Ok(t),
+            None => match self.variables.get(key) {
+                Some(var) => Ok(var),
+                None => return Err(CompileError::new(format!("{:?} is not defined", key), 0)),
+            },
         };
     }
     pub fn change_type(&mut self, key: &String, new_type: Type) -> AnalyzeResult<()> {
@@ -84,23 +134,5 @@ impl Variables {
         variable.data_type = Some(new_type);
 
         return Ok(());
-    }
-}
-
-#[derive(Debug)]
-struct Parameters {
-    values: HashMap<String, Type>,
-}
-impl Parameters {
-    pub fn new(parameters: Vec<(String, Type)>) -> Self {
-        let mut map = HashMap::new();
-        for (key, data_type) in parameters {
-            map.insert(key, data_type);
-        }
-
-        Self { values: map }
-    }
-    pub fn get(&self, name: &String) -> Option<&Type> {
-        return self.values.get(name);
     }
 }
