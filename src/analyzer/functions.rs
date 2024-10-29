@@ -30,7 +30,7 @@ pub fn get_function_types(
                 let fname = if module.name == "main" && name == "main" {
                     String::from("main")
                 } else {
-                    random.generate(20)
+                    random.generate(None)
                 };
 
                 let function = Function {

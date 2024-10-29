@@ -16,8 +16,14 @@ impl RandomString {
             generated: HashMap::new()
         }
     }
-    pub fn generate(&mut self, length: usize) -> String {
+    pub fn generate(&mut self, length: Option<i32>) -> String {
         let mut numbers = Vec::new();
+
+        let length = match length {
+            Some(l) => l,
+            None => self.random.integer(5, 30),
+        };
+
         for _ in 0..length {
             if self.random.bool() {
                 numbers.push(self.random.integer(97, 122) as u8);
@@ -28,7 +34,7 @@ impl RandomString {
 
         let value = String::from_utf8(numbers).unwrap();
         match self.generated.insert(value.clone(), true) {
-            Some(_) => self.generate(length),
+            Some(_) => self.generate(Some(length)),
             None => value,
         }
     } 
@@ -44,7 +50,6 @@ pub struct Variable {
 #[derive(Debug)]
 pub struct Variables {
     random: RandomString,
-    generated: HashMap<String, bool>,
     states: Vec<Vec<String>>,
     variables: HashMap<String, Variable>,
     parameters: HashMap<String, Variable>,
@@ -52,7 +57,6 @@ pub struct Variables {
 impl Variables {
     pub fn new(parameters: Vec<(String, Type)>) -> Self {
         let mut vars = Self {
-            generated: HashMap::new(),
             random: RandomString::new(),
             parameters: HashMap::new(),
             states: Vec::new(),
@@ -60,7 +64,7 @@ impl Variables {
         };
 
         for (key, t) in parameters {
-            let name = vars.random.generate(15);
+            let name = vars.random.generate(None);
             vars.parameters.insert(
                 key,
                 Variable {
@@ -79,8 +83,8 @@ impl Variables {
         key: String,
         mutable: bool,
         data_type: Option<Type>,
-    ) -> AnalyzeResult<()> {
-        let name = self.random.generate(15);
+    ) -> AnalyzeResult<&Variable> {
+        let new_name = self.random.generate(None);
         let current_state = self.states.last_mut().unwrap();
 
         match self.parameters.get(&key) {
@@ -91,7 +95,7 @@ impl Variables {
         let result = self.variables.insert(
             key.clone(),
             Variable {
-                name,
+                name: new_name,
                 mutable,
                 data_type,
             },
@@ -107,9 +111,9 @@ impl Variables {
             None => {}
         }
 
-        current_state.push(key);
+        current_state.push(key.clone());
 
-        return Ok(());
+        return Ok(self.variables.get(&key).unwrap());
     }
     pub fn create_state(&mut self) {
         self.states.push(Vec::new());

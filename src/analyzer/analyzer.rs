@@ -111,18 +111,17 @@ fn handle_scope(
                 data_type,
                 expression,
             } => {
-                variables.insert(name.clone(), mutable, data_type.clone())?;
-                
                 let (expression, var_type) = handle_expression(
                     types,
                     current_path,
-                    data_type,
+                    data_type.clone(),
                     variables,
                     expression.unwrap(),
                 )?;
+                let variable = variables.insert(name.clone(), mutable, data_type)?;
 
                 IRNode::DefineVariable {
-                    name,
+                    name: variable.name.clone(),
                     data_type: var_type,
                     expression: expression,
                 }
@@ -167,7 +166,7 @@ fn handle_expression(
             let variable = variables.get(&name)?;
             let data_type = variable.clone().data_type.unwrap();
 
-            (IRExpression::GetVariable(name), data_type)
+            (IRExpression::GetVariable(variable.name.clone()), data_type)
         }
         t => todo!("{:?}", t),
     };
