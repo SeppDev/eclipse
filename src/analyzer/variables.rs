@@ -7,22 +7,20 @@ use super::Random;
 #[derive(Debug)]
 pub struct RandomString {
     random: Random,
-    generated: HashMap<String, bool>
+    generated: HashMap<String, bool>,
 }
 impl RandomString {
     pub fn new() -> Self {
         Self {
             random: Random::new(),
-            generated: HashMap::new()
+            generated: HashMap::new(),
         }
     }
-    pub fn generate(&mut self, length: Option<i32>) -> String {
+    pub fn generate(&mut self) -> String {
+        self.g(6)
+    }
+    fn g(&mut self, length: u32) -> String {
         let mut numbers = Vec::new();
-
-        let length = match length {
-            Some(l) => l,
-            None => self.random.integer(5, 30),
-        };
 
         for _ in 0..length {
             if self.random.bool() {
@@ -34,10 +32,10 @@ impl RandomString {
 
         let value = String::from_utf8(numbers).unwrap();
         match self.generated.insert(value.clone(), true) {
-            Some(_) => self.generate(Some(length)),
+            Some(_) => self.g(length + 1),
             None => value,
         }
-    } 
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -64,7 +62,7 @@ impl Variables {
         };
 
         for (key, t) in parameters {
-            let name = vars.random.generate(None);
+            let name = vars.random.generate();
             vars.parameters.insert(
                 key,
                 Variable {
@@ -84,7 +82,7 @@ impl Variables {
         mutable: bool,
         data_type: Option<Type>,
     ) -> AnalyzeResult<&Variable> {
-        let new_name = self.random.generate(None);
+        let new_name = self.random.generate();
         let current_state = self.states.last_mut().unwrap();
 
         match self.parameters.get(&key) {
