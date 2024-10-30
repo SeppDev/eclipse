@@ -45,6 +45,9 @@ fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
 
                 builder.push_str("\tret ");
                 handle_return(builder, expression, return_type);
+            },
+            IRNode::Expression(expression, data_type) => {
+                handle_return(builder, expression, &data_type);
             }
         }
         builder.next_line();
@@ -85,6 +88,11 @@ fn handle_return(builder: &mut Builder, expression: IRExpression, return_type: &
             _ => {}
         },
         IRExpression::GetVariable(name) => builder.push(format!("{} %{}", expr_type, name)),
+        IRExpression::Call(name, arguments) => builder.push(format!(
+            "call {} @{}()",
+            expr_type,
+            name
+        )),
         _ => todo!(),
     }
 }

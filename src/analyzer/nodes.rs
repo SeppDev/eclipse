@@ -15,6 +15,7 @@ pub enum IRNode {
     //     is_unsafe: bool,
     //     body: Vec<IRNode>,
     // },
+    Expression(IRExpression, Type),
     Return(Option<IRExpression>),
     DefineVariable {
         name: String,

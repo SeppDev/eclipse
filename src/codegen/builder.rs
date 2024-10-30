@@ -32,7 +32,7 @@ pub fn codegen(project_dir: &PathBuf, program: IRProgram, mode: Mode) -> PathBuf
 
             match execute(format!("clang -O3 {} -o {}/build.exe", &string_path, build_dir_path)) {
                 Ok(_) => {},
-                Err(error) => panic!("{}", error)
+                Err(error) => println!("{}", error)
             }
 
         },
@@ -117,7 +117,7 @@ impl Builder {
 }
 
 fn build_llvm(builder: &Builder, body: &mut Body) {
-    body.pushln_str("target triple = \"x86_64-pc-windows-msvc19.40.33814\"");
+    body.pushln_str("target triple = \"x86_64-pc-windows-unkown\"\n");
 
     for (name, value) in &builder.constants {
         body.pushln(format!(

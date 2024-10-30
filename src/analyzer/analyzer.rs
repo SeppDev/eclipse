@@ -126,6 +126,10 @@ fn handle_scope(
                     expression: expression,
                 }
             }
+            Node::Expression(expression) => {
+                let (expression, data_type) = handle_expression(types, current_path, None, variables, expression)?;
+                IRNode::Expression(expression, data_type)
+            }
             t => panic!("{:#?}", t),
         };
         nodes.push(new_node);
@@ -144,18 +148,25 @@ fn handle_expression(
 ) -> AnalyzeResult<(IRExpression, Type)> {
     let (ir, data_type): (IRExpression, Type) = match expression {
         Expression::Value(value) => {
-            let mut new_type = Type::Base(crate::BaseType::Void);
-            match value {
-                Value::Integer(_, _) => new_type = Type::Base(BaseType::Int32),
-                Value::Float(_) => new_type = Type::Base(BaseType::Float64),
-                _ => todo!(),
-            }
+            let data_type = match return_type {
+                Some(t) => t,
+                None => match value {
+                    Value::Integer(_, _) => Type::Base(BaseType::Int32),
+                    Value::Float(_) => Type::Base(BaseType::Float64),
+                    _ => todo!(),
+                },
+            };
 
-            (IRExpression::Value(value), new_type)
+            (IRExpression::Value(value), data_type)
         }
         Expression::Call(mut path, _arguments) => {
             let name = path.components.pop().unwrap();
             let function = types.get_function(current_path, path, &name)?;
+
+            match return_type {
+                Some(t) => assert!(t == function.return_type),
+                None => {}
+            }
 
             (
                 IRExpression::Call(function.name.clone(), Vec::new()),
