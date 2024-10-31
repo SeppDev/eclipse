@@ -26,13 +26,9 @@ fn handle_module(builder: &mut Builder, module: IRModule) {
 fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
     for node in nodes {
         match node {
-            IRNode::DefineVariable {
-                name,
-                data_type,
-                expression,
-            } => {
-                builder.push(format!("\t%{} = ", name));
-                define_variable(builder, expression, &data_type);
+            IRNode::DefineVariable(name, data_type, expression) => {
+                let expression = handle_expression(builder, expression, &data_type, Some(&name));
+                builder.push(format!("\t%{} = {}", name, expression));
             }
             IRNode::Return(expression) => {
                 let expression = match expression {
@@ -43,58 +39,80 @@ fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
                     }
                 };
 
-                builder.push_str("\tret ");
-                handle_return(builder, expression, return_type);
-            },
+                let result_name = builder.random.generate();
+
+                let expression =
+                    handle_expression(builder, expression, &return_type, Some(&result_name));
+
+                builder.pushln(format!("\t%{} = {}", result_name, expression));
+                builder.pushln(format!("\tret {} %{}", convert_type(&return_type), result_name));
+            }
             IRNode::Expression(expression, data_type) => {
-                handle_return(builder, expression, &data_type);
+                let expression = handle_expression(builder, expression, &data_type, None);
+                builder.push(format!("{}", expression));
+            }
+            IRNode::SetVariable(name, data_type, expression) => {
+                let expr = handle_expression(builder, expression, &data_type, None);
+                builder.pushln(format!("\tstore {}, {}* %{}", expr, convert_type(&data_type), name));
             }
         }
         builder.next_line();
     }
 }
 
-fn define_variable(builder: &mut Builder, expression: IRExpression, var_type: &Type) {
+fn handle_expression(
+    builder: &mut Builder,
+    expression: IRExpression,
+    var_type: &Type,
+    declaration: Option<&String>,
+) -> String {
     use crate::parser::Value;
-
     let expr_type = convert_type(var_type);
+    let mut string = String::new();
 
     match expression {
         IRExpression::Value(value) => match value {
-            Value::Integer(signed, value) => {
-                builder.push(format!("add {} {}, 0", expr_type, value))
+            Value::Integer(_, value) => match declaration {
+                Some(name) => {
+                    string.push_str(format!("alloca {}\n", expr_type).as_str());
+                    string.push_str(
+                        format!("\tstore {} {}, {}* %{}", expr_type, value, expr_type, name)
+                            .as_str(),
+                    );
+                }
+                None => {
+                    string.push_str(format!("{} {}", expr_type, value).as_str());
+                }
+            },
+            _ => todo!(),
+        },
+        IRExpression::GetVariable(name) => match declaration {
+            Some(_) => {
+                string.push_str(format!("load {}, {}* %{}", expr_type, expr_type, name).as_str());
             }
-            Value::Float(value) => builder.push(format!("fadd {} {}, 0.0", expr_type, value)),
-            _ => {}
+            None => {
+                string.push_str(format!("{} %{}", expr_type, name).as_str());
+            }
         },
-        IRExpression::Call(name, arguments) => builder.push(format!(
-            "call {} @{}()",
-            expr_type,
-            name
-        )),
-        _ => todo!(),
-    }
-}
+        IRExpression::Call(name, arguments) => {
+            let mut args: Vec<String> = Vec::new();
 
-fn handle_return(builder: &mut Builder, expression: IRExpression, return_type: &Type) {
-    use crate::parser::Value;
+            for (argument, data_type) in arguments {
+                let result_name = builder.random.generate();
+                let s_type = convert_type(&data_type);
 
-    let expr_type = convert_type(return_type);
+                let expression =
+                    handle_expression(builder, argument, &data_type, Some(&result_name));
+                builder.pushln(format!("\t%{} = {}", result_name, expression));
+                args.push(format!("{} %{}", s_type, result_name));
+            }
 
-    match expression {
-        IRExpression::Value(value) => match value {
-            Value::Integer(_signed, value) => builder.push(format!("{} {}", expr_type, value)),
-            Value::Float(value) => builder.push(format!("{} {}", expr_type, value)),
-            _ => {}
-        },
-        IRExpression::GetVariable(name) => builder.push(format!("{} %{}", expr_type, name)),
-        IRExpression::Call(name, arguments) => builder.push(format!(
-            "call {} @{}()",
-            expr_type,
-            name
-        )),
-        _ => todo!(),
-    }
+            string
+                .push_str(format!("\tcall {} @{}({})", expr_type, name, args.join(", ")).as_str());
+        }
+    };
+
+    return string;
 }
 
 fn convert_type(data_type: &Type) -> String {

@@ -1,6 +1,6 @@
-use std::{io::Read, path::PathBuf, process::exit};
+use std::{io::Read, path::PathBuf, process::{exit, Output}};
 
-use analyzer::analyze;
+use analyzer::{analyze, RandomString};
 use codegen::builder;
 use parser::*;
 
@@ -32,7 +32,7 @@ pub fn read_file(path: &PathBuf) -> String {
     return buf;
 }
 
-pub fn execute(command: String) -> Result<String, String> {
+pub fn execute(command: String) -> Result<Output, String> {
     let cmd = match std::process::Command::new("cmd")
         .args(["/C", &command])
         .output()
@@ -41,19 +41,15 @@ pub fn execute(command: String) -> Result<String, String> {
         Err(a) => return Err(a.to_string()),
     };
 
-    if cmd.stderr.len() > 0 {
-        let mut result = command.clone();
-        result.push_str("\n");
-        result.push_str(String::from_utf8(cmd.stderr).unwrap().as_str());
-        return Err(result);
-    }
-
-    return Ok(String::from_utf8(cmd.stdout).unwrap());
+    return Ok(cmd)
 }
 
 pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
+    let mut random_string = RandomString::new();
+
     let main = ASTModule::new(&project_path, &PathBuf::from("src/main"))?;
-    let executable_path = builder::codegen(&project_path, analyze(main)?, builder::Mode::LLVM);
+    let program = analyze(main, &mut random_string)?;
+    let executable_path = builder::codegen(&project_path, program, builder::Mode::LLVM, random_string);
 
     return Ok(executable_path);
 }

@@ -1,14 +1,23 @@
 use std::collections::HashMap;
 
-use crate::{ASTModule, AnalyzeResult, Node, Path, Type};
+use crate::{ASTModule, AnalyzeResult, BaseType, Node, Path, Type};
 
-use super::variables::RandomString;
+use super::random::RandomString;
 
 pub fn get_function_types(
     module: &ASTModule,
     random: &mut RandomString,
 ) -> AnalyzeResult<ModuleTypes> {
     let mut function_types = ModuleTypes::new();
+
+    function_types.functions.insert(
+        String::from("print"),
+        Function {
+            name: String::from("print"),
+            parameters: vec![(String::from("a"), Type::Base(crate::BaseType::Int32))],
+            return_type: Type::Base(BaseType::Void),
+        },
+    );
 
     for (name, (export, submodule)) in &module.submodules {
         let types = get_function_types(submodule, random)?;

@@ -6,22 +6,15 @@ use crate::{
 use super::{
     get_function_types,
     nodes::{IRExpression, IRNode},
-    variables::{RandomString, Variables},
-    IRModule, IRProgram, ModuleTypes,
+    variables::Variables,
+    IRModule, IRProgram, ModuleTypes, RandomString,
 };
 
-pub fn analyze(module: ASTModule) -> AnalyzeResult<IRProgram> {
-    let mut random_string = RandomString::new();
-    let types = get_function_types(&module, &mut random_string)?;
+pub fn analyze(module: ASTModule, random_string: &mut RandomString) -> AnalyzeResult<IRProgram> {
+    let types = get_function_types(&module, random_string)?;
 
     let mut modules = Vec::new();
-    handle_module(
-        &mut random_string,
-        &mut modules,
-        module,
-        &types,
-        Path::new(),
-    )?;
+    handle_module(random_string, &mut modules, module, &types, Path::new())?;
 
     return Ok(IRProgram { modules, types });
 }
@@ -120,15 +113,30 @@ fn handle_scope(
                 )?;
                 let variable = variables.insert(name.clone(), mutable, data_type)?;
 
-                IRNode::DefineVariable {
-                    name: variable.name.clone(),
-                    data_type: var_type,
-                    expression: expression,
-                }
+                IRNode::DefineVariable(variable.name.clone(), var_type, expression)
             }
             Node::Expression(expression) => {
-                let (expression, data_type) = handle_expression(types, current_path, None, variables, expression)?;
+                let (expression, data_type) =
+                    handle_expression(types, current_path, None, variables, expression)?;
                 IRNode::Expression(expression, data_type)
+            }
+            Node::SetVariable(name, expression) => {
+                let variable = variables.get(&name)?;
+                let var_type = variable.data_type.clone();
+
+                let (irexpression, data_type) = handle_expression(
+                    types,
+                    current_path,
+                    var_type,
+                    variables,
+                    expression,
+                )?;
+                
+                // assert!(variable.mutable == true);
+                // if variable.data_type.is_none() {
+                    // variables.change_type(&name, data_type.clone())?;
+                // }
+                IRNode::SetVariable(variable.name.clone(), data_type, irexpression)
             }
             t => panic!("{:#?}", t),
         };
@@ -143,13 +151,23 @@ fn handle_expression(
     types: &ModuleTypes,
     current_path: &Path,
     return_type: Option<Type>,
-    variables: &Variables,
+    variables: &mut Variables,
     expression: Expression,
 ) -> AnalyzeResult<(IRExpression, Type)> {
     let (ir, data_type): (IRExpression, Type) = match expression {
         Expression::Value(value) => {
             let data_type = match return_type {
-                Some(t) => t,
+                Some(t) => match value {
+                    Value::Integer(_, _) => {
+                        assert!(t.is_integer());
+                        t
+                    }
+                    Value::Float(_) => {
+                        assert!(t.is_float());
+                        t
+                    }
+                    _ => todo!(),
+                },
                 None => match value {
                     Value::Integer(_, _) => Type::Base(BaseType::Int32),
                     Value::Float(_) => Type::Base(BaseType::Float64),
@@ -159,9 +177,25 @@ fn handle_expression(
 
             (IRExpression::Value(value), data_type)
         }
-        Expression::Call(mut path, _arguments) => {
+        Expression::Call(mut path, arguments) => {
             let name = path.components.pop().unwrap();
             let function = types.get_function(current_path, path, &name)?;
+            let mut args = Vec::new();
+
+            let mut used = 0;
+            for (i, arg) in arguments.into_iter().enumerate() {
+                let param = match function.parameters.get(i) {
+                    Some(param) => param,
+                    None => panic!("Too many arguments!"),
+                };
+
+                used += 1;
+                let a =
+                    handle_expression(types, current_path, Some(param.1.clone()), variables, arg)?;
+                assert!(a.1 == param.1);
+                args.push(a);
+            }
+            assert!(function.parameters.len() == used, "Too few arguments");
 
             match return_type {
                 Some(t) => assert!(t == function.return_type),
@@ -169,7 +203,7 @@ fn handle_expression(
             }
 
             (
-                IRExpression::Call(function.name.clone(), Vec::new()),
+                IRExpression::Call(function.name.clone(), args),
                 function.return_type.clone(),
             )
         }
@@ -181,11 +215,6 @@ fn handle_expression(
         }
         t => todo!("{:?}", t),
     };
-
-    // match return_type {
-    //     Some(t) => assert!(t == data_type),
-    //     None => {}
-    // }
 
     return Ok((ir, data_type));
 }

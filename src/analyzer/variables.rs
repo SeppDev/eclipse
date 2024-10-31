@@ -2,41 +2,7 @@ use std::collections::HashMap;
 
 use crate::{AnalyzeResult, CompileError, Type};
 
-use super::Random;
-
-#[derive(Debug)]
-pub struct RandomString {
-    random: Random,
-    generated: HashMap<String, bool>,
-}
-impl RandomString {
-    pub fn new() -> Self {
-        Self {
-            random: Random::new(),
-            generated: HashMap::new(),
-        }
-    }
-    pub fn generate(&mut self) -> String {
-        self.g(6)
-    }
-    fn g(&mut self, length: u32) -> String {
-        let mut numbers = Vec::new();
-
-        for _ in 0..length {
-            if self.random.bool() {
-                numbers.push(self.random.integer(97, 122) as u8);
-            } else {
-                numbers.push(self.random.integer(65, 90) as u8);
-            }
-        }
-
-        let value = String::from_utf8(numbers).unwrap();
-        match self.generated.insert(value.clone(), true) {
-            Some(_) => self.g(length + 1),
-            None => value,
-        }
-    }
-}
+use super::{Random, RandomString};
 
 #[derive(Debug, Clone)]
 pub struct Variable {

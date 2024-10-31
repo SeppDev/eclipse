@@ -79,6 +79,7 @@ fn main() {
             Err(error) => return println!("{:?}", error),
         };
     }
+
 }
 
 fn run(executable_path: PathBuf) {

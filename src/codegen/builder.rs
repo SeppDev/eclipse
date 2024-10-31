@@ -1,49 +1,62 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::{analyzer::IRProgram, execute};
+use crate::{
+    analyzer::{IRProgram, RandomString},
+    execute,
+};
 
 use super::llvm;
 
-pub fn codegen(project_dir: &PathBuf, program: IRProgram, mode: Mode) -> PathBuf {
+pub fn codegen(
+    project_dir: &PathBuf,
+    program: IRProgram,
+    mode: Mode,
+    random_string: RandomString,
+) -> PathBuf {
     use std::fs;
 
-    let mut builder = Builder::new(mode.clone());
+    let mut builder = Builder::new(mode.clone(), random_string);
 
     let mut build_dir = project_dir.clone();
     build_dir.push("build");
 
     // if build_dir.exists() {
-        // fs::remove_dir_all(&build_dir).unwrap();
+    // fs::remove_dir_all(&build_dir).unwrap();
     // }
     fs::create_dir_all(&build_dir).unwrap();
 
     let mut main_dir = build_dir.clone();
     main_dir.push("main.ll");
-    
+
     let string_path = main_dir.to_str().unwrap().to_string();
     let build_dir_path = build_dir.to_str().unwrap().to_string();
-    
+
     match mode {
         Mode::LLVM => {
             llvm::generate(program, &mut builder);
-            
+
             fs::write(&main_dir, builder.build()).unwrap();
-            
 
-            match execute(format!("clang -O3 {} -o {}/build.exe", &string_path, build_dir_path)) {
-                Ok(_) => {},
-                Err(error) => println!("{}", error)
+            let output = match execute(format!(
+                "clang -O3 {} -o {}/build.exe",
+                &string_path, build_dir_path
+            )) {
+                Ok(out) => out,
+                Err(error) => panic!("{}", error),
+            };
+
+            if output.status.success() == false {
+                println!("LLVM {}", output.status);
+                panic!("{}", String::from_utf8(output.stderr).unwrap());
             }
-
-        },
+        }
     }
 
-    return build_dir.join("build.exe")
+    return build_dir.join("build.exe");
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub enum Mode {
-    #[default]
     LLVM,
     // MLIR,
     // CraneLift,
@@ -69,17 +82,21 @@ impl Body {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Builder {
+    pub random: RandomString,
     mode: Mode,
     constants: HashMap<String, String>,
     body: String,
 }
 impl Builder {
-    pub fn new(mode: Mode) -> Self {
-        let mut s = Self::default();
-        s.mode = mode;
-        return s;
+    pub fn new(mode: Mode, random: RandomString) -> Self {
+        Self {
+            mode,
+            random,
+            constants: HashMap::new(),
+            body: String::new(),
+        }
     }
     pub fn build(&self) -> String {
         let mut body = Body::new();
@@ -118,6 +135,15 @@ impl Builder {
 
 fn build_llvm(builder: &Builder, body: &mut Body) {
     body.pushln_str("target triple = \"x86_64-pc-windows-unkown\"\n");
+    body.pushln_str("declare i32 @printf(i8*, ...)");
+    body.pushln_str("@.str = private constant [4 x i8] c\"%d\\0A\\00\"\n");
+
+    body.pushln_str("define void @print(i32 %a) local_unnamed_addr #0 {\nentry:");
+    body.pushln_str("\t%str_ptr = getelementptr [4 x i8], [4 x i8]* @.str, i32 0, i32 0");
+    // body.pushln_str("\t%.a = load i32, i32* %a");
+    body.pushln_str("\tcall i32 @printf(i8* %str_ptr, i32 %a)");
+    body.pushln_str("\tret void");
+    body.pushln_str("}");
 
     for (name, value) in &builder.constants {
         body.pushln(format!(

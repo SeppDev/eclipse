@@ -6,7 +6,7 @@ use super::ModuleTypes;
 pub enum IRExpression {
     Value(Value),
     GetVariable(String),
-    Call(String, Vec<IRExpression>),
+    Call(String, Vec<(IRExpression, Type)>),
 }
 
 #[derive(Debug)]
@@ -17,11 +17,8 @@ pub enum IRNode {
     // },
     Expression(IRExpression, Type),
     Return(Option<IRExpression>),
-    DefineVariable {
-        name: String,
-        data_type: Type,
-        expression: IRExpression,
-    },
+    SetVariable(String, Type, IRExpression),
+    DefineVariable(String, Type, IRExpression),
 }
 
 #[derive(Debug)]

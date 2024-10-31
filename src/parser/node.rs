@@ -37,6 +37,20 @@ impl BaseType {
             _ => false,
         }
     }
+    fn is_float(&self) -> bool {
+        use BaseType::*;
+        match &self {
+            Float16 | Float32 | Float64 | Float128 => true,
+            _ => false,
+        }
+    }
+    fn is_bool(&self) -> bool {
+        use BaseType::*;
+        match &self {
+            Boolean => true,
+            _ => false,
+        }
+    }
 }
 
 
@@ -50,6 +64,18 @@ impl Type {
     pub fn is_integer(&self) -> bool {
         match &self {
             Type::Base(base) => base.is_integer(),
+            _ => false,
+        }
+    }
+    pub fn is_float(&self) -> bool {
+        match &self {
+            Type::Base(base) => base.is_float(),
+            _ => false,
+        }
+    }
+    pub fn is_bool(&self) -> bool {
+        match &self {
+            Type::Base(base) => base.is_bool(),
             _ => false,
         }
     }
