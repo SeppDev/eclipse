@@ -31,6 +31,8 @@ pub fn codegen(
     let string_path = main_dir.to_str().unwrap().to_string();
     let build_dir_path = build_dir.to_str().unwrap().to_string();
 
+    // println!("Compiling using: {:?}", mode);
+
     match mode {
         Mode::LLVM => {
             llvm::generate(program, &mut builder);
@@ -51,6 +53,8 @@ pub fn codegen(
             }
         }
     }
+
+    // println!("Running\n");
 
     return build_dir.join("build.exe");
 }

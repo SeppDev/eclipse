@@ -4,6 +4,7 @@ use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
     process::{exit, Command, Stdio},
+    thread::Thread,
 };
 
 fn main() {
@@ -79,23 +80,44 @@ fn main() {
             Err(error) => return println!("{:?}", error),
         };
     }
-
 }
 
 fn run(executable_path: PathBuf) {
+    use std::io::BufRead;
+    use std::sync::mpsc::TryRecvError;
+    use std::thread;
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    thread::spawn(move || {
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            match rx.try_recv() {
+                Ok(_) | Err(TryRecvError::Disconnected) => break,
+                Err(TryRecvError::Empty) => {
+                    println!("Spawning thread is taking longer than 2 seconds");
+                    break;
+                }
+            }
+        }
+    });
+
     let mut thread = Command::new(executable_path)
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
 
+    let _ = tx.send(());
+
     let stdout = thread.stdout.as_mut().expect("Failed to open stdout");
     let reader = BufReader::new(stdout);
+
     for line in reader.lines() {
         match line {
             Ok(a) => println!("{}", a),
             Err(a) => println!("{:?}", a),
         }
     }
+
     thread.wait().unwrap();
 }
 

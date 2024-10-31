@@ -124,6 +124,7 @@ pub enum Node {
     Expression(Expression),
     SetVariable(String, Expression),
     Return(Option<Expression>),
+    Loop(Vec<ASTNode>),
     Struct {
         export: bool,
         name: String,

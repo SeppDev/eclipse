@@ -4,7 +4,6 @@ pub enum Token {
     #[default]
     None,
     EndOfFile,
-
     Function,
     StartScope,
     EndScope,

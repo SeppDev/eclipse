@@ -45,7 +45,21 @@ fn handle_module(
                     .get_function(&Path::new(), current_path.clone(), &name)?
                     .name
                     .clone();
-                let nodes = handle_scope(types, &current_path, body, &return_type, &mut variables)?;
+                let mut nodes =
+                    handle_scope(types, &current_path, body, &return_type, &mut variables)?;
+
+                match nodes.last() {
+                    Some(n) => {
+                        if !n.is_return() {
+                            assert!(return_type.is_void());
+                            nodes.push(IRNode::Return(None))
+                        }
+                    }
+                    None => {
+                        assert!(return_type.is_void());
+                        nodes.push(IRNode::Return(None))
+                    }
+                }
 
                 let function = IRFunction {
                     name: fname,
@@ -79,18 +93,26 @@ fn handle_scope(
 ) -> AnalyzeResult<Vec<IRNode>> {
     variables.create_state();
     let mut nodes = Vec::new();
-
+    
     for node in body {
         let new_node: IRNode = match node.node {
+            Node::Loop(nodes) => IRNode::Loop(handle_scope(
+                types,
+                current_path,
+                nodes,
+                return_type,
+                variables,
+            )?),
             Node::Return(expression) => match expression {
                 Some(expr) => {
-                    let (expression, _) = handle_expression(
+                    let (expression, data_type) = handle_expression(
                         types,
                         current_path,
                         Some(return_type.clone()),
                         variables,
                         expr,
                     )?;
+                    assert!(&data_type == return_type);
                     IRNode::Return(Some(expression))
                 }
                 None => {
@@ -111,7 +133,7 @@ fn handle_scope(
                     variables,
                     expression.unwrap(),
                 )?;
-                let variable = variables.insert(name.clone(), mutable, data_type)?;
+                let variable = variables.insert(name.clone(), mutable, var_type.clone())?;
 
                 IRNode::DefineVariable(variable.name.clone(), var_type, expression)
             }
@@ -122,24 +144,24 @@ fn handle_scope(
             }
             Node::SetVariable(name, expression) => {
                 let variable = variables.get(&name)?;
+                assert!(variable.mutable == true);
                 let var_type = variable.data_type.clone();
 
-                let (irexpression, data_type) = handle_expression(
-                    types,
-                    current_path,
-                    var_type,
-                    variables,
-                    expression,
-                )?;
-                
-                // assert!(variable.mutable == true);
+                let (irexpression, data_type) =
+                    handle_expression(types, current_path, Some(var_type), variables, expression)?;
+
                 // if variable.data_type.is_none() {
-                    // variables.change_type(&name, data_type.clone())?;
+                // variables.change_type(&name, data_type.clone())?;
                 // }
                 IRNode::SetVariable(variable.name.clone(), data_type, irexpression)
             }
             t => panic!("{:#?}", t),
         };
+
+        if new_node.is_return() {
+            nodes.push(new_node);
+            break;
+        }
         nodes.push(new_node);
     }
 
@@ -151,7 +173,7 @@ fn handle_expression(
     types: &ModuleTypes,
     current_path: &Path,
     return_type: Option<Type>,
-    variables: &mut Variables,
+    variables: &Variables,
     expression: Expression,
 ) -> AnalyzeResult<(IRExpression, Type)> {
     let (ir, data_type): (IRExpression, Type) = match expression {
@@ -209,7 +231,7 @@ fn handle_expression(
         }
         Expression::GetVariable(name) => {
             let variable = variables.get(&name)?;
-            let data_type = variable.clone().data_type.unwrap();
+            let data_type = variable.clone().data_type;
 
             (IRExpression::GetVariable(variable.name.clone()), data_type)
         }

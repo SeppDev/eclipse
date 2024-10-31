@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use crate::{AnalyzeResult, CompileError, Type};
 
-use super::{Random, RandomString};
+use super::RandomString;
 
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub name: String,
     pub mutable: bool,
-    pub data_type: Option<Type>,
+    pub data_type: Type,
 }
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl Variables {
                 Variable {
                     name,
                     mutable: false,
-                    data_type: Some(t),
+                    data_type: t,
                 },
             );
         }
@@ -46,7 +46,7 @@ impl Variables {
         &mut self,
         key: String,
         mutable: bool,
-        data_type: Option<Type>,
+        data_type: Type,
     ) -> AnalyzeResult<&Variable> {
         let new_name = self.random.generate();
         let current_state = self.states.last_mut().unwrap();
@@ -97,10 +97,10 @@ impl Variables {
             },
         };
     }
-    pub fn change_type(&mut self, key: &String, new_type: Type) -> AnalyzeResult<()> {
-        let variable = self.variables.get_mut(key).unwrap();
-        variable.data_type = Some(new_type);
+    // pub fn change_type(&mut self, key: &String, new_type: Type) -> AnalyzeResult<()> {
+    //     let variable = self.variables.get_mut(key).unwrap();
+    //     variable.data_type = Some(new_type);
 
-        return Ok(());
-    }
+    //     return Ok(());
+    // }
 }

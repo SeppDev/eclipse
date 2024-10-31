@@ -19,6 +19,16 @@ pub enum IRNode {
     Return(Option<IRExpression>),
     SetVariable(String, Type, IRExpression),
     DefineVariable(String, Type, IRExpression),
+    Loop(Vec<IRNode>),
+    // Break,
+}
+impl IRNode {
+    pub fn is_return(&self) -> bool {
+        match self {
+            Self::Return(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug)]

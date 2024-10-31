@@ -26,6 +26,14 @@ fn handle_module(builder: &mut Builder, module: IRModule) {
 fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
     for node in nodes {
         match node {
+            IRNode::Loop(nodes) => {
+                let break_label = builder.random.generate();
+                let loop_label = builder.random.generate();
+
+                builder.pushln(format!("{}:", loop_label));
+                handle_scope(builder, nodes, return_type);
+                builder.pushln(format!("{}:", break_label));
+            },
             IRNode::DefineVariable(name, data_type, expression) => {
                 let expression = handle_expression(builder, expression, &data_type, Some(&name));
                 builder.push(format!("\t%{} = {}", name, expression));

@@ -77,6 +77,12 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, 
             Token::Variable => parse_variable(tokens)?,
             Token::Struct => parse_struct(tokens)?,
             Token::Enum => parse_enum(tokens)?,
+            Token::Loop => {
+                expect_tokens(tokens, vec![Token::StartScope])?;
+                let (body, _) = parse(tokens)?;
+                expect_tokens(tokens, vec![Token::EndScope])?;
+                tokens.create_ast(Node::Loop(body))
+            }
             Token::Return => {
                 let expression = parse_expression(tokens)?;
                 tokens.create_ast(Node::Return(expression))
