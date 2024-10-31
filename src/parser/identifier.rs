@@ -9,7 +9,6 @@ use super::{
     expression::parse_expected_expression,
     node::{ASTNode, Node, Path},
     path::parse_path,
-    Expression,
 };
 
 pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult<ASTNode> {
@@ -34,14 +33,14 @@ pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult
             expect_tokens(tokens, vec![Token::OpenParen])?;
 
             let arguments = parse_arguments(tokens)?;
-            let expression = Node::Expression(Expression::Call(path, arguments));
+            let expression = Node::Call(path, arguments);
 
             tokens.create_ast(expression)
         }
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
             let path = Path::from(string);
-            let expression = Node::Expression(Expression::Call(path, arguments));
+            let expression = Node::Call(path, arguments);
 
             tokens.create_ast(expression)
         }

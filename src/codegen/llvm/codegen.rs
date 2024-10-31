@@ -1,6 +1,6 @@
 use crate::{
     analyzer::{IRExpression, IRModule, IRNode, IRProgram},
-    codegen::builder::Builder,
+    codegen::{builder::Builder, string::BetterString},
     Type,
 };
 
@@ -18,120 +18,139 @@ fn handle_module(builder: &mut Builder, module: IRModule) {
             function.name
         ));
 
-        handle_scope(builder, function.nodes, &function.return_type);
+        handle_scope(builder, function.nodes, &function.return_type, None);
         builder.pushln(format!("}}\n"));
     }
 }
 
-fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
-    for node in nodes {
-        match node {
-            IRNode::Loop(nodes) => {
-                let break_label = builder.random.generate();
-                let loop_label = builder.random.generate();
-
-                builder.pushln(format!("{}:", loop_label));
-                handle_scope(builder, nodes, return_type);
-                builder.pushln(format!("{}:", break_label));
-            },
-            IRNode::DefineVariable(name, data_type, expression) => {
-                let expression = handle_expression(builder, expression, &data_type, Some(&name));
-                builder.push(format!("\t%{} = {}", name, expression));
-            }
-            IRNode::Return(expression) => {
-                let expression = match expression {
-                    Some(expr) => expr,
-                    None => {
-                        builder.pushln_str("\tret void");
-                        continue;
-                    }
-                };
-
-                let result_name = builder.random.generate();
-
-                let expression =
-                    handle_expression(builder, expression, &return_type, Some(&result_name));
-
-                builder.pushln(format!("\t%{} = {}", result_name, expression));
-                builder.pushln(format!("\tret {} %{}", convert_type(&return_type), result_name));
-            }
-            IRNode::Expression(expression, data_type) => {
-                let expression = handle_expression(builder, expression, &data_type, None);
-                builder.push(format!("{}", expression));
-            }
-            IRNode::SetVariable(name, data_type, expression) => {
-                let expr = handle_expression(builder, expression, &data_type, None);
-                builder.pushln(format!("\tstore {}, {}* %{}", expr, convert_type(&data_type), name));
-            }
-        }
-        builder.next_line();
-    }
+fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type, break_label: Option<String>) {
+    
 }
 
-fn handle_expression(
-    builder: &mut Builder,
-    expression: IRExpression,
-    var_type: &Type,
-    declaration: Option<&String>,
-) -> String {
-    use crate::parser::Value;
-    let expr_type = convert_type(var_type);
-    let mut string = String::new();
+// fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
+//     for node in nodes {
+//         match node {
+//             IRNode::Loop(nodes) => {
+//                 let break_label = builder.random.generate();
+//                 let loop_label = builder.random.generate();
 
-    match expression {
-        IRExpression::Value(value) => match value {
-            Value::Integer(_, value) => match declaration {
-                Some(name) => {
-                    string.push_str(format!("alloca {}\n", expr_type).as_str());
-                    string.push_str(
-                        format!("\tstore {} {}, {}* %{}", expr_type, value, expr_type, name)
-                            .as_str(),
-                    );
-                }
-                None => {
-                    string.push_str(format!("{} {}", expr_type, value).as_str());
-                }
-            },
-            _ => todo!(),
-        },
-        IRExpression::GetVariable(name) => match declaration {
-            Some(_) => {
-                string.push_str(format!("load {}, {}* %{}", expr_type, expr_type, name).as_str());
-            }
-            None => {
-                string.push_str(format!("{} %{}", expr_type, name).as_str());
-            }
-        },
-        IRExpression::Call(name, arguments) => {
-            let mut args: Vec<String> = Vec::new();
+//                 builder.pushln(format!("br label %{}", loop_label));
+//                 builder.pushln(format!("{}:", loop_label));
+//                 handle_scope(builder, nodes, return_type);
 
-            for (argument, data_type) in arguments {
-                let result_name = builder.random.generate();
-                let s_type = convert_type(&data_type);
+//                 builder.pushln(format!("\tbr label %{}", loop_label));
+//                 builder.pushln(format!("{}:", break_label));
+//             },
+//             IRNode::DefineVariable(name, data_type, expression) => {
+//                 let expression = handle_expression(builder, expression, &data_type, Some(&name));
+//                 builder.push(format!("\t%{} = {}", name, expression));
+//             }
+//             IRNode::Return(expression) => {
+//                 let expression = match expression {
+//                     Some(expr) => expr,
+//                     None => {
+//                         builder.pushln_str("\tret void");
+//                         continue;
+//                     }
+//                 };
 
-                let expression =
-                    handle_expression(builder, argument, &data_type, Some(&result_name));
-                builder.pushln(format!("\t%{} = {}", result_name, expression));
-                args.push(format!("{} %{}", s_type, result_name));
-            }
+//                 let result_name = builder.random.generate();
 
-            string
-                .push_str(format!("\tcall {} @{}({})", expr_type, name, args.join(", ")).as_str());
-        }
-    };
+//                 let expression =
+//                     handle_expression(builder, expression, &return_type, Some(&result_name));
 
-    return string;
-}
+//                 builder.pushln(format!("\t%{} = {}", result_name, expression));
+//                 builder.pushln(format!("\tret {} %{}", convert_type(&return_type), result_name));
+//             }
+//             // IRNode::Call(name, data_type, arguments) => {
+//             //     let expression = handle_expression(builder, expression, &data_type, None);
+//             //     builder.push(format!("{}", expression));
+
+//             // }
+//             IRNode::SetVariable(name, data_type, expression) => {
+//                 let expr = handle_expression(builder, expression, &data_type, None);
+//                 builder.pushln(format!("\tstore {}, {}* %{}", expr, convert_type(&data_type), name));
+//             },
+//             _ => todo!()
+//         }
+//         builder.next_line();
+//     }
+// }
+
+// fn handle_expression(
+//     builder: &mut Builder,
+//     expression: IRExpression,
+//     var_type: &Type,
+//     declaration: Option<&String>,
+// ) -> BetterString {
+//     use crate::parser::Value;
+//     let expr_type = convert_type(var_type);
+//     let mut string = BetterString::new();
+
+//     match expression {
+//         IRExpression::BinaryOperation(expr1, operator, expr2) => {
+//             let result = builder.random.generate();
+//             let a = *expr1;
+//             let b = *expr2;
+
+//             // let first = handle_expression(builder, a, var_type, );
+//             // let second = handle_expression(builder, b, var_type, None);
+//             // string.push_str(format!("%{} = add {} {}, {}", result, convert_type(var_type), first, second).as_str());
+//         }
+//         IRExpression::Value(value) => match value {
+//             Value::Integer(_, value) => match declaration {
+//                 Some(name) => {
+//                     string.push(format!("alloca {}\n", expr_type).as_str());
+//                     string.push(
+//                         format!("\tstore {} {}, {}* %{}", expr_type, value, expr_type, name)
+//                             .as_str(),
+//                     );
+//                 }
+//                 None => {
+//                     string.push(format!("{} {}", expr_type, value).as_str());
+//                 }
+//             },
+//             _ => todo!(),
+//         },
+//         IRExpression::GetVariable(name) => match declaration {
+//             Some(_) => {
+//                 string.push(format!("load {}, {}* %{}", expr_type, expr_type, name).as_str());
+//             }
+//             None => {
+//                 string.push(format!("{} %{}", expr_type, name).as_str());
+//             }
+//         },
+//         IRExpression::Call(name, arguments) => {
+//             let mut args: Vec<String> = Vec::new();
+
+//             for (argument, data_type) in arguments {
+//                 let result_name = builder.random.generate();
+//                 let s_type = convert_type(&data_type);
+
+//                 let expression =
+//                     handle_expression(builder, argument, &data_type, Some(&result_name));
+//                 builder.pushln(format!("\t%{} = {}", result_name, expression));
+//                 args.push(format!("{} %{}", s_type, result_name));
+//             }
+
+//             string
+//                 .push(format!("\tcall {} @{}({})", expr_type, name, args.join(", ")).as_str());
+//         }
+//     };
+
+//     return string;
+// }
 
 fn convert_type(data_type: &Type) -> String {
     use crate::parser::BaseType;
 
     return match data_type {
         Type::Base(base) => match base {
-            BaseType::Int64 => "i64",
-            BaseType::Int32 => "i32",
-            BaseType::Int16 => "i16",
+            BaseType::Boolean => "i1",
             BaseType::Int8 => "i8",
+            BaseType::Int16 => "i16",
+            BaseType::Int32 => "i32",
+            BaseType::Int64 => "i64",
             BaseType::Float16 => "half",
             BaseType::Float32 => "float",
             BaseType::Float64 => "double",

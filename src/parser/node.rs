@@ -121,7 +121,7 @@ pub enum Node {
     // Use(bool, Path),
     // Conditional((Expression, Expression), Vec<ASTNode>, Option<Vec<ASTNode>>),
     // Loop(Vec<ASTNode>),
-    Expression(Expression),
+    Call(Path, Vec<Expression>),
     SetVariable(String, Expression),
     Return(Option<Expression>),
     Loop(Vec<ASTNode>),

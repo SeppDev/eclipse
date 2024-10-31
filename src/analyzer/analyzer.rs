@@ -137,11 +137,6 @@ fn handle_scope(
 
                 IRNode::DefineVariable(variable.name.clone(), var_type, expression)
             }
-            Node::Expression(expression) => {
-                let (expression, data_type) =
-                    handle_expression(types, current_path, None, variables, expression)?;
-                IRNode::Expression(expression, data_type)
-            }
             Node::SetVariable(name, expression) => {
                 let variable = variables.get(&name)?;
                 assert!(variable.mutable == true);
@@ -198,6 +193,14 @@ fn handle_expression(
             };
 
             (IRExpression::Value(value), data_type)
+        },
+        Expression::BinaryOperation(expr1, operator , expr2) => {
+            let a = *expr1;
+            let b = *expr2;
+            let (first, t1) = handle_expression(types, current_path, return_type, variables, a)?;
+            let (second, t2) = handle_expression(types, current_path, Some(t1), variables, b)?;
+
+            (IRExpression::BinaryOperation(Box::new(first), operator, Box::new(second)), t2)
         }
         Expression::Call(mut path, arguments) => {
             let name = path.components.pop().unwrap();

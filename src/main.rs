@@ -113,7 +113,7 @@ fn run(executable_path: PathBuf) {
 
     for line in reader.lines() {
         match line {
-            Ok(a) => println!("{}", a),
+            Ok(a) => print!("{}", a),
             Err(a) => println!("{:?}", a),
         }
     }

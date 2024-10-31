@@ -1,11 +1,11 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf, process::Output};
 
 use crate::{
     analyzer::{IRProgram, RandomString},
     execute,
 };
 
-use super::llvm;
+use super::{llvm, string::BetterString};
 
 pub fn codegen(
     project_dir: &PathBuf,
@@ -16,45 +16,45 @@ pub fn codegen(
     use std::fs;
 
     let mut builder = Builder::new(mode.clone(), random_string);
-
+    
+    // Build directory
     let mut build_dir = project_dir.clone();
     build_dir.push("build");
-
-    // if build_dir.exists() {
-    // fs::remove_dir_all(&build_dir).unwrap();
-    // }
+    
+    // Create build directory if it doesn't exists yet
     fs::create_dir_all(&build_dir).unwrap();
+    
+    let build_final = {
+        let mut a = build_dir.clone();
+        a.push("build.exe");
+        a
+    };
 
-    let mut main_dir = build_dir.clone();
-    main_dir.push("main.ll");
+    let mut build_file: PathBuf = build_dir.clone();
+    let command: String;
 
-    let string_path = main_dir.to_str().unwrap().to_string();
-    let build_dir_path = build_dir.to_str().unwrap().to_string();
-
-    // println!("Compiling using: {:?}", mode);
-
+    // the "compiling" process
     match mode {
         Mode::LLVM => {
-            llvm::generate(program, &mut builder);
+            build_file.push("main.ll");
 
-            fs::write(&main_dir, builder.build()).unwrap();
-
-            let output = match execute(format!(
-                "clang -O3 {} -o {}/build.exe",
-                &string_path, build_dir_path
-            )) {
-                Ok(out) => out,
-                Err(error) => panic!("{}", error),
-            };
-
-            if output.status.success() == false {
-                println!("LLVM {}", output.status);
-                panic!("{}", String::from_utf8(output.stderr).unwrap());
-            }
+            llvm::generate(program, &mut builder);        
+            command = format!("clang -O3 {} -o {}", build_file.to_string_lossy(), build_final.to_string_lossy());
         }
     }
 
-    // println!("Running\n");
+    // Writing to build file
+    fs::write(&build_file, builder.build().to_string()).unwrap();
+
+    let output = match execute(command) {
+        Ok(out) => out,
+        Err(error) => panic!("{}", error),
+    };
+
+    if output.status.success() == false {
+        println!("{}", output.status);
+        panic!("{}", String::from_utf8(output.stderr).unwrap());
+    }
 
     return build_dir.join("build.exe");
 }
@@ -67,31 +67,11 @@ pub enum Mode {
 }
 
 #[derive(Debug)]
-struct Body {
-    pub body: String,
-}
-impl Body {
-    pub fn new() -> Self {
-        Self {
-            body: String::new(),
-        }
-    }
-    pub fn pushln(&mut self, line: String) {
-        self.body.push_str(line.as_str());
-        self.body.push('\n');
-    }
-    pub fn pushln_str(&mut self, line: &str) {
-        self.body.push_str(line);
-        self.body.push('\n');
-    }
-}
-
-#[derive(Debug)]
 pub struct Builder {
     pub random: RandomString,
     mode: Mode,
     constants: HashMap<String, String>,
-    body: String,
+    body: BetterString,
 }
 impl Builder {
     pub fn new(mode: Mode, random: RandomString) -> Self {
@@ -99,16 +79,15 @@ impl Builder {
             mode,
             random,
             constants: HashMap::new(),
-            body: String::new(),
+            body: BetterString::new(),
         }
     }
-    pub fn build(&self) -> String {
-        let mut body = Body::new();
-        match &self.mode {
-            Mode::LLVM => build_llvm(self, &mut body),
+    pub fn build(mut self) -> BetterString {
+        match self.mode {
+            Mode::LLVM => build_llvm(&mut self),
         }
-        body.pushln(self.body.clone());
-        return body.body;
+
+        return self.body;
     }
     pub fn contstant_string(&mut self, string: String) -> String {
         let name = format!(".str.{}", self.constants.len());
@@ -119,38 +98,29 @@ impl Builder {
     pub fn next_line(&mut self) {
         self.body.push('\n');
     }
-
-    pub fn push(&mut self, line: String) {
-        self.body.push_str(line.as_str());
+    pub fn push<T: ToString>(&mut self, value: T) {
+        self.body.push(value);
     }
-    pub fn push_str(&mut self, line: &str) {
-        self.body.push_str(line);
-    }
-
-    pub fn pushln(&mut self, line: String) {
-        self.body.push_str(line.as_str());
-        self.body.push('\n');
-    }
-    pub fn pushln_str(&mut self, line: &str) {
-        self.body.push_str(line);
-        self.body.push('\n');
+    pub fn pushln<T: ToString>(&mut self, value: T) {
+        self.body.pushln(value);
     }
 }
 
-fn build_llvm(builder: &Builder, body: &mut Body) {
-    body.pushln_str("target triple = \"x86_64-pc-windows-unkown\"\n");
-    body.pushln_str("declare i32 @printf(i8*, ...)");
-    body.pushln_str("@.str = private constant [4 x i8] c\"%d\\0A\\00\"\n");
+fn build_llvm(builder: &mut Builder) {
+    builder.pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
+    builder.pushln("declare i32 @printf(i8*, ...)");
+    builder.pushln("@.str = private constant [4 x i8] c\"%d\\0A\\00\"\n");
+    builder.pushln("define void @print(i32 %a) local_unnamed_addr #0 {\nentry:");
+    builder.pushln("\t%str_ptr = getelementptr [4 x i8], [4 x i8]* @.str, i32 0, i32 0");
+    builder.pushln("\tcall i32 @printf(i8* %str_ptr, i32 %a)");
+    builder.pushln("\tret void");
+    builder.pushln("}");
+    builder.next_line();
 
-    body.pushln_str("define void @print(i32 %a) local_unnamed_addr #0 {\nentry:");
-    body.pushln_str("\t%str_ptr = getelementptr [4 x i8], [4 x i8]* @.str, i32 0, i32 0");
-    // body.pushln_str("\t%.a = load i32, i32* %a");
-    body.pushln_str("\tcall i32 @printf(i8* %str_ptr, i32 %a)");
-    body.pushln_str("\tret void");
-    body.pushln_str("}");
+    let contstants = builder.constants.clone();
 
-    for (name, value) in &builder.constants {
-        body.pushln(format!(
+    for (name, value) in contstants {
+        builder.pushln(format!(
             "@{} = private constant [{} x i8] c\"{:?}\"",
             name,
             value.len(),
