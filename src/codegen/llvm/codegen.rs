@@ -2,9 +2,10 @@ use crate::{
     analyzer::{IRExpression, IRModule, IRNode, IRProgram},
     codegen::{
         builder::{self, Builder},
-        llvm::expressions::extract_value, string::BetterString,
+        llvm::expressions::extract_value,
+        string::BetterString,
     },
-    types::{Type, Value},
+    types::{Operator, Type, Value},
 };
 
 pub fn generate(program: IRProgram, builder: &mut Builder) {
@@ -39,7 +40,7 @@ fn handle_scope(
             IRNode::Loop(body) => {
                 let break_label = builder.generate();
                 let loop_label = builder.generate();
-                
+
                 builder.pushln(format!("\tbr label %{}", loop_label));
                 builder.pushln(format!("{}:", loop_label));
 
@@ -47,7 +48,7 @@ fn handle_scope(
 
                 builder.pushln(format!("\tbr label %{}", loop_label));
                 builder.pushln(format!("{}:", break_label));
-            },
+            }
             IRNode::Break => {
                 builder.pushln(format!("\tbr label %{}", break_label.unwrap()));
             }
@@ -72,6 +73,59 @@ fn handle_scope(
                 }
                 None => builder.pushln("\tret void"),
             },
+            IRNode::SetVariable(name, var_type, expression) => {
+                let str_type = convert_type(&var_type);
+
+                match expression {
+                    IRExpression::Value(value) => {
+                        builder.pushln(format!(
+                            "\tstore {} {}, {}* %{}",
+                            str_type,
+                            extract_value(value),
+                            str_type,
+                            name
+                        ));
+                    }
+
+                    IRExpression::GetVariable(from_name) => {
+                        let temp = builder.generate();
+                        builder.pushln(format!(
+                            "\t%{} = load {}, {}* %{}",
+                            temp, str_type, str_type, from_name
+                        ));
+                        builder.pushln(format!(
+                            "\tstore {} %{}, {}* %{}",
+                            str_type, temp, str_type, name
+                        ));
+                    }
+                    IRExpression::BinaryOperation(a, operator, b) => {
+                        let first = *a;
+                        let second = *b;
+
+                        // match operator {
+                        //     Operator::Plus => {},
+                        //     _ => todo!()
+                        // }
+
+                        let value1 = match first {
+                            IRExpression::GetVariable(from_name) => {
+                                let temp = builder.generate();
+                                builder.pushln(format!(
+                                    "\t%{} = load {}, {}* %{}",
+                                    temp, str_type, str_type, from_name
+                                ));
+                                format!("%{}", temp)
+                            }
+                            _ => todo!(),
+                        };
+
+                        let temp = builder.generate();
+                        builder.pushln(format!("\t%{} = add {} {}, {}", temp, str_type, value1, 1));
+                        builder.pushln(format!("\tstore {}* %{}, {}* %{}", str_type, name, str_type, temp));
+                    }
+                    _ => todo!(),
+                }
+            }
             IRNode::DefineVariable(name, var_type, expression) => {
                 let str_type = convert_type(&var_type);
                 // builder.pushln(format!("\t%{}")); add type value, 0
@@ -82,20 +136,36 @@ fn handle_scope(
                     str_type,
                     var_type.size()
                 ));
-                builder.push(format!("\tstore {} ", str_type));
 
                 match expression {
-                    IRExpression::Value(value) => builder.push(extract_value(value)),
+                    IRExpression::Value(value) => {
+                        builder.pushln(format!(
+                            "\tstore {} {}, {}* %{}",
+                            str_type,
+                            extract_value(value),
+                            str_type,
+                            name
+                        ));
+                    }
+                    IRExpression::GetVariable(from_name) => {
+                        let temp = builder.generate();
+                        builder.pushln(format!(
+                            "\t%{} = load {}, {}* %{}",
+                            temp, str_type, str_type, from_name
+                        ));
+                        builder.pushln(format!(
+                            "\tstore {} %{}, {}* %{}",
+                            str_type, temp, str_type, name
+                        ));
+                    }
                     _ => todo!(),
                 }
-
-                builder.pushln(format!(", {}* %{}", str_type, name));
             }
             IRNode::Call(name, data_type, arguments) => {
                 let string = call(builder, name, &data_type, arguments);
                 builder.push('\t');
                 builder.pushln(string);
-            },
+            }
             _ => todo!(),
         }
     }
@@ -103,11 +173,17 @@ fn handle_scope(
 
 // fn clone()
 
-fn call(builder: &mut Builder, name: String, data_type: &Type, arguments: Vec<(IRExpression, Type)>) -> String {
+fn call(
+    builder: &mut Builder,
+    name: String,
+    data_type: &Type,
+    arguments: Vec<(IRExpression, Type)>,
+) -> String {
     let str_type = convert_type(data_type);
 
-    let body = format!("call {} @{}({})", str_type, name, {
-        let mut body = BetterString::new();
+    let arguments = {
+        let mut str_args = Vec::new();
+
         for (argument, t) in arguments {
             let str_type = convert_type(&t);
 
@@ -123,14 +199,16 @@ fn call(builder: &mut Builder, name: String, data_type: &Type, arguments: Vec<(I
 
                     format!("%{}", result_name)
                 }
-                expr => todo!("{:?}", expr)
+                expr => todo!("{:?}", expr),
             };
 
-            body.push(format!("{} {} ", str_type, value));
+            str_args.push(format!("{} {}", str_type, value))
         }
 
-        body.to_string()
-    });
+        str_args.join(", ")
+    };
+
+    let body = format!("call {} @{}({})", str_type, name, arguments);
 
     body
 }

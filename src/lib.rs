@@ -25,6 +25,17 @@ impl CompileArguments {
             arguments: HashMap::new(),
         }
     }
+    pub fn from(mut values: impl Iterator<Item = String>) -> Self {
+        let mut s = Self::new();
+        loop {
+            let arg = match values.next() {
+                Some(arg) => arg,
+                None => break
+            };
+            s.insert(arg);
+        }
+        s
+    }
     pub fn test() -> Self {
         let mut args = Self::new();
         args.insert("--dumpir".to_string());

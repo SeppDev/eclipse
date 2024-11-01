@@ -6,7 +6,6 @@ use std::{
     process::{exit, Command, Stdio},
 };
 
-
 fn main() {
     #[derive(PartialEq, Eq)]
     enum Action {
@@ -30,17 +29,8 @@ fn main() {
         _ => return println!("{:?} is not a valid argument", action),
     };
 
-    let mut c_arguments = CompileArguments::new();
-    loop {
-        let arg = match arguments.next() {
-            Some(arg) => arg,
-            None => break
-        };
-        c_arguments.insert(arg);
-    }
-
     if action == Action::Build || action == Action::BuildAndRun {
-        let executable = match build(project_dir, c_arguments) {
+        let executable = match build(project_dir, CompileArguments::from(arguments)) {
             Ok(path) => path,
             Err(a) => {
                 a.print();
