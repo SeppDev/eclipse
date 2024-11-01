@@ -1,9 +1,6 @@
 use std::{iter::Peekable, vec::IntoIter};
 
-use crate::{
-    parser::{ASTNode, Node},
-    CompileError, ParseResult,
-};
+use crate::{types::{ASTNode, Node}, CompileError, ParseResult};
 
 use super::{Token, TokenInfo};
 
@@ -36,7 +33,7 @@ impl TokensGroup {
     }
     pub fn create_ast(&mut self, node: Node) -> ASTNode {
         let start = self.starts.pop().unwrap();
-        return ASTNode::new(self.indent, start.line..self.current.line, node);
+        return ASTNode::new(start.line..self.current.line, node);
     }
     pub fn peek(&mut self) -> ParseResult<TokenInfo> {
         return match self.tokens.peek() {

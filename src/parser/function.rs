@@ -1,9 +1,9 @@
 use crate::{
-    analyzer::Fields, lexer::{Token, TokensGroup}, parser::parser::get_identifier, ParseResult
+    analyzer::Fields, lexer::{Token, TokensGroup}, parser::parser::get_identifier, types::{ASTNode, BaseType, Node, Type}, ParseResult
 };
 
 use super::{
-    generics::parse_generics, node::{ASTNode, Node, Type}, parse, parser::{expect_tokens, peek_expect_tokens}, types::parse_type
+    generics::parse_generics, parse, parser::{expect_tokens, peek_expect_tokens}, types::parse_type
 };
 
 pub fn parse_function(
@@ -41,7 +41,7 @@ pub fn parse_function(
         }
     }
 
-    let mut return_type: Type = Type::Base(super::BaseType::Void);
+    let mut return_type: Type = Type::Base(BaseType::Void);
     if peek_expect_tokens(tokens, vec![Token::Colon], true)?.is_some() {
         return_type = parse_type(tokens)?;
     }

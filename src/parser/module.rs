@@ -1,12 +1,10 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    lexer::{tokenize, TokensGroup},
-    read_file, CompileError, ParseResult, FILE_EXTENSION,
+    lexer::{tokenize, TokensGroup}, read_file, types::ASTNode, CompileError, ParseResult, FILE_EXTENSION
 };
 
-use super::{parse, ASTNode};
-
+use super::parse;
 
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
@@ -51,7 +49,7 @@ impl ASTModule {
             relative_path.to_str().unwrap() == "src/main" || file_name == "mod"
         };
 
-        let file_path = project_path.join(&relative_path); 
+        let file_path = project_path.join(&relative_path);
         let source = read_file(&file_path.with_extension(FILE_EXTENSION));
 
         let tokens = tokenize(source);
@@ -76,7 +74,7 @@ impl ASTModule {
             // TODO better error handling
             let found_path = match find_path(&full_relative_path, &paths) {
                 Some(p) => p,
-                None => return Err(CompileError::new(format!("Failed to find {:#?}", paths), 0))
+                None => return Err(CompileError::new(format!("Failed to find {:#?}", paths), 0)),
             };
             let module = Self::new(project_path, &parent.join(&found_path))?;
 
@@ -88,5 +86,5 @@ impl ASTModule {
             body: nodes,
             submodules,
         });
-    } 
+    }
 }

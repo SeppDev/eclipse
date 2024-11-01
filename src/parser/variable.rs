@@ -1,12 +1,9 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    parser::parser::get_identifier,
-    ParseResult,
+    lexer::{Token, TokensGroup}, parser::parser::get_identifier, types::{ASTNode, Node, Type}, ParseResult
 };
 
 use super::{
     expression::parse_expected_expression,
-    node::{ASTNode, Node, Type},
     parser::{expect_tokens, peek_expect_tokens},
     types::parse_type,
 };

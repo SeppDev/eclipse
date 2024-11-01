@@ -8,6 +8,7 @@ mod lexer;
 mod parser;
 mod analyzer;
 mod codegen;
+mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
 

@@ -1,6 +1,7 @@
 use crate::{
-    analyzer::nodes::IRFunction, ASTModule, ASTNode, AnalyzeResult, BaseType, Expression, Node,
-    Path, Type, Value,
+    analyzer::nodes::IRFunction,
+    types::{ASTNode, BaseType, Expression, Node, Path, Type, Value},
+    ASTModule, AnalyzeResult,
 };
 
 use super::{
@@ -88,12 +89,12 @@ fn handle_scope(
     types: &ModuleTypes,
     current_path: &Path,
     body: Vec<ASTNode>,
-    return_type: &Type,
+    return_type: &crate::types::Type,
     variables: &mut Variables,
 ) -> AnalyzeResult<Vec<IRNode>> {
     variables.create_state();
     let mut nodes = Vec::new();
-    
+
     for node in body {
         let new_node: IRNode = match node.node {
             Node::Loop(nodes) => IRNode::Loop(handle_scope(
@@ -150,6 +151,21 @@ fn handle_scope(
                 // }
                 IRNode::SetVariable(variable.name.clone(), data_type, irexpression)
             }
+            Node::Expression(expression) => {
+                let (expr, data_type) = handle_expression(
+                    types,
+                    current_path,
+                    None,
+                    variables,
+                    expression,
+                )?;
+
+                match expr {
+                    IRExpression::Call(path, arguments) => IRNode::Call(path, data_type, arguments),
+                    _ => todo!(),
+                }
+            }
+            Node::Break => IRNode::Break,
             t => panic!("{:#?}", t),
         };
 
@@ -183,24 +199,50 @@ fn handle_expression(
                         assert!(t.is_float());
                         t
                     }
+                    Value::Boolean(_) => {
+                        assert!(t.is_bool());
+                        t
+                    }
                     _ => todo!(),
                 },
                 None => match value {
                     Value::Integer(_, _) => Type::Base(BaseType::Int32),
                     Value::Float(_) => Type::Base(BaseType::Float64),
+                    Value::Boolean(_) => Type::Base(BaseType::Boolean),
                     _ => todo!(),
                 },
             };
 
+            // match data_type.integer_info() {
+            //     Some((signed, bits)) => {
+            //         let mut max_value: usize = 2 ^ bits;
+            //         match value {
+            //             Value::Integer(minus, value) => if signed {
+            //                 let value = i64::
+            //                 let max_value = max_value as isize / 2 - 1;
+            //                 assert!(value <= max_value);
+            //                 assert!(value > -max_value);
+            //             } else {
+            //                 assert!(value <= max_value)
+            //             },
+            //             _ => panic!()
+            //         }
+            //     },
+            //     None => {}
+            // }
+
             (IRExpression::Value(value), data_type)
-        },
-        Expression::BinaryOperation(expr1, operator , expr2) => {
+        }
+        Expression::BinaryOperation(expr1, operator, expr2) => {
             let a = *expr1;
             let b = *expr2;
             let (first, t1) = handle_expression(types, current_path, return_type, variables, a)?;
             let (second, t2) = handle_expression(types, current_path, Some(t1), variables, b)?;
 
-            (IRExpression::BinaryOperation(Box::new(first), operator, Box::new(second)), t2)
+            (
+                IRExpression::BinaryOperation(Box::new(first), operator, Box::new(second)),
+                t2,
+            )
         }
         Expression::Call(mut path, arguments) => {
             let name = path.components.pop().unwrap();

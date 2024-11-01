@@ -1,9 +1,8 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    ParseResult,
+    lexer::{Token, TokensGroup}, types::Expression, ParseResult
 };
 
-use super::{expression::parse_expression, node::Expression, parser::expect_tokens};
+use super::{expression::parse_expression, parser::expect_tokens};
 
 pub fn parse_arguments(tokens: &mut TokensGroup) -> ParseResult<Vec<Expression>> {
     let mut arguments = Vec::new();

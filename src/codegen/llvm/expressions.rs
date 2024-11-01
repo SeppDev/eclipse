@@ -1,15 +1,22 @@
-use crate::Value;
+use crate::types::Value;
 
-pub fn value(value: Value) -> String {
-    use crate::Value::{self};
-
+pub fn extract_value(value: Value) -> String {
     return match value {
-        Value::Integer(_signed, value) => format!("{}", value),
+        Value::Integer(minus, value) => {
+            if minus {
+                format!("-{}", value)
+            } else {
+                format!("{}", value)
+            }
+        }
         Value::Float(value) => format!("{}", value),
-        Value::Boolean(value) => match value {
-            true => String::from("1"),
-            false => String::from("0"),
-        },
-        Value::String(string) => format!("{:?}", string),
+        Value::Boolean(value) => {
+            if value {
+                String::from("1")
+            } else {
+                String::from("0")
+            }
+        }
+        Value::String(_string) => todo!("String value"),
     };
 }

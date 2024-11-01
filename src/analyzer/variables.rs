@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{AnalyzeResult, CompileError, Type};
+use crate::{types::Type, AnalyzeResult, CompileError};
 
 use super::RandomString;
 

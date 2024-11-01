@@ -1,10 +1,10 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    parser::{parser::peek_expect_tokens, Operator},
-    CompileError, ParseResult,
+    lexer::{Token, TokensGroup}, types::{Expression, Path, Value}, CompileError, ParseResult
 };
+use crate::parser::parser::peek_expect_tokens;
+use crate::types::Operator;
 
-use super::{arguments::parse_arguments, node::Expression, path::parse_path, Path, Value};
+use super::{arguments::parse_arguments, path::parse_path};
 
 pub fn parse_expression(tokens: &mut TokensGroup) -> ParseResult<Option<Expression>> {
     let info = tokens.peek()?;

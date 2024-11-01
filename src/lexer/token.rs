@@ -11,6 +11,7 @@ pub enum Token {
     CloseParen,
     OpenBracket,
     CloseBracket,
+    Break,
     Pub,
     Import,
     Use,

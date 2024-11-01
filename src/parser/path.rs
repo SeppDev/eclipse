@@ -1,9 +1,7 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    ParseResult,
+    lexer::{Token, TokensGroup}, types::Path, ParseResult
 };
 
-use super::node::Path;
 
 pub fn parse_path(tokens: &mut TokensGroup, root: String) -> ParseResult<Path> {
     let mut path = Path::from(root);

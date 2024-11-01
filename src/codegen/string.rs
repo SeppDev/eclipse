@@ -19,6 +19,9 @@ impl BetterString {
         }
     }
 
+    pub fn next_line(&mut self) {
+        self.body.push('\n');
+    }
     pub fn push<T: ToString>(&mut self, value: T) {
         self.body.push_str(value.to_string().as_str());
     }

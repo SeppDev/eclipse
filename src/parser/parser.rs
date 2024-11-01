@@ -1,14 +1,12 @@
 use std::collections::HashMap;
 
 use crate::{
-    lexer::{Token, TokenInfo, TokensGroup},
-    CompileError, ParseResult,
+    lexer::{Token, TokenInfo, TokensGroup}, types::{ASTNode, Node}, CompileError, ParseResult
 };
 
 use super::{
     enums::parse_enum, expression::parse_expression, function::parse_function,
-    identifier::parse_identifier, node::ASTNode, structs::parse_struct, variable::parse_variable,
-    Node,
+    identifier::parse_identifier, structs::parse_struct, variable::parse_variable,
 };
 
 pub fn get_identifier(tokens: &mut TokensGroup) -> ParseResult<String> {
@@ -82,6 +80,9 @@ pub fn parse(tokens: &mut TokensGroup) -> ParseResult<(Vec<ASTNode>, Vec<(bool, 
                 let (body, _) = parse(tokens)?;
                 expect_tokens(tokens, vec![Token::EndScope])?;
                 tokens.create_ast(Node::Loop(body))
+            }
+            Token::Break => {
+                tokens.create_ast(Node::Break)
             }
             Token::Return => {
                 let expression = parse_expression(tokens)?;

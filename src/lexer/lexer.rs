@@ -100,7 +100,7 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
             }
         }
     }
-    
+
     reader.push(TokenInfo::new(Token::EndOfFile, reader.lines.len() + 1, 0));
     return reader.tokens;
 }
@@ -204,6 +204,7 @@ fn match_word(word: &String) -> Option<Token> {
         "while" => Token::While,
         "<" => Token::LessThan,
         ">" => Token::GreaterThan,
+        "break" => Token::Break,
         _ => return None,
     };
 

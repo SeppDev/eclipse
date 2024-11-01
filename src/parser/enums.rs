@@ -1,12 +1,10 @@
 use crate::{
-    analyzer::Fields,
-    lexer::{Token, TokensGroup},
-    ParseResult,
+    analyzer::Fields, lexer::{Token, TokensGroup}, types::{ASTNode, Node, Type}, ParseResult
 };
 
 use super::{
     generics::parse_generics, get_identifier, parser::expect_tokens, peek_expect_tokens,
-    types::parse_type, ASTNode, Node, Type,
+    types::parse_type
 };
 
 pub fn parse_enum(tokens: &mut TokensGroup) -> ParseResult<ASTNode> {

@@ -1,15 +1,8 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    parser::parser::expect_tokens,
-    ParseResult,
+    lexer::{Token, TokensGroup}, parser::parser::expect_tokens, types::{ASTNode, Expression, Node, Path}, ParseResult
 };
 
-use super::{
-    arguments::parse_arguments,
-    expression::parse_expected_expression,
-    node::{ASTNode, Node, Path},
-    path::parse_path,
-};
+use super::{arguments::parse_arguments, expression::parse_expected_expression, path::parse_path};
 
 pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult<ASTNode> {
     let info = expect_tokens(
@@ -33,14 +26,14 @@ pub fn parse_identifier(tokens: &mut TokensGroup, string: String) -> ParseResult
             expect_tokens(tokens, vec![Token::OpenParen])?;
 
             let arguments = parse_arguments(tokens)?;
-            let expression = Node::Call(path, arguments);
+            let expression = Node::Expression(Expression::Call(path, arguments));
 
             tokens.create_ast(expression)
         }
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
             let path = Path::from(string);
-            let expression = Node::Call(path, arguments);
+            let expression = Node::Expression(Expression::Call(path, arguments));
 
             tokens.create_ast(expression)
         }

@@ -37,9 +37,16 @@ pub fn codegen(
     match mode {
         Mode::LLVM => {
             build_file.push("main.ll");
-
             llvm::generate(program, &mut builder);        
+
+            let mut temp_final = build_dir.clone();
+            temp_final.push("assembly.asm");
+            println!("{:?}", temp_final);
+
+            execute(format!("clang -03 {} -o {}", build_file.to_string_lossy(), temp_final.to_string_lossy())).unwrap();
+
             command = format!("clang -O3 {} -o {}", build_file.to_string_lossy(), build_final.to_string_lossy());
+
         }
     }
 
@@ -68,18 +75,23 @@ pub enum Mode {
 
 #[derive(Debug)]
 pub struct Builder {
-    pub random: RandomString,
+    random: RandomString,
     mode: Mode,
     constants: HashMap<String, String>,
     body: BetterString,
 }
 impl Builder {
     pub fn new(mode: Mode, random: RandomString) -> Self {
+        let mut body = BetterString::new();
+        match &mode {
+            Mode::LLVM => start_llvm(&mut body),
+        }
+
         Self {
             mode,
             random,
             constants: HashMap::new(),
-            body: BetterString::new(),
+            body,
         }
     }
     pub fn build(mut self) -> BetterString {
@@ -89,14 +101,20 @@ impl Builder {
 
         return self.body;
     }
-    pub fn contstant_string(&mut self, string: String) -> String {
-        let name = format!(".str.{}", self.constants.len());
-        self.constants.insert(name.clone(), string);
-        return name;
+    pub fn generate(&mut self) -> String {
+        self.random.generate()
     }
+    // pub fn contstant_string(&mut self, string: String) -> String {
+    //     let name = format!(".str.{}", self.constants.len());
+    //     self.constants.insert(name.clone(), string);
+    //     return name;
+    // }
 
     pub fn next_line(&mut self) {
-        self.body.push('\n');
+        self.body.next_line();
+    }
+    pub fn space(&mut self) {
+        self.body.push(' ');
     }
     pub fn push<T: ToString>(&mut self, value: T) {
         self.body.push(value);
@@ -106,17 +124,19 @@ impl Builder {
     }
 }
 
-fn build_llvm(builder: &mut Builder) {
-    builder.pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
-    builder.pushln("declare i32 @printf(i8*, ...)");
-    builder.pushln("@.str = private constant [4 x i8] c\"%d\\0A\\00\"\n");
-    builder.pushln("define void @print(i32 %a) local_unnamed_addr #0 {\nentry:");
-    builder.pushln("\t%str_ptr = getelementptr [4 x i8], [4 x i8]* @.str, i32 0, i32 0");
-    builder.pushln("\tcall i32 @printf(i8* %str_ptr, i32 %a)");
-    builder.pushln("\tret void");
-    builder.pushln("}");
-    builder.next_line();
+fn start_llvm(body: &mut BetterString) {
+    body.pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
+    body.pushln("declare i32 @printf(i8*, ...)");
+    body.pushln("@.str = private constant [4 x i8] c\"%d\\0A\\00\"\n");
+    body.pushln("define void @print(i32 %a) local_unnamed_addr #0 {\nentry:");
+    body.pushln("\t%str_ptr = getelementptr [4 x i8], [4 x i8]* @.str, i32 0, i32 0");
+    body.pushln("\tcall i32 @printf(i8* %str_ptr, i32 %a)");
+    body.pushln("\tret void");
+    body.pushln("}");
+    body.next_line();
+}
 
+fn build_llvm(builder: &mut Builder) {
     let contstants = builder.constants.clone();
 
     for (name, value) in contstants {

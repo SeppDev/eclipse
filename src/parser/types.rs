@@ -1,9 +1,8 @@
 use crate::{
-    lexer::{Token, TokensGroup},
-    ParseResult,
+    lexer::{Token, TokensGroup}, types::{BaseType, Type}, ParseResult
 };
 
-use super::{node::Type, parser::get_identifier, peek_expect_tokens, BaseType};
+use super::{parser::get_identifier, peek_expect_tokens};
 
 pub fn parse_type(tokens: &mut TokensGroup) -> ParseResult<Type> {
     let info = peek_expect_tokens(tokens, vec![Token::OpenParen], true)?;
@@ -40,11 +39,12 @@ pub fn parse_type(tokens: &mut TokensGroup) -> ParseResult<Type> {
         "u16" => Type::Base(BaseType::UInt16),
         "i8" => Type::Base(BaseType::Int8),
         "u8" => Type::Base(BaseType::UInt8),
-        "f16" => Type::Base(BaseType::Float16),
+        // "f16" => Type::Base(BaseType::Float16),
         "f32" => Type::Base(BaseType::Float32),
         "f64" => Type::Base(BaseType::Float64),
-        "f128" => Type::Base(BaseType::Float128),
+        // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
-        a => Type::Custom(a.to_string()),
+        _ => todo!()
+        // a => Type::Custom(a.to_string()),
     });
 }

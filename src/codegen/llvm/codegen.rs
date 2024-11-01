@@ -1,7 +1,10 @@
 use crate::{
     analyzer::{IRExpression, IRModule, IRNode, IRProgram},
-    codegen::{builder::Builder, string::BetterString},
-    Type,
+    codegen::{
+        builder::{self, Builder},
+        llvm::expressions::extract_value, string::BetterString,
+    },
+    types::{Type, Value},
 };
 
 pub fn generate(program: IRProgram, builder: &mut Builder) {
@@ -13,7 +16,7 @@ pub fn generate(program: IRProgram, builder: &mut Builder) {
 fn handle_module(builder: &mut Builder, module: IRModule) {
     for function in module.functions {
         builder.pushln(format!(
-            "define {} @{}() local_unnamed_addr #0 {{\nentry:\n",
+            "define {} @{}() {{\nentry:\n",
             convert_type(&function.return_type),
             function.name
         ));
@@ -23,8 +26,135 @@ fn handle_module(builder: &mut Builder, module: IRModule) {
     }
 }
 
-fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type, break_label: Option<String>) {
-    
+fn handle_scope(
+    builder: &mut Builder,
+    nodes: Vec<IRNode>,
+    return_type: &Type,
+    break_label: Option<&String>,
+) {
+    use IRNode::{self};
+
+    for node in nodes {
+        match node {
+            IRNode::Loop(body) => {
+                let break_label = builder.generate();
+                let loop_label = builder.generate();
+                
+                builder.pushln(format!("\tbr label %{}", loop_label));
+                builder.pushln(format!("{}:", loop_label));
+
+                handle_scope(builder, body, return_type, Some(&break_label));
+
+                builder.pushln(format!("\tbr label %{}", loop_label));
+                builder.pushln(format!("{}:", break_label));
+            },
+            IRNode::Break => {
+                builder.pushln(format!("\tbr label %{}", break_label.unwrap()));
+            }
+            IRNode::Return(expression) => match expression {
+                Some(expression) => {
+                    let str_type = convert_type(&return_type);
+
+                    match expression {
+                        IRExpression::Value(value) => {
+                            builder.pushln(format!("\tret {} {}", str_type, extract_value(value)));
+                        }
+                        IRExpression::GetVariable(name) => {
+                            let result_name = builder.generate();
+                            builder.pushln(format!(
+                                "\t%{} = load {}, {}* %{}",
+                                result_name, str_type, str_type, name
+                            ));
+                            builder.pushln(format!("\tret {} %{}", str_type, result_name));
+                        }
+                        _ => todo!(),
+                    }
+                }
+                None => builder.pushln("\tret void"),
+            },
+            IRNode::DefineVariable(name, var_type, expression) => {
+                let str_type = convert_type(&var_type);
+                // builder.pushln(format!("\t%{}")); add type value, 0
+
+                builder.pushln(format!(
+                    "\t%{} = alloca {}, align {}",
+                    name,
+                    str_type,
+                    var_type.size()
+                ));
+                builder.push(format!("\tstore {} ", str_type));
+
+                match expression {
+                    IRExpression::Value(value) => builder.push(extract_value(value)),
+                    _ => todo!(),
+                }
+
+                builder.pushln(format!(", {}* %{}", str_type, name));
+            }
+            IRNode::Call(name, data_type, arguments) => {
+                let string = call(builder, name, &data_type, arguments);
+                builder.push('\t');
+                builder.pushln(string);
+            },
+            _ => todo!(),
+        }
+    }
+}
+
+// fn clone()
+
+fn call(builder: &mut Builder, name: String, data_type: &Type, arguments: Vec<(IRExpression, Type)>) -> String {
+    let str_type = convert_type(data_type);
+
+    let body = format!("call {} @{}({})", str_type, name, {
+        let mut body = BetterString::new();
+        for (argument, t) in arguments {
+            let str_type = convert_type(&t);
+
+            let value = match argument {
+                IRExpression::Value(value) => extract_value(value),
+                IRExpression::GetVariable(name) => {
+                    let result_name = builder.generate();
+
+                    builder.pushln(format!(
+                        "\t%{} = load {}, {}* %{}",
+                        result_name, str_type, str_type, name
+                    ));
+
+                    format!("%{}", result_name)
+                }
+                expr => todo!("{:?}", expr)
+            };
+
+            body.push(format!("{} {} ", str_type, value));
+        }
+
+        body.to_string()
+    });
+
+    body
+}
+
+fn convert_type(data_type: &Type) -> String {
+    use crate::types::BaseType;
+
+    return match data_type {
+        Type::Base(base) => match base {
+            BaseType::Boolean => "i1",
+            BaseType::Int8 => "i8",
+            BaseType::Int16 => "i16",
+            BaseType::Int32 => "i32",
+            BaseType::Int64 => "i64",
+            // BaseType::Float16 => "half",
+            BaseType::Float32 => "float",
+            BaseType::Float64 => "double",
+            // BaseType::Float128 => "fp128",
+            BaseType::Void => "void",
+            _ => todo!(),
+        }
+        .to_string(),
+        t => todo!("{:?}", t),
+    };
 }
 
 // fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type) {
@@ -140,25 +270,3 @@ fn handle_scope(builder: &mut Builder, nodes: Vec<IRNode>, return_type: &Type, b
 
 //     return string;
 // }
-
-fn convert_type(data_type: &Type) -> String {
-    use crate::parser::BaseType;
-
-    return match data_type {
-        Type::Base(base) => match base {
-            BaseType::Boolean => "i1",
-            BaseType::Int8 => "i8",
-            BaseType::Int16 => "i16",
-            BaseType::Int32 => "i32",
-            BaseType::Int64 => "i64",
-            BaseType::Float16 => "half",
-            BaseType::Float32 => "float",
-            BaseType::Float64 => "double",
-            BaseType::Float128 => "fp128",
-            BaseType::Void => "void",
-            _ => todo!(),
-        }
-        .to_string(),
-        t => todo!("{:?}", t),
-    };
-}

@@ -1,4 +1,4 @@
-use crate::{parser::{Type, Value}, Operator};
+use crate::types::{Operator, Type, Value};
 
 use super::ModuleTypes;
 
@@ -16,7 +16,8 @@ pub enum IRNode {
     //     is_unsafe: bool,
     //     body: Vec<IRNode>,
     // },
-    Call(String, Type, Vec<IRExpression>),
+    Break,
+    Call(String, Type, Vec<(IRExpression, Type)>),
     Return(Option<IRExpression>),
     SetVariable(String, Type, IRExpression),
     DefineVariable(String, Type, IRExpression),
