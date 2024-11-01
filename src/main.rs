@@ -1,11 +1,11 @@
-use eclipse::{build, FILE_EXTENSION};
+use eclipse::{build, CompileArguments, FILE_EXTENSION};
 use std::{
     env,
-    io::{BufRead, BufReader},
+    io::BufReader,
     path::PathBuf,
     process::{exit, Command, Stdio},
-    thread::Thread,
 };
+
 
 fn main() {
     #[derive(PartialEq, Eq)]
@@ -30,8 +30,17 @@ fn main() {
         _ => return println!("{:?} is not a valid argument", action),
     };
 
+    let mut c_arguments = CompileArguments::new();
+    loop {
+        let arg = match arguments.next() {
+            Some(arg) => arg,
+            None => break
+        };
+        c_arguments.insert(arg);
+    }
+
     if action == Action::Build || action == Action::BuildAndRun {
-        let executable = match build(project_dir) {
+        let executable = match build(project_dir, c_arguments) {
             Ok(path) => path,
             Err(a) => {
                 a.print();
@@ -88,15 +97,13 @@ fn run(executable_path: PathBuf) {
     use std::thread;
 
     let (tx, rx) = std::sync::mpsc::channel();
-    thread::spawn(move || {
-        loop {
-            std::thread::sleep(std::time::Duration::from_secs(2));
-            match rx.try_recv() {
-                Ok(_) | Err(TryRecvError::Disconnected) => break,
-                Err(TryRecvError::Empty) => {
-                    println!("Spawning thread is taking longer than 2 seconds");
-                    break;
-                }
+    thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        match rx.try_recv() {
+            Ok(_) | Err(TryRecvError::Disconnected) => break,
+            Err(TryRecvError::Empty) => {
+                println!("Spawning thread is taking longer than 2 seconds");
+                break;
             }
         }
     });
@@ -113,7 +120,7 @@ fn run(executable_path: PathBuf) {
 
     for line in reader.lines() {
         match line {
-            Ok(a) => print!("{}", a),
+            Ok(a) => println!("{}", a),
             Err(a) => println!("{:?}", a),
         }
     }
@@ -134,7 +141,7 @@ mod tests {
             path = PathBuf::from("C:/Users/seppd/OneDrive/Documenten/Eclipse/first_project/");
         }
 
-        let executable_path = match build(path) {
+        let executable_path = match build(path, CompileArguments::test()) {
             Ok(path) => path,
             Err(a) => {
                 a.print();

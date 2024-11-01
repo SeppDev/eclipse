@@ -2,12 +2,13 @@ use std::{collections::HashMap, path::PathBuf, process::Output};
 
 use crate::{
     analyzer::{IRProgram, RandomString},
-    execute,
+    execute, CompileArguments,
 };
 
 use super::{llvm, string::BetterString};
 
 pub fn codegen(
+    compiler_arguments: CompileArguments,
     project_dir: &PathBuf,
     program: IRProgram,
     mode: Mode,
@@ -39,28 +40,26 @@ pub fn codegen(
             build_file.push("main.ll");
             llvm::generate(program, &mut builder);        
 
-            let mut temp_final = build_dir.clone();
-            temp_final.push("assembly.asm");
-            println!("{:?}", temp_final);
-
-            execute(format!("clang -03 {} -o {}", build_file.to_string_lossy(), temp_final.to_string_lossy())).unwrap();
-
             command = format!("clang -O3 {} -o {}", build_file.to_string_lossy(), build_final.to_string_lossy());
 
         }
     }
-
+    
     // Writing to build file
     fs::write(&build_file, builder.build().to_string()).unwrap();
-
+    
     let output = match execute(command) {
         Ok(out) => out,
         Err(error) => panic!("{}", error),
     };
-
+    
     if output.status.success() == false {
         println!("{}", output.status);
         panic!("{}", String::from_utf8(output.stderr).unwrap());
+    }
+    
+    if !compiler_arguments.dump_ir() {
+        let _ = fs::remove_file(&build_file);
     }
 
     return build_dir.join("build.exe");

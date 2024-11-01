@@ -1,4 +1,4 @@
-use std::{io::Read, path::PathBuf, process::{exit, Output}};
+use std::{collections::HashMap, io::Read, path::PathBuf, process::{exit, Output}};
 
 use analyzer::{analyze, RandomString};
 use codegen::builder;
@@ -11,6 +11,40 @@ mod codegen;
 mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
+
+#[derive(PartialEq, Eq, Hash)]
+pub enum CompileArgument {
+    DumpIr,
+}
+pub struct CompileArguments {
+    arguments: HashMap<CompileArgument, bool>,
+}
+impl CompileArguments {
+    pub fn new() -> Self {
+        Self {
+            arguments: HashMap::new(),
+        }
+    }
+    pub fn test() -> Self {
+        let mut args = Self::new();
+        args.insert("--dumpir".to_string());
+        args
+    }
+    pub fn insert(&mut self, argument: String) {
+        let argument = match argument.as_str() {
+            "--dumpir" => CompileArgument::DumpIr, 
+            a => {
+                println!("Unkown argument '{}'", a);
+                exit(1)
+            }
+        };
+        self.arguments.insert(argument, true);
+    }
+    pub fn dump_ir(&self) -> bool {
+        return self.arguments.get(&CompileArgument::DumpIr).is_some()
+    }
+}
+
 
 pub fn open_file(path: &PathBuf) -> std::fs::File {
     let file = match std::fs::File::open(path) {
@@ -45,12 +79,12 @@ pub fn execute(command: String) -> Result<Output, String> {
     return Ok(cmd)
 }
 
-pub fn build(project_path: PathBuf) -> Result<PathBuf, CompileError> {
+pub fn build(project_path: PathBuf, compile_arguments: CompileArguments) -> Result<PathBuf, CompileError> {
     let mut random_string = RandomString::new();
 
     let main = ASTModule::new(&project_path, &PathBuf::from("src/main"))?;
     let program = analyze(main, &mut random_string)?;
-    let executable_path = builder::codegen(&project_path, program, builder::Mode::LLVM, random_string);
+    let executable_path = builder::codegen(compile_arguments,&project_path, program, builder::Mode::LLVM, random_string);
 
     return Ok(executable_path);
 }
