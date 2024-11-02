@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Path {
@@ -15,29 +17,29 @@ impl Path {
             components: Vec::new(),
         }
     }
-    pub fn from(root: String) -> Self {
+    pub fn from<T: ToString>(root: T) -> Self {
         let mut path = Self::new();
         path.add(root);
         return path;
     }
-    pub fn join(&self, seperator: String) -> String {
-        self.components.join(&seperator)
+    pub fn join<T: ToString>(&self, seperator: T) -> String {
+        self.components.join(&seperator.to_string())
     }
-    pub fn add(&mut self, name: String) {
-        self.components.push(name)
+    pub fn add<T: ToString>(&mut self, name: T) {
+        self.components.push(name.to_string())
     }
     // pub fn push(&mut self, path: &Self) {
     //     for path in &path.components {
     //         self.components.push(path.clone());
     //     }
     // }
-    // pub fn to_pathbuf(&self) -> PathBuf {
-    //     let mut buf = PathBuf::new();
-    //     for p in &self.components {
-    //         buf.push(p);
-    //     }
-    //     return buf;
-    // }
+    pub fn as_pathbuf(&self) -> PathBuf {
+        let mut buf = PathBuf::new();
+        for p in &self.components {
+            buf.push(p);
+        }
+        return buf;
+    }
     // pub fn from_pathbuf(path: &PathBuf) -> Self {
     //     let components = path.components();
     //     let mut path = Path::new();
