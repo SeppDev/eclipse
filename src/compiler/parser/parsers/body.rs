@@ -1,6 +1,6 @@
 use crate::compiler::{lexer::{Token, Tokens}, parser::Node};
 
-use super::{expression::parse_expression, variable::parse_variable};
+use super::{expression::parse_expression, identifier::parse_after_identifier, variable::{parse_set_variable, parse_variable}};
 
 
 pub fn parse_body(tokens: &mut Tokens) -> Vec<Node> {
@@ -14,8 +14,9 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<Node> {
                 Node::Return(expression)
             },
             Token::Variable => parse_variable(tokens),
+            Token::Identifier(name) => parse_after_identifier(tokens, name),
             Token::EndScope => break,
-            t => tokens.throw_error(format!("Expected item, got '{}'", t), "")
+            t => tokens.throw_error(format!("Expected item 2, got '{}'", t), "")
         };
         body.push(node)
     }

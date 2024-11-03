@@ -13,7 +13,6 @@ pub fn parse_function(tokens: &mut Tokens) -> Node {
     let mut parameters: Vec<(String, Type)> = Vec::new();
     loop {
         if tokens.peek_expect_token(Token::CloseParen) {
-            tokens.advance();
             break;
         }
         let name = tokens.parse_identifer();
@@ -22,7 +21,6 @@ pub fn parse_function(tokens: &mut Tokens) -> Node {
     }
 
     let return_type = if tokens.peek_expect_token(Token::Colon) {
-        tokens.advance();
         parse_type(tokens)
     } else {
         Type::Base(BaseType::Void)

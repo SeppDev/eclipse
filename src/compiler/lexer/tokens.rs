@@ -2,7 +2,7 @@ use std::{path::PathBuf, process::exit};
 
 use crate::compiler::parser::{Expression, Node};
 
-use super::TokenInfo;
+use super::{Token, TokenInfo};
 use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
@@ -27,7 +27,10 @@ impl Tokens {
     pub fn throw_error<T: ToString, E: ToString>(&mut self, message: T, notice: E) -> ! {
         let current = self.current.clone().unwrap();
         let location = &current.location;
-        let line = self.lines.get(location.lines.start - 1).unwrap();
+        let line = match self.lines.get(location.lines.start - 1) {
+            Some(s) => s,
+            None => panic!("Could not find: {:?}", location)
+        };
 
         println!("error: {}", message.to_string());
         println!(
@@ -67,7 +70,9 @@ impl Tokens {
     pub fn advance(&mut self) -> TokenInfo {
         match self.tokens.next() {
             Some(info) => {
-                self.current = Some(info.clone());
+                if info.token != Token::EndOfFile {
+                    self.current = Some(info.clone());
+                }
                 info
             }
             None => todo!(),

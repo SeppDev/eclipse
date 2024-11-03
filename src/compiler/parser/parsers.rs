@@ -7,6 +7,7 @@ mod types;
 mod body;
 mod expression;
 mod variable;
+mod arguments;
 
 use crate::compiler::{lexer::tokenize, read_file};
 
