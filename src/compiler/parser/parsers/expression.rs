@@ -4,13 +4,16 @@ use crate::compiler::{
 };
 
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expression> {
-    let info = tokens.peek();
+    let info = tokens.start();
 
-    let expression = match &info.token {
+    let expression = match info.token.clone() {
         Token::Integer(integer) => Expression::Value(Value::Integer {
             minus: false,
             integer: integer.clone(),
         }),
+        Token::Identifier(name) => {
+            
+        }
         token => {
             if required {
                 tokens.throw_error(format!("Expected expression, got '{}'", token), "");
@@ -18,7 +21,6 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
             return None;
         }
     };
-    tokens.advance();
 
-    Some(expression)
+    Some(tokens.create_expression(expression))
 }

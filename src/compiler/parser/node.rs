@@ -15,6 +15,11 @@ pub enum Node {
     Return(Option<Expression>)
 }
 
+pub struct NodeInfo {
+    pub node: Node,
+    
+}
+
 #[derive(Debug)]
 pub enum Expression {
     Value(Value)

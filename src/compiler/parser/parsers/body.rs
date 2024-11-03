@@ -7,7 +7,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<Node> {
     let mut body: Vec<Node> = Vec::new();
 
     loop {
-        let info = tokens.advance();
+        let info = tokens.start();
         let node = match info.token.clone() {
             Token::Return => {
                 let expression = parse_expression(tokens, false);

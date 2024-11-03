@@ -20,6 +20,6 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
         "f64" => Type::Base(BaseType::Float64),
         // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
-        _ => todo!(), // a => Type::Custom(a.to_string()),
+        str => tokens.throw_error(format!("Expected type, got {}", str), ""),
     };
 }

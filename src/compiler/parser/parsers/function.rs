@@ -17,7 +17,7 @@ pub fn parse_function(tokens: &mut Tokens) -> Node {
             break;
         }
         let name = tokens.parse_identifer();
-        let data_type= parse_type(tokens);
+        let data_type = parse_type(tokens);
         parameters.push((name, data_type))
     }
 
@@ -31,5 +31,10 @@ pub fn parse_function(tokens: &mut Tokens) -> Node {
     tokens.expect_token(Token::StartScope);
     let body = parse_body(tokens);
 
-    Node::Function { name, parameters, return_type, body }
+    tokens.create_node(Node::Function {
+        name,
+        parameters,
+        return_type,
+        body,
+    })
 }

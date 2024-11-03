@@ -16,11 +16,10 @@ fn clean_path(path: PathBuf) -> PathBuf {
 
 pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
     use super::super::lexer::Token;
-
+    
     let file_path = project_dir.join(&relative_path);
     let source = read_file(&file_path);
     let mut tokens = tokenize(&relative_path, source);
-
     loop {
         let info = tokens.start();
 
@@ -34,6 +33,7 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
             Token::Function => function::parse_function(&mut tokens),
             t => tokens.throw_error(format!("Expected item, found '{}'", t), ""),
         };
+        
         println!("{:#?}", node);
     }
 }
