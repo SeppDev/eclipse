@@ -92,7 +92,7 @@ impl std::fmt::Display for Token {
                 While => "while",
                 LessThan => "<",
                 GreaterThan => ">",
-                Boolean(value) => "bool",
+                Boolean(_) => "bool",
                 String(value) => value.as_str(),
                 Integer(value) => value.as_str(),
                 Float(value) => value.as_str(),

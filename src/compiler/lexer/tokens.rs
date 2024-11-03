@@ -26,22 +26,23 @@ impl Tokens {
     }
     pub fn throw_error<T: ToString, E: ToString>(&mut self, message: T, notice: E) -> ! {
         let current = self.current.clone().unwrap();
+        let location = &current.location;
+        let line = self.lines.get(location.lines.start - 1).unwrap();
 
-        let line = self.lines.get(current.lines.start - 1).unwrap();
         println!("error: {}", message.to_string());
         println!(
             "  --> {}:{}:{}",
             self.file_path.to_string_lossy(),
-            current.lines.start,
-            current.columns.start
+            location.lines.start,
+            location.columns.start
         );
 
         println!("  |");
         println!("  | {}", line);
         println!(
             "  | {}{} {}",
-            " ".repeat(current.columns.start - 1),
-            "^".repeat(current.columns.end - current.columns.start),
+            " ".repeat(location.columns.start - 1),
+            "^".repeat(location.columns.end - current.location.columns.start),
             notice.to_string()
         );
         exit(1)

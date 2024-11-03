@@ -22,7 +22,8 @@ pub struct NodeInfo {
 
 #[derive(Debug)]
 pub enum Expression {
-    Value(Value)
+    Value(Value),
+    GetVariable(String)
 }
 
 #[derive(Debug)]
