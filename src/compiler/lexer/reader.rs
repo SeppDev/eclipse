@@ -32,8 +32,8 @@ pub struct Reader {
 }
 impl Reader {
     pub fn new(source: String) -> Self {
-        let source = source.replace("\r\n", "\n");
-        let source = source.replace("\r", "\n");
+        let mut source = source.replace("\r\n", "\n");
+        source = source.replace("\r", "\n");
 
         let mut chars = source.chars().peekable();
 
@@ -61,7 +61,7 @@ impl Reader {
                 }
                 '\t' => {
                     column += 4;
-                    line_string.push('\t')
+                    line_string.push_str("    ")
                 }
                 ch => {
                     line_string.push(ch);

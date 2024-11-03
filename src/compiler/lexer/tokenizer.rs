@@ -1,9 +1,10 @@
+use std::path::PathBuf;
+
 use super::{
-    reader::{Char, Reader},
-    Token, TokenInfo,
+    reader::{Char, Reader}, Token, TokenInfo, Tokens
 };
 
-pub fn tokenize(source: String) -> Vec<TokenInfo> {
+pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
     let mut reader = Reader::new(source);
     let mut cursor: usize = 0;
 
@@ -101,12 +102,9 @@ pub fn tokenize(source: String) -> Vec<TokenInfo> {
     }
 
     let lines = reader.lines.len() + 1;
-    reader.push(TokenInfo::new(
-        Token::EndOfFile,
-        lines..lines,
-        0..1,
-    ));
-    return reader.tokens;
+    reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
+
+    return Tokens::new(file_path.clone(), reader.tokens, reader.lines);
 }
 
 fn is_float(source: &String) -> Option<Token> {
@@ -151,7 +149,6 @@ fn is_identifier(source: &String) -> Option<Token> {
         Some(char) => {
             if char.is_ascii_digit() {
                 return None;
-                // return is_integer(&source.to_string());
             }
             if !is_valid_char(char) {
                 return None;

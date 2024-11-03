@@ -28,11 +28,6 @@ impl Path {
     pub fn add<T: ToString>(&mut self, name: T) {
         self.components.push(name.to_string())
     }
-    // pub fn push(&mut self, path: &Self) {
-    //     for path in &path.components {
-    //         self.components.push(path.clone());
-    //     }
-    // }
     pub fn as_pathbuf(&self) -> PathBuf {
         let mut buf = PathBuf::new();
         for p in &self.components {
@@ -40,14 +35,4 @@ impl Path {
         }
         return buf;
     }
-    // pub fn from_pathbuf(path: &PathBuf) -> Self {
-    //     let components = path.components();
-    //     let mut path = Path::new();
-
-    //     for component in components.into_iter() {
-    //         path.add(String::from(component.as_os_str().to_str().unwrap()));
-    //     }
-
-    //     return path;
-    // }
 }

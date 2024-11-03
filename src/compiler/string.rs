@@ -18,7 +18,6 @@ impl BetterString {
             body: value.to_string()
         }
     }
-
     pub fn next_line(&mut self) {
         self.body.push('\n');
     }
