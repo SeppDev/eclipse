@@ -20,7 +20,7 @@ impl Tokens {
             tokens,
         };
     }
-    pub fn create_error<T: ToString, E: ToString>(&self, message: T, notice: E) -> ! {
+    pub fn throw_error<T: ToString, E: ToString>(&self, message: T, notice: E) -> ! {
         let current = self.current();
         let line = self.lines.get(current.lines.start - 1).unwrap();
 
@@ -43,7 +43,7 @@ impl Tokens {
         exit(1)
     }
     pub fn create_node(&mut self) {
-        self.starts.pop();
+        let start = self.starts.pop().unwrap();
     }
     pub fn current(&self) -> &TokenInfo {
         return match self.tokens.get(self.cursor - 1) {
@@ -66,7 +66,7 @@ impl Tokens {
         };
     }
     pub fn peek(&self) -> &TokenInfo {
-        return match self.tokens.get(self.cursor + 1) {
+        return match self.tokens.get(self.cursor) {
             Some(info) => info,
             None => todo!(),
         };

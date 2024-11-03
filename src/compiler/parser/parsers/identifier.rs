@@ -12,7 +12,7 @@ impl Tokens {
             token => token.clone(),
         };
         
-        self.create_error(
+        self.throw_error(
             format!("Expected identifier, found '{:?}'", token),
             "expected identifier",
         )

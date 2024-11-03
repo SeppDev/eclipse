@@ -5,12 +5,22 @@ pub enum Node {
     Function {
         name: String,
         parameters: Vec<(String, Type)>,
-        return_type: Option<Type>,
-        body: Vec<Node>
-    }
+        return_type: Type,
+        body: Vec<Node>,
+    },
+    Variable {
+        name: String,
+        value: Expression
+    },
+    Return(Option<Expression>)
 }
 
 #[derive(Debug)]
 pub enum Expression {
+    Value(Value)
+}
 
+#[derive(Debug)]
+pub enum Value {
+    Integer { minus: bool, integer: String },
 }

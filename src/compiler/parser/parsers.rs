@@ -1,5 +1,12 @@
 use std::path::PathBuf;
+
+mod expect_token;
+mod function;
 mod identifier;
+mod types;
+mod body;
+mod expression;
+mod variable;
 
 use crate::compiler::{lexer::tokenize, read_file};
 
@@ -17,19 +24,16 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
     loop {
         let info = tokens.start();
 
-        match info.token.clone() {
+        let node = match info.token.clone() {
             Token::EndOfFile => break,
             Token::Import => {
-                let name = tokens.parse_identifer();
+                let _name = tokens.parse_identifer();
                 // parse(project_dir, relative_path.parent().unwrap().join(name));
-
-
+                todo!()
             }
-            Token::Function => {
-                let name = tokens.parse_identifer();
-
-            }
-            t => tokens.create_error(format!("Expected item, found '{}'", t), ""),
+            Token::Function => function::parse_function(&mut tokens),
+            t => tokens.throw_error(format!("Expected item, found '{}'", t), ""),
         };
+        println!("{:#?}", node);
     }
 }

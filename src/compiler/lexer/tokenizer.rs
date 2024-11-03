@@ -123,12 +123,20 @@ fn is_float(source: &String) -> Option<Token> {
 }
 
 fn is_number(source: &String) -> Option<Token> {
-    for chr in source.chars() {
+    let mut chrs = source.chars();
+    if !chrs.next().unwrap().is_ascii_digit() {
+        return None;
+    }
+
+    for chr in chrs {
         if chr == '.' {
             return is_float(source);
         }
         if chr.is_ascii_digit() {
             continue;
+        }
+        if chr.is_alphabetic() {
+           panic!("Failed to parse number!")
         }
         return None;
     }
