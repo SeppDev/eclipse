@@ -1,32 +1,47 @@
 use crate::compiler::{
     lexer::{Token, Tokens},
-    parser::{Expression, Operator, Value},
+    parser::{Expression, ExpressionInfo, Operator, Value},
 };
 
-pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expression> {
-    tokens.peek_expect_token(vec![]);
+pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
+    let info = match tokens.peek_expect_tokens(
+        vec![
+            Token::String(String::new()),
+            Token::Integer(String::new()),
+            Token::Identifier(String::new()),
+        ],
+        false,
+    ) {
+        Some(info) => info,
+        None => {
+            if required {
+                let info = tokens.advance();
+                tokens.throw_error(format!("Expected expression, got '{}'", info.token), "");
+            }
+            return None;
+        }
+    };
+    tokens.start();
 
-    let expression = tokens.create_expression(match info.token.clone() {
+    let expression = tokens.create_expression(match info.token {
         Token::Integer(integer) => Expression::Value(Value::Integer {
             minus: false,
             integer: integer.clone(),
         }),
         Token::Identifier(name) => Expression::GetVariable(name),
-        token => {
-            if required {
-                tokens.throw_error(format!("Expected expression, got '{}'", token), "");
-            }
-            return None;
-        }
+        _ => panic!(),
     });
 
-    let info = match tokens.peek_expect_tokens(vec![
-        Token::Plus,
-        Token::Minus,
-        Token::ForwardSlash,
-        Token::Asterisk,
-    ]) {
-        Some(info) => info,
+    let info = match tokens.peek_expect_tokens(
+        vec![
+            Token::Plus,
+            Token::Minus,
+            Token::ForwardSlash,
+            Token::Asterisk,
+        ],
+        false,
+    ) {
+        Some(_) => tokens.start(),
         None => return Some(expression),
     };
     let operator = match info.token {
@@ -39,9 +54,9 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
 
     let second_expression = parse_expression(tokens, true).unwrap();
 
-    Some(Expression::BinaryOperation(
+    Some(tokens.create_expression(Expression::BinaryOperation(
         Box::new(expression),
         operator,
         Box::new(second_expression),
-    ))
+    )))
 }

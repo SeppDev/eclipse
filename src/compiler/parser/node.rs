@@ -1,4 +1,4 @@
-use crate::compiler::types::Type;
+use crate::compiler::{lexer::Location, types::Type};
 
 #[derive(Debug)]
 pub enum Node {
@@ -6,33 +6,40 @@ pub enum Node {
         name: String,
         parameters: Vec<(String, Type)>,
         return_type: Type,
-        body: Vec<Node>,
+        body: Vec<NodeInfo>,
     },
     SetVariable {
         name: String,
-        expression: Expression,
+        expression: ExpressionInfo,
     },
     Variable {
         name: String,
         mutable: bool,
         data_type: Option<Type>,
-        expression: Expression
+        expression: ExpressionInfo
     },
-    Expression(Expression),
-    Return(Option<Expression>)
+    Expression(ExpressionInfo),
+    Return(Option<ExpressionInfo>)
 }
 
+#[derive(Debug)]
 pub struct NodeInfo {
     pub node: Node,
-    
+    pub location: Location
 }
 
 #[derive(Debug)]
 pub enum Expression {
     Value(Value),
     GetVariable(String),
-    Call(String, Vec<Expression>),
-    BinaryOperation(Box<Expression>, Operator, Box<Expression>)
+    Call(String, Vec<ExpressionInfo>),
+    BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>)
+}
+
+#[derive(Debug)]
+pub struct ExpressionInfo {
+    pub expression: Expression,
+    pub location: Location
 }
 
 #[derive(Debug)]

@@ -46,6 +46,20 @@ pub enum Token {
     Float(String),
     Identifier(String),
 }
+impl Token {
+    pub fn better_eq(&self, other: &Token) -> bool {
+        match (self, other) {
+            (Token::Boolean(_), Token::Boolean(_)) => true,
+            (Token::String(_), Token::String(_)) => true,
+            (Token::Integer(_), Token::Integer(_)) => true,
+            (Token::Float(_), Token::Float(_)) => true,
+            (Token::Identifier(_), Token::Identifier(_)) => true,
+            _ => self == other,
+        }
+        // println!("{:?} == {:?} ({})", self, other, result);
+        // result
+    }
+}
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -93,10 +107,10 @@ impl std::fmt::Display for Token {
                 LessThan => "<",
                 GreaterThan => ">",
                 Boolean(_) => "bool",
-                String(value) => value.as_str(),
-                Integer(value) => value.as_str(),
-                Float(value) => value.as_str(),
-                Identifier(value) => value.as_str(),
+                String(_) => "\"string\"",
+                Integer(_) => "1234",
+                Float(_) => "3.14",
+                Identifier(_) => "Identifier",
             }
         )
     }

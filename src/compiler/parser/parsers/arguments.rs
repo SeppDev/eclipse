@@ -1,20 +1,21 @@
 use crate::compiler::{
     lexer::{Token, Tokens},
-    parser::Expression,
+    parser::ExpressionInfo,
 };
 
 use super::expression::parse_expression;
 
-pub fn parse_arguments(tokens: &mut Tokens) -> Vec<Expression> {
+pub fn parse_arguments(tokens: &mut Tokens) -> Vec<ExpressionInfo> {
     let mut arguments = Vec::new();
 
     loop {
-        if tokens.peek_expect_token(Token::CloseParen) {
+        if tokens.peek_expect_token(Token::CloseParen, true) {
             break;
         };
+        
         arguments.push(parse_expression(tokens, true).unwrap());
         match tokens
-            .expect_tokens(vec![Token::Comma, Token::CloseParen])
+            .expect_tokens(vec![Token::Comma, Token::CloseParen], false)
             .token
         {
             Token::Comma => continue,

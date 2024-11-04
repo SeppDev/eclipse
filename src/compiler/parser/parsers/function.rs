@@ -1,18 +1,18 @@
 use crate::compiler::{
     lexer::{Token, Tokens},
-    parser::Node,
+    parser::{Node, NodeInfo},
     types::{BaseType, Type},
 };
 
 use super::{body::parse_body, types::parse_type};
 
-pub fn parse_function(tokens: &mut Tokens) -> Node {
+pub fn parse_function(tokens: &mut Tokens) -> NodeInfo {
     let name = tokens.parse_identifer();
-    tokens.expect_token(Token::OpenParen);
+    tokens.expect_tokens(vec![Token::OpenParen], false);
 
     let mut parameters: Vec<(String, Type)> = Vec::new();
     loop {
-        if tokens.peek_expect_token(Token::CloseParen) {
+        if tokens.peek_expect_token(Token::CloseParen, true) {
             break;
         }
         let name = tokens.parse_identifer();
@@ -20,13 +20,13 @@ pub fn parse_function(tokens: &mut Tokens) -> Node {
         parameters.push((name, data_type))
     }
 
-    let return_type = if tokens.peek_expect_token(Token::Colon) {
+    let return_type = if tokens.peek_expect_token(Token::Colon, true) {
         parse_type(tokens)
     } else {
         Type::Base(BaseType::Void)
     };
 
-    tokens.expect_token(Token::StartScope);
+    tokens.expect_tokens(vec![Token::StartScope], false);
     let body = parse_body(tokens);
 
     tokens.create_node(Node::Function {

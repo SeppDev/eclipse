@@ -1,8 +1,8 @@
 use std::{path::PathBuf, process::exit};
 
-use crate::compiler::parser::{Expression, Node};
+use crate::compiler::parser::{Expression, ExpressionInfo, Node, NodeInfo};
 
-use super::{Token, TokenInfo};
+use super::{Location, Token, TokenInfo};
 use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ impl Tokens {
         let location = &current.location;
         let line = match self.lines.get(location.lines.start - 1) {
             Some(s) => s,
-            None => panic!("Could not find: {:?}", location)
+            None => panic!("Could not find: {:?}", location),
         };
 
         println!("error: {}", message.to_string());
@@ -50,17 +50,47 @@ impl Tokens {
         );
         exit(1)
     }
-    pub fn create_node(&mut self, node: Node) -> Node {
+    pub fn finish(mut self) {
+        if self.starts.len() > 0 {
+            println!("{:#?}", self.starts);
+            panic!("Failed to finish: {:#?}", self.start())
+        }
+    }
+    pub fn pop_start(&mut self) -> TokenInfo {
+        self.starts.pop().unwrap()
+    }
+    pub fn push_start(&mut self, token: &TokenInfo) {
+        self.starts.push(token.clone());
+    }
+    pub fn create_node(&mut self, node: Node) -> NodeInfo {
         let start = self.starts.pop().unwrap_or_else(|| {
             panic!("No starting node for: {:#?}", node);
         });
-        node
+        let current = self.current.clone().unwrap().location;
+
+        println!("CREATING NODE: {:#?} WITH {:#?}", node, start);
+        let location = Location::new(
+            start.location.lines.start..current.lines.start,
+            start.location.columns.start..current.columns.start,
+        );
+        NodeInfo { node, location }
     }
-    pub fn create_expression(&mut self, expression: Expression) -> Expression {
+    pub fn create_expression(&mut self, expression: Expression) -> ExpressionInfo {
         let start = self.starts.pop().unwrap_or_else(|| {
             panic!("No starting node for: {:#?}", expression);
         });
-        expression
+        let current = self.current.clone().unwrap().location;
+
+        println!("CREATING EXPRESION: {:#?} WITH {:#?}", expression, start);
+
+        let location = Location::new(
+            start.location.lines.start..current.lines.start,
+            start.location.columns.start..current.columns.start,
+        );
+        ExpressionInfo {
+            expression,
+            location,
+        }
     }
     pub fn start(&mut self) -> TokenInfo {
         let token = self.advance();
@@ -70,12 +100,13 @@ impl Tokens {
     pub fn advance(&mut self) -> TokenInfo {
         match self.tokens.next() {
             Some(info) => {
-                if info.token != Token::EndOfFile {
-                    self.current = Some(info.clone());
-                }
+                // if info.token == Token::EndOfFile {
+                //     self.throw_error("Early <EOF>", "")
+                // }
+                self.current = Some(info.clone());
                 info
             }
-            None => todo!(),
+            None => panic!(),
         }
     }
     pub fn peek(&mut self) -> &TokenInfo {
@@ -83,5 +114,8 @@ impl Tokens {
             Some(info) => info,
             None => todo!(),
         };
+    }
+    pub fn is_eof(&mut self) -> bool {
+        return self.peek().token == Token::EndOfFile;
     }
 }

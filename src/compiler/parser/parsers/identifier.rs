@@ -2,9 +2,13 @@
 
 // }
 
-use crate::compiler::parser::{Expression, Node};
+use crate::compiler::parser::{Expression, Node, NodeInfo};
 
-use super::{super::super::lexer::{Token, Tokens}, arguments::parse_arguments, expression::parse_expression, variable::parse_set_variable};
+use super::{
+    super::super::lexer::{Token, Tokens},
+    arguments::parse_arguments,
+    variable::parse_set_variable,
+};
 impl Tokens {
     pub fn parse_identifer(&mut self) -> String {
         let info = self.advance();
@@ -13,7 +17,7 @@ impl Tokens {
             Token::Identifier(string) => return string.clone(),
             token => token.clone(),
         };
-        
+
         self.throw_error(
             format!("Expected identifier, found '{:?}'", token),
             "expected identifier",
@@ -21,17 +25,18 @@ impl Tokens {
     }
 }
 
-pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> Node {
-    let info = tokens.expect_tokens(vec![Token::OpenParen, Token::Equals]);
-    
+pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
+    let info = tokens.expect_tokens(vec![Token::OpenParen, Token::Equals], false);
+
     let node = match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens);
-            Node::Expression(Expression::Call(name, arguments))
-        },
+            let expression = tokens.create_expression(Expression::Call(name, arguments));
+            tokens.create_node(Node::Expression(expression))
+        }
         Token::Equals => parse_set_variable(tokens, name),
-        _ => panic!()
+        _ => panic!(),
     };
 
-    return tokens.create_node(node)
+    return node;
 }

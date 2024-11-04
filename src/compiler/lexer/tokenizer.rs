@@ -101,7 +101,7 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
         }
     }
 
-    let lines = reader.lines.len() + 1;
+    let lines = reader.lines.len();
     reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
 
     return Tokens::new(file_path.clone(), reader.tokens, reader.lines);
