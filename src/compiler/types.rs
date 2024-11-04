@@ -47,6 +47,8 @@ pub enum Type {
     Base(BaseType),
     Array(Box<Type>, usize),
     Tuple(Vec<Type>),
+    Pointer(Box<Type>),
+    Reference(Box<Type>)
 }
 impl Type {
     // The bool in the return type is true if the integer is signed
@@ -81,7 +83,8 @@ impl Type {
                     size += x.size();
                 }
                 size
-            }
+            },
+            _ => todo!()
         }
     }
     pub fn is_integer(&self) -> bool {
