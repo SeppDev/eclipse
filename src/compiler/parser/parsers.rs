@@ -20,9 +20,13 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
 
     let file_path = project_dir.join(&relative_path);
     let source = read_file(&file_path);
+
+    let lexer_start = std::time::Instant::now();
     let mut tokens = tokenize(&relative_path, source);
+    let lexer_took = lexer_start.elapsed();
 
     let mut nodes = Vec::new();
+    let parser_start = std::time::Instant::now();
 
     loop {
         if tokens.is_eof() {
@@ -44,5 +48,8 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
         nodes.push(node);
     }
     tokens.finish();
-    println!("{:#?}", nodes);
+    let parser_took = parser_start.elapsed();
+    // println!("{:#?}", nodes);
+
+    println!("lexer: {:?}\nparser: {:?}", lexer_took, parser_took);
 }

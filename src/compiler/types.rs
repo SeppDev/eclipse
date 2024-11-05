@@ -2,6 +2,9 @@
 pub enum BaseType {
     Void,
 
+    // Int,
+    // UInt,
+
     Int64,
     UInt64,
     Int32,
@@ -16,8 +19,7 @@ pub enum BaseType {
     Float32,
     Float64,
     // Float128
-    // Intsize,
-    // UIntsize,
+    
 }
 impl BaseType {
     pub fn size(&self) -> usize {
@@ -29,7 +31,7 @@ impl BaseType {
             Int32 | UInt32 | Float32 => 4,
             Int16 | UInt16 => 2,
             Int8 | UInt8 | Boolean => 1,
-
+            _ => todo!()
         }
     }
     pub fn is_bool(&self) -> bool {

@@ -2,6 +2,7 @@ use crate::compiler::{lexer::Location, types::Type};
 
 #[derive(Debug)]
 pub enum Node {
+    Scope(Vec<NodeInfo>),
     Function {
         name: String,
         parameters: Vec<(String, Type)>,

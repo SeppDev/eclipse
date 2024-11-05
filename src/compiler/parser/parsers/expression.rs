@@ -3,6 +3,8 @@ use crate::compiler::{
     parser::{Expression, ExpressionInfo, Operator, Value},
 };
 
+use super::arguments::parse_arguments;
+
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -23,14 +25,15 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
     };
     tokens.start();
 
-    let expression = tokens.create_expression(match info.token {
+    let expression = match info.token {
         Token::Integer(integer) => Expression::Value(Value::Integer {
             minus: false,
             integer: integer.clone(),
         }),
-        Token::Identifier(name) => Expression::GetVariable(name),
+        Token::Identifier(name) => parse_identifier(tokens, name),
         _ => panic!(),
-    });
+    };
+    let expression = tokens.create_expression(expression);
 
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -59,4 +62,19 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         operator,
         Box::new(second_expression),
     )))
+}
+
+fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {
+    let info = match tokens.peek_expect_tokens(vec![Token::OpenParen, Token::DoubleColon], true) {
+        Some(info) => info,
+        None => return Expression::GetVariable(name),
+    };
+    match info.token {
+        Token::OpenParen => {
+            let arguments = parse_arguments(tokens);
+            Expression::Call(name, arguments)
+        }
+        Token::DoubleColon => todo!(),
+        _ => panic!(),
+    }
 }

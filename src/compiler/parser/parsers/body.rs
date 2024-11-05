@@ -23,12 +23,17 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 Token::Return,
                 Token::Function,
                 Token::Variable,
+                Token::StartScope,
                 Token::Identifier(String::new()),
             ],
             true,
         );
 
         let node = match info.token {
+            Token::StartScope => {
+                let nodes = parse_body(tokens);
+                tokens.create_node(Node::Scope(nodes))
+            }
             Token::Identifier(name) => parse_after_identifier(tokens, name),
             Token::Return => {
                 let expression = parse_expression(tokens, false);

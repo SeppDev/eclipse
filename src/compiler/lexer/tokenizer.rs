@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use super::{
-    reader::{Char, Reader}, Token, TokenInfo, Tokens
+    reader::{Char, Reader},
+    Token, TokenInfo, Tokens,
 };
 
 pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
@@ -16,34 +17,34 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
         let mut token: Option<Token> = None;
 
         loop {
-            let string = match Char::to_string(&chars) {
+            let mut string = match Char::to_string(&chars) {
                 Some(s) => s,
                 None => break,
             };
 
-            match match_word(&string) {
-                Some(t) => {
+            string = match match_word(string) {
+                Ok(t) => {
                     token = Some(t);
                     break;
                 }
-                None => {}
-            }
+                Err(source) => source,
+            };
 
-            match is_number(&string) {
-                Some(t) => {
+            string = match is_number(string) {
+                Ok(t) => {
                     token = Some(t);
                     break;
                 }
-                None => {}
-            }
+                Err(source) => source,
+            };
 
-            match is_identifier(&string) {
-                Some(t) => {
+            string = match is_identifier(string) {
+                Ok(t) => {
                     token = Some(t);
                     break;
                 }
-                None => {}
-            }
+                Err(source) => source,
+            };
 
             match string.as_str() {
                 "\"" => {
@@ -107,7 +108,7 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
     return Tokens::new(file_path.clone(), reader.tokens, reader.lines);
 }
 
-fn is_float(source: &String) -> Option<Token> {
+fn is_float(source: String) -> Result<Token, String> {
     let mut dot = false;
     for chr in source.chars() {
         if chr.is_ascii_digit() {
@@ -117,15 +118,15 @@ fn is_float(source: &String) -> Option<Token> {
             dot = true;
             continue;
         }
-        return None;
+        return Err(source);
     }
-    return Some(Token::Float(source.clone()));
+    return Ok(Token::Float(source));
 }
 
-fn is_number(source: &String) -> Option<Token> {
+fn is_number(source: String) -> Result<Token, String> {
     let mut chrs = source.chars();
     if !chrs.next().unwrap().is_ascii_digit() {
-        return None;
+        return Err(source);
     }
 
     for chr in chrs {
@@ -136,11 +137,11 @@ fn is_number(source: &String) -> Option<Token> {
             continue;
         }
         if chr.is_alphabetic() {
-           panic!("Failed to parse number!")
+            panic!("Failed to parse number!")
         }
-        return None;
+        return Err(source);
     }
-    return Some(Token::Integer(source.clone()));
+    return Ok(Token::Integer(source));
 }
 
 fn is_valid_char(chr: char) -> bool {
@@ -150,30 +151,27 @@ fn is_valid_char(chr: char) -> bool {
         || chr.is_ascii_digit();
 }
 
-fn is_identifier(source: &String) -> Option<Token> {
+fn is_identifier(source: String) -> Result<Token, String> {
     let mut chars = source.chars();
 
     match chars.next() {
         Some(char) => {
-            if char.is_ascii_digit() {
-                return None;
-            }
-            if !is_valid_char(char) {
-                return None;
+            if char.is_ascii_digit() || !is_valid_char(char) {
+                return Err(source);
             }
         }
-        None => return None,
+        None => return Err(source),
     }
     for char in chars {
         if is_valid_char(char) {
             continue;
         }
-        return None;
+        return Err(source);
     }
-    return Some(Token::Identifier(source.to_string()));
+    return Ok(Token::Identifier(source));
 }
 
-fn match_word(word: &String) -> Option<Token> {
+fn match_word(word: String) -> Result<Token, String> {
     let token = match word.as_str() {
         "fn" => Token::Function,
         "{" => Token::StartScope,
@@ -214,8 +212,8 @@ fn match_word(word: &String) -> Option<Token> {
         "<" => Token::LessThan,
         ">" => Token::GreaterThan,
         "break" => Token::Break,
-        _ => return None,
+        _ => return Err(word),
     };
 
-    return Some(token);
+    return Ok(token);
 }
