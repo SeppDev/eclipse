@@ -1,9 +1,10 @@
 use crate::compiler::{
     lexer::{Token, Tokens},
     parser::{Expression, ExpressionInfo, Operator, Value},
+    path::Path,
 };
 
-use super::arguments::parse_arguments;
+use super::{arguments::parse_arguments, path::parse_path};
 
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
     let info = match tokens.peek_expect_tokens(
@@ -65,16 +66,22 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {
-    let info = match tokens.peek_expect_tokens(vec![Token::OpenParen, Token::DoubleColon], true) {
-        Some(info) => info,
-        None => return Expression::GetVariable(name),
+    let path = if tokens.peek_expect_tokens(vec![Token::DoubleColon], false).is_some() {
+        parse_path(tokens, &name)
+    } else {
+        Path::from(&name)
     };
+    
+    let info = match tokens.peek_expect_tokens(vec![Token::OpenParen], true) {
+        Some(info) => info,
+        None => return Expression::GetVariable(path)
+    };
+    
     match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens);
-            Expression::Call(name, arguments)
+            Expression::Call(path, arguments)
         }
-        Token::DoubleColon => todo!(),
         _ => panic!(),
     }
 }

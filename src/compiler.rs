@@ -5,6 +5,9 @@ use parser::parse;
 mod lexer;
 mod parser;
 
+mod benchmark;
+pub use benchmark::*;
+
 mod errors;
 mod path;
 mod string;

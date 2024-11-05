@@ -89,7 +89,7 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
                 let start = chars.first().unwrap();
                 let end = chars.last().unwrap();
 
-                cursor += chars.len().max(1);
+                cursor += chars.len().max(1); 
                 reader.push(TokenInfo::new(
                     token,
                     start.line..end.line,

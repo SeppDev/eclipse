@@ -68,8 +68,8 @@ impl Tokens {
         });
         let current = self.current.clone().unwrap().location;
         let location = Location::new(
-            start.location.lines.start..current.lines.start,
-            start.location.columns.start..current.columns.start,
+            start.location.lines.start..current.lines.end,
+            start.location.columns.start..current.columns.end,
         );
         NodeInfo { node, location }
     }
@@ -79,8 +79,8 @@ impl Tokens {
         });
         let current = self.current.clone().unwrap().location;
         let location = Location::new(
-            start.location.lines.start..current.lines.start,
-            start.location.columns.start..current.columns.start,
+            start.location.lines.start..current.lines.end,
+            start.location.columns.start..current.columns.end,
         );
         ExpressionInfo {
             expression,
