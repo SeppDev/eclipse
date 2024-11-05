@@ -3,7 +3,7 @@
 // }
 
 use crate::compiler::{
-    parser::{Expression, Node, NodeInfo},
+    parser::{Node, NodeInfo},
     path::Path,
 };
 

@@ -46,6 +46,4 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
         nodes.push(node);
     }
     tokens.finish();
-
-    println!("{:#?}", nodes);
 }
