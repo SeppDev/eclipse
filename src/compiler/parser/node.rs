@@ -18,7 +18,7 @@ pub enum Node {
         data_type: Option<Type>,
         expression: ExpressionInfo
     },
-    Expression(ExpressionInfo),
+    Call(String, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>)
 }
 

@@ -19,7 +19,7 @@ impl Tokens {
         };
 
         self.throw_error(
-            format!("Expected identifier, found '{:?}'", token),
+            format!("Expected identifier, found '{}'", token),
             "expected identifier",
         )
     }
@@ -31,8 +31,7 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
     let node = match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens);
-            let expression = tokens.create_expression(Expression::Call(name, arguments));
-            tokens.create_node(Node::Expression(expression))
+            tokens.create_node(Node::Call(name, arguments))
         }
         Token::Equals => parse_set_variable(tokens, name),
         _ => panic!(),

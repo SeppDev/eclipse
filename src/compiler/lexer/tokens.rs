@@ -67,8 +67,6 @@ impl Tokens {
             panic!("No starting node for: {:#?}", node);
         });
         let current = self.current.clone().unwrap().location;
-
-        println!("CREATING NODE: {:#?} WITH {:#?}", node, start);
         let location = Location::new(
             start.location.lines.start..current.lines.start,
             start.location.columns.start..current.columns.start,
@@ -80,9 +78,6 @@ impl Tokens {
             panic!("No starting node for: {:#?}", expression);
         });
         let current = self.current.clone().unwrap().location;
-
-        println!("CREATING EXPRESION: {:#?} WITH {:#?}", expression, start);
-
         let location = Location::new(
             start.location.lines.start..current.lines.start,
             start.location.columns.start..current.columns.start,
