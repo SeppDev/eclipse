@@ -4,6 +4,7 @@ use parser::parse;
 
 mod lexer;
 mod parser;
+mod analyzer;
 
 mod benchmark;
 pub use benchmark::*;
@@ -20,7 +21,8 @@ pub fn build(project_dir: PathBuf) {
         let mut relative_path = PathBuf::from("src/main");
         relative_path.set_extension(FILE_EXTENSION);
 
-        parse(&project_dir, relative_path);
+        let main = parse(&project_dir, relative_path);
+        println!("{:#?}", main);
     };
 
 }
@@ -28,7 +30,7 @@ pub fn build(project_dir: PathBuf) {
 fn read_file(path: &PathBuf) -> String {
     let source = match std::fs::read_to_string(path) {
         Ok(source) => source,
-        Err(error) => todo!("{:?}", error),
+        Err(error) => panic!("{:?}: {:?}", path, error),
     };
 
     source

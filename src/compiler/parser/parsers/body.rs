@@ -12,7 +12,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
 
     loop {
         if tokens
-            .peek_expect_tokens(vec![Token::EndScope], true)
+            .peek_expect_tokens(vec![Token::EndScope], false)
             .is_some()
         {
             break;
@@ -32,6 +32,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
         let node = match info.token {
             Token::StartScope => {
                 let nodes = parse_body(tokens);
+                tokens.expect_tokens(vec![Token::EndScope], false);
                 tokens.create_node(Node::Scope(nodes))
             }
             Token::Identifier(name) => parse_after_identifier(tokens, name),

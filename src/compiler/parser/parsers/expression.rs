@@ -1,5 +1,4 @@
 use crate::compiler::{
-    benchmark,
     lexer::{Token, Tokens},
     parser::{Expression, ExpressionInfo, Operator, Value},
     path::Path,
@@ -8,10 +7,14 @@ use crate::compiler::{
 use super::{arguments::parse_arguments, path::parse_path};
 
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
+    let minus = tokens.peek_expect_token(Token::Minus, true);
+    
     let info = match tokens.peek_expect_tokens(
         vec![
             Token::String(String::new()),
             Token::Integer(String::new()),
+            Token::Float(String::new()),
+            Token::Boolean(true),
             Token::Identifier(String::new()),
         ],
         false,
@@ -28,14 +31,14 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
     tokens.start();
 
     let expression = match info.token {
-        Token::Integer(integer) => Expression::Value(Value::Integer {
-            minus: false,
-            integer: integer.clone(),
-        }),
+        Token::Integer(integer) => Expression::Value(Value::Integer(integer)),
+        Token::Float(float) => Expression::Value(Value::Float(float)),
+        Token::String(string) => Expression::Value(Value::String(string)),
+        Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
         Token::Identifier(name) => parse_identifier(tokens, name),
         _ => panic!(),
     };
-    let expression = tokens.create_expression(expression);
+    let expression = tokens.create_expression(expression, minus);
 
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -63,7 +66,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Box::new(expression),
         operator,
         Box::new(second_expression),
-    )))
+    ), false))
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {

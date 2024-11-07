@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 mod arguments;
 mod body;
@@ -10,22 +10,35 @@ mod path;
 mod types;
 mod variable;
 
-use crate::compiler::{lexer::tokenize, read_file};
+use crate::compiler::{lexer::tokenize, read_file, FILE_EXTENSION};
+
+use super::NodeInfo;
 
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
 }
 
-pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
+#[derive(Debug, Default)]
+pub struct ParsedFile {
+    pub imported: HashMap<String, ParsedFile>,
+    pub body: Vec<NodeInfo>,
+}
+impl ParsedFile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
     use super::super::lexer::Token;
 
     let file_path = project_dir.join(&relative_path);
     let source = read_file(&file_path);
 
     let mut tokens = tokenize(&relative_path, source);
+    // println!("{:#?}", tokens);
 
-    let mut nodes = Vec::new();
-
+    let mut file = ParsedFile::new();
     loop {
         if tokens.is_eof() {
             break;
@@ -35,15 +48,22 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) {
 
         let node = match info.token {
             Token::Import => {
-                let _name = tokens.parse_identifer();
-                // parse(project_dir, relative_path.parent().unwrap().join(name));
+                let name = tokens.parse_identifer();
+                let mut new_path = clean_path(relative_path.parent().unwrap().join(&name));
+                new_path.set_extension(FILE_EXTENSION);
+
+                let newfile = parse(project_dir, new_path);
                 tokens.pop_start();
-                todo!()
+
+                file.imported.insert(name, newfile);
+                continue;
             }
             Token::Function => function::parse_function(&mut tokens),
             t => tokens.throw_error(format!("Expected item, found '{}'", t), ""),
         };
-        nodes.push(node);
+        file.body.push(node);
     }
     tokens.finish();
+
+    return file;
 }

@@ -40,6 +40,7 @@ pub enum Expression {
 #[derive(Debug)]
 pub struct ExpressionInfo {
     pub location: Location,
+    pub minus: bool,
     pub expression: Expression,
 }
 
@@ -53,5 +54,8 @@ pub enum Operator {
 
 #[derive(Debug)]
 pub enum Value {
-    Integer { minus: bool, integer: String },
+    Boolean(bool),
+    Integer(String),
+    Float(String),
+    String(String)
 }

@@ -73,7 +73,7 @@ impl Tokens {
         );
         NodeInfo { node, location }
     }
-    pub fn create_expression(&mut self, expression: Expression) -> ExpressionInfo {
+    pub fn create_expression(&mut self, expression: Expression, minus: bool) -> ExpressionInfo {
         let start = self.starts.pop().unwrap_or_else(|| {
             panic!("No starting node for: {:#?}", expression);
         });
@@ -82,7 +82,9 @@ impl Tokens {
             start.location.lines.start..current.lines.end,
             start.location.columns.start..current.columns.end,
         );
+
         ExpressionInfo {
+            minus,
             expression,
             location,
         }
@@ -95,9 +97,6 @@ impl Tokens {
     pub fn advance(&mut self) -> TokenInfo {
         match self.tokens.next() {
             Some(info) => {
-                // if info.token == Token::EndOfFile {
-                //     self.throw_error("Early <EOF>", "")
-                // }
                 self.current = Some(info.clone());
                 info
             }
