@@ -31,7 +31,6 @@ impl BaseType {
             Int32 | UInt32 | Float32 => 4,
             Int16 | UInt16 => 2,
             Int8 | UInt8 | Boolean => 1,
-            _ => todo!()
         }
     }
     pub fn is_bool(&self) -> bool {

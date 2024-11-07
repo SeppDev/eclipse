@@ -8,7 +8,7 @@ use super::{arguments::parse_arguments, path::parse_path};
 
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
     let minus = tokens.peek_expect_token(Token::Minus, true);
-    
+
     let info = match tokens.peek_expect_tokens(
         vec![
             Token::String(String::new()),
@@ -62,11 +62,10 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
 
     let second_expression = parse_expression(tokens, true).unwrap();
 
-    Some(tokens.create_expression(Expression::BinaryOperation(
-        Box::new(expression),
-        operator,
-        Box::new(second_expression),
-    ), false))
+    Some(tokens.create_expression(
+        Expression::BinaryOperation(Box::new(expression), operator, Box::new(second_expression)),
+        false,
+    ))
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {

@@ -1,13 +1,10 @@
-use std::path::PathBuf;
-
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Hash, Clone)]
 pub struct Path {
-    pub components: Vec<String>,
+    components: Vec<String>,
 }
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.components.join("/"))
+        write!(f, "{}", self.components.join("::"))
     }
 }
 
@@ -22,17 +19,30 @@ impl Path {
         path.add(root);
         return path;
     }
-    pub fn join<T: ToString>(&self, seperator: T) -> String {
-        self.components.join(&seperator.to_string())
-    }
     pub fn add<T: ToString>(&mut self, name: T) {
-        self.components.push(name.to_string())
-    }
-    pub fn as_pathbuf(&self) -> PathBuf {
-        let mut buf = PathBuf::new();
-        for p in &self.components {
-            buf.push(p);
-        }
-        return buf;
+        // self.components.push(Chain {
+        //     method,
+        //     body: name.to_string(),
+        // })
+        self.components.push(name.to_string());
     }
 }
+
+// #[derive(Debug, PartialEq, Hash, Clone)]
+// struct Chain {
+//     method: bool,
+//     body: String,
+// }
+// impl Chain {
+//     pub fn join(&self) -> String {
+            
+//     }
+// }
+
+// impl std::fmt::Display for Chain {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "{}", "")
+//         // if self.method {
+//         // }
+//     }
+// }

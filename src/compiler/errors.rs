@@ -6,9 +6,9 @@
 
 // }
 
-use std::process::exit;
+// use std::process::exit;
 
-pub fn throw_error<T: ToString>(message: T,) -> ! {
-    println!("error: {}", message.to_string());
-    exit(1)
-} 
+// pub fn throw_error<T: ToString>(message: T,) -> ! {
+//     println!("error: {}", message.to_string());
+//     exit(1)
+// } 

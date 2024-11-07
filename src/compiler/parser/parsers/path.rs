@@ -4,7 +4,7 @@ use crate::compiler::{
 };
 
 pub fn parse_path(tokens: &mut Tokens, root: &String) -> Path {
-    let mut path = Path::from(root);
+    let mut path = Path::from( root);
     loop {
         if !tokens.peek_expect_token(Token::DoubleColon, true) {
             break;
