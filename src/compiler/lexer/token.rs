@@ -18,7 +18,7 @@ pub enum Token {
     Enum,
     Struct,
     Unsafe,
-    Reference,
+    Ampersand,
     SemiColon,
     Return,
     Dot,
@@ -69,7 +69,7 @@ impl std::fmt::Display for Token {
             "{}",
             match self {
                 EndOfFile => "<eof>",
-                Reference => "&",
+                Ampersand => "&",
                 Function => "fn",
                 StartScope => "{",
                 EndScope => "}",

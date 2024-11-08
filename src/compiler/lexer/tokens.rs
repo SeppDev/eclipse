@@ -73,7 +73,7 @@ impl Tokens {
         );
         NodeInfo { node, location }
     }
-    pub fn create_expression(&mut self, expression: Expression, minus: bool) -> ExpressionInfo {
+    pub fn create_expression(&mut self, expression: Expression) -> ExpressionInfo {
         let start = self.starts.pop().unwrap_or_else(|| {
             panic!("No starting node for: {:#?}", expression);
         });
@@ -84,7 +84,6 @@ impl Tokens {
         );
 
         ExpressionInfo {
-            minus,
             expression,
             location,
         }

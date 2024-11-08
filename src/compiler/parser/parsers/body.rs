@@ -4,7 +4,7 @@ use crate::compiler::{
 };
 
 use super::{
-    expression::parse_expression, identifier::parse_after_identifier, variable::parse_variable,
+    expression::parse_expression, identifier::parse_after_identifier, namespace::parse_namespace, variable::parse_variable
 };
 
 pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
@@ -24,6 +24,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 Token::Function,
                 Token::Variable,
                 Token::StartScope,
+                Token::Use,
                 Token::Identifier(String::new()),
             ],
             true,
@@ -35,6 +36,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 tokens.expect_tokens(vec![Token::EndScope], false);
                 tokens.create_node(Node::Scope(nodes))
             }
+            Token::Use => parse_namespace(tokens),
             Token::Identifier(name) => parse_after_identifier(tokens, name),
             Token::Return => {
                 let expression = parse_expression(tokens, false);

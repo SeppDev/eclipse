@@ -7,8 +7,6 @@ use crate::compiler::{
 use super::{arguments::parse_arguments, path::parse_path};
 
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
-    let minus = false; //tokens.peek_expect_token(Token::Minus, true);
-
     let info = match tokens.peek_expect_tokens(
         vec![
             Token::String(String::new()),
@@ -16,6 +14,10 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
             Token::Float(String::new()),
             Token::Boolean(true),
             Token::Identifier(String::new()),
+            Token::Asterisk,
+            Token::Ampersand,
+            Token::Minus,
+            Token::OpenParen,
         ],
         false,
     ) {
@@ -35,10 +37,41 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Token::Float(float) => Expression::Value(Value::Float(float)),
         Token::String(string) => Expression::Value(Value::String(string)),
         Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
+        Token::Ampersand => {
+            let new_expression = parse_expression(tokens, true).unwrap();
+            return Some(tokens.create_expression(Expression::Reference(Box::new(new_expression))));
+        }
+        Token::Asterisk => {
+            let new_expression = parse_expression(tokens, true).unwrap();
+            return Some(tokens.create_expression(Expression::Pointer(Box::new(new_expression))));
+        }
+        Token::Minus => {
+            let new_expression = parse_expression(tokens, true).unwrap();
+            return Some(tokens.create_expression(Expression::Minus(Box::new(new_expression))));
+        }
+        Token::OpenParen => {
+            let mut expressions = Vec::new();
+            loop {
+                let new_expression = match parse_expression(tokens, false) {
+                    Some(expression) => expression,
+                    None => {
+                        tokens.expect_tokens(vec![Token::CloseParen], false);
+                        break;
+                    }
+                };
+                expressions.push(new_expression);
+                match tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false).token {
+                    Token::CloseParen => break,
+                    Token::Comma => continue,
+                    _ => panic!()
+                };
+            }
+            return Some(tokens.create_expression(Expression::Tuple(expressions)));
+        }
         Token::Identifier(name) => parse_identifier(tokens, name),
         _ => panic!(),
     };
-    let expression_info = tokens.create_expression(expression, minus); 
+    let expression_info = tokens.create_expression(expression);
 
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -62,10 +95,11 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
 
     let second_expression = parse_expression(tokens, true).unwrap();
 
-    Some(tokens.create_expression(
-        Expression::BinaryOperation(Box::new(expression_info), operator, Box::new(second_expression)),
-        false,
-    ))
+    Some(tokens.create_expression(Expression::BinaryOperation(
+        Box::new(expression_info),
+        operator,
+        Box::new(second_expression),
+    )))
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {

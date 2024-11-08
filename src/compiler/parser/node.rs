@@ -17,10 +17,11 @@ pub enum Node {
         name: String,
         mutable: bool,
         data_type: Option<Type>,
-        expression: ExpressionInfo
+        expression: ExpressionInfo,
     },
     Call(Path, Vec<ExpressionInfo>),
-    Return(Option<ExpressionInfo>)
+    Return(Option<ExpressionInfo>),
+    NameSpace(Path)
 }
 impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -45,7 +46,10 @@ pub enum Expression {
     GetVariable(Path),
     Call(Path, Vec<ExpressionInfo>),
     BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>),
-    // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
+    Tuple(Vec<ExpressionInfo>),
+    Minus(Box<ExpressionInfo>),
+    Pointer(Box<ExpressionInfo>),
+    Reference(Box<ExpressionInfo>), // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
 }
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -56,7 +60,6 @@ impl std::fmt::Display for Expression {
 #[derive(Debug)]
 pub struct ExpressionInfo {
     pub location: Location,
-    pub minus: bool,
     pub expression: Expression,
 }
 impl std::fmt::Display for ExpressionInfo {
@@ -70,7 +73,7 @@ pub enum Operator {
     Plus,
     Minus,
     Division,
-    Multiply
+    Multiply,
 }
 
 #[derive(Debug)]
@@ -78,5 +81,5 @@ pub enum Value {
     Boolean(bool),
     Integer(String),
     Float(String),
-    String(String)
+    String(String),
 }

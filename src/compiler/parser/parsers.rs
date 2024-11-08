@@ -9,7 +9,10 @@ mod identifier;
 mod path;
 mod types;
 mod variable;
+mod namespace;
 // mod dot;
+
+use namespace::parse_namespace;
 
 use crate::compiler::{lexer::tokenize, read_file, FILE_EXTENSION};
 
@@ -45,7 +48,7 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
             break;
         }
 
-        let info = tokens.expect_tokens(vec![Token::Import, Token::Function], true);
+        let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
 
         let node = match info.token {
             Token::Import => {
@@ -59,6 +62,7 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
                 file.imported.insert(name, newfile);
                 continue;
             }
+            Token::Use => parse_namespace(&mut tokens),
             Token::Function => function::parse_function(&mut tokens),
             t => tokens.throw_error(format!("Expected item, found '{}'", t), ""),
         };

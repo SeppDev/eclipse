@@ -186,7 +186,7 @@ fn match_word(word: String) -> Result<Token, String> {
         "=" => Token::Equals,
         "==" => Token::Compare,
         "mut" => Token::Mutable,
-        "&" => Token::Reference,
+        "&" => Token::Ampersand,
         "_" => Token::Underscore,
         "if" => Token::If,
         "else" => Token::Else,
