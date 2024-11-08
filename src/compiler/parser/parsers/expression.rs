@@ -7,7 +7,7 @@ use crate::compiler::{
 use super::{arguments::parse_arguments, path::parse_path};
 
 pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
-    let minus = tokens.peek_expect_token(Token::Minus, true);
+    let minus = false; //tokens.peek_expect_token(Token::Minus, true);
 
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -38,7 +38,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Token::Identifier(name) => parse_identifier(tokens, name),
         _ => panic!(),
     };
-    let expression = tokens.create_expression(expression, minus);
+    let expression_info = tokens.create_expression(expression, minus); 
 
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -50,7 +50,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         false,
     ) {
         Some(_) => tokens.start(),
-        None => return Some(expression),
+        None => return Some(expression_info),
     };
     let operator = match info.token {
         Token::Plus => Operator::Plus,
@@ -63,7 +63,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
     let second_expression = parse_expression(tokens, true).unwrap();
 
     Some(tokens.create_expression(
-        Expression::BinaryOperation(Box::new(expression), operator, Box::new(second_expression)),
+        Expression::BinaryOperation(Box::new(expression_info), operator, Box::new(second_expression)),
         false,
     ))
 }

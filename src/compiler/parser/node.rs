@@ -22,11 +22,21 @@ pub enum Node {
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>)
 }
+impl std::fmt::Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
 
 #[derive(Debug)]
 pub struct NodeInfo {
     pub location: Location,
     pub node: Node,
+}
+impl std::fmt::Display for NodeInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.node)
+    }
 }
 
 #[derive(Debug)]
@@ -34,7 +44,13 @@ pub enum Expression {
     Value(Value),
     GetVariable(Path),
     Call(Path, Vec<ExpressionInfo>),
-    BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>)
+    BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>),
+    // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
+}
+impl std::fmt::Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 #[derive(Debug)]
@@ -42,6 +58,11 @@ pub struct ExpressionInfo {
     pub location: Location,
     pub minus: bool,
     pub expression: Expression,
+}
+impl std::fmt::Display for ExpressionInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.expression)
+    }
 }
 
 #[derive(Debug)]

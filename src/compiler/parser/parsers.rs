@@ -9,6 +9,7 @@ mod identifier;
 mod path;
 mod types;
 mod variable;
+// mod dot;
 
 use crate::compiler::{lexer::tokenize, read_file, FILE_EXTENSION};
 
