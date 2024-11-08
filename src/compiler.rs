@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use parser::parse;
+use parser::{parse, ParsedFile};
 
 mod analyzer;
 mod lexer;
@@ -18,24 +18,33 @@ mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
 
-pub fn build(project_dir: PathBuf) {
-    let current_dir = std::env::current_exe().unwrap();
-    let current_dir = current_dir.parent().unwrap().to_path_buf();
-    println!("{:#?}", current_dir);
+fn parse_include(source: &str, name: &str) -> ParsedFile {
+    let mut relative_path = PathBuf::from("std");
+    relative_path.push(name);
+    relative_path.set_extension(FILE_EXTENSION);
 
+    println!("{:?}", relative_path);
+
+    let file = parse(&PathBuf::new(), relative_path, source.to_string());
+    return file;
+}
+
+pub fn build(project_dir: PathBuf) {
     let _executable = {
-        let mut relative_path = PathBuf::from("std/lib");
-        relative_path.set_extension(FILE_EXTENSION);
-        let standard = parse(&current_dir, relative_path);
+        let std_imports = vec![
+            parse_include(include_str!("./std/io.ecl"), "io"),
+            parse_include(include_str!("./std/math.ecl"), "math"),
+        ];
+
+        let mut standard = ParsedFile::new();
+        
 
         let mut relative_path = PathBuf::from("src/main");
         relative_path.set_extension(FILE_EXTENSION);
-        
-        let main = parse(&project_dir, relative_path);
-        let program = ParsedProgram {
-            standard,
-            main,
-        };
+
+        let source = read_file(&project_dir.join(&relative_path));
+        let main = parse(&project_dir, relative_path, source);
+        let program = ParsedProgram { standard, main };
         println!("{:#?}", program);
     };
 }

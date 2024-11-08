@@ -34,11 +34,11 @@ impl ParsedFile {
     }
 }
 
-pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
+pub fn parse(project_dir: &PathBuf, mut relative_path: PathBuf, source: String) -> ParsedFile {
     use super::super::lexer::Token;
 
-    let file_path = project_dir.join(&relative_path);
-    let source = read_file(&file_path);
+    // let file_path = project_dir.join(&relative_path);
+    relative_path = clean_path(relative_path);
 
     let mut tokens = tokenize(&relative_path, source);
     // println!("{:#?}", tokens);
@@ -55,10 +55,11 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
         let node = match info.token {
             Token::Import => {
                 let name = tokens.parse_identifer();
-                let mut new_path = clean_path(relative_path.parent().unwrap().join(&name));
+                let mut new_path = relative_path.parent().unwrap().join(&name);
                 new_path.set_extension(FILE_EXTENSION);
 
-                let mut newfile = parse(project_dir, new_path);
+                let source = read_file(&new_path);
+                let mut newfile = parse(project_dir, new_path, source);
                 tokens.pop_start();
                 newfile.export = public;
 
