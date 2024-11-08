@@ -1,10 +1,43 @@
 use crate::compiler::{
-    lexer::Tokens,
+    lexer::{Token, Tokens},
     types::{BaseType, Type},
 };
 
 pub fn parse_type(tokens: &mut Tokens) -> Type {
-    let name = tokens.parse_identifer();
+    if tokens
+        .peek_expect_tokens(vec![Token::OpenParen], true)
+        .is_some()
+    {
+        let mut tuple = Vec::new();
+        loop {
+            let new_type = parse_type(tokens);
+            tuple.push(new_type);
+            match tokens
+                .expect_tokens(vec![Token::CloseParen, Token::Comma], false)
+                .token
+            {
+                Token::CloseParen => break,
+                Token::Comma => continue,
+                _ => panic!(),
+            };
+        }
+        return Type::Tuple(tuple);
+    }
+
+    let info = tokens.expect_tokens(
+        vec![
+            Token::Ampersand,
+            Token::Asterisk,
+            Token::Identifier(String::new()),
+        ],
+        false,
+    );
+    let name = match info.token {
+        Token::Ampersand => return Type::Reference(Box::new(parse_type(tokens))),
+        Token::Asterisk => return Type::Pointer(Box::new(parse_type(tokens))),
+        Token::Identifier(string) => string,
+        _ => panic!(),
+    };
 
     return match name.as_str() {
         "i64" => Type::Base(BaseType::Int64),

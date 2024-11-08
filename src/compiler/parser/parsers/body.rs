@@ -36,7 +36,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 tokens.expect_tokens(vec![Token::EndScope], false);
                 tokens.create_node(Node::Scope(nodes))
             }
-            Token::Use => parse_namespace(tokens),
+            Token::Use => parse_namespace(tokens, false),
             Token::Identifier(name) => parse_after_identifier(tokens, name),
             Token::Return => {
                 let expression = parse_expression(tokens, false);

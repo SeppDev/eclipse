@@ -4,6 +4,7 @@ use crate::compiler::{lexer::Location, path::Path, types::Type};
 pub enum Node {
     Scope(Vec<NodeInfo>),
     Function {
+        public: bool,
         name: String,
         parameters: Vec<(String, Type)>,
         return_type: Type,
@@ -21,7 +22,10 @@ pub enum Node {
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),
-    NameSpace(Path)
+    NameSpace {
+        public: bool,
+        static_path: Path,
+    },
 }
 impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

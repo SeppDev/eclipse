@@ -24,6 +24,7 @@ fn clean_path(path: PathBuf) -> PathBuf {
 
 #[derive(Debug, Default)]
 pub struct ParsedFile {
+    pub export: bool,
     pub imported: HashMap<String, ParsedFile>,
     pub body: Vec<NodeInfo>,
 }
@@ -48,6 +49,7 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
             break;
         }
 
+        let public = tokens.peek_expect_token(Token::Pub, true);
         let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
 
         let node = match info.token {
@@ -56,14 +58,15 @@ pub fn parse(project_dir: &PathBuf, relative_path: PathBuf) -> ParsedFile {
                 let mut new_path = clean_path(relative_path.parent().unwrap().join(&name));
                 new_path.set_extension(FILE_EXTENSION);
 
-                let newfile = parse(project_dir, new_path);
+                let mut newfile = parse(project_dir, new_path);
                 tokens.pop_start();
+                newfile.export = public;
 
                 file.imported.insert(name, newfile);
                 continue;
             }
-            Token::Use => parse_namespace(&mut tokens),
-            Token::Function => function::parse_function(&mut tokens),
+            Token::Use => parse_namespace(&mut tokens, public),
+            Token::Function => function::parse_function(&mut tokens, public),
             t => tokens.throw_error(format!("Expected item, found '{}'", t), ""),
         };
         file.body.push(node);
