@@ -16,15 +16,27 @@ impl Path {
     }
     pub fn from<T: ToString>(root: T) -> Self {
         let mut path = Self::new();
-        path.add(root);
+        path.push(root);
         return path;
     }
-    pub fn add<T: ToString>(&mut self, name: T) {
-        // self.components.push(Chain {
-        //     method,
-        //     body: name.to_string(),
-        // })
+    pub fn join<T: ToString>(&self, name: T) -> Self {
+        let mut new = self.clone();
+        new.push(name);
+        return new;
+    }
+    pub fn push<T: ToString>(&mut self, name: T) {
         self.components.push(name.to_string());
+    }
+    pub fn pop(&mut self) -> Option<String> {
+        self.components.pop()
+    }
+    pub fn parent(&self) -> Self {
+        let mut clone = self.clone();
+        clone.pop();
+        clone
+    }
+    pub fn components(&self) -> Vec<String> {
+        return self.components.clone()
     }
 }
 

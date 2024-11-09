@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
+use analyzer::analyze;
 use parser::{parse, ParsedFile};
 
 mod analyzer;
 mod lexer;
 mod parser;
 
-mod benchmark;
-pub use benchmark::*;
+
 use program::ParsedProgram;
 
 mod errors;
@@ -18,15 +18,14 @@ mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
 
-fn parse_include(source: &str, name: &str) -> ParsedFile {
+fn parse_include(source: &str, name: &str) -> (String, ParsedFile) {
     let mut relative_path = PathBuf::from("std");
     relative_path.push(name);
     relative_path.set_extension(FILE_EXTENSION);
 
-    println!("{:?}", relative_path);
-
-    let file = parse(&PathBuf::new(), relative_path, source.to_string());
-    return file;
+    let mut file = parse(&PathBuf::new(), relative_path, source.to_string());
+    file.export = true;
+    return (name.to_string(), file);
 }
 
 pub fn build(project_dir: PathBuf) {
@@ -37,15 +36,19 @@ pub fn build(project_dir: PathBuf) {
         ];
 
         let mut standard = ParsedFile::new();
-        
+        for (key, file) in std_imports {
+            standard.imported.insert(key, file);
+        }
 
         let mut relative_path = PathBuf::from("src/main");
         relative_path.set_extension(FILE_EXTENSION);
 
         let source = read_file(&project_dir.join(&relative_path));
-        let main = parse(&project_dir, relative_path, source);
+        let mut main = parse(&project_dir, relative_path, source);
+        main.export = true;
+
         let program = ParsedProgram { standard, main };
-        println!("{:#?}", program);
+        analyze(program);
     };
 }
 

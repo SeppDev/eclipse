@@ -6,10 +6,10 @@ use crate::compiler::{
 use super::{expression::parse_expression, types::parse_type};
 
 pub fn parse_variable(tokens: &mut Tokens) -> NodeInfo {
-    let mutable = tokens.peek_expect_token(Token::Mutable, true);
+    let mutable = tokens.peek_expect_tokens(vec![Token::Mutable], true).is_some();
     let name = tokens.parse_identifer();
 
-    let data_type = if tokens.peek_expect_token(Token::Colon, true) {
+    let data_type = if tokens.peek_expect_tokens(vec![Token::Colon], true).is_some() {
         Some(parse_type(tokens))
     } else {
         None

@@ -1,6 +1,7 @@
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
     Void,
+    Never,
 
     // Int,
     // UInt,
@@ -27,6 +28,7 @@ impl BaseType {
         
         match self {
             Void => 0,
+            Never => 0,
             Int64 | UInt64 | Float64 => 8,
             Int32 | UInt32 | Float32 => 4,
             Int16 | UInt16 => 2,

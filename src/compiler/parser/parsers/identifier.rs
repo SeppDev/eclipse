@@ -30,18 +30,22 @@ impl Tokens {
 }
 
 pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
-    let info = tokens.expect_tokens(
+    let info = tokens.peek_require_token(
         vec![Token::OpenParen, Token::Equals, Token::DoubleColon],
-        false,
     );
 
-    let node = match info.token {
+    match info.token {
         Token::DoubleColon => {
             let path = parse_path(tokens, &name);
             let _ = tokens.expect_tokens(vec![Token::OpenParen], false);
             let arguments = parse_arguments(tokens);
-            tokens.create_node(Node::Call(path, arguments))
-        }
+            return tokens.create_node(Node::Call(path, arguments))
+        },
+        _ => {}
+    }
+
+    tokens.advance();
+    return match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens);
             tokens.create_node(Node::Call(Path::from(&name), arguments))
@@ -49,6 +53,4 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
         Token::Equals => parse_set_variable(tokens, name),
         _ => panic!(),
     };
-
-    return node;
 }

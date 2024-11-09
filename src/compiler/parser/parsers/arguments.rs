@@ -9,7 +9,7 @@ pub fn parse_arguments(tokens: &mut Tokens) -> Vec<ExpressionInfo> {
     let mut arguments = Vec::new();
 
     loop {
-        if tokens.peek_expect_token(Token::CloseParen, true) {
+        if tokens.peek_expect_tokens(vec![Token::CloseParen], true).is_some() {
             break;
         };
         

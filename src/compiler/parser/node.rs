@@ -1,15 +1,16 @@
 use crate::compiler::{lexer::Location, path::Path, types::Type};
 
 #[derive(Debug)]
+pub struct Function {
+    pub public: bool,
+    pub parameters: Vec<(String, Type)>,
+    pub return_type: Type,
+    pub body: Vec<NodeInfo>,
+}
+
+#[derive(Debug)]
 pub enum Node {
     Scope(Vec<NodeInfo>),
-    Function {
-        public: bool,
-        name: String,
-        parameters: Vec<(String, Type)>,
-        return_type: Type,
-        body: Vec<NodeInfo>,
-    },
     SetVariable {
         name: String,
         expression: ExpressionInfo,
@@ -27,21 +28,12 @@ pub enum Node {
         static_path: Path,
     },
 }
-impl std::fmt::Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
+
 
 #[derive(Debug)]
 pub struct NodeInfo {
     pub location: Location,
     pub node: Node,
-}
-impl std::fmt::Display for NodeInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.node)
-    }
 }
 
 #[derive(Debug)]
@@ -55,21 +47,12 @@ pub enum Expression {
     Pointer(Box<ExpressionInfo>),
     Reference(Box<ExpressionInfo>), // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
 }
-impl std::fmt::Display for Expression {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
+
 
 #[derive(Debug)]
 pub struct ExpressionInfo {
     pub location: Location,
     pub expression: Expression,
-}
-impl std::fmt::Display for ExpressionInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.expression)
-    }
 }
 
 #[derive(Debug)]

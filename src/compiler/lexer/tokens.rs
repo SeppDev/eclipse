@@ -1,6 +1,6 @@
 use std::{path::PathBuf, process::exit};
 
-use crate::compiler::parser::{Expression, ExpressionInfo, Node, NodeInfo};
+use crate::compiler::{errors::throw_error, parser::{Expression, ExpressionInfo, Node, NodeInfo}};
 
 use super::{Location, Token, TokenInfo};
 use std::{iter::Peekable, vec::IntoIter};
@@ -27,41 +27,23 @@ impl Tokens {
     pub fn throw_error<T: ToString, E: ToString>(&mut self, message: T, notice: E) -> ! {
         let current = self.current.clone().unwrap();
         let location = &current.location;
-        let line = match self.lines.get(location.lines.start - 1) {
-            Some(s) => s,
-            None => panic!("Could not find: {:?}", location),
-        };
 
-        println!("error: {}", message.to_string());
-        println!(
-            "  --> {}:{}:{}",
-            self.file_path.to_string_lossy(),
-            location.lines.start,
-            location.columns.start
-        );
-
-        println!("  |");
-        println!("  | {}", line);
-        println!(
-            "  | {}{} {}",
-            " ".repeat(location.columns.start - 1),
-            "^".repeat(location.columns.end - current.location.columns.start),
-            notice.to_string()
-        );
-        exit(1)
+        throw_error(message, &self.file_path, location, &self.lines)
     }
-    pub fn finish(mut self) {
+    pub fn finish(mut self) -> Vec<String> {
         if self.starts.len() > 0 {
             println!("{:#?}", self.starts);
             panic!("Failed to finish: {:#?}", self.start())
         }
+
+        self.lines
     }
     pub fn pop_start(&mut self) -> TokenInfo {
         self.starts.pop().unwrap()
     }
-    pub fn push_start(&mut self, token: &TokenInfo) {
-        self.starts.push(token.clone());
-    }
+    // pub fn push_start(&mut self, token: &TokenInfo) {
+    //     self.starts.push(token.clone());
+    // }
     pub fn create_node(&mut self, node: Node) -> NodeInfo {
         let start = self.starts.pop().unwrap_or_else(|| {
             panic!("No starting node for: {:#?}", node);
@@ -102,9 +84,9 @@ impl Tokens {
             None => panic!(),
         }
     }
-    pub fn peek(&mut self) -> &TokenInfo {
+    pub fn peek(&mut self) -> TokenInfo {
         return match self.tokens.peek() {
-            Some(info) => info,
+            Some(info) => info.clone(),
             None => todo!(),
         };
     }
