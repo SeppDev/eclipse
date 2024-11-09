@@ -5,7 +5,6 @@ pub enum BaseType {
 
     // Int,
     // UInt,
-
     Int64,
     UInt64,
     Int32,
@@ -20,12 +19,11 @@ pub enum BaseType {
     Float32,
     Float64,
     // Float128
-    
 }
 impl BaseType {
     pub fn size(&self) -> usize {
         use BaseType::*;
-        
+
         match self {
             Void => 0,
             Never => 0,
@@ -42,7 +40,29 @@ impl BaseType {
         self == &Self::Boolean
     }
 }
-
+impl std::fmt::Display for BaseType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Boolean => "bool",
+                Self::Void => "void",
+                Self::Float32 => "f32",
+                Self::Float64 => "f64",
+                Self::Int8 => "i8",
+                Self::UInt8 => "u8",
+                Self::Int16 => "i16",
+                Self::UInt16 => "u16",
+                Self::Int32 => "i32",
+                Self::UInt32 => "u32",
+                Self::Int64 => "i64",
+                Self::UInt64 => "u64",
+                Self::Never => "!",
+            }
+        )
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
@@ -51,7 +71,26 @@ pub enum Type {
     Array(Box<Type>, usize),
     Tuple(Vec<Type>),
     Pointer(Box<Type>),
-    Reference(Box<Type>)
+    Reference(Box<Type>),
+}
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Base(base) => write!(f, "{}", base),
+            Self::Array(t, size) => write!(f, "[{}; {}]", t, size),
+            Self::Pointer(t) => write!(f, "*{}", t),
+            Self::Reference(t) => write!(f, "&{}", t),
+            Self::Tuple(types) => write!(
+                f,
+                "({})",
+                types
+                    .into_iter()
+                    .map(|a| format!("{}", a))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+        }
+    }
 }
 impl Type {
     // The bool in the return type is true if the integer is signed
@@ -70,9 +109,9 @@ impl Type {
                 Int32 => (true, 32),
 
                 UInt64 => (false, 64),
-                Int64 => (true, 64), 
+                Int64 => (true, 64),
                 _ => return None,
-            }
+            },
             _ => return None,
         });
     }
@@ -86,8 +125,8 @@ impl Type {
                     size += x.size();
                 }
                 size
-            },
-            _ => todo!()
+            }
+            _ => todo!(),
         }
     }
     pub fn is_integer(&self) -> bool {
@@ -96,7 +135,7 @@ impl Type {
             Type::Base(base) => match base {
                 Int8 | UInt8 | Int16 | UInt16 | Int32 | UInt32 | Int64 | UInt64 => true,
                 _ => false,
-            }
+            },
             _ => false,
         }
     }
@@ -106,7 +145,7 @@ impl Type {
             Type::Base(base) => match base {
                 Float32 | Float64 => true,
                 _ => false,
-            }
+            },
             _ => false,
         }
     }
@@ -116,7 +155,7 @@ impl Type {
             Type::Base(base) => match base {
                 Boolean => true,
                 _ => false,
-            }
+            },
             _ => false,
         }
     }
@@ -127,6 +166,6 @@ impl Type {
                 _ => false,
             },
             _ => false,
-        }
+        };
     }
 }
