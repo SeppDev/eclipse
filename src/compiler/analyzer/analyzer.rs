@@ -35,20 +35,20 @@ fn analyze_body(
     for info in nodes {
         let _ = match &info.node {
             Node::Return(expression) => {
-                analyze_expression(program, file, namespace, Some(return_type.clone()), expression)
-                    .or_else(|| {
-                        file.throw_error(
-                            format!(
-                                "Expected '{}', but returned '{}'",
-                                return_type,
-                                BaseType::Void
-                            ),
-                            &info.location,
-                        )
-                    });
+                // analyze_expression(program, file, namespace, Some(return_type.clone()), expression)
+                //     .or_else(|| {
+                //         file.throw_error(
+                //             format!(
+                //                 "Expected '{}', but returned '{}'",
+                //                 return_type,
+                //                 BaseType::Void
+                //             ),
+                //             &info.location,
+                //         )
+                //     });
             }
             Node::Variable { name, mutable, data_type, expression } => {
-                analyze_expression(program, file, namespace, data_type, &Some(expression.clone()));
+                // analyze_expression(program, file, namespace, data_type, &Some(expression.clone()));
             }
             _ => file.throw_error("Unhandled node", &info.location),
         };
@@ -68,5 +68,5 @@ fn analyze_expression(
         None => return None,
     };
 
-    
+    None
 }

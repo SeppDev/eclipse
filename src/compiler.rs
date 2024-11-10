@@ -43,6 +43,8 @@ pub fn build(project_dir: PathBuf) {
         let mut relative_path = PathBuf::from("src/main");
         relative_path.set_extension(FILE_EXTENSION);
 
+        println!("{:?}", &project_dir.join(&relative_path));
+        
         let source = read_file(&project_dir.join(&relative_path));
         let mut main = parse(&project_dir, relative_path, source);
         main.export = true;

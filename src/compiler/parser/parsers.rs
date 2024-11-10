@@ -1,4 +1,3 @@
-
 use std::{collections::HashMap, path::PathBuf};
 
 mod arguments;
@@ -13,9 +12,13 @@ mod types;
 mod variable;
 // mod dot;
 
-use namespace::parse_namespace;
-use crate::compiler::{errors::throw_error, lexer::{tokenize, Location}, read_file, FILE_EXTENSION};
 use super::Function;
+use crate::compiler::{
+    errors::throw_error,
+    lexer::{tokenize, Location},
+    read_file, FILE_EXTENSION,
+};
+use namespace::parse_namespace;
 
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
@@ -56,11 +59,11 @@ pub fn parse(project_dir: &PathBuf, mut relative_path: PathBuf, source: String) 
             Token::Use => parse_namespace(&mut tokens, public),
             Token::Import => {
                 let name = tokens.parse_identifer();
-                let mut new_path = relative_path.parent().unwrap().join(&name);
-                new_path.set_extension(FILE_EXTENSION);
+                let mut new_relative_path = relative_path.parent().unwrap().join(&name);
+                new_relative_path.set_extension(FILE_EXTENSION);
 
-                let source = read_file(&new_path);
-                let mut newfile = parse(project_dir, new_path, source);
+                let source = read_file(&project_dir.join(&new_relative_path));
+                let mut newfile = parse(project_dir, new_relative_path, source);
                 tokens.pop_start();
                 newfile.export = public;
 
