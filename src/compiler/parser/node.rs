@@ -13,13 +13,13 @@ pub enum Node {
     Scope(Vec<NodeInfo>),
     SetVariable {
         name: String,
-        expression: ExpressionInfo,
+        expression: Option<ExpressionInfo>,
     },
     Variable {
         name: String,
         mutable: bool,
         data_type: Option<Type>,
-        expression: ExpressionInfo,
+        expression: Option<ExpressionInfo>,
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),

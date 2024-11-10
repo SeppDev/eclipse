@@ -5,6 +5,8 @@ use crate::compiler::{
     types::{BaseType, Type},
 };
 
+use super::variables::Variables;
+
 pub fn analyze(program: ParsedProgram) {
     let std = &program.standard;
     analyze_file(&program, std, &Path::from("std"));
@@ -15,6 +17,7 @@ pub fn analyze(program: ParsedProgram) {
 
 fn analyze_file(program: &ParsedProgram, file: &ParsedFile, path: &Path) {    
     for (name, function) in &file.functions {
+        let mut variables = Variables::new(function.parameters);
         analyze_body(program, file, path, &function.return_type, &function.body);
     }
 
@@ -35,20 +38,13 @@ fn analyze_body(
     for info in nodes {
         let _ = match &info.node {
             Node::Return(expression) => {
-                // analyze_expression(program, file, namespace, Some(return_type.clone()), expression)
-                //     .or_else(|| {
-                //         file.throw_error(
-                //             format!(
-                //                 "Expected '{}', but returned '{}'",
-                //                 return_type,
-                //                 BaseType::Void
-                //             ),
-                //             &info.location,
-                //         )
-                //     });
+                analyze_expression(program, file, namespace, &Some(return_type.clone()), expression)
             }
             Node::Variable { name, mutable, data_type, expression } => {
-                // analyze_expression(program, file, namespace, data_type, &Some(expression.clone()));
+                analyze_expression(program, file, namespace, data_type, expression);
+            }
+            Node::SetVariable { name, expression } => {
+                // analyze_expression(program, file, namespace, return_type, expression)
             }
             _ => file.throw_error("Unhandled node", &info.location),
         };
@@ -67,6 +63,8 @@ fn analyze_expression(
         Some(expr) => expr,
         None => return None,
     };
+
+    file.throw_error("yes", &expression.location);
 
     None
 }
