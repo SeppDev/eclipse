@@ -5,9 +5,11 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{node::IRExpression, variables::Variables};
+use super::{node::IRExpression, variables::Variables, IRProgram};
 
 pub fn analyze(program: ParsedProgram) {
+    let mut ir_program = IRProgram::new();
+
     let std = &program.standard;
     analyze_file(&program, std, &Path::from("std"));
 
