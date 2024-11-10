@@ -1,21 +1,23 @@
-use crate::compiler::{lexer::Location, path::Path, types::Type};
-
-#[derive(Debug)]
-pub struct Function {
-    pub public: bool,
-    pub parameters: Vec<(String, Type)>,
-    pub return_type: Type,
-    pub body: Vec<NodeInfo>,
-}
+use crate::compiler::{
+    lexer::Location,
+    path::Path,
+    types::{BaseType, Type},
+};
 
 #[derive(Debug)]
 pub enum Node {
+    Function {
+        public: bool,
+        parameters: Vec<(String, Type)>,
+        return_type: Type,
+        body: Vec<NodeInfo>,
+    },
     Scope(Vec<NodeInfo>),
     SetVariable {
         name: String,
         expression: Option<ExpressionInfo>,
     },
-    Variable {
+    DefineVariable {
         name: String,
         mutable: bool,
         data_type: Option<Type>,
@@ -28,7 +30,6 @@ pub enum Node {
         static_path: Path,
     },
 }
-
 
 #[derive(Debug)]
 pub struct NodeInfo {
@@ -48,7 +49,6 @@ pub enum Expression {
     Reference(Box<ExpressionInfo>), // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
 }
 
-
 #[derive(Debug)]
 pub struct ExpressionInfo {
     pub location: Location,
@@ -63,10 +63,20 @@ pub enum Operator {
     Multiply,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Boolean(bool),
     Integer(String),
     Float(String),
-    String(String),
+    StaticString(String),
+}
+impl Value {
+    pub fn default_type(&self) -> Type {
+        return Type::Base(match self {
+            Self::Boolean(_) => BaseType::Boolean,
+            Self::Float(_) => BaseType::Float64,
+            Self::Integer(_) => BaseType::Int32,
+            Self::StaticString(_) => BaseType::StaticString,
+        });
+    }
 }

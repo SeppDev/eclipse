@@ -29,7 +29,7 @@ pub fn parse_variable(tokens: &mut Tokens) -> NodeInfo {
         None
     };
 
-    tokens.create_node(Node::Variable {
+    tokens.create_node(Node::DefineVariable {
         name,
         mutable,
         data_type,

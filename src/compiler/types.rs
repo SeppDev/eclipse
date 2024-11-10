@@ -1,10 +1,12 @@
+use super::POINTER_WIDTH;
+
+
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
     Void,
     Never,
 
-    // Int,
-    // UInt,
     Int64,
     UInt64,
     Int32,
@@ -14,10 +16,12 @@ pub enum BaseType {
     Int8,
     UInt8,
 
-    Boolean,
-
     Float32,
     Float64,
+
+    Boolean,
+    StaticString,
+
     // Float128
 }
 impl BaseType {
@@ -25,8 +29,7 @@ impl BaseType {
         use BaseType::*;
 
         match self {
-            Void => 0,
-            Never => 0,
+            Void | StaticString | Never => 0,
             Int64 | UInt64 | Float64 => 8,
             Int32 | UInt32 | Float32 => 4,
             Int16 | UInt16 => 2,
@@ -59,6 +62,7 @@ impl std::fmt::Display for BaseType {
                 Self::Int64 => "i64",
                 Self::UInt64 => "u64",
                 Self::Never => "!",
+                Self::StaticString => "static_string"
             }
         )
     }

@@ -12,13 +12,14 @@ mod types;
 mod variable;
 // mod dot;
 
-use super::Function;
 use crate::compiler::{
     errors::throw_error,
     lexer::{tokenize, Location},
     read_file, FILE_EXTENSION,
 };
 use namespace::parse_namespace;
+
+use super::NodeInfo;
 
 fn clean_path(path: PathBuf) -> PathBuf {
     return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
@@ -29,7 +30,7 @@ pub struct ParsedFile {
     pub export: bool,
     pub relative_path: PathBuf,
     pub imported: HashMap<String, ParsedFile>,
-    pub functions: HashMap<String, Function>,
+    pub functions: HashMap<String, NodeInfo>,
     pub lines: Vec<String>,
 }
 impl ParsedFile {

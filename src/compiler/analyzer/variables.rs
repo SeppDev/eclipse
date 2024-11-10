@@ -4,9 +4,9 @@ use crate::compiler::types::Type;
 
 #[derive(Debug, Clone)]
 pub struct Variable {
-    pub name: String,
     pub mutable: bool,
     pub data_type: Type,
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl Variables {
             parameters: HashMap::new(),
             states: Vec::new(),
             variables: HashMap::new(),
-            count: 0
+            count: 0,
         };
 
         for (key, t) in parameters {
@@ -41,15 +41,10 @@ impl Variables {
     }
     pub fn generate(&mut self) -> String {
         self.count += 1;
-        return self.count.to_string()
+        return self.count.to_string();
     }
-    pub fn insert(
-        &mut self,
-        key: String,
-        mutable: bool,
-        data_type: Type,
-    ) -> Result<(), Variable> {
-        let new_name = self.generate();
+    pub fn insert(&mut self, key: String, mutable: bool, data_type: Type) -> Result<(), Variable> {
+        let name = self.generate();
         let current_state = self.states.last_mut().unwrap();
 
         match self.parameters.get(&key) {
@@ -60,14 +55,15 @@ impl Variables {
         let result = self.variables.insert(
             key.clone(),
             Variable {
-                name: new_name,
+                name,
                 mutable,
                 data_type,
             },
         );
+        self.count += 1;
 
         match result {
-            Some(var) => return Err(var), 
+            Some(var) => return Err(var),
             None => {}
         }
 
@@ -87,7 +83,7 @@ impl Variables {
     pub fn get(&self, key: &String) -> Option<&Variable> {
         return match self.parameters.get(key) {
             Some(t) => Some(t),
-            None => self.variables.get(key)
-        } 
+            None => self.variables.get(key),
+        };
     }
 }

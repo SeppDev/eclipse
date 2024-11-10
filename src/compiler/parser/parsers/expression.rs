@@ -35,7 +35,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
     let expression = match info.token {
         Token::Integer(integer) => Expression::Value(Value::Integer(integer)),
         Token::Float(float) => Expression::Value(Value::Float(float)),
-        Token::String(string) => Expression::Value(Value::String(string)),
+        Token::String(string) => Expression::Value(Value::StaticString(string)),
         Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
         Token::Ampersand => {
             let new_expression = parse_expression(tokens, true).unwrap();

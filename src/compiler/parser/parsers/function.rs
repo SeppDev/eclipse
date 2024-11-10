@@ -1,12 +1,12 @@
 use crate::compiler::{
     lexer::{Token, Tokens},
-    parser::Function,
+    parser::{Node, NodeInfo},
     types::{BaseType, Type},
 };
 
 use super::{body::parse_body, types::parse_type};
 
-pub fn parse_function(tokens: &mut Tokens, public: bool) -> Function {
+pub fn parse_function(tokens: &mut Tokens, public: bool) -> NodeInfo {
     tokens.expect_tokens(vec![Token::OpenParen], false);
 
     let mut parameters: Vec<(String, Type)> = Vec::new();
@@ -35,11 +35,10 @@ pub fn parse_function(tokens: &mut Tokens, public: bool) -> Function {
     let body = parse_body(tokens);
     tokens.expect_tokens(vec![Token::EndScope], false);
 
-    let _start = tokens.pop_start();
-    Function {
+    tokens.create_node(Node::Function {
         public,
-        body,
         parameters,
         return_type,
-    }
+        body,
+    })
 }
