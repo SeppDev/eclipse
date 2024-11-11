@@ -37,6 +37,7 @@ pub fn parse_function(tokens: &mut Tokens, public: bool) -> NodeInfo {
 
     tokens.create_node(Node::Function {
         public,
+        name,
         parameters,
         return_type,
         body,

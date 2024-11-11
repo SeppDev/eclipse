@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use analyzer::analyze;
+use counter::NameCounter;
 use parser::{parse, ParsedFile};
 
 mod analyzer;
@@ -9,6 +10,7 @@ mod parser;
 
 use program::ParsedProgram;
 
+mod counter;
 mod errors;
 mod path;
 mod program;
@@ -18,7 +20,7 @@ mod types;
 pub static FILE_EXTENSION: &str = "ecl";
 pub static POINTER_WIDTH: usize = 8;
 
-fn parse_include(source: &str, name: &str) -> (String, ParsedFile) {
+fn parse_include(counter: &mut NameCounter, source: &str, name: &str) -> (String, ParsedFile) {
     let mut relative_path = PathBuf::from("std");
     relative_path.push(name);
     relative_path.set_extension(FILE_EXTENSION);
@@ -30,9 +32,11 @@ fn parse_include(source: &str, name: &str) -> (String, ParsedFile) {
 
 pub fn build(project_dir: PathBuf) {
     let _executable = {
+        let mut counter = NameCounter::new();
+
         let std_imports = vec![
-            parse_include(include_str!("./std/io.ecl"), "io"),
-            parse_include(include_str!("./std/math.ecl"), "math"),
+            parse_include(&mut counter, include_str!("./std/io.ecl"), "io"),
+            parse_include(&mut counter, include_str!("./std/math.ecl"), "math"),
         ];
 
         let mut standard = ParsedFile::new();

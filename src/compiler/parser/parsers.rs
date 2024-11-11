@@ -13,9 +13,7 @@ mod variable;
 // mod dot;
 
 use crate::compiler::{
-    errors::throw_error,
-    lexer::{tokenize, Location},
-    read_file, FILE_EXTENSION,
+    counter::NameCounter, errors::throw_error, lexer::{tokenize, Location}, read_file, FILE_EXTENSION
 };
 use namespace::parse_namespace;
 
@@ -42,7 +40,7 @@ impl ParsedFile {
     }
 }
 
-pub fn parse(project_dir: &PathBuf, mut relative_path: PathBuf, source: String) -> ParsedFile {
+pub fn parse(counter: &mut NameCounter, project_dir: &PathBuf, mut relative_path: PathBuf, source: String) -> ParsedFile {
     use super::super::lexer::Token;
 
     relative_path = clean_path(relative_path);
@@ -64,7 +62,7 @@ pub fn parse(project_dir: &PathBuf, mut relative_path: PathBuf, source: String) 
                 new_relative_path.set_extension(FILE_EXTENSION);
 
                 let source = read_file(&project_dir.join(&new_relative_path));
-                let mut newfile = parse(project_dir, new_relative_path, source);
+                let mut newfile = parse(counter, project_dir, new_relative_path, source);
                 tokens.pop_start();
                 newfile.export = public;
 

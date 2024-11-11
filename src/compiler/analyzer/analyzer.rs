@@ -14,7 +14,7 @@ use super::{
 fn push_functions(program: &mut IRProgram, functions: Vec<IRFunction>) {
     for function in functions {
         let key = program.generate();
-        program.functions.insert(key, function);
+        program.functions.push(function);
     }
 }
 
