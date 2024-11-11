@@ -8,6 +8,7 @@ use crate::compiler::{
 pub enum Node {
     Function {
         public: bool,
+        name: String,
         parameters: Vec<(String, Type)>,
         return_type: Type,
         body: Vec<NodeInfo>,

@@ -7,7 +7,6 @@ mod analyzer;
 mod lexer;
 mod parser;
 
-
 use program::ParsedProgram;
 
 mod errors;
@@ -49,7 +48,8 @@ pub fn build(project_dir: PathBuf) {
         main.export = true;
 
         let program = ParsedProgram { standard, main };
-        analyze(program);
+        let analyzed = analyze(program);
+        println!("{:#?}", analyzed);
     };
 }
 

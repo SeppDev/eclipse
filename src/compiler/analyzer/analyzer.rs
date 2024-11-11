@@ -5,19 +5,37 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{node::IRExpression, variables::Variables, IRProgram};
+use super::{
+    node::{IRExpression, IRFunction, IRNode},
+    variables::Variables,
+    IRProgram,
+};
 
-pub fn analyze(program: ParsedProgram) {
-    let mut ir_program = IRProgram::new();
-
-    let std = &program.standard;
-    analyze_file(&program, std, &Path::from("std"));
-
-    let main = &program.main;
-    analyze_file(&program, main, &Path::from("src").join("main"));
+fn push_functions(program: &mut IRProgram, functions: Vec<IRFunction>) {
+    for function in functions {
+        let key = program.generate();
+        program.functions.insert(key, function);
+    }
 }
 
-fn analyze_file(program: &ParsedProgram, file: &ParsedFile, path: &Path) {
+pub fn analyze(parsed: ParsedProgram) -> IRProgram {
+    let mut program = IRProgram::new();
+
+    let std = &parsed.standard;
+    push_functions(&mut program, analyze_file(&parsed, std, &Path::from("std")));
+
+    let main = &parsed.main;
+    push_functions(
+        &mut program,
+        analyze_file(&parsed, main, &Path::from("src").join("main")),
+    );
+
+    return program;
+}
+
+fn analyze_file(parsed: &ParsedProgram, file: &ParsedFile, path: &Path) -> Vec<IRFunction> {
+    let mut functions = Vec::new();
+
     for (name, info) in &file.functions {
         let (public, parameters, return_type, body) = match &info.node {
             crate::compiler::parser::Node::Function {
@@ -30,29 +48,39 @@ fn analyze_file(program: &ParsedProgram, file: &ParsedFile, path: &Path) {
         };
 
         let mut variables = Variables::new(parameters.clone());
-        analyze_body(program, file, &mut variables, path, return_type, body);
+        let body = analyze_body(parsed, file, &mut variables, path, return_type, body);
+        functions.push(IRFunction {
+            parameters: parameters.clone(),
+            return_type: return_type.clone(),
+            body,
+        })
     }
 
     for (name, imported) in &file.imported {
-        analyze_file(program, imported, &path.join(name));
+        for function in analyze_file(parsed, imported, &path.join(name)) {
+            functions.push(function);
+        }
     }
+
+    return functions;
 }
 
 fn analyze_body(
-    program: &ParsedProgram,
+    parsed: &ParsedProgram,
     file: &ParsedFile,
     variables: &mut Variables,
     namespace: &Path,
     return_type: &Type,
-    nodes: &Vec<NodeInfo>,
-) {
+    nodes: Vec<NodeInfo>,
+) -> Vec<IRNode> {
     use super::super::parser::Node;
+    let mut ir_nodes = Vec::new();
 
     for info in nodes {
-        let _ = match &info.node {
+        let ir_node: IRNode = match info.node {
             Node::Return(expression) => {
-                analyze_expression(
-                    program,
+                let expression = analyze_expression(
+                    parsed,
                     file,
                     variables,
                     namespace,
@@ -60,27 +88,32 @@ fn analyze_body(
                     info,
                     expression,
                 );
+                IRNode::Return(expression)
             }
-            Node::DefineVariable {
-                name,
-                mutable,
-                data_type,
-                expression,
-            } => {
-                analyze_expression(
-                    program, file, variables, namespace, data_type, info, expression,
-                );
-            }
+            // Node::DefineVariable {
+            //     name,
+            //     mutable,
+            //     data_type,
+            //     expression,
+            // } => {
+            //     let expression = analyze_expression(
+            //         parsed, file, variables, namespace, data_type, info, expression,
+            //     );
+            //     IRNode::DefineVariable(name.clone(), )
+            // }
             // Node::SetVariable { name, expression } => {
-            //     // analyze_expression(program, file, namespace, return_type, expression)
+            //     // analyze_expression(parsed, file, namespace, return_type, expression)
             // }
             _ => file.throw_error("Unhandled node", &info.location),
         };
+        ir_nodes.push(ir_node);
     }
+
+    return ir_nodes;
 }
 
 fn analyze_expression(
-    program: &ParsedProgram,
+    parsed: &ParsedProgram,
     file: &ParsedFile,
     variables: &Variables,
     namespace: &Path,
