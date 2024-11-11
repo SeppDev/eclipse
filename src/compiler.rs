@@ -25,7 +25,7 @@ fn parse_include(counter: &mut NameCounter, source: &str, name: &str) -> (String
     relative_path.push(name);
     relative_path.set_extension(FILE_EXTENSION);
 
-    let mut file = parse(&PathBuf::new(), relative_path, source.to_string());
+    let mut file = parse(counter, &PathBuf::new(), relative_path, source.to_string());
     file.export = true;
     return (name.to_string(), file);
 }
@@ -48,7 +48,7 @@ pub fn build(project_dir: PathBuf) {
         relative_path.set_extension(FILE_EXTENSION);
 
         let source = read_file(&project_dir.join(&relative_path));
-        let mut main = parse(&project_dir, relative_path, source);
+        let mut main = parse(&mut counter, &project_dir, relative_path, source);
         main.export = true;
 
         let program = ParsedProgram { standard, main };

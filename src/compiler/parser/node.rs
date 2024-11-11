@@ -16,7 +16,7 @@ pub enum Node {
     Scope(Vec<NodeInfo>),
     SetVariable {
         name: String,
-        expression: Option<ExpressionInfo>,
+        expression: Option<ExpressionInfo>, 
     },
     DefineVariable {
         name: String,
