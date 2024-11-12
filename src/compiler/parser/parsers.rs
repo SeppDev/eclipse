@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::{BTreeMap, HashMap}, path::PathBuf};
 
 mod arguments;
 mod body;
@@ -28,7 +28,7 @@ pub struct ParsedFile {
     pub export: bool,
     pub relative_path: PathBuf,
     pub imported: HashMap<String, ParsedFile>,
-    pub functions: HashMap<String, NodeInfo>,
+    pub functions: BTreeMap<String, NodeInfo>,
     pub lines: Vec<String>,
 }
 impl ParsedFile {
@@ -46,26 +46,27 @@ pub fn parse(counter: &mut NameCounter, project_dir: &PathBuf, mut relative_path
     relative_path = clean_path(relative_path);
     let mut tokens = tokenize(&relative_path, source);
     let mut file = ParsedFile::new();
+    
     loop {
         if tokens.is_eof() {
             break;
         }
-
+        
         let public = tokens.peek_expect_tokens(vec![Token::Pub], true).is_some();
         let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
-
+        
         match info.token {
             Token::Use => parse_namespace(&mut tokens, public),
             Token::Import => {
                 let name = tokens.parse_identifer();
                 let mut new_relative_path = relative_path.parent().unwrap().join(&name);
                 new_relative_path.set_extension(FILE_EXTENSION);
-
+                
                 let source = read_file(&project_dir.join(&new_relative_path));
                 let mut newfile = parse(counter, project_dir, new_relative_path, source); 
                 tokens.pop_start();
                 newfile.export = public;
-
+                
                 file.imported.insert(name, newfile);
                 continue;
             }
@@ -73,17 +74,17 @@ pub fn parse(counter: &mut NameCounter, project_dir: &PathBuf, mut relative_path
                 let name = tokens.parse_identifer();
                 let function = function::parse_function(counter, &mut tokens, public);
                 match file.functions.insert(name.clone(), function) {
-                    Some(_) => panic!("There's already a function named '{}'", name),
+                    Some(old) => tokens.throw_error(format!("There's already a function named '{}'", name), "", &old.location),
                     None => {}
                 };
                 continue;
             }
-            t => tokens.throw_error(format!("Expected item, found '{}'", t), ""),
+            t => tokens.throw_error(format!("Expected item, found '{}'", t), "", &info.location),
         };
     }
     let lines = tokens.finish();
-    file.lines = lines;
     file.relative_path = relative_path;
+    file.lines = lines;
 
     return file;
 }

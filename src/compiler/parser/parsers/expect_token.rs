@@ -23,6 +23,7 @@ impl Tokens {
                 info.token
             ),
             "",
+            &info.location
         )
     }
     pub fn peek_require_token(&mut self, expected: Vec<Token>) -> TokenInfo {
@@ -45,6 +46,7 @@ impl Tokens {
                 info.token
             ),
             "",
+            &info.location
         )
     }
     pub fn peek_expect_tokens(

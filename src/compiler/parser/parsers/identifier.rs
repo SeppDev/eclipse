@@ -25,6 +25,7 @@ impl Tokens {
         self.throw_error(
             format!("Expected identifier, found '{}'", token),
             "expected identifier",
+            &info.location
         )
     }
 }

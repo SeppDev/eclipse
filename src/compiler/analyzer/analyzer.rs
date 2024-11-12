@@ -52,8 +52,16 @@ fn analyze_file(parsed: &ParsedProgram, file: &ParsedFile, path: &Path) -> Vec<I
 
         let mut variables = Variables::new(parameters.clone());
         let body = analyze_body(parsed, file, &mut variables, path, return_type, body);
+
+        if !return_type.is_void() {
+            match body.last() {
+                Some(last) => {}, 
+                None => file.throw_error("Expected return node", &info.location)
+            }
+        }
+
         functions.push(IRFunction {
-            name: name.clone(),
+            name: name.clone(), 
             parameters: parameters.clone(),
             return_type: return_type.clone(),
             body,
@@ -89,10 +97,11 @@ fn analyze_body(
                     variables,
                     namespace,
                     &Some(return_type.clone()),
-                    info,
+                    info, 
                     expression,
                 );
-                IRNode::Return(expression)
+                ir_nodes.push(IRNode::Return(expression));
+                break;
             }
             Node::DeclareVariable {
                 name,
@@ -123,6 +132,7 @@ fn analyze_body(
     return ir_nodes;
 }
 
+
 fn analyze_expression(
     parsed: &ParsedProgram,
     file: &ParsedFile,
@@ -141,7 +151,7 @@ fn analyze_expression(
             };
             if !rt.is_void() {
                 file.throw_error(
-                    format!("Expected type '{}' but did not receive any expression", rt),
+                    format!("Expected type '{}' but no expression was provided.", rt),
                     &node.location,
                 )
             }
@@ -154,11 +164,11 @@ fn analyze_expression(
 
     let (ir_expression, data_type) = match &expression.expression {
         Expression::GetVariable(name) => {
-            let name = if &name.len() == &1 {
-                name.components().first().unwrap()
-            } else {
-                file.throw_error("Unhandled path", &expression.location)
-            };
+            // let name = if &name.len() == &1 {
+            //     name.components().first().unwrap()
+            // } else {
+            //     file.throw_error("Unhandled path", &expression.location)
+            // };
 
             panic!("Getting variable named: {}", name)
         }

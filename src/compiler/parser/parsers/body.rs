@@ -43,7 +43,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 tokens.create_node(Node::Return(expression))
             }
             Token::Variable => parse_variable(tokens),
-            t => tokens.throw_error(format!("Expected item, got '{}'", t), ""),
+            t => tokens.throw_error(format!("Expected item, got '{}'", t), "", &info.location),
         };
         body.push(node)
     }

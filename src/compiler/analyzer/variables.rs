@@ -7,6 +7,7 @@ pub struct Variable {
     pub mutable: bool,
     pub data_type: Type,
     pub name: String,
+    used: bool,
 }
 
 #[derive(Debug)]
@@ -33,6 +34,7 @@ impl Variables {
                     name,
                     mutable: false,
                     data_type: t,
+                    used: false,
                 },
             );
         }
@@ -58,6 +60,7 @@ impl Variables {
                 name,
                 mutable,
                 data_type,
+                used: false,
             },
         );
         self.count += 1;
@@ -80,9 +83,12 @@ impl Variables {
             self.variables.remove(&key);
         }
     }
-    pub fn get(&self, key: &String) -> Option<&Variable> {
-        return match self.parameters.get(key) {
-            Some(t) => Some(t),
+    pub fn get(&mut self, key: &String) -> Option<&Variable> {
+        return match self.parameters.get_mut(key) {
+            Some(t) => {
+                t.used = true;
+                Some(t)
+            }
             None => self.variables.get(key),
         };
     }

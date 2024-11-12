@@ -1,5 +1,7 @@
 use std::ops::Range;
 
+use crate::compiler::errors::Location;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     EndOfFile,
@@ -116,16 +118,6 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Location {
-    pub lines: Range<usize>,
-    pub columns: Range<usize>,
-}
-impl Location {
-    pub fn new(lines: Range<usize>, columns: Range<usize>) -> Self {
-        Self { lines, columns }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct TokenInfo {

@@ -27,10 +27,7 @@ impl Tokens {
             tokens: tokens.into_iter().peekable(),
         };
     }
-    pub fn throw_error<T: ToString, E: ToString>(&mut self, message: T, notice: E) -> ! {
-        let current = self.current.clone().unwrap();
-        let location = &current.location;
-
+    pub fn throw_error<T: ToString, E: ToString>(&mut self, message: T, notice: E, location: &Location) -> ! {
         throw_error(message, notice, &self.file_path, location, &self.lines)
     }
     pub fn finish(mut self) -> Vec<String> {
