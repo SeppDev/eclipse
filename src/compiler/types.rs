@@ -1,6 +1,3 @@
-use super::POINTER_WIDTH;
-
-
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
@@ -118,6 +115,9 @@ impl Type {
             },
             _ => return None,
         });
+    }
+    pub fn void() -> Self {
+        self::Type::Base(BaseType::Void)
     }
     pub fn size(&self) -> usize {
         match self {

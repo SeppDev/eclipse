@@ -10,8 +10,9 @@ use std::{path::PathBuf, process::exit};
 
 use super::lexer::Location;
 
-pub fn throw_error<T: ToString>(
+pub fn throw_error<T: ToString, E: ToString>(
     message: T,
+    notice: E,
     relative_path: &PathBuf,
     location: &Location,
     lines: &Vec<String>,
@@ -35,7 +36,7 @@ pub fn throw_error<T: ToString>(
         "  | {}{} {}",
         " ".repeat(location.columns.start - 1),
         "^".repeat(location.columns.end - location.columns.start),
-        ""
+        notice.to_string()
     );
     exit(1)
 }

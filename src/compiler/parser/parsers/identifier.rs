@@ -17,8 +17,8 @@ impl Tokens {
     pub fn parse_identifer(&mut self) -> String {
         let info = self.advance();
 
-        let token = match &info.token {
-            Token::Identifier(string) => return string.clone(),
+        let token = match info.token {
+            Token::Identifier(string) => return string,
             token => token.clone(),
         };
 

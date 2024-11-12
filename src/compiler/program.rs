@@ -6,7 +6,7 @@ pub struct ParsedProgram {
     pub main: ParsedFile,
 }
 impl ParsedProgram {
-    pub fn get_file(&self, path: &Path) -> &ParsedFile {
+    pub fn get_file(&self, path: &Path/* , namespaces: &Vec<Path>*/) -> &ParsedFile {
         let mut components = path.components();
         components.reverse();
         let root = components.pop().unwrap();

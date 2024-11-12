@@ -18,7 +18,7 @@ pub enum Node {
         name: String,
         expression: Option<ExpressionInfo>, 
     },
-    DefineVariable {
+    DeclareVariable {
         name: String,
         mutable: bool,
         data_type: Option<Type>,

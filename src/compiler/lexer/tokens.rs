@@ -1,6 +1,9 @@
-use std::{path::PathBuf, process::exit};
+use std::path::PathBuf;
 
-use crate::compiler::{errors::throw_error, parser::{Expression, ExpressionInfo, Node, NodeInfo}};
+use crate::compiler::{
+    errors::throw_error,
+    parser::{Expression, ExpressionInfo, Node, NodeInfo},
+};
 
 use super::{Location, Token, TokenInfo};
 use std::{iter::Peekable, vec::IntoIter};
@@ -28,7 +31,7 @@ impl Tokens {
         let current = self.current.clone().unwrap();
         let location = &current.location;
 
-        throw_error(message, &self.file_path, location, &self.lines)
+        throw_error(message, notice, &self.file_path, location, &self.lines)
     }
     pub fn finish(mut self) -> Vec<String> {
         if self.starts.len() > 0 {

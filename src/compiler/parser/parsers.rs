@@ -36,7 +36,7 @@ impl ParsedFile {
         Self::default()
     }
     pub fn throw_error<T: ToString>(&self, message: T, location: &Location) -> ! {
-        throw_error(message, &self.relative_path, location, &self.lines)
+        throw_error(message, "", &self.relative_path, location, &self.lines)
     }
 }
 
@@ -62,7 +62,7 @@ pub fn parse(counter: &mut NameCounter, project_dir: &PathBuf, mut relative_path
                 new_relative_path.set_extension(FILE_EXTENSION);
 
                 let source = read_file(&project_dir.join(&new_relative_path));
-                let mut newfile = parse(counter, project_dir, new_relative_path, source);
+                let mut newfile = parse(counter, project_dir, new_relative_path, source); 
                 tokens.pop_start();
                 newfile.export = public;
 
@@ -71,7 +71,7 @@ pub fn parse(counter: &mut NameCounter, project_dir: &PathBuf, mut relative_path
             }
             Token::Function => {
                 let name = tokens.parse_identifer();
-                let function = function::parse_function(&mut tokens, public);
+                let function = function::parse_function(counter, &mut tokens, public);
                 match file.functions.insert(name.clone(), function) {
                     Some(_) => panic!("There's already a function named '{}'", name),
                     None => {}
