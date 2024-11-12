@@ -35,6 +35,9 @@ impl Path {
         clone.pop();
         clone
     }
+    pub fn len(&self) -> usize {
+        self.components.len()
+    }
     pub fn components(&self) -> Vec<String> {
         return self.components.clone()
     }

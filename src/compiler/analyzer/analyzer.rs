@@ -153,24 +153,62 @@ fn analyze_expression(
     // use super::super::types::{BaseType, Type};
 
     let (ir_expression, data_type) = match &expression.expression {
+        Expression::GetVariable(name) => {
+            let name = if &name.len() == &1 {
+                name.components().first().unwrap()
+            } else {
+                file.throw_error("Unhandled path", &expression.location)
+            };
+
+            panic!("Getting variable named: {}", name)
+        }
         Expression::Value(value) => {
-            let data_type = return_type.clone().unwrap_or(value.default_type());
             match value {
-                Value::Boolean(bool) => (IRExpression::Boolean(bool.clone()), data_type),
-                Value::Float(float) => (IRExpression::Float(float.clone()), data_type),
-                Value::Integer(integer) => (IRExpression::Integer(integer.clone()), data_type),
-                Value::StaticString(string) => {
-                    (IRExpression::Integer(string.clone()), data_type)
-                }
+                Value::Boolean(bool) => (IRExpression::Boolean(bool.clone()), value.default_type()),
+                Value::StaticString(string) => (IRExpression::Integer(string.clone()), value.default_type()),
+                Value::Float(float) => {
+                    let rt: Type = match &return_type {
+                        Some(rt) => {
+                            if rt.is_float() {
+                                rt.clone()
+                            } else {
+                                file.throw_error(format!("Mismatched types, expected '{}', found float", rt), &expression.location)
+                            }
+
+                        },
+                        None => value.default_type()
+                    };
+
+                    (IRExpression::Float(float.clone()), rt)
+                },
+                Value::Integer(integer) => {
+                    let rt: Type = match &return_type {
+                        Some(rt) => {
+                            if rt.is_integer() {
+                                rt.clone()
+                            } else {
+                                file.throw_error(format!("Mismatched types, expected '{}', found integer", rt), &expression.location)
+                            }
+
+                        },
+                        None => value.default_type()
+                    };
+
+                    (IRExpression::Integer(integer.clone()), rt)
+                },
             }
         }
         _ => file.throw_error("Unhandled expression", &expression.location),
     };
 
     match return_type {
-        Some(rt) => if rt != &data_type {
-            println!("{} == {}", rt, data_type);
-            file.throw_error(format!("Wrong types, expected: '{}', got: '{}'", rt, data_type), &expression.location);
+        Some(rt) => {
+            if rt != &data_type {
+                file.throw_error(
+                    format!("Wrong types, expected: '{}', got: '{}'", rt, data_type),
+                    &expression.location,
+                );
+            }
         }
         None => {}
     }
