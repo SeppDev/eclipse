@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::compiler::{
     errors::{CompileMessages, Location, Message, MessageKind},
-    parser::{Expression, ExpressionInfo, Node, NodeInfo},
+    parser::{Expression, ExpressionInfo, Node, NodeInfo}, path::Path,
 };
 
 use super::{Token, TokenInfo};
@@ -11,7 +11,7 @@ use std::{iter::Peekable, vec::IntoIter};
 #[derive(Debug)]
 pub struct Tokens {
     lines: Vec<String>,
-    file_path: PathBuf,
+    file_path: Path,
     errors: CompileMessages,
 
     current: Option<TokenInfo>,
@@ -37,10 +37,10 @@ impl Tokens {
     ) -> &mut Message {
         self.errors.create(
             MessageKind::Error,
-            self.file_path.clone(),
+            self.,
+            location,
             message,
             notice,
-            location,
         )
     }
     pub fn finish(mut self) -> Vec<String> {

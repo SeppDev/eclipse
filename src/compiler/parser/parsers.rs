@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::PathBuf,
-};
+use std::{collections::BTreeMap, path::PathBuf};
 
 mod arguments;
 mod body;
@@ -16,57 +13,38 @@ mod variable;
 // mod dot;
 
 use crate::compiler::{
-    counter::NameCounter,
-    errors::{CompileMessages, Location, Message, MessageKind},
-    lexer::tokenize,
-    read_file, FILE_EXTENSION,
+    counter::NameCounter, errors::CompileMessages, lexer::tokenize, path::Path, read_file,
+    FILE_EXTENSION,
 };
 use namespace::parse_namespace;
 
 use super::NodeInfo;
 
-fn clean_path(path: PathBuf) -> PathBuf {
-    return PathBuf::from(path.to_string_lossy().replace("\\", "/"));
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ParsedFile {
     pub export: bool,
-    pub relative_path: PathBuf,
-    pub imported: HashMap<String, ParsedFile>,
+    pub relative_path: Path,
+    pub imported: BTreeMap<String, ParsedFile>,
     pub functions: BTreeMap<String, NodeInfo>,
     pub lines: Vec<String>,
-    pub errors: CompileMessages,
 }
 impl ParsedFile {
     pub fn new() -> Self {
-        Self::default()
-    }
-    pub fn throw_error<T: ToString, E: ToString>(
-        &mut self,
-        message: T,
-        notice: E,
-        location: &Location,
-    ) -> &mut Message {
-        self.errors.create(
-            MessageKind::Error,
-            self.relative_path.clone(),
-            message,
-            notice,
-            location.clone(),
-        )
+        Self {
+
+        }
     }
 }
 
 pub fn parse(
     counter: &mut NameCounter,
+    errors: &mut CompileMessages,
     project_dir: &PathBuf,
-    mut relative_path: PathBuf,
+    mut relative_path: Path,
     source: String,
 ) -> ParsedFile {
     use super::super::lexer::Token;
 
-    relative_path = clean_path(relative_path);
     let mut tokens = tokenize(&relative_path, source);
     let mut file = ParsedFile::new();
 
@@ -86,7 +64,7 @@ pub fn parse(
                 new_relative_path.set_extension(FILE_EXTENSION);
 
                 let source = read_file(&project_dir.join(&new_relative_path));
-                let mut newfile = parse(counter, project_dir, new_relative_path, source);
+                let mut newfile = parse(counter, errors, project_dir, new_relative_path, source);
                 tokens.pop_start();
                 newfile.export = public;
 
@@ -113,7 +91,11 @@ pub fn parse(
                 continue;
             }
             t => {
-                tokens.throw_error(format!("Expected item, found '{}'", t), "", info.location.clone());
+                tokens.throw_error(
+                    format!("Expected item, found '{}'", t),
+                    "",
+                    info.location.clone(),
+                );
                 continue;
             }
         };

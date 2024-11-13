@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use analyzer::analyze;
 use counter::NameCounter;
+use errors::CompileMessages;
 use parser::{parse, ParsedFile};
 
 mod analyzer;
@@ -20,12 +21,12 @@ mod types;
 pub static FILE_EXTENSION: &str = "ecl";
 pub static POINTER_WIDTH: usize = 8;
 
-fn parse_include(counter: &mut NameCounter, source: &str, name: &str) -> (String, ParsedFile) {
+fn parse_include(counter: &mut NameCounter, errors: &mut CompileMessages, source: &str, name: &str) -> (String, ParsedFile) {
     let mut relative_path = PathBuf::from("std");
     relative_path.push(name);
     relative_path.set_extension(FILE_EXTENSION);
 
-    let mut file = parse(counter, &PathBuf::new(), relative_path, source.to_string());
+    let mut file = parse(counter, errors, &PathBuf::new(), relative_path, source.to_string());
     file.export = true;
     return (name.to_string(), file);
 }
@@ -33,10 +34,11 @@ fn parse_include(counter: &mut NameCounter, source: &str, name: &str) -> (String
 pub fn build(project_dir: PathBuf) {
     let _executable = {
         let mut counter = NameCounter::new();
+        let mut errors = CompileMessages::new();
 
         let std_imports = vec![
-            parse_include(&mut counter, include_str!("./std/io.ecl"), "io"),
-            parse_include(&mut counter, include_str!("./std/math.ecl"), "math"),
+            parse_include(&mut counter, &mut errors, include_str!("./std/io.ecl"), "io"),
+            parse_include(&mut counter, &mut errors, include_str!("./std/math.ecl"), "math"),
         ];
 
         let mut standard = ParsedFile::new();
@@ -48,11 +50,11 @@ pub fn build(project_dir: PathBuf) {
         relative_path.set_extension(FILE_EXTENSION);
 
         let source = read_file(&project_dir.join(&relative_path));
-        let mut main = parse(&mut counter, &project_dir, relative_path, source);
+        let mut main = parse(&mut counter, &mut errors, &project_dir, relative_path, source);
         main.export = true;
 
-        let program = ParsedProgram { standard, main };
-        let analyzed = analyze(program);
+        let mut program = ParsedProgram { standard, main, errors };
+        let analyzed = analyze(&mut program);
         println!("{:#?}", analyzed);
     };
 }

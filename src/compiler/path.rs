@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
 #[derive(Debug, PartialEq, Hash, Clone)]
 pub struct Path {
     components: Vec<String>,
 }
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.components.join("::"))
+        write!(f, "{}", self.components.join("/"))
     }
 }
 
@@ -13,6 +15,13 @@ impl Path {
         Self {
             components: Vec::new(),
         }
+    }
+    pub fn convert(&self) -> PathBuf {
+        let mut p = PathBuf::new();
+        for a in &self.components {
+            p.push(a);
+        }
+        return p;
     }
     pub fn from<T: ToString>(root: T) -> Self {
         let mut path = Self::new();

@@ -6,7 +6,9 @@
 
 // }
 
-use std::{ops::Range, path::PathBuf, process::exit};
+use std::{ops::Range, process::exit};
+
+use super::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Location {
@@ -29,24 +31,31 @@ impl CompileMessages {
             messages: Vec::new(),
         }
     }
-}
-impl CompileMessages {
+    pub fn push(&mut self, messages: Self) {
+        for msg in messages.messages {
+            self.messages.push(msg);
+        }
+    }
+    pub fn get_messages(self) -> Vec<Message> {
+        return self.messages;
+    }
     pub fn create<T: ToString, E: ToString>(
         &mut self,
         kind: MessageKind,
-        relative_path: PathBuf,
+        relative_path: Path,
+        location: Location,
         message: T,
         notice: E,
-        location: Location,
     ) -> &mut Message {
         Message {
             kind,
-            relative_path: relative_path.clone(),
+            relative_path,
             message: message.to_string(),
             details: vec![Detail::new(notice.to_string(), location)],
         };
         self.messages.last_mut().unwrap()
     }
+    
 }
 
 #[derive(Debug)]
@@ -59,7 +68,7 @@ pub enum MessageKind {
 #[derive(Debug)]
 pub struct Message {
     kind: MessageKind,
-    relative_path: PathBuf,
+    relative_path: Path,
     message: String,
     details: Vec<Detail>,
 }
@@ -83,7 +92,7 @@ impl Detail {
 fn build_message<T: ToString, E: ToString>(
     message: T,
     notice: E,
-    relative_path: &PathBuf,
+    relative_path: &Path,
     location: &Location,
     lines: &Vec<String>,
 ) -> ! {
@@ -92,7 +101,7 @@ fn build_message<T: ToString, E: ToString>(
     println!("error: {}", message.to_string());
     println!(
         "  --> {}:{}:{}",
-        relative_path.to_string_lossy(),
+        relative_path,
         location.lines.start,
         location.columns.start
     );

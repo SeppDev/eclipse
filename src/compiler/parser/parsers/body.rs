@@ -4,7 +4,8 @@ use crate::compiler::{
 };
 
 use super::{
-    expression::parse_expression, identifier::parse_after_identifier, namespace::parse_namespace, variable::parse_variable
+    expression::parse_expression, identifier::parse_after_identifier, namespace::parse_namespace,
+    variable::parse_variable,
 };
 
 pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
@@ -43,7 +44,14 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 tokens.create_node(Node::Return(expression))
             }
             Token::Variable => parse_variable(tokens),
-            t => tokens.throw_error(format!("Expected item, got '{}'", t), "", &info.location),
+            t => {
+                tokens.throw_error(
+                    format!("Expected item, got '{}'", t),
+                    "",
+                    info.location.clone(),
+                );
+                continue;
+            }
         };
         body.push(node)
     }

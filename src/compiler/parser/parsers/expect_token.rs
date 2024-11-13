@@ -23,8 +23,9 @@ impl Tokens {
                 info.token
             ),
             "",
-            &info.location
-        )
+            info.location.clone()
+        );
+        TokenInfo {token: Token::Unkown, location: info.location}
     }
     pub fn peek_require_token(&mut self, expected: Vec<Token>) -> TokenInfo {
         let info = self.peek();
@@ -46,8 +47,10 @@ impl Tokens {
                 info.token
             ),
             "",
-            info.location
-        )
+            info.location.clone()
+        );
+
+        TokenInfo {token: Token::Unkown, location: info.location}
     }
     pub fn peek_expect_tokens(
         &mut self,
