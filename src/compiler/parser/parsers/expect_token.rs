@@ -46,7 +46,7 @@ impl Tokens {
                 info.token
             ),
             "",
-            &info.location
+            info.location
         )
     }
     pub fn peek_expect_tokens(

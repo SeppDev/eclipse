@@ -1,7 +1,5 @@
 use crate::compiler::{
-    lexer::Location,
-    path::Path,
-    types::{BaseType, Type},
+    errors::Location, path::Path, types::{BaseType, Type}
 };
 
 #[derive(Debug)]

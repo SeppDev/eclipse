@@ -53,6 +53,9 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
         "f64" => Type::Base(BaseType::Float64),
         // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
-        str => tokens.throw_error(format!("Expected type, got {}", str), "", &info.location),
+        str => {
+            tokens.throw_error(format!("Expected type, got {}", str), "", info.location.clone());
+            Type::Base(BaseType::Unkown)
+        },
     };
 }

@@ -6,7 +6,7 @@
 
 // }
 
-use std::{path::PathBuf, process::exit};
+use std::{ops::Range, path::PathBuf, process::exit};
 
 #[derive(Debug, Clone)]
 pub struct Location {
@@ -19,23 +19,44 @@ impl Location {
     }
 }
 
-pub struct Messages {
+#[derive(Debug, Default)]
+pub struct CompileMessages {
     messages: Vec<Message>,
 }
-impl Messages {
+impl CompileMessages {
     pub fn new() -> Self {
         Self {
             messages: Vec::new(),
         }
     }
 }
+impl CompileMessages {
+    pub fn create<T: ToString, E: ToString>(
+        &mut self,
+        kind: MessageKind,
+        relative_path: PathBuf,
+        message: T,
+        notice: E,
+        location: Location,
+    ) -> &mut Message {
+        Message {
+            kind,
+            relative_path: relative_path.clone(),
+            message: message.to_string(),
+            details: vec![Detail::new(notice.to_string(), location)],
+        };
+        self.messages.last_mut().unwrap()
+    }
+}
 
+#[derive(Debug)]
 pub enum MessageKind {
     Note,
     Warning,
     Error,
 }
 
+#[derive(Debug)]
 pub struct Message {
     kind: MessageKind,
     relative_path: PathBuf,
@@ -43,25 +64,12 @@ pub struct Message {
     details: Vec<Detail>,
 }
 impl Message {
-    pub fn new<Message: ToString, Notice: ToString>(
-        kind: MessageKind,
-        relative_path: &PathBuf,
-        message: Message,
-        notice: Notice,
-        location: &Location
-    ) -> Self {
-        Self {
-            kind,
-            relative_path: relative_path.clone(),
-            message: message.to_string(),
-            details: vec![Detail::new(notice, location)],
-        }
-    }
-    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: &Location) {
-        self.details.push(Detail::new(notice, location.clone()));
+    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) {
+        self.details.push(Detail::new(notice.to_string(), location));
     }
 }
 
+#[derive(Debug)]
 pub struct Detail {
     notice: String,
     location: Location,

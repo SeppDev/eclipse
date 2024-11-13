@@ -25,7 +25,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         None => {
             if required {
                 let info = tokens.advance();
-                tokens.throw_error(format!("Expected expression, got '{}'", info.token), "", &info.location);
+                tokens.throw_error(format!("Expected expression, got '{}'", info.token), "", info.location);
             }
             return None;
         }

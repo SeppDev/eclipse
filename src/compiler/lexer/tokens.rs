@@ -1,17 +1,18 @@
 use std::path::PathBuf;
 
 use crate::compiler::{
-    errors::throw_error,
+    errors::{CompileMessages, Location, Message, MessageKind},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
 };
 
-use super::{Location, Token, TokenInfo};
+use super::{Token, TokenInfo};
 use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
 pub struct Tokens {
     lines: Vec<String>,
     file_path: PathBuf,
+    errors: CompileMessages,
 
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
@@ -21,14 +22,26 @@ impl Tokens {
     pub fn new(file_path: PathBuf, tokens: Vec<TokenInfo>, lines: Vec<String>) -> Self {
         return Self {
             file_path,
+            errors: CompileMessages::new(),
             starts: Vec::new(),
             current: None,
             lines,
             tokens: tokens.into_iter().peekable(),
         };
     }
-    pub fn throw_error<T: ToString, E: ToString>(&mut self, message: T, notice: E, location: &Location) -> ! {
-        throw_error(message, notice, &self.file_path, location, &self.lines)
+    pub fn throw_error<T: ToString, E: ToString>(
+        &mut self,
+        message: T,
+        notice: E,
+        location: Location,
+    ) -> &mut Message {
+        self.errors.create(
+            MessageKind::Error,
+            self.file_path.clone(),
+            message,
+            notice,
+            location,
+        )
     }
     pub fn finish(mut self) -> Vec<String> {
         if self.starts.len() > 0 {

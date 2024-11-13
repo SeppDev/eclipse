@@ -1,6 +1,7 @@
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
+    Unkown,
     Void,
     Never,
 
@@ -26,7 +27,7 @@ impl BaseType {
         use BaseType::*;
 
         match self {
-            Void | StaticString | Never => 0,
+            Void | StaticString | Never | Unkown => 0,
             Int64 | UInt64 | Float64 => 8,
             Int32 | UInt32 | Float32 => 4,
             Int16 | UInt16 => 2,
@@ -46,6 +47,7 @@ impl std::fmt::Display for BaseType {
             f,
             "{}",
             match self {
+                Self::Unkown => "{{unkown}}",
                 Self::Boolean => "bool",
                 Self::Void => "void",
                 Self::Float32 => "f32",

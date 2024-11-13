@@ -1,7 +1,6 @@
 // pub fn parse_identifier() {
 
 // }
-
 use crate::compiler::{
     parser::{Node, NodeInfo},
     path::Path,
@@ -17,16 +16,17 @@ impl Tokens {
     pub fn parse_identifer(&mut self) -> String {
         let info = self.advance();
 
-        let token = match info.token {
+        match info.token {
             Token::Identifier(string) => return string,
-            token => token.clone(),
+            _ => {},
         };
 
         self.throw_error(
-            format!("Expected identifier, found '{}'", token),
+            format!("Expected identifier, found '{}'", info.token),
             "expected identifier",
-            &info.location
-        )
+            info.location
+        );
+        format!("{}", info.token)
     }
 }
 
