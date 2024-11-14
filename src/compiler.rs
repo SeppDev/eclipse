@@ -84,10 +84,9 @@ pub fn build(project_dir: PathBuf) {
         let mut program = ParsedProgram {
             standard,
             main,
-            errors,
         };
 
-        let analyzed = analyze(&mut program);
+        let analyzed = analyze(&mut program, &mut errors);
         println!("{:#?}", analyzed);
     };
 }

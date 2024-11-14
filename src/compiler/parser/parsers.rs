@@ -14,7 +14,7 @@ mod variable;
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileMessages, MessageKind},
+    errors::{CompileMessages, FileMessages, MessageKind},
     lexer::tokenize,
     path::Path,
     read_file, FILE_EXTENSION,
@@ -28,6 +28,7 @@ pub struct ParsedFile {
     pub export: bool,
     pub imported: BTreeMap<String, ParsedFile>,
     pub functions: BTreeMap<String, NodeInfo>,
+    pub messages: FileMessages
 }
 impl ParsedFile {
     pub fn new() -> Self {
@@ -106,8 +107,9 @@ pub fn parse(
 
     let mut file_messages = tokens.finish();
     file_messages.set_path(relative_path);
-    messages.push(file_messages);
     messages.should_throw();
+    parsed_file.messages = file_messages;
+    // messages.push(file_messages);
 
     return parsed_file;
 }

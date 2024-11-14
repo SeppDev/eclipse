@@ -8,7 +8,6 @@ use super::{
 pub struct ParsedProgram {
     pub standard: ParsedFile,
     pub main: ParsedFile,
-    pub errors: CompileMessages,
 }
 impl ParsedProgram {
     pub fn get_file(&self, path: &Path /* , namespaces: &Vec<Path>*/) -> &ParsedFile {

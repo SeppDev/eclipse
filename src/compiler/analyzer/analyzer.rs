@@ -12,17 +12,15 @@ use super::{
     IRProgram,
 };
 
-pub fn analyze(parsed: &mut ParsedProgram) -> IRProgram {
+pub fn analyze(parsed: &mut ParsedProgram, errors: &mut CompileMessages) -> IRProgram {
     let program = IRProgram::new();
     let mut functions = Vec::new();
 
     let std_path = Path::from("std");
-    analyze_file(parsed, &mut functions, &parsed.standard, &std_path);
+    analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    // let main_path = Path::from("src").join("main");
-    // analyze_file(parsed, &mut functions, &parsed.main, &main_path);
-
-    println!("{:#?}", functions);
+    let main_path = Path::from("src").join("main");
+    analyze_file(parsed, &mut functions, errors, &parsed.main, &main_path);
 
     return program;
 }
@@ -30,17 +28,16 @@ pub fn analyze(parsed: &mut ParsedProgram) -> IRProgram {
 fn analyze_file(
     program: &ParsedProgram,
     functions: &mut Vec<IRFunction>,
+    messages: &mut CompileMessages,
     file: &ParsedFile,
     path: &Path,
 ) {
-    // for (name, _) in &file.imported {
-    // let found = analyze_file(program, &path.join(name));
-    // for function in analyze_file(program, &path.join(name)) {
-    // functions.push(function);
-    // }
-    // }
+    for (name, file) in &file.imported {
+        analyze_file(program, functions, messages, file,  &path.join(name));
+    }
 
-    println!("{:?}", file);
+    let mut file_messages = messages.create();
+    file_messages.set_path(path.clone());
 
     for (name, info) in &file.functions {
         let (public, name, parameters, return_type, body) = match &info.node {
@@ -63,30 +60,19 @@ fn analyze_file(
             }
         };
 
-        println!("{}", name);
-
         let mut variables = Variables::new(parameters.clone());
-        let body = analyze_body(
-            program,
-            file,
-            &mut variables,
-
-            path,
-            return_type,
-            body,
-        );
+        let body = analyze_body(program, file, &mut variables, path, return_type, body);
 
         if !return_type.is_void() {
             match body.last() {
                 Some(last) => {}
                 None => {
-                    // errors.create(
-                    //     MessageKind::Error,
-                    //     file.relative_path.clone(),
-                    //     format!("Expected return"),
-                    //     "",
-                    //     info.location.clone(),
-                    // );
+                    file_messages.create(
+                        MessageKind::Error,
+                        info.location.clone(),
+                        format!("Expected return"),
+                        "",
+                    );
                     continue;
                 }
             }
@@ -99,6 +85,8 @@ fn analyze_file(
             body,
         })
     }
+
+    messages.push(file_messages);
 }
 
 fn analyze_body(
