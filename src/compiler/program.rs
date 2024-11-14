@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use super::{
     errors::{CompileMessages, Location, Message, MessageKind},
     parser::ParsedFile,
@@ -34,24 +32,24 @@ impl ParsedProgram {
         }
         return file;
     }
-    pub fn create_error<T: ToString, E: ToString>(
-        &mut self,
-        message: T,
-        notice: E,
-        relative_path: Path,
-        location: Location,
-    ) -> &mut Message {
-        self.errors
-            .create(MessageKind::Error, relative_path, message, notice, location)
-    }
-    pub fn push_error<T: ToString, E: ToString>(
-        &mut self,
-        message: T,
-        notice: E,
-        relative_path: PathBuf,
-        location: Location,
-    ) {
-        self.errors
-            .create(MessageKind::Error, relative_path, message, notice, location);
-    }
+    // pub fn create_error<T: ToString, E: ToString>(
+    //     &mut self,
+    //     message: T,
+    //     notice: E,
+    //     relative_path: Path,
+    //     location: Location,
+    // ) -> &mut Message {
+    //     self.errors
+    //         .create(MessageKind::Error, relative_path, location, message, notice)
+    // }
+    // pub fn push_error<T: ToString, E: ToString>(
+    //     &mut self,
+    //     message: T,
+    //     notice: E,
+    //     relative_path: Path,
+    //     location: Location,
+    // ) {
+    //     self.errors
+    //         .create(MessageKind::Error, relative_path, location, message, notice);
+    // }
 }

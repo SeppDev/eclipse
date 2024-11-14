@@ -13,40 +13,39 @@ mod variable;
 // mod dot;
 
 use crate::compiler::{
-    counter::NameCounter, errors::CompileMessages, lexer::tokenize, path::Path, read_file,
-    FILE_EXTENSION,
+    counter::NameCounter,
+    errors::{CompileMessages, MessageKind},
+    lexer::tokenize,
+    path::Path,
+    read_file, FILE_EXTENSION,
 };
 use namespace::parse_namespace;
 
 use super::NodeInfo;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ParsedFile {
     pub export: bool,
-    pub relative_path: Path,
     pub imported: BTreeMap<String, ParsedFile>,
     pub functions: BTreeMap<String, NodeInfo>,
-    pub lines: Vec<String>,
 }
 impl ParsedFile {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self::default()
     }
 }
 
 pub fn parse(
     counter: &mut NameCounter,
-    errors: &mut CompileMessages,
+    messages: &mut CompileMessages,
     project_dir: &PathBuf,
-    mut relative_path: Path,
+    relative_path: Path,
     source: String,
 ) -> ParsedFile {
     use super::super::lexer::Token;
 
-    let mut tokens = tokenize(&relative_path, source);
-    let mut file = ParsedFile::new();
+    let mut tokens = tokenize(messages, source);
+    let mut parsed_file = ParsedFile::new();
 
     loop {
         if tokens.is_eof() {
@@ -60,49 +59,55 @@ pub fn parse(
             Token::Use => parse_namespace(&mut tokens, public),
             Token::Import => {
                 let name = tokens.parse_identifer();
-                let mut new_relative_path = relative_path.parent().unwrap().join(&name);
-                new_relative_path.set_extension(FILE_EXTENSION);
+                let relative_path = relative_path.parent().join(&name);
 
-                let source = read_file(&project_dir.join(&new_relative_path));
-                let mut newfile = parse(counter, errors, project_dir, new_relative_path, source);
+                let mut file_path = project_dir.join(relative_path.convert());
+                file_path.set_extension(FILE_EXTENSION);
+
+                let source = read_file(&file_path);
+                let mut newfile = parse(counter, messages, project_dir, relative_path, source);
                 tokens.pop_start();
                 newfile.export = public;
 
-                file.imported.insert(name, newfile);
+                parsed_file.imported.insert(name, newfile);
                 continue;
             }
             Token::Function => {
                 let name = tokens.parse_identifer();
                 let function = function::parse_function(counter, &mut tokens, public);
 
-                match file.functions.remove(&name) {
+                match parsed_file.functions.remove(&name) {
                     Some(old) => {
-                        let message = tokens.throw_error(
+                        let message = tokens.throw(
+                            MessageKind::Error,
+                            old.location,
                             format!("There's already a function named '{}'", name),
                             "",
-                            old.location,
                         );
                         message.push("", function.location.clone());
                     }
                     None => {}
                 }
 
-                file.functions.insert(name.clone(), function).unwrap();
+                parsed_file.functions.insert(name.clone(), function);
                 continue;
             }
             t => {
-                tokens.throw_error(
+                tokens.throw(
+                    MessageKind::Error,
+                    info.location,
                     format!("Expected item, found '{}'", t),
                     "",
-                    info.location.clone(),
                 );
                 continue;
             }
         };
     }
-    let lines = tokens.finish();
-    file.relative_path = relative_path;
-    file.lines = lines;
 
-    return file;
+    let mut file_messages = tokens.finish();
+    file_messages.set_path(relative_path);
+    messages.push(file_messages);
+    messages.should_throw();
+
+    return parsed_file;
 }

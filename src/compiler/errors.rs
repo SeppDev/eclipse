@@ -1,11 +1,3 @@
-// pub struct CompileError {
-//     message: String,
-//     lines: Vec<(usize, String)>,
-// }
-// impl CompileError {
-
-// }
-
 use std::{ops::Range, process::exit};
 
 use super::path::Path;
@@ -23,62 +15,96 @@ impl Location {
 
 #[derive(Debug, Default)]
 pub struct CompileMessages {
-    messages: Vec<Message>,
+    files: Vec<FileMessages>,
 }
 impl CompileMessages {
     pub fn new() -> Self {
-        Self {
-            messages: Vec::new(),
+        Self { files: Vec::new() }
+    }
+    pub fn create(&mut self) -> FileMessages {
+        let file = FileMessages::new();
+        return file;
+    }
+    pub fn push(&mut self, file: FileMessages) {
+        self.files.push(file)
+    }
+    fn has_errors(&self) -> bool {
+        for file in &self.files {
+            if file.has_errors() {
+                return true;
+            }
+        }
+        return false;
+    }
+    pub fn should_throw(&self) {
+        let has_errors = self.has_errors();
+        if !has_errors {
+            return;
+        }
+        for file in &self.files {
+            file.throw();
+        }
+        if has_errors {
+            exit(1)
         }
     }
-    pub fn push(&mut self, messages: Self) {
-        for msg in messages.messages {
-            self.messages.push(msg);
+    pub fn throw(&self) {
+        for file in &self.files {
+            file.throw();
+        }
+        if self.has_errors() {
+            exit(1)
         }
     }
-    pub fn get_messages(self) -> Vec<Message> {
-        return self.messages;
+}
+
+#[derive(Debug, Default)]
+pub struct FileMessages {
+    messages: Vec<Message>,
+    relative_path: Path,
+    lines: Vec<String>,
+}
+impl FileMessages {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn set_path(&mut self, path: Path) {
+        self.relative_path = path
+    }
+    pub fn set_lines(&mut self, lines: Vec<String>) {
+        self.lines = lines
+    }
+    fn has_errors(&self) -> bool {
+        for message in &self.messages {
+            if message.kind.eq(&MessageKind::Error) {
+                return true;
+            }
+        }
+        return false;
+    }
+    fn throw(&self) {
+        for message in &self.messages {
+            display_message(&self.relative_path, &self.lines, message)
+        }
     }
     pub fn create<T: ToString, E: ToString>(
         &mut self,
         kind: MessageKind,
-        relative_path: Path,
         location: Location,
         message: T,
         notice: E,
     ) -> &mut Message {
-        Message {
+        let message = Message {
             kind,
-            relative_path,
             message: message.to_string(),
             details: vec![Detail::new(notice.to_string(), location)],
         };
+        self.messages.push(message);
         self.messages.last_mut().unwrap()
     }
-    
 }
 
-#[derive(Debug)]
-pub enum MessageKind {
-    Note,
-    Warning,
-    Error,
-}
-
-#[derive(Debug)]
-pub struct Message {
-    kind: MessageKind,
-    relative_path: Path,
-    message: String,
-    details: Vec<Detail>,
-}
-impl Message {
-    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) {
-        self.details.push(Detail::new(notice.to_string(), location));
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Detail {
     notice: String,
     location: Location,
@@ -89,30 +115,74 @@ impl Detail {
     }
 }
 
-fn build_message<T: ToString, E: ToString>(
-    message: T,
-    notice: E,
-    relative_path: &Path,
-    location: &Location,
-    lines: &Vec<String>,
-) -> ! {
-    let line = lines.get(location.lines.start - 1).unwrap();
+#[derive(Debug, PartialEq)]
+pub enum MessageKind {
+    Note,
+    Warning,
+    Error,
+}
+impl std::fmt::Display for MessageKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Note => write!(f, "note"),
+            Self::Warning => write!(f, "warning"),
+            Self::Error => write!(f, "error"),
+        }
+    }
+}
 
-    println!("error: {}", message.to_string());
+#[derive(Debug)]
+pub struct Message {
+    kind: MessageKind,
+    message: String,
+    details: Vec<Detail>,
+}
+impl Message {
+    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) {
+        self.details.push(Detail::new(notice.to_string(), location));
+    }
+}
+
+fn display_message(relative_path: &Path, lines: &Vec<String>, message: &Message) {
+    println!("{}: {}", message.kind, message.message);
+
+    let first = message.details.first().unwrap();
     println!(
         "  --> {}:{}:{}",
-        relative_path,
-        location.lines.start,
-        location.columns.start
+        relative_path, first.location.lines.start, first.location.columns.start
     );
 
-    println!("  |");
-    println!("  | {}", line);
-    println!(
-        "  | {}{} {}",
-        " ".repeat(location.columns.start - 1),
-        "^".repeat(line.len() - location.columns.start + 1),
-        notice.to_string()
-    );
-    exit(1)
+    let mut spacing = String::new();
+    for detail in &message.details {
+        let location = &detail.location;
+        let temp_spacing = String::from(" ").repeat(format!("{}", location.lines.start).len());
+
+        if temp_spacing.len() > spacing.len() {
+            spacing = temp_spacing;
+        }
+    }
+
+    for detail in &message.details {
+        let location = &detail.location;
+        let line = lines.get(location.lines.start - 1).unwrap();
+        let total_spacing = format!("{}", detail.location.lines.start).len();
+        let line_spacing = String::from(" ").repeat(spacing.len() - total_spacing);
+
+        println!(" {} |", spacing);
+        println!(" {}{} | {}", line_spacing, location.lines.start, line);
+        println!(
+            " {} | {}{} {}",
+            spacing,
+            " ".repeat(location.columns.start - 1),
+            "^".repeat(line.len() - location.columns.start + 1),
+            detail.notice
+        );
+    }
+    println!()
+
+    // let line = lines.get(location.lines.start - 1).unwrap();
+
+    // println!("error: {}", message.to_string());
+
+    // println!("  | {}", line);
 }

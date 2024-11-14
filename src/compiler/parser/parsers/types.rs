@@ -1,4 +1,5 @@
 use crate::compiler::{
+    errors::MessageKind,
     lexer::{Token, Tokens},
     types::{BaseType, Type},
 };
@@ -36,7 +37,7 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
         Token::Ampersand => return Type::Reference(Box::new(parse_type(tokens))),
         Token::Asterisk => return Type::Pointer(Box::new(parse_type(tokens))),
         Token::Identifier(string) => string,
-        _ => panic!(),
+        t => return Type::Unkown,
     };
 
     return match name.as_str() {
@@ -54,8 +55,13 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
         // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
         str => {
-            tokens.throw_error(format!("Expected type, got {}", str), "", info.location.clone());
-            Type::Base(BaseType::Unkown)
-        },
+            tokens.throw(
+                MessageKind::Error,
+                info.location.clone(),
+                format!("Expected type, got {}", str),
+                "",
+            );
+            Type::Unkown
+        }
     };
 }

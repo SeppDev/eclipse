@@ -2,6 +2,7 @@
 
 // }
 use crate::compiler::{
+    errors::MessageKind,
     parser::{Node, NodeInfo},
     path::Path,
 };
@@ -18,30 +19,29 @@ impl Tokens {
 
         match info.token {
             Token::Identifier(string) => return string,
-            _ => {},
+            _ => {}
         };
 
-        self.throw_error(
+        self.throw(
+            MessageKind::Error,
+            info.location,
             format!("Expected identifier, found '{}'", info.token),
             "expected identifier",
-            info.location
         );
         format!("{}", info.token)
     }
 }
 
 pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
-    let info = tokens.peek_require_token(
-        vec![Token::OpenParen, Token::Equals, Token::DoubleColon],
-    );
+    let info = tokens.peek_require_token(vec![Token::OpenParen, Token::Equals, Token::DoubleColon]);
 
     match info.token {
         Token::DoubleColon => {
             let path = parse_path(tokens, &name);
             let _ = tokens.expect_tokens(vec![Token::OpenParen], false);
             let arguments = parse_arguments(tokens);
-            return tokens.create_node(Node::Call(path, arguments))
-        },
+            return tokens.create_node(Node::Call(path, arguments));
+        }
         _ => {}
     }
 

@@ -3,6 +3,8 @@ use std::path::PathBuf;
 mod compiler;
 
 fn main() {
+    let start = std::time::Instant::now();
+
     let mut project_dir = std::env::current_dir().unwrap();
     let mut args = std::env::args();
     args.next();
@@ -13,4 +15,6 @@ fn main() {
     }
 
     compiler::build(project_dir);
+
+    println!("{:?}", start.elapsed());
 }

@@ -1,7 +1,5 @@
 use crate::compiler::{
-    lexer::{Token, Tokens},
-    parser::{Expression, ExpressionInfo, Operator, Value},
-    path::Path,
+    errors::MessageKind, lexer::{Token, Tokens}, parser::{Expression, ExpressionInfo, Operator, Value}, path::Path
 };
 
 use super::{arguments::parse_arguments, path::parse_path};
@@ -25,7 +23,12 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         None => {
             if required {
                 let info = tokens.advance();
-                tokens.throw_error(format!("Expected expression, got '{}'", info.token), "", info.location);
+                tokens.throw(
+                    MessageKind::Error,
+                    info.location,
+                    format!("Expected expression, got '{}'", info.token),
+                    "",
+                );
             }
             return None;
         }
@@ -60,10 +63,13 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
                     }
                 };
                 expressions.push(new_expression);
-                match tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false).token {
+                match tokens
+                    .expect_tokens(vec![Token::CloseParen, Token::Comma], false)
+                    .token
+                {
                     Token::CloseParen => break,
                     Token::Comma => continue,
-                    _ => panic!()
+                    _ => panic!(),
                 };
             }
             return Some(tokens.create_expression(Expression::Tuple(expressions)));

@@ -1,3 +1,5 @@
+use crate::compiler::errors::Location;
+
 use super::TokenInfo;
 
 #[derive(Debug)]

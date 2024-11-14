@@ -1,11 +1,12 @@
-use std::path::PathBuf;
+use crate::compiler::errors::{CompileMessages, Location, MessageKind};
 
 use super::{
     reader::{Char, Reader},
     Token, TokenInfo, Tokens,
 };
 
-pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
+pub fn tokenize(messages: &mut CompileMessages, source: String) -> Tokens {
+    let mut file_messages = messages.create();
     let mut reader = Reader::new(source);
     let mut cursor: usize = 0;
 
@@ -68,7 +69,17 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
                                     'r' => string.push('\r'),
                                     't' => string.push('\t'),
                                     '\\' => string.push('\\'),
-                                    c => panic!("Unrecognized character: {:?}", c),
+                                    c => {
+                                        file_messages.create(
+                                            MessageKind::Error,
+                                            Location::new(
+                                                chr.line..chr.line,
+                                                chr.column..chr.column,
+                                            ),
+                                            format!("Unrecognized character: {:?}", c),
+                                            "",
+                                        );
+                                    } //panic!("Unrecognized character: {:?}", c),
                                 }
                             }
                             _ => string.push(chr.char),
@@ -89,7 +100,7 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
                 let start = chars.first().unwrap();
                 let end = chars.last().unwrap();
 
-                cursor += chars.len().max(1); 
+                cursor += chars.len().max(1);
                 reader.push(TokenInfo::new(
                     token,
                     start.line..end.line,
@@ -104,8 +115,9 @@ pub fn tokenize(file_path: &PathBuf, source: String) -> Tokens {
 
     let lines = reader.lines.len();
     reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
+    file_messages.set_lines(reader.lines);
 
-    return Tokens::new(file_path.clone(), reader.tokens, reader.lines);
+    return Tokens::new(reader.tokens, file_messages);
 }
 
 fn is_float(source: String) -> Result<Token, String> {

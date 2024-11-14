@@ -1,8 +1,6 @@
-use std::path::PathBuf;
-
 use crate::compiler::{
-    errors::{CompileMessages, Location, Message, MessageKind},
-    parser::{Expression, ExpressionInfo, Node, NodeInfo}, path::Path,
+    errors::{FileMessages, Location, Message, MessageKind},
+    parser::{Expression, ExpressionInfo, Node, NodeInfo},
 };
 
 use super::{Token, TokenInfo};
@@ -10,46 +8,40 @@ use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
 pub struct Tokens {
-    lines: Vec<String>,
-    file_path: Path,
-    errors: CompileMessages,
-
+    file_messages: FileMessages,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
     tokens: Peekable<IntoIter<TokenInfo>>,
 }
 impl Tokens {
-    pub fn new(file_path: PathBuf, tokens: Vec<TokenInfo>, lines: Vec<String>) -> Self {
+    pub fn new(tokens: Vec<TokenInfo>, file_messages: FileMessages) -> Self {
         return Self {
-            file_path,
-            errors: CompileMessages::new(),
+            file_messages,
             starts: Vec::new(),
             current: None,
-            lines,
             tokens: tokens.into_iter().peekable(),
         };
     }
-    pub fn throw_error<T: ToString, E: ToString>(
+    pub fn throw<T: ToString, E: ToString> (
         &mut self,
+        kind: MessageKind,
+        location: Location,
         message: T,
         notice: E,
-        location: Location,
     ) -> &mut Message {
-        self.errors.create(
-            MessageKind::Error,
-            self.,
+        self.file_messages.create(
+            kind,
             location,
             message,
             notice,
         )
     }
-    pub fn finish(mut self) -> Vec<String> {
+    pub fn finish(mut self) -> FileMessages {
         if self.starts.len() > 0 {
             println!("{:#?}", self.starts);
             panic!("Failed to finish: {:#?}", self.start())
         }
-
-        self.lines
+        self.file_messages
     }
     pub fn pop_start(&mut self) -> TokenInfo {
         self.starts.pop().unwrap()

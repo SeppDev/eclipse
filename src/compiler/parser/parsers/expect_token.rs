@@ -1,4 +1,4 @@
-use crate::compiler::lexer::TokenInfo;
+use crate::compiler::{errors::MessageKind, lexer::TokenInfo};
 
 use super::super::super::lexer::{Token, Tokens};
 
@@ -12,7 +12,9 @@ impl Tokens {
             }
         }
 
-        self.throw_error(
+        self.throw(
+            MessageKind::Error,
+            info.location.clone(),
             format!(
                 "Expected one of {}, found '{}'",
                 expected
@@ -23,9 +25,8 @@ impl Tokens {
                 info.token
             ),
             "",
-            info.location.clone()
         );
-        TokenInfo {token: Token::Unkown, location: info.location}
+        info
     }
     pub fn peek_require_token(&mut self, expected: Vec<Token>) -> TokenInfo {
         let info = self.peek();
@@ -36,7 +37,9 @@ impl Tokens {
             }
         }
 
-        self.throw_error(
+        self.throw(
+            MessageKind::Error,
+            info.location.clone(),
             format!(
                 "Expected one of {}, found '{}'",
                 expected
@@ -47,10 +50,12 @@ impl Tokens {
                 info.token
             ),
             "",
-            info.location.clone()
         );
 
-        TokenInfo {token: Token::Unkown, location: info.location}
+        TokenInfo {
+            token: Token::Unkown,
+            location: info.location,
+        }
     }
     pub fn peek_expect_tokens(
         &mut self,

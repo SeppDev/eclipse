@@ -12,42 +12,35 @@ use super::{
     IRProgram,
 };
 
-fn push_functions(program: &mut IRProgram, functions: Vec<IRFunction>) {
-    for function in functions {
-        program.functions.push(function);
-    }
-}
-
 pub fn analyze(parsed: &mut ParsedProgram) -> IRProgram {
-    let mut program = IRProgram::new();
+    let program = IRProgram::new();
+    let mut functions = Vec::new();
 
     let std_path = Path::from("std");
-    let (functions, messages) = analyze_file(parsed, &parsed.standard, &std_path);
-    push_functions(&mut program, functions);
-    parsed.errors.push(messages);
+    analyze_file(parsed, &mut functions, &parsed.standard, &std_path);
 
-    let main_path = Path::from("src").join("main");
-    let (functions, messages) = analyze_file(parsed, &parsed.main, &main_path);
-    push_functions(&mut program, functions);
-    parsed.errors.push(messages);
+    // let main_path = Path::from("src").join("main");
+    // analyze_file(parsed, &mut functions, &parsed.main, &main_path);
+
+    println!("{:#?}", functions);
 
     return program;
 }
 
 fn analyze_file(
     program: &ParsedProgram,
+    functions: &mut Vec<IRFunction>,
     file: &ParsedFile,
     path: &Path,
-) -> (Vec<IRFunction>, CompileMessages) {
-    let mut errors = CompileMessages::new();
-    let mut functions = Vec::new();
-
+) {
     // for (name, _) in &file.imported {
     // let found = analyze_file(program, &path.join(name));
     // for function in analyze_file(program, &path.join(name)) {
     // functions.push(function);
     // }
     // }
+
+    println!("{:?}", file);
 
     for (name, info) in &file.functions {
         let (public, name, parameters, return_type, body) = match &info.node {
@@ -59,31 +52,41 @@ fn analyze_file(
                 body,
             } => (public, name, parameters, return_type, body),
             _ => {
-                errors.create(
-                    MessageKind::Error,
-                    file.relative_path.clone(),
-                    format!("Expected function, got: {:#?}", info),
-                    "",
-                    info.location.clone(),
-                );
+                // errors.create(
+                //     MessageKind::Error,
+                //     file.relative_path.clone(),
+                //     format!("Expected function, got: {:#?}", info),
+                //     "",
+                //     info.location.clone(),
+                // );
                 continue;
             }
         };
 
+        println!("{}", name);
+
         let mut variables = Variables::new(parameters.clone());
-        let body = analyze_body(program, file, &mut variables, &mut errors, path, return_type, body);
+        let body = analyze_body(
+            program,
+            file,
+            &mut variables,
+
+            path,
+            return_type,
+            body,
+        );
 
         if !return_type.is_void() {
             match body.last() {
                 Some(last) => {}
                 None => {
-                    errors.create(
-                        MessageKind::Error,
-                        file.relative_path.clone(),
-                        format!("Expected return"),
-                        "",
-                        info.location.clone(),
-                    );
+                    // errors.create(
+                    //     MessageKind::Error,
+                    //     file.relative_path.clone(),
+                    //     format!("Expected return"),
+                    //     "",
+                    //     info.location.clone(),
+                    // );
                     continue;
                 }
             }
@@ -96,15 +99,12 @@ fn analyze_file(
             body,
         })
     }
-
-    return (functions, errors);
 }
 
 fn analyze_body(
     program: &ParsedProgram,
     file: &ParsedFile,
     variables: &mut Variables,
-    errors: &mut CompileMessages,
     relative_path: &Path,
     return_type: &Type,
     nodes: &Vec<NodeInfo>,
@@ -133,11 +133,17 @@ fn analyze_body(
                 expression,
             } => {
                 if expression.is_none() {
-                    errors.create(MessageKind::Error, relative_path.clone(), info.location.clone(), "Expected expression", "");
+                    // errors.create(
+                    //     MessageKind::Error,
+                    //     relative_path.clone(),
+                    //     info.location.clone(),
+                    //     "Expected expression",
+                    //     "",
+                    // );
+                    continue;
                 }
-                let expression = analyze_expression(
-                    program, file, variables, data_type, info, expression,
-                );
+                let expression =
+                    analyze_expression(program, file, variables, data_type, info, expression);
                 IRNode::DeclareVariable(name.clone(), expression)
             }
             // Node::Call(path, arguments) => {
@@ -242,7 +248,7 @@ fn analyze_expression(
     match return_type {
         Some(rt) => {
             if rt != &data_type {
-                panic!()
+                // panic!()
                 // file.throw_error(
                 //     format!("Wrong types, expected: '{}', got: '{}'", rt, data_type),
                 //     &expression.location,

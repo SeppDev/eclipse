@@ -1,7 +1,5 @@
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
-    Unkown,
     Void,
     Never,
 
@@ -19,7 +17,6 @@ pub enum BaseType {
 
     Boolean,
     StaticString,
-
     // Float128
 }
 impl BaseType {
@@ -27,7 +24,7 @@ impl BaseType {
         use BaseType::*;
 
         match self {
-            Void | StaticString | Never | Unkown => 0,
+            Void | StaticString | Never => 0,
             Int64 | UInt64 | Float64 => 8,
             Int32 | UInt32 | Float32 => 4,
             Int16 | UInt16 => 2,
@@ -47,7 +44,6 @@ impl std::fmt::Display for BaseType {
             f,
             "{}",
             match self {
-                Self::Unkown => "{{unkown}}",
                 Self::Boolean => "bool",
                 Self::Void => "void",
                 Self::Float32 => "f32",
@@ -61,7 +57,7 @@ impl std::fmt::Display for BaseType {
                 Self::Int64 => "i64",
                 Self::UInt64 => "u64",
                 Self::Never => "!",
-                Self::StaticString => "static_string"
+                Self::StaticString => "static_string",
             }
         )
     }
@@ -70,6 +66,7 @@ impl std::fmt::Display for BaseType {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
     // Custom(String),
+    Unkown,
     Base(BaseType),
     Array(Box<Type>, usize),
     Tuple(Vec<Type>),
@@ -79,6 +76,7 @@ pub enum Type {
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            Self::Unkown => write!(f, "{{unkown}}"),
             Self::Base(base) => write!(f, "{}", base),
             Self::Array(t, size) => write!(f, "[{}; {}]", t, size),
             Self::Pointer(t) => write!(f, "*{}", t),
