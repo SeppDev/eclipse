@@ -24,7 +24,7 @@ impl ParsedProgram {
                 Some(s) => s,
                 None => break,
             };
-            file = match file.imported.get(&name) {
+            file = match file.imports.get(&name) {
                 Some(file) => file,
                 None => panic!("Could not find '{}'", name),
             }

@@ -1,8 +1,10 @@
 mod display;
-pub use display::*;
+mod message;
 
+pub use display::*;
+use message::{Detail, Message, MessageKind};
 use super::path::Path;
-use std::{ops::Range, process::exit};
+use std::{collections::{BTreeMap, HashMap}, ops::Range, process::exit};
 
 #[derive(Debug, Clone)]
 pub struct Location {
@@ -17,20 +19,17 @@ impl Location {
 
 #[derive(Debug, Default)]
 pub struct CompileMessages {
-    files: Vec<FileMessages>,
+    files: BTreeMap<Path, FileMessages>,
+    lines: HashMap<Path, Vec<String>>
 }
 impl CompileMessages {
     pub fn new() -> Self {
-        Self { files: Vec::new() }
+        Self::default()
     }
-    pub fn push_file(&mut self, file: FileMessages) {
-        self.files.push(file);
+    pub fn create_file(&mut self, relative_path: Path, lines: Vec<String>) -> &mut FileMessages {
+        self.files.insert(relative_path, FileMessages::new());
+        self.files.last_mut().unwrap()
     }
-    // pub fn create_file(&mut self, relative_path: Path, lines: Vec<String>) -> &mut FileMessages {
-    //     self.files.push(FileMessages::new(relative_path, lines));
-    //     self.files.last_mut().unwrap()
-    // }
-
     fn has_errors(&self) -> bool {
         for file in &self.files {
             if file.has_errors() {
@@ -39,9 +38,9 @@ impl CompileMessages {
         }
         return false;
     }
-    pub fn should_throw(&self) {
+    pub fn throw(&self, finish: bool) {
         let has_errors = self.has_errors();
-        if !has_errors {
+        if !has_errors || finish {
             return;
         }
         for file in &self.files {
@@ -51,32 +50,18 @@ impl CompileMessages {
             exit(1)
         }
     }
-    pub fn throw(&self) {
-        for file in &self.files {
-            file.throw();
-        }
-        if self.has_errors() {
-            exit(1)
-        }
-    }
 }
+
 
 #[derive(Debug)]
 pub struct FileMessages {
     messages: Vec<Message>,
-    relative_path: Path,
-    lines: Vec<String>,
 }
 impl FileMessages {
-    pub fn new(relative_path: Path, lines: Vec<String>) -> Self {
+    pub fn new() -> Self {
         Self {
             messages: Vec::new(),
-            lines,
-            relative_path,
         }
-    }
-    pub fn set_lines(&mut self, lines: Vec<String>) {
-        self.lines = lines;
     }
     fn has_errors(&self) -> bool {
         for message in &self.messages {
@@ -88,7 +73,7 @@ impl FileMessages {
     }
     fn throw(&self) {
         for message in &self.messages {
-            display_message(&self.relative_path, &self.lines, message)
+            display_message(&self.relative_path, message)
         }
     }
     // pub fn push(&mut self, message: Message) {
@@ -111,41 +96,3 @@ impl FileMessages {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Detail {
-    notice: String,
-    location: Location,
-}
-impl Detail {
-    fn new(notice: String, location: Location) -> Self {
-        Self { notice, location }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum MessageKind {
-    Note,
-    Warning,
-    Error,
-}
-impl std::fmt::Display for MessageKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Note => write!(f, "note"),
-            Self::Warning => write!(f, "warning"),
-            Self::Error => write!(f, "error"),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Message {
-    kind: MessageKind,
-    message: String,
-    details: Vec<Detail>,
-}
-impl Message {
-    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) {
-        self.details.push(Detail::new(notice.to_string(), location));
-    }
-}

@@ -12,7 +12,7 @@ mod types;
 mod variable;
 
 use crate::compiler::{
-    errors::{CompileMessages, FileMessages},
+    errors::{CompileMessages, FileMessages, MessageKind},
     lexer::tokenize,
     path::Path,
     read_file, FILE_EXTENSION,
@@ -22,7 +22,7 @@ use super::NodeInfo;
 
 #[derive(Debug)]
 pub struct ParsedFile {
-    pub imports: BTreeMap<String, &'static ParsedFile>,
+    pub imports: BTreeMap<String, ParsedFile>,
     pub functions: BTreeMap<String, NodeInfo>,
     pub file_messages: FileMessages,
 }
@@ -43,7 +43,7 @@ pub fn start_parse(
 
     let mut imports = BTreeMap::new();
     let mut functions = BTreeMap::new();
-    
+
     use super::super::lexer::Token;
     loop {
         if tokens.is_eof() {
@@ -55,12 +55,18 @@ pub fn start_parse(
             Token::Import => {
                 let name = tokens.parse_identifer();
                 let import = start_parse(compile_messages, project_dir, path.parent().join(&name));
-                functions.insert(name, import);
+                imports.insert(name, import);
             }
-            Token::Function => {
-                
+            Token::Function => {}
+            _ => {
+                tokens.file_messages.create(
+                    MessageKind::Error,
+                    info.location,
+                    format!("Expected item, found '{}'", info.token),
+                    "",
+                );
+                continue;
             }
-            _ => panic!(),
         }
     }
 

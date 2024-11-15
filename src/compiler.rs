@@ -29,7 +29,6 @@ pub fn build(project_dir: PathBuf) {
         let main_path = Path::from("src").join("main");
         let main = start_parse(&mut compile_messages, &project_dir, main_path);
 
-        compile_messages.should_throw();
 
         println!("{:#?}", main);
 

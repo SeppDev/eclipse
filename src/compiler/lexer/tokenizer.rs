@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{FileMessages, Location, MessageKind},
+    errors::{Location, MessageKind},
     path::Path,
 };
 
@@ -11,8 +11,6 @@ use super::{
 pub fn tokenize(relative_path: Path, source: String) -> Tokens {
     let mut reader = Reader::new(source);
     let mut cursor: usize = 0;
-    let lines = reader.lines.len();
-    let mut file_messages = FileMessages::new(relative_path, Vec::new());
 
     loop {
         let mut chars = match reader.next(&cursor) {
@@ -116,11 +114,12 @@ pub fn tokenize(relative_path: Path, source: String) -> Tokens {
             }
         }
     }
-
+    
+    let lines = reader.lines.len();
     reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
     file_messages.set_lines(reader.lines);
 
-    return Tokens::new(reader.tokens, file_messages);
+    return Tokens::new(reader.tokens);
 }
 
 fn is_float(source: String) -> Result<Token, String> {
