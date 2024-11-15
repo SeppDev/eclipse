@@ -30,7 +30,7 @@ pub fn parse_function(counter: &mut NameCounter, tokens: &mut Tokens, public: bo
     };
 
     tokens.expect_tokens(vec![Token::StartScope], false);
-    let body = parse_body(tokens);
+    let body = parse_body( tokens);
     tokens.expect_tokens(vec![Token::EndScope], false);
 
     tokens.create_node(Node::Function {

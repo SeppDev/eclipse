@@ -17,7 +17,6 @@ pub enum BaseType {
 
     Boolean,
     StaticString,
-    // Float128
 }
 impl BaseType {
     pub fn size(&self) -> usize {

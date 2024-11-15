@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{FileMessages, Location, Message, MessageKind},
+    errors::{FileMessages, Location},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
 };
 
@@ -8,41 +8,37 @@ use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
 pub struct Tokens {
-    file_messages: FileMessages,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
     tokens: Peekable<IntoIter<TokenInfo>>,
+    pub file_messages: FileMessages
 }
 impl Tokens {
     pub fn new(tokens: Vec<TokenInfo>, file_messages: FileMessages) -> Self {
         return Self {
-            file_messages,
             starts: Vec::new(),
             current: None,
             tokens: tokens.into_iter().peekable(),
+            file_messages
         };
     }
-    pub fn throw<T: ToString, E: ToString> (
-        &mut self,
-        kind: MessageKind,
-        location: Location,
-        message: T,
-        notice: E,
-    ) -> &mut Message {
-        self.file_messages.create(
-            kind,
-            location,
-            message,
-            notice,
-        )
+    pub fn finish(self) -> FileMessages {
+        return self.file_messages
     }
-    pub fn finish(mut self) -> FileMessages {
-        if self.starts.len() > 0 {
-            println!("{:#?}", self.starts);
-            panic!("Failed to finish: {:#?}", self.start())
-        }
-        self.file_messages
-    }
+    // pub fn throw<T: ToString, E: ToString> (
+    //     &mut self,
+    //     kind: MessageKind,
+    //     location: Location,
+    //     message: T,
+    //     notice: E,
+    // ) -> &mut Message {
+    //     self.file_messages.create(
+    //         kind,
+    //         location,
+    //         message,
+    //         notice,
+    //     )
+    // }
     pub fn pop_start(&mut self) -> TokenInfo {
         self.starts.pop().unwrap()
     }

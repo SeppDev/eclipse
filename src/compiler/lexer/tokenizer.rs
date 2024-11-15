@@ -1,14 +1,18 @@
-use crate::compiler::errors::{CompileMessages, Location, MessageKind};
+use crate::compiler::{
+    errors::{FileMessages, Location, MessageKind},
+    path::Path,
+};
 
 use super::{
     reader::{Char, Reader},
     Token, TokenInfo, Tokens,
 };
 
-pub fn tokenize(messages: &mut CompileMessages, source: String) -> Tokens {
-    let mut file_messages = messages.create();
+pub fn tokenize(relative_path: Path, source: String) -> Tokens {
     let mut reader = Reader::new(source);
     let mut cursor: usize = 0;
+    let lines = reader.lines.len();
+    let mut file_messages = FileMessages::new(relative_path, Vec::new());
 
     loop {
         let mut chars = match reader.next(&cursor) {
@@ -52,11 +56,11 @@ pub fn tokenize(messages: &mut CompileMessages, source: String) -> Tokens {
                     let mut string = String::new();
                     loop {
                         cursor += 1;
-                        let chr = match reader.get(&cursor) {
+                        let start_chr = match reader.get(&cursor) {
                             Some(c) => c,
                             None => break,
                         };
-                        match chr.char {
+                        match start_chr.char {
                             '"' => break,
                             '\\' => {
                                 cursor += 1;
@@ -74,15 +78,15 @@ pub fn tokenize(messages: &mut CompileMessages, source: String) -> Tokens {
                                             MessageKind::Error,
                                             Location::new(
                                                 chr.line..chr.line,
-                                                chr.column..chr.column,
+                                                chr.column - 1..chr.column,
                                             ),
-                                            format!("Unrecognized character: {:?}", c),
+                                            format!("Unkown character escape: {:?}", c),
                                             "",
                                         );
                                     } //panic!("Unrecognized character: {:?}", c),
                                 }
                             }
-                            _ => string.push(chr.char),
+                            _ => string.push(start_chr.char),
                         }
                     }
 
@@ -113,7 +117,6 @@ pub fn tokenize(messages: &mut CompileMessages, source: String) -> Tokens {
         }
     }
 
-    let lines = reader.lines.len();
     reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
     file_messages.set_lines(reader.lines);
 

@@ -55,7 +55,7 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
         // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
         str => {
-            tokens.throw(
+            tokens.file_messages.create(
                 MessageKind::Error,
                 info.location.clone(),
                 format!("Expected type, got {}", str),

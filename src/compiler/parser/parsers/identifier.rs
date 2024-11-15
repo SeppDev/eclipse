@@ -22,7 +22,7 @@ impl Tokens {
             _ => {}
         };
 
-        self.throw(
+        self.file_messages.create(
             MessageKind::Error,
             info.location,
             format!("Expected identifier, found '{}'", info.token),

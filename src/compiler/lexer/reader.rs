@@ -1,5 +1,3 @@
-use crate::compiler::errors::Location;
-
 use super::TokenInfo;
 
 #[derive(Debug)]
@@ -74,6 +72,8 @@ impl Reader {
             if previous == '/' {
                 if chr == '/' {
                     vec.pop();
+                    line_string.pop();
+                    line_string.pop();
 
                     loop {
                         let chr = match chars.peek() {

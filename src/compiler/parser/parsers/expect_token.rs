@@ -12,7 +12,7 @@ impl Tokens {
             }
         }
 
-        self.throw(
+        self.file_messages.create(
             MessageKind::Error,
             info.location.clone(),
             format!(
@@ -37,7 +37,7 @@ impl Tokens {
             }
         }
 
-        self.throw(
+        self.file_messages.create(
             MessageKind::Error,
             info.location.clone(),
             format!(

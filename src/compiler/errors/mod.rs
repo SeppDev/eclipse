@@ -1,6 +1,8 @@
-use std::{ops::Range, process::exit};
+mod display;
+pub use display::*;
 
 use super::path::Path;
+use std::{ops::Range, process::exit};
 
 #[derive(Debug, Clone)]
 pub struct Location {
@@ -21,13 +23,14 @@ impl CompileMessages {
     pub fn new() -> Self {
         Self { files: Vec::new() }
     }
-    pub fn create(&mut self) -> FileMessages {
-        let file = FileMessages::new();
-        return file;
+    pub fn push_file(&mut self, file: FileMessages) {
+        self.files.push(file);
     }
-    pub fn push(&mut self, file: FileMessages) {
-        self.files.push(file)
-    }
+    // pub fn create_file(&mut self, relative_path: Path, lines: Vec<String>) -> &mut FileMessages {
+    //     self.files.push(FileMessages::new(relative_path, lines));
+    //     self.files.last_mut().unwrap()
+    // }
+
     fn has_errors(&self) -> bool {
         for file in &self.files {
             if file.has_errors() {
@@ -58,21 +61,22 @@ impl CompileMessages {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct FileMessages {
     messages: Vec<Message>,
     relative_path: Path,
     lines: Vec<String>,
 }
 impl FileMessages {
-    pub fn new() -> Self {
-        Self::default()
-    }
-    pub fn set_path(&mut self, path: Path) {
-        self.relative_path = path
+    pub fn new(relative_path: Path, lines: Vec<String>) -> Self {
+        Self {
+            messages: Vec::new(),
+            lines,
+            relative_path,
+        }
     }
     pub fn set_lines(&mut self, lines: Vec<String>) {
-        self.lines = lines
+        self.lines = lines;
     }
     fn has_errors(&self) -> bool {
         for message in &self.messages {
@@ -87,6 +91,9 @@ impl FileMessages {
             display_message(&self.relative_path, &self.lines, message)
         }
     }
+    // pub fn push(&mut self, message: Message) {
+    //     self.messages.push(message)
+    // }
     pub fn create<T: ToString, E: ToString>(
         &mut self,
         kind: MessageKind,
@@ -141,48 +148,4 @@ impl Message {
     pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) {
         self.details.push(Detail::new(notice.to_string(), location));
     }
-}
-
-fn display_message(relative_path: &Path, lines: &Vec<String>, message: &Message) {
-    println!("{}: {}", message.kind, message.message);
-
-    let first = message.details.first().unwrap();
-    println!(
-        "  --> {}:{}:{}",
-        relative_path, first.location.lines.start, first.location.columns.start
-    );
-
-    let mut spacing = String::new();
-    for detail in &message.details {
-        let location = &detail.location;
-        let temp_spacing = String::from(" ").repeat(format!("{}", location.lines.start).len());
-
-        if temp_spacing.len() > spacing.len() {
-            spacing = temp_spacing;
-        }
-    }
-
-    for detail in &message.details {
-        let location = &detail.location;
-        let line = lines.get(location.lines.start - 1).unwrap();
-        let total_spacing = format!("{}", detail.location.lines.start).len();
-        let line_spacing = String::from(" ").repeat(spacing.len() - total_spacing);
-
-        println!(" {} |", spacing);
-        println!(" {}{} | {}", line_spacing, location.lines.start, line);
-        println!(
-            " {} | {}{} {}",
-            spacing,
-            " ".repeat(location.columns.start - 1),
-            "^".repeat(line.len() - location.columns.start + 1),
-            detail.notice
-        );
-    }
-    println!()
-
-    // let line = lines.get(location.lines.start - 1).unwrap();
-
-    // println!("error: {}", message.to_string());
-
-    // println!("  | {}", line);
 }
