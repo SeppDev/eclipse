@@ -22,7 +22,7 @@ use super::NodeInfo;
 
 #[derive(Debug)]
 pub struct ParsedFile {
-    pub imported: BTreeMap<String, &'static ParsedFile>,
+    pub imports: BTreeMap<String, &'static ParsedFile>,
     pub functions: BTreeMap<String, NodeInfo>,
     pub file_messages: FileMessages,
 }
@@ -40,6 +40,9 @@ pub fn start_parse(
 
     let source = read_file(&file_path);
     let mut tokens = tokenize(path.clone(), source);
+
+    let mut imports = BTreeMap::new();
+    let mut functions = BTreeMap::new();
     
     use super::super::lexer::Token;
     loop {
@@ -52,17 +55,20 @@ pub fn start_parse(
             Token::Import => {
                 let name = tokens.parse_identifer();
                 let import = start_parse(compile_messages, project_dir, path.parent().join(&name));
-                // file.imported.insert(name, import);
+                functions.insert(name, import);
             }
-            _ => continue,
+            Token::Function => {
+                
+            }
+            _ => panic!(),
         }
     }
 
     let file_messages = tokens.finish();
 
     let file = ParsedFile {
-        functions: BTreeMap::new(),
-        imported: BTreeMap::new(),
+        imports,
+        functions,
         file_messages,
     };
 
