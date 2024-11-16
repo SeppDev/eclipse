@@ -17,8 +17,7 @@ use function::parse_function;
 use import::handle_import;
 
 use crate::compiler::{
-    counter::NameCounter,
-    errors::{CompileMessages, MessageKind},
+    errors::{CompileMessages, CompileResult},
     lexer::tokenize,
     path::Path,
     read_file, FILE_EXTENSION,
@@ -38,7 +37,7 @@ pub fn start_parse(
     compile_messages: &mut CompileMessages,
     project_dir: &PathBuf,
     relative_path: Path,
-) -> ParsedFile {
+) -> CompileResult<ParsedFile> {
     let mut file_path = {
         // let first = path.first().unwrap();
         project_dir.join(relative_path.convert())
@@ -58,15 +57,21 @@ pub fn start_parse(
             break;
         }
 
-        let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
+        let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true)?;
 
         match info.token {
             Token::Import => {
                 let (name, import) =
-                    handle_import(compile_messages, project_dir, &relative_path, &mut tokens);
+                    handle_import(compile_messages, project_dir, &relative_path, &mut tokens)?;
                 imports.push((name, import));
             }
-            Token::Function => functions.push(parse_function(&mut tokens, false)),
+            Token::Function => {
+                let function = match parse_function(&mut tokens, false) {
+                    Ok(f) => f,
+                    Err(()) => break,
+                };
+                functions.push(function)
+            },
             Token::Enum => todo!(),
             Token::Struct => todo!(),
             _ => continue,
@@ -82,7 +87,7 @@ pub fn start_parse(
         relative_path,
     };
 
-    return file;
+    return Ok(file);
 }
 
 // fn parse_tokens(

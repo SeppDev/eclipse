@@ -4,7 +4,8 @@ use crate::compiler::errors::Location;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
-    Unkown,
+    // Unkown,
+
     EndOfFile,
     Function,
     StartScope,
@@ -32,6 +33,7 @@ pub enum Token {
     Mutable,
     Variable,
     Give,
+    ExclamationMark,
 
     If,
     ElseIf,
@@ -80,7 +82,7 @@ impl std::fmt::Display for Token {
             f,
             "{}",
             match self {
-                Unkown => "<unkown>",
+                ExclamationMark => "!",
                 EndOfFile => "<eof>",
                 Ampersand => "&",
                 Function => "fn",

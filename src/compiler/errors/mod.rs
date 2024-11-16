@@ -6,6 +6,8 @@ pub use display::*;
 pub use message::{Detail, Message, MessageKind};
 use std::{collections::HashMap, ops::Range, process::exit};
 
+pub type CompileResult<T> = Result<T, ()>;
+
 #[derive(Debug, Clone, Default)]
 pub struct Location {
     pub lines: Range<usize>,

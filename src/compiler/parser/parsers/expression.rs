@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::MessageKind,
+    errors::{CompileResult, MessageKind},
     lexer::{Token, Tokens},
     parser::{Expression, ExpressionInfo, Operator, Value},
     path::Path,
@@ -7,7 +7,10 @@ use crate::compiler::{
 
 use super::{arguments::parse_arguments, path::parse_path};
 
-pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<ExpressionInfo> {
+pub fn parse_expression(
+    tokens: &mut Tokens,
+    required: bool,
+) -> CompileResult<Option<ExpressionInfo>> {
     let info = match tokens.peek_expect_tokens(
         vec![
             Token::String(String::new()),
@@ -33,7 +36,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
                     "",
                 );
             }
-            return None;
+            return Ok(None);
         }
     };
     tokens.start();
@@ -44,40 +47,52 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Token::String(string) => Expression::Value(Value::StaticString(string)),
         Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
         Token::Ampersand => {
-            let new_expression = parse_expression(tokens, true).unwrap();
-            return Some(tokens.create_expression(Expression::Reference(Box::new(new_expression))));
+            let new_expression = parse_expression(tokens, true)?.unwrap();
+            return Ok(Some(tokens.create_expression(Expression::Reference(
+                Box::new(new_expression),
+            ))));
         }
         Token::Asterisk => {
-            let new_expression = parse_expression(tokens, true).unwrap();
-            return Some(tokens.create_expression(Expression::Pointer(Box::new(new_expression))));
+            let new_expression = parse_expression(tokens, true)?.unwrap();
+            return Ok(Some(
+                tokens.create_expression(Expression::Pointer(Box::new(new_expression))),
+            ));
         }
         Token::Minus => {
-            let new_expression = parse_expression(tokens, true).unwrap();
-            return Some(tokens.create_expression(Expression::Minus(Box::new(new_expression))));
+            let new_expression = parse_expression(tokens, true)?.unwrap();
+            return Ok(Some(
+                tokens.create_expression(Expression::Minus(Box::new(new_expression))),
+            ));
+        }
+        Token::ExclamationMark => {
+            let new_expression = parse_expression(tokens, true)?.unwrap();
+            return Ok(Some(
+                tokens.create_expression(Expression::Not(Box::new(new_expression))),
+            ));
         }
         Token::OpenParen => {
             let mut expressions = Vec::new();
             loop {
-                let new_expression = match parse_expression(tokens, false) {
+                let new_expression = match parse_expression(tokens, false)? {
                     Some(expression) => expression,
                     None => {
-                        tokens.expect_tokens(vec![Token::CloseParen], false);
+                        tokens.expect_tokens(vec![Token::CloseParen], false)?;
                         break;
                     }
                 };
                 expressions.push(new_expression);
-                match tokens
-                    .expect_tokens(vec![Token::CloseParen, Token::Comma], false)
-                    .token
-                {
+                let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
+                match result.token {
                     Token::CloseParen => break,
                     Token::Comma => continue,
                     _ => panic!(),
                 };
             }
-            return Some(tokens.create_expression(Expression::Tuple(expressions)));
+            return Ok(Some(
+                tokens.create_expression(Expression::Tuple(expressions)),
+            ));
         }
-        Token::Identifier(name) => parse_identifier(tokens, name),
+        Token::Identifier(name) => parse_identifier(tokens, name)?,
         _ => panic!(),
     };
     let first_expression_info = tokens.create_expression(expression);
@@ -98,7 +113,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         false,
     ) {
         Some(_) => tokens.start(),
-        None => return Some(first_expression_info),
+        None => return Ok(Some(first_expression_info)),
     };
     let operator = match info.token {
         Token::Plus => Operator::Plus,
@@ -115,7 +130,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         _ => panic!(),
     };
 
-    let second_expression = parse_expression(tokens, true).unwrap();
+    let second_expression = parse_expression(tokens, true)?.unwrap();
     let mut first_location = first_expression_info.location.clone();
     first_location.columns.end = second_expression.location.columns.end;
 
@@ -125,28 +140,28 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Box::new(second_expression),
     ));
     info.location = first_location;
-    return Some(info)
+    return Ok(Some(info));
 }
 
-fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {
+fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expression> {
     let path = if tokens
         .peek_expect_tokens(vec![Token::DoubleColon], false)
         .is_some()
     {
-        parse_path(tokens, &name)
+        parse_path(tokens, &name)?
     } else {
         Path::from(&name)
     };
 
     let info = match tokens.peek_expect_tokens(vec![Token::OpenParen], true) {
         Some(info) => info,
-        None => return Expression::GetVariable(path),
+        None => return Ok(Expression::GetVariable(path)),
     };
 
     match info.token {
         Token::OpenParen => {
-            let arguments = parse_arguments(tokens);
-            Expression::Call(path, arguments)
+            let arguments = parse_arguments(tokens)?;
+            Ok(Expression::Call(path, arguments))
         }
         _ => panic!(),
     }

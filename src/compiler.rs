@@ -30,7 +30,10 @@ pub fn build(project_dir: PathBuf) {
         // standard.imported.insert(String::from("io") );
 
         let main_path = Path::from("src").join("main");
-        let main = start_parse(&mut compile_messages, &project_dir, main_path);
+        let main = match start_parse(&mut compile_messages, &project_dir, main_path) {
+            Ok(file) => file,
+            Err(()) => compile_messages.quit(),
+        };
         compile_messages.throw(false);
 
         let program = ParsedProgram {

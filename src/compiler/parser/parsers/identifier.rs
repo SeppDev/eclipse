@@ -1,5 +1,8 @@
-
-use crate::compiler::{errors::MessageKind, parser::{Node, NodeInfo}, path::Path};
+use crate::compiler::{
+    errors::{CompileResult, MessageKind},
+    parser::{Node, NodeInfo},
+    path::Path,
+};
 
 use super::{
     super::super::lexer::{Token, Tokens},
@@ -8,11 +11,11 @@ use super::{
     variable::parse_set_variable,
 };
 impl Tokens {
-    pub fn parse_identifier(&mut self) -> Option<String> {
+    pub fn parse_identifier(&mut self) -> CompileResult<String> {
         let info = self.advance();
 
         match info.token {
-            Token::Identifier(string) => return Some(string),
+            Token::Identifier(string) => return Ok(string),
             _ => {}
         };
 
@@ -22,19 +25,20 @@ impl Tokens {
             format!("Expected identifier, found '{}'", info.token),
             "expected identifier",
         );
-        return None;
+        return Ok("x".to_string());
     }
 }
 
-pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
-    let info = tokens.peek_require_token(vec![Token::OpenParen, Token::Equals, Token::DoubleColon]);
+pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResult<NodeInfo> {
+    let info =
+        tokens.peek_require_token(vec![Token::OpenParen, Token::Equals, Token::DoubleColon])?;
 
     match info.token {
         Token::DoubleColon => {
-            let path = parse_path(tokens, &name);
+            let path = parse_path(tokens, &name)?;
             let _ = tokens.expect_tokens(vec![Token::OpenParen], false);
-            let arguments = parse_arguments(tokens);
-            return tokens.create_node(Node::Call(path, arguments));
+            let arguments = parse_arguments(tokens)?;
+            return Ok(tokens.create_node(Node::Call(path, arguments)));
         }
         _ => {}
     }
@@ -42,8 +46,8 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> NodeInfo {
     tokens.advance();
     return match info.token {
         Token::OpenParen => {
-            let arguments = parse_arguments(tokens);
-            tokens.create_node(Node::Call(Path::from(&name), arguments))
+            let arguments = parse_arguments(tokens)?;
+            Ok(tokens.create_node(Node::Call(Path::from(&name), arguments)))
         }
         Token::Equals => parse_set_variable(tokens, name),
         _ => panic!(),

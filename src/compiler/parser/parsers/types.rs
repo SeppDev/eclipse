@@ -1,28 +1,27 @@
 use crate::compiler::{
-    errors::MessageKind,
+    errors::{CompileResult, MessageKind},
     lexer::{Token, Tokens},
     types::{BaseType, Type},
 };
 
-pub fn parse_type(tokens: &mut Tokens) -> Type {
+pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
     if tokens
         .peek_expect_tokens(vec![Token::OpenParen], true)
         .is_some()
     {
         let mut tuple = Vec::new();
         loop {
-            let new_type = parse_type(tokens);
+            let new_type = parse_type(tokens)?;
             tuple.push(new_type);
-            match tokens
-                .expect_tokens(vec![Token::CloseParen, Token::Comma], false)
-                .token
-            {
+
+            let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
+            match result.token {
                 Token::CloseParen => break,
                 Token::Comma => continue,
                 _ => panic!(),
             };
         }
-        return Type::Tuple(tuple);
+        return Ok(Type::Tuple(tuple));
     }
 
     let info = tokens.expect_tokens(
@@ -32,15 +31,15 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
             Token::Identifier(String::new()),
         ],
         false,
-    );
+    )?;
     let name = match info.token {
-        Token::Ampersand => return Type::Reference(Box::new(parse_type(tokens))),
-        Token::Asterisk => return Type::Pointer(Box::new(parse_type(tokens))),
+        Token::Ampersand => return Ok(Type::Reference(Box::new(parse_type(tokens)?))),
+        Token::Asterisk => return Ok(Type::Pointer(Box::new(parse_type(tokens)?))),
         Token::Identifier(string) => string,
-        _ => return Type::Unkown,
+        _ => return Ok(Type::Unkown),
     };
 
-    return match name.as_str() {
+    let t = match name.as_str() {
         "int64" => Type::Base(BaseType::Int64),
         "uint64" => Type::Base(BaseType::UInt64),
         "int32" => Type::Base(BaseType::Int32),
@@ -64,4 +63,5 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
             Type::Unkown
         }
     };
+    return Ok(t);
 }

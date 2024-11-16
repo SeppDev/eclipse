@@ -1,12 +1,15 @@
 use crate::compiler::{
-    counter::NameCounter, lexer::{Token, Tokens}, parser::{Node, NodeInfo}
+    errors::CompileResult,
+    lexer::{Token, Tokens},
+    parser::{Node, NodeInfo},
 };
 
 use super::{
-    expression::parse_expression, identifier::parse_after_identifier, ifstatement::parse_ifstatement, namespace::parse_namespace, variable::parse_variable
+    expression::parse_expression, identifier::parse_after_identifier,
+    ifstatement::parse_ifstatement, namespace::parse_namespace, variable::parse_variable,
 };
 
-pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
+pub fn parse_body(tokens: &mut Tokens) -> CompileResult<Vec<NodeInfo>> {
     let mut body: Vec<NodeInfo> = Vec::new();
 
     loop {
@@ -28,26 +31,25 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 Token::Identifier(String::new()),
             ],
             true,
-        );
+        )?;
 
         let node = match info.token {
             Token::StartScope => {
-                let nodes = parse_body(tokens);
-                // tokens.expect_tokens(vec![Token::EndScope], false);
+                let nodes = parse_body(tokens)?;
                 tokens.create_node(Node::Scope(nodes))
             }
-            Token::If => parse_ifstatement(tokens),
-            Token::Use => parse_namespace(tokens, false),
-            Token::Identifier(name) => parse_after_identifier(tokens, name),
+            Token::If => parse_ifstatement(tokens)?,
+            Token::Use => parse_namespace(tokens, false)?,
+            Token::Identifier(name) => parse_after_identifier(tokens, name)?,
             Token::Return => {
-                let expression = parse_expression(tokens, false);
+                let expression = parse_expression(tokens, false)?;
                 tokens.create_node(Node::Return(expression))
             }
-            Token::Variable => parse_variable(tokens),
+            Token::Variable => parse_variable(tokens)?,
             _ => continue,
         };
         body.push(node)
     }
 
-    return body;
+    return Ok(body);
 }

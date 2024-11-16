@@ -1,14 +1,14 @@
-use crate::compiler::{errors::MessageKind, lexer::TokenInfo};
+use crate::compiler::{errors::{CompileResult, MessageKind}, lexer::TokenInfo};
 
 use super::super::super::lexer::{Token, Tokens};
 
 impl Tokens {
-    pub fn expect_tokens(&mut self, expected: Vec<Token>, start: bool) -> TokenInfo {
+    pub fn expect_tokens(&mut self, expected: Vec<Token>, start: bool) -> CompileResult<TokenInfo> {
         let info = if start { self.start() } else { self.advance() };
 
         for token in &expected {
             if info.token.better_eq(&token) {
-                return info;
+                return Ok(info);
             }
         }
 
@@ -26,14 +26,14 @@ impl Tokens {
             ),
             "",
         );
-        info
+        return Err(())
     }
-    pub fn peek_require_token(&mut self, expected: Vec<Token>) -> TokenInfo {
+    pub fn peek_require_token(&mut self, expected: Vec<Token>) -> CompileResult<TokenInfo> {
         let info = self.peek().clone();
 
         for token in &expected {
             if info.token.better_eq(&token) {
-                return info;
+                return Ok(info);
             }
         }
 
@@ -52,7 +52,7 @@ impl Tokens {
             "",
         );
 
-        return info;
+        return Err(());
     }
     pub fn peek_expect_tokens(
         &mut self,

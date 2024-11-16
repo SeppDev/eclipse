@@ -1,15 +1,12 @@
 use crate::compiler::{
-    counter::NameCounter,
-    lexer::{Token, Tokens},
-    parser::{Node, NodeInfo},
-    types::{BaseType, Type},
+    errors::CompileResult, lexer::{Token, Tokens}, parser::{Node, NodeInfo}, types::{BaseType, Type}
 };
 
 use super::{body::parse_body, types::parse_type};
 
-pub fn parse_function(tokens: &mut Tokens, public: bool) -> NodeInfo {
-    let name = tokens.parse_identifier().unwrap();
-    tokens.expect_tokens(vec![Token::OpenParen], false);
+pub fn parse_function(tokens: &mut Tokens, public: bool) -> CompileResult<NodeInfo> {
+    let name = tokens.parse_identifier()?;
+    tokens.expect_tokens(vec![Token::OpenParen], false)?;
 
     let mut parameters: Vec<(String, Type)> = Vec::new();
     loop {
@@ -19,14 +16,12 @@ pub fn parse_function(tokens: &mut Tokens, public: bool) -> NodeInfo {
         {
             break;
         }
-        let name = match tokens.parse_identifier() {
-            Some(s) => s,
-            None => break,
-        };
-        let data_type = parse_type(tokens);
+        let name = tokens.parse_identifier()?;
+        let data_type = parse_type(tokens)?;
         parameters.push((name, data_type));
 
-        match tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false).token {
+        let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?; 
+        match result.token {
             Token::CloseParen => break,
             Token::Comma => continue,
             _ => break
@@ -37,19 +32,19 @@ pub fn parse_function(tokens: &mut Tokens, public: bool) -> NodeInfo {
         .peek_expect_tokens(vec![Token::Colon], true)
         .is_some()
     {
-        parse_type(tokens)
+        parse_type(tokens)?
     } else {
         Type::Base(BaseType::Void)
     };
 
-    tokens.expect_tokens(vec![Token::StartScope], false);
-    let body = parse_body(tokens);
+    tokens.expect_tokens(vec![Token::StartScope], false)?;
+    let body = parse_body(tokens)?;
 
-    tokens.create_node(Node::Function {
+    return Ok(tokens.create_node(Node::Function {
         public,
         name,
         parameters,
         return_type,
         body,
-    })
+    }));
 }
