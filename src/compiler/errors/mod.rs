@@ -6,7 +6,7 @@ pub use display::*;
 pub use message::{Detail, Message, MessageKind};
 use std::{collections::HashMap, ops::Range, process::exit};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Location {
     pub lines: Range<usize>,
     pub columns: Range<usize>,
@@ -43,6 +43,10 @@ impl CompileMessages {
     }
     pub fn set_lines(&mut self, relative_path: Path, lines: Vec<String>) {
         self.lines.insert(relative_path, lines);
+    }
+    pub fn quit(&self) -> ! {
+        self.throw(true);
+        exit(1)
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.messages.errors.len() > 0;

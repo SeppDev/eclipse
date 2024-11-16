@@ -193,7 +193,7 @@ fn is_identifier(source: String) -> Result<Token, String> {
 
 fn match_word(word: String) -> Result<Token, String> {
     let token = match word.as_str() {
-        "fn" => Token::Function,
+        "func" => Token::Function,
         "{" => Token::StartScope,
         "}" => Token::EndScope,
         "(" => Token::OpenParen,
@@ -210,12 +210,13 @@ fn match_word(word: String) -> Result<Token, String> {
         "_" => Token::Underscore,
         "if" => Token::If,
         "else" => Token::Else,
+        "elseif" => Token::ElseIf,
         "+" => Token::Plus,
         "-" => Token::Minus,
         "*" => Token::Asterisk,
         "/" => Token::ForwardSlash,
         "return" => Token::Return,
-        "let" => Token::Variable,
+        "var" => Token::Variable,
         "true" => Token::Boolean(true),
         "false" => Token::Boolean(false),
         "pub" => Token::Pub,
@@ -230,7 +231,10 @@ fn match_word(word: String) -> Result<Token, String> {
         "loop" => Token::Loop,
         "while" => Token::While,
         "<" => Token::LessThan,
+        "<=" => Token::LessThanOrEquals,
         ">" => Token::GreaterThan,
+        ">=" => Token::GreaterThanOrEquals,
+        "!=" => Token::NotEquals,
         "break" => Token::Break,
         _ => return Err(word),
     };

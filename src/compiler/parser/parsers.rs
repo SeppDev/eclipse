@@ -10,6 +10,7 @@ mod namespace;
 mod path;
 mod types;
 mod variable;
+mod ifstatement;
 
 use crate::compiler::{
     counter::NameCounter,
@@ -25,7 +26,7 @@ use super::NodeInfo;
 pub struct ParsedFile {
     pub imports: HashMap<String, ParsedFile>,
     pub functions: HashMap<String, NodeInfo>,
-    pub relative_path: Path
+    pub relative_path: Path,
 }
 
 pub fn start_parse(
@@ -53,10 +54,16 @@ pub fn start_parse(
         }
 
         let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
-        
+
         match info.token {
             Token::Import => {
-                let name = tokens.parse_identifier();
+                let name = match tokens.parse_identifier() {
+                    Some(s) => s,
+                    None => {
+                        tokens.finish(compile_messages);
+                        compile_messages.quit();
+                    }
+                };
                 let import = start_parse(
                     name_counter,
                     compile_messages,
@@ -64,10 +71,17 @@ pub fn start_parse(
                     relative_path.parent().join(&name),
                 );
                 imports.insert(name, import);
+                tokens.pop_start();
                 continue;
             }
             Token::Function => {
-                let name = tokens.parse_identifier();
+                let name = match tokens.parse_identifier() {
+                    Some(s) => s,
+                    None => {
+                        tokens.finish(compile_messages);
+                        compile_messages.quit();
+                    },
+                };
                 let function = function::parse_function(name_counter, &mut tokens, false);
 
                 match functions.remove(&name) {
@@ -86,22 +100,17 @@ pub fn start_parse(
                 functions.insert(name.clone(), function);
                 continue;
             }
-            _ => {
-                compile_messages.create(
-                    MessageKind::Error,
-                    info.location,
-                    relative_path.clone(),
-                    format!("Expected item, found '{}'", info.token),
-                    "",
-                );
-                continue;
-            }
+            _ => continue,
         }
     }
 
     tokens.finish(compile_messages);
 
-    let file = ParsedFile { imports, functions, relative_path };
+    let file = ParsedFile {
+        imports,
+        functions,
+        relative_path,
+    };
 
     return file;
 }

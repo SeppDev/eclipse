@@ -40,7 +40,7 @@ pub fn display_message(relative_path: &Path, lines: &Vec<String>, message: &Mess
         println!(
             " {} | {}{} {}",
             spacing,
-            " ".repeat(location.columns.start - 1),
+            " ".repeat(location.columns.start.max(1) - 1),
             "^".repeat(repeat),
             detail.notice
         );

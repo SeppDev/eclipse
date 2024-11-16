@@ -1,6 +1,7 @@
 use crate::compiler::{
     errors::{create_error_message, CompileMessages, Location, Message, MessageKind},
-    parser::{Expression, ExpressionInfo, Node, NodeInfo}, path::Path,
+    parser::{Expression, ExpressionInfo, Node, NodeInfo},
+    path::Path,
 };
 
 use super::{Token, TokenInfo};
@@ -24,19 +25,14 @@ impl Tokens {
             tokens: tokens.into_iter().peekable(),
         };
     }
-    pub fn throw<T: ToString, E: ToString> (
+    pub fn throw<T: ToString, E: ToString>(
         &mut self,
         kind: MessageKind,
         location: Location,
         message: T,
         notice: E,
     ) -> &mut Message {
-        let message = create_error_message(
-            kind,
-            location,
-            message,
-            notice,
-        );
+        let message = create_error_message(kind, location, message, notice);
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
@@ -85,19 +81,40 @@ impl Tokens {
     pub fn advance(&mut self) -> TokenInfo {
         match self.tokens.next() {
             Some(info) => {
+                match info.token {
+                    Token::EndOfFile => {
+                        self.throw(
+                            MessageKind::Error,
+                            info.location.clone(),
+                            format!("Early {}", info.token),
+                            "",
+                        );
+                    }
+                    _ => {}
+                }
                 self.current = Some(info.clone());
                 info
             }
-            None => panic!(),
+            None => {
+                let current = self.current.clone().unwrap();
+                self.throw(
+                    MessageKind::Error,
+                    current.location.clone(),
+                    format!("No token found {}", current.token),
+                    "",
+                );
+                current
+            }
         }
     }
-    pub fn peek(&mut self) -> TokenInfo {
-        return match self.tokens.peek() {
-            Some(info) => info.clone(),
-            None => todo!(),
+    pub fn peek(&mut self) -> &TokenInfo {
+        match self.tokens.peek() {
+            Some(info) => return info,
+            None => {}
         };
+        self.current.as_mut().unwrap()
     }
     pub fn is_eof(&mut self) -> bool {
-        return self.peek().token == Token::EndOfFile;
+        return self.tokens.peek().unwrap().token == Token::EndOfFile;
     }
 }

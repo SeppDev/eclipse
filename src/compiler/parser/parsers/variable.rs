@@ -9,7 +9,10 @@ pub fn parse_variable(tokens: &mut Tokens) -> NodeInfo {
     let mutable = tokens
         .peek_expect_tokens(vec![Token::Mutable], true)
         .is_some();
-    let name = tokens.parse_identifier();
+    let name = match tokens.parse_identifier() {
+        Some(s) => s,
+        None => panic!()
+    };
 
     let data_type = if tokens
         .peek_expect_tokens(vec![Token::Colon], true)
@@ -29,7 +32,7 @@ pub fn parse_variable(tokens: &mut Tokens) -> NodeInfo {
         None
     };
 
-    tokens.create_node(Node::DeclareVariable {
+    return tokens.create_node(Node::DeclareVariable {
         name,
         mutable,
         data_type,

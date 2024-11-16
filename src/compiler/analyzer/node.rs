@@ -10,6 +10,7 @@ pub struct IRFunction {
 
 #[derive(Debug)]
 pub enum IRNode {
+    Label(String),
     DeclareVariable(String, IRExpressionInfo),
     SetVariable(String, IRExpressionInfo),
     Return(IRExpressionInfo),

@@ -41,17 +41,17 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
     };
 
     return match name.as_str() {
-        "i64" => Type::Base(BaseType::Int64),
-        "u64" => Type::Base(BaseType::UInt64),
-        "i32" => Type::Base(BaseType::Int32),
-        "u32" => Type::Base(BaseType::UInt32),
-        "i16" => Type::Base(BaseType::Int16),
-        "u16" => Type::Base(BaseType::UInt16),
-        "i8" => Type::Base(BaseType::Int8),
-        "u8" => Type::Base(BaseType::UInt8),
+        "int64" => Type::Base(BaseType::Int64),
+        "uint64" => Type::Base(BaseType::UInt64),
+        "int32" => Type::Base(BaseType::Int32),
+        "uint32" => Type::Base(BaseType::UInt32),
+        "int16" => Type::Base(BaseType::Int16),
+        "uint16" => Type::Base(BaseType::UInt16),
+        "int8" => Type::Base(BaseType::Int8),
+        "uint8" => Type::Base(BaseType::UInt8),
         // "f16" => Type::Base(BaseType::Float16),
-        "f32" => Type::Base(BaseType::Float32),
-        "f64" => Type::Base(BaseType::Float64),
+        "float32" => Type::Base(BaseType::Float32),
+        "float64" => Type::Base(BaseType::Float64),
         // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
         str => {

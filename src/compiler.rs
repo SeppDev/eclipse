@@ -43,9 +43,9 @@ pub fn build(project_dir: PathBuf) {
             main,
         };
 
-        let _analyzed = analyze(&mut program, &mut compile_messages);
+        let analyzed = analyze(&mut program, &mut compile_messages);
         compile_messages.throw(true);
-        // println!("{:#?}", analyzed);
+        println!("{:#?}", analyzed);
     };
 }
 

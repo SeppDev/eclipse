@@ -8,11 +8,11 @@ use super::{
     variable::parse_set_variable,
 };
 impl Tokens {
-    pub fn parse_identifier(&mut self) -> String {
+    pub fn parse_identifier(&mut self) -> Option<String> {
         let info = self.advance();
 
         match info.token {
-            Token::Identifier(string) => return string,
+            Token::Identifier(string) => return Some(string),
             _ => {}
         };
 
@@ -22,7 +22,7 @@ impl Tokens {
             format!("Expected identifier, found '{}'", info.token),
             "expected identifier",
         );
-        format!("{}", info.token)
+        panic!()
     }
 }
 

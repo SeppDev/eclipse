@@ -12,7 +12,6 @@ use super::{
 };
 
 pub fn analyze(parsed: &mut ParsedProgram, compile_messages: &mut CompileMessages) -> IRProgram {
-    let program = IRProgram::new();
     let mut functions = Vec::new();
 
     // let std_path = Path::from("std");
@@ -20,7 +19,7 @@ pub fn analyze(parsed: &mut ParsedProgram, compile_messages: &mut CompileMessage
 
     analyze_file(compile_messages, &mut functions, parsed, &parsed.main);
 
-    return program;
+    return IRProgram { functions };
 }
 
 fn analyze_file(
@@ -42,16 +41,7 @@ fn analyze_file(
                 return_type,
                 body,
             } => (public, name, parameters, return_type, body),
-            _ => {
-                // errors.create(
-                //     MessageKind::Error,
-                //     file.relative_path.clone(),
-                //     format!("Expected function, got: {:#?}", info),
-                //     "",
-                //     info.location.clone(),
-                // );
-                continue;
-            }
+            _ => continue,
         };
 
         let mut variables = Variables::new(parameters.clone());
@@ -74,7 +64,6 @@ fn analyze_file(
                     "",
                 );
             });
-            continue;
         }
 
         functions.push(IRFunction {
@@ -151,12 +140,38 @@ fn analyze_body(
                     });
                 IRNode::DeclareVariable(name.clone(), expression)
             }
+            Node::SetVariable { name, expression } => {
+                let variable = match variables.get(name) {
+                    Some(var) => var.clone(),
+                    None => todo!(),
+                };
+                if !variable.mutable {
+                    compile_messages.create(
+                        MessageKind::Error,
+                        info.location.clone(),
+                        file.relative_path.clone(),
+                        format!("Cannot asign to immutable variable '{}'", name.clone()),
+                        "",
+                    );
+                    continue;
+                }
+                let expression = analyze_expression(
+                    compile_messages,
+                    program,
+                    file,
+                    variables,
+                    &Some(variable.data_type),
+                    info,
+                    expression,
+                );
+                IRNode::SetVariable(name.clone(), expression)
+            }
             _ => {
                 compile_messages.create(
                     MessageKind::Error,
                     info.location.clone(),
                     file.relative_path.clone(),
-                    "unhandled path",
+                    "Unhandled node",
                     "",
                 );
                 continue;
@@ -172,7 +187,7 @@ fn analyze_body(
 
 fn analyze_expression(
     compile_messages: &mut CompileMessages,
-    parsed: &ParsedProgram,
+    program: &ParsedProgram,
     file: &ParsedFile,
     variables: &mut Variables,
     return_type: &Option<Type>,

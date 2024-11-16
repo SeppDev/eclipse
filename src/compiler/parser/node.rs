@@ -1,9 +1,13 @@
 use crate::compiler::{
-    errors::Location, path::Path, types::{BaseType, Type}
+    errors::Location,
+    path::Path,
+    types::{BaseType, Type},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum Node {
+    #[default]
+    Uknown,
     Function {
         public: bool,
         name: String,
@@ -14,13 +18,18 @@ pub enum Node {
     Scope(Vec<NodeInfo>),
     SetVariable {
         name: String,
-        expression: Option<ExpressionInfo>, 
+        expression: Option<ExpressionInfo>,
     },
     DeclareVariable {
         name: String,
         mutable: bool,
         data_type: Option<Type>,
         expression: Option<ExpressionInfo>,
+    },
+    IfStatement {
+        expression: (ExpressionInfo, Vec<NodeInfo>),
+        elseif: Vec<(ExpressionInfo, Vec<NodeInfo>)>,
+        else_expression: Option<Vec<NodeInfo>>
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),
@@ -30,7 +39,7 @@ pub enum Node {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct NodeInfo {
     pub location: Location,
     pub node: Node,
@@ -60,7 +69,31 @@ pub enum Operator {
     Minus,
     Division,
     Multiply,
+    Equals,
+    NotEquals,
+    GreaterThan,
+    GreaterThanOrEquals,
+    LessThan,
+    LessThanOrEquals,
 }
+
+
+// #[derive(Debug)]
+// pub enum ArithmeticOperator {
+//     Plus,
+//     Minus,
+//     Division,
+//     Multiply,
+// }
+// #[derive(Debug)]
+// pub enum CompareOperator {
+//     Equals,
+//     NotEquals,
+//     GreaterThan,
+//     GreaterThanOrEquals,
+//     LessThan,
+//     LessThanOrEquals,
+// }
 
 #[derive(Debug, Clone)]
 pub enum Value {

@@ -29,7 +29,7 @@ impl Tokens {
         info
     }
     pub fn peek_require_token(&mut self, expected: Vec<Token>) -> TokenInfo {
-        let info = self.peek();
+        let info = self.peek().clone();
 
         for token in &expected {
             if info.token.better_eq(&token) {
@@ -52,10 +52,7 @@ impl Tokens {
             "",
         );
 
-        TokenInfo {
-            token: Token::Unkown,
-            location: info.location,
-        }
+        return info;
     }
     pub fn peek_expect_tokens(
         &mut self,

@@ -85,6 +85,9 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
             Token::Minus,
             Token::ForwardSlash,
             Token::Asterisk,
+            Token::Compare,
+            Token::NotEquals,
+            
         ],
         false,
     ) {
@@ -96,6 +99,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Token::Minus => Operator::Minus,
         Token::ForwardSlash => Operator::Division,
         Token::Asterisk => Operator::Multiply,
+        Token::Compare => Operator::Equals,
         _ => panic!(),
     };
 
