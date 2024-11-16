@@ -115,13 +115,13 @@ impl Reader {
         }
     }
     pub fn get(&self, cursor: &usize) -> Option<&Char> {
-        return self.chars.get(cursor.clone());
+        return self.chars.get(*cursor);
     }
     pub fn next(&self, cursor: &usize) -> Option<Vec<&Char>> {
         let mut chars = Vec::new();
 
         loop {
-            let chr = match self.get(&(cursor + chars.len())) {
+            let chr = match self.get(&(*cursor + chars.len())) {
                 Some(chr) => chr,
                 None => break,
             };

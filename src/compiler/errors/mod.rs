@@ -46,7 +46,7 @@ impl CompileMessages {
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.messages.errors.len() > 0;
-        if !has_errors || finish {
+        if !has_errors && !finish {
             return;
         }
 

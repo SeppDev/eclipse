@@ -1,9 +1,8 @@
 use crate::compiler::{
     errors::{CompileMessages, MessageKind},
     parser::{Expression, ExpressionInfo, Node, NodeInfo, ParsedFile},
-    path::Path,
     program::ParsedProgram,
-    types::Type,
+    types::{BaseType, Type},
 };
 
 use super::{
@@ -12,32 +11,27 @@ use super::{
     IRProgram,
 };
 
-pub fn analyze(parsed: &mut ParsedProgram, errors: &mut CompileMessages) -> IRProgram {
+pub fn analyze(parsed: &mut ParsedProgram, compile_messages: &mut CompileMessages) -> IRProgram {
     let program = IRProgram::new();
     let mut functions = Vec::new();
 
-    let std_path = Path::from("std");
-    analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
+    // let std_path = Path::from("std");
+    // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    let main_path = Path::from("src").join("main");
-    analyze_file(parsed, &mut functions, errors, &parsed.main, &main_path);
+    analyze_file(compile_messages, &mut functions, parsed, &parsed.main);
 
     return program;
 }
 
 fn analyze_file(
-    program: &ParsedProgram,
+    compile_messages: &mut CompileMessages,
     functions: &mut Vec<IRFunction>,
-    messages: &mut CompileMessages,
+    program: &ParsedProgram,
     file: &ParsedFile,
-    path: &Path,
 ) {
-    for (name, file) in &file.imported {
-        analyze_file(program, functions, messages, file,  &path.join(name));
-    }
-
-    let mut file_messages = messages.create();
-    file_messages.set_path(path.clone());
+    // for (name, file) in &file.imports {
+    //     analyze_file(program, functions, messages, file, &path.join(name));
+    // }
 
     for (name, info) in &file.functions {
         let (public, name, parameters, return_type, body) = match &info.node {
@@ -61,21 +55,26 @@ fn analyze_file(
         };
 
         let mut variables = Variables::new(parameters.clone());
-        let body = analyze_body(program, file, &mut variables, path, return_type, body);
+        let body = analyze_body(
+            compile_messages,
+            program,
+            file,
+            &mut variables,
+            return_type,
+            body,
+        );
 
         if !return_type.is_void() {
-            match body.last() {
-                Some(last) => {}
-                None => {
-                    file_messages.create(
-                        MessageKind::Error,
-                        info.location.clone(),
-                        format!("Expected return"),
-                        "",
-                    );
-                    continue;
-                }
-            }
+            body.last().is_none().then(|| {
+                compile_messages.create(
+                    MessageKind::Error,
+                    info.location.clone(),
+                    file.relative_path.clone(),
+                    format!("Expected return"),
+                    "",
+                );
+            });
+            continue;
         }
 
         functions.push(IRFunction {
@@ -85,25 +84,25 @@ fn analyze_file(
             body,
         })
     }
-
-    messages.push(file_messages);
 }
 
 fn analyze_body(
+    compile_messages: &mut CompileMessages,
     program: &ParsedProgram,
     file: &ParsedFile,
     variables: &mut Variables,
-    relative_path: &Path,
     return_type: &Type,
     nodes: &Vec<NodeInfo>,
 ) -> Vec<IRNode> {
     use super::super::parser::Node;
     let mut ir_nodes = Vec::new();
+    variables.create_state();
 
     for info in nodes {
         let ir_node: IRNode = match &info.node {
             Node::Return(expression) => {
                 let expression = analyze_expression(
+                    compile_messages,
                     program,
                     file,
                     variables,
@@ -130,29 +129,52 @@ fn analyze_body(
                     // );
                     continue;
                 }
-                let expression =
-                    analyze_expression(program, file, variables, data_type, info, expression);
+                let expression = analyze_expression(
+                    compile_messages,
+                    program,
+                    file,
+                    variables,
+                    data_type,
+                    info,
+                    expression,
+                );
+                variables
+                    .insert(name.clone(), mutable.clone(), expression.data_type.clone())
+                    .unwrap_or_else(|_| {
+                        compile_messages.create(
+                            MessageKind::Error,
+                            info.location.clone(),
+                            file.relative_path.clone(),
+                            format!("'{}' is already declared", name.clone()),
+                            "",
+                        );
+                    });
                 IRNode::DeclareVariable(name.clone(), expression)
             }
-            // Node::Call(path, arguments) => {
-            // let file = parsed.get_file(path);
-            // panic!("{:#?}", file);
-            // }
-            // Node::SetVariable { name, expression } => {
-            //     // analyze_expression(parsed, file, namespace, return_type, expression)
-            // }
-            _ => panic!(), //program.throw_error("Unhandled node", &info.location),
+            _ => {
+                compile_messages.create(
+                    MessageKind::Error,
+                    info.location.clone(),
+                    file.relative_path.clone(),
+                    "unhandled path",
+                    "",
+                );
+                continue;
+            }
         };
         ir_nodes.push(ir_node);
     }
+
+    variables.pop_state();
 
     return ir_nodes;
 }
 
 fn analyze_expression(
+    compile_messages: &mut CompileMessages,
     parsed: &ParsedProgram,
     file: &ParsedFile,
-    variables: &Variables,
+    variables: &mut Variables,
     return_type: &Option<Type>,
     node: &NodeInfo,
     expression: &Option<ExpressionInfo>,
@@ -165,11 +187,13 @@ fn analyze_expression(
                 None => return IRExpressionInfo::void(),
             };
             if !rt.is_void() {
-                panic!()
-                // file.throw_error(
-                //     format!("Expected type '{}' but no expression was provided.", rt),
-                //     &node.location,
-                // )
+                compile_messages.create(
+                    MessageKind::Error,
+                    node.location.clone(),
+                    file.relative_path.clone(),
+                    format!("Expected type '{}' but no expression was provided.", rt),
+                    "",
+                );
             }
             return IRExpressionInfo::void();
         }
@@ -179,14 +203,29 @@ fn analyze_expression(
     // use super::super::types::{BaseType, Type};
 
     let (ir_expression, data_type) = match &expression.expression {
-        Expression::GetVariable(name) => {
-            // let name = if &name.len() == &1 {
-            //     name.components().first().unwrap()
-            // } else {
-            //     file.throw_error("Unhandled path", &expression.location)
-            // };
-
-            panic!("Getting variable named: {}", name)
+        Expression::GetVariable(path) => {
+            let name = if &path.len() == &1 {
+                path.first().unwrap()
+            } else {
+                panic!()
+            };
+            let variable = match variables.get(name) {
+                Some(var) => var,
+                None => {
+                    compile_messages.create(
+                        MessageKind::Error,
+                        node.location.clone(),
+                        file.relative_path.clone(),
+                        format!("Could not find variable named: '{}'", name),
+                        "",
+                    );
+                    return IRExpressionInfo::void();
+                }
+            };
+            (
+                IRExpression::GetVariable(name.clone()),
+                variable.data_type.clone(),
+            )
         }
         Expression::Value(value) => match value {
             Value::Boolean(bool) => (IRExpression::Boolean(bool.clone()), value.default_type()),
@@ -199,11 +238,14 @@ fn analyze_expression(
                         if rt.is_float() {
                             rt.clone()
                         } else {
-                            // file.throw_error(
-                            //     format!("Mismatched types, expected '{}', found float", rt),
-                            //     &expression.location,
-                            // )
-                            panic!()
+                            compile_messages.create(
+                                MessageKind::Error,
+                                node.location.clone(),
+                                file.relative_path.clone(),
+                                format!("Mismatched types, expected '{}', found float", rt),
+                                "",
+                            );
+                            rt.clone()
                         }
                     }
                     None => value.default_type(),
@@ -217,11 +259,14 @@ fn analyze_expression(
                         if rt.is_integer() {
                             rt.clone()
                         } else {
-                            // file.throw_error(
-                            //     format!("Mismatched types, expected '{}', found integer", rt),
-                            //     &expression.location,
-                            // )
-                            panic!()
+                            compile_messages.create(
+                                MessageKind::Error,
+                                node.location.clone(),
+                                file.relative_path.clone(),
+                                format!("Mismatched types, expected '{}', found integer", rt),
+                                "",
+                            );
+                            rt.clone()
                         }
                     }
                     None => value.default_type(),
@@ -236,16 +281,17 @@ fn analyze_expression(
     match return_type {
         Some(rt) => {
             if rt != &data_type {
-                // panic!()
-                // file.throw_error(
-                //     format!("Wrong types, expected: '{}', got: '{}'", rt, data_type),
-                //     &expression.location,
-                // );
+                compile_messages.create(
+                    MessageKind::Error,
+                    expression.location.clone(),
+                    file.relative_path.clone(),
+                    format!("Wrong types, expected: '{}', got: '{}'", rt, data_type),
+                    "",
+                );
             }
         }
         None => {}
     }
-    // file.throw_error(format!("Expected integer type, got: '{}'", t), &expression.location);
 
     return IRExpressionInfo::from(ir_expression, data_type);
 }

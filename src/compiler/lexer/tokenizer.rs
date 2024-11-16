@@ -8,7 +8,11 @@ use super::{
     Token, TokenInfo, Tokens,
 };
 
-pub fn tokenize(compile_messages: &mut CompileMessages, relative_path: Path, source: String) -> Tokens {
+pub fn tokenize(
+    compile_messages: &mut CompileMessages,
+    relative_path: Path,
+    source: String,
+) -> Tokens {
     let mut reader = Reader::new(source);
     let mut cursor: usize = 0;
 
@@ -56,7 +60,7 @@ pub fn tokenize(compile_messages: &mut CompileMessages, relative_path: Path, sou
                         cursor += 1;
                         let start_chr = match reader.get(&cursor) {
                             Some(c) => c,
-                            None => break,
+                            None => panic!("Failed to close string")
                         };
                         match start_chr.char {
                             '"' => break,
@@ -116,7 +120,7 @@ pub fn tokenize(compile_messages: &mut CompileMessages, relative_path: Path, sou
             }
         }
     }
-    
+
     let lines = reader.lines.len();
     reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
     compile_messages.set_lines(relative_path.clone(), reader.lines);

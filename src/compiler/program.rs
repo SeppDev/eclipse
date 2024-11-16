@@ -1,12 +1,8 @@
-use super::{
-    errors::{CompileMessages, Location, Message, MessageKind},
-    parser::ParsedFile,
-    path::Path,
-};
+use super::{parser::ParsedFile, path::Path};
 
 #[derive(Debug)]
 pub struct ParsedProgram {
-    pub standard: ParsedFile,
+    // pub standard: ParsedFile,
     pub main: ParsedFile,
 }
 impl ParsedProgram {
@@ -14,7 +10,7 @@ impl ParsedProgram {
         let mut components = path.components();
         components.reverse();
         let mut file = match path.first().unwrap().as_str() {
-            "std" => &self.standard,
+            // "std" => &self.standard,
             _ => &self.main,
         };
 

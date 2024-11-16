@@ -1,10 +1,12 @@
+use analyzer::analyze;
 use counter::NameCounter;
 use errors::CompileMessages;
 use parser::start_parse;
 use path::Path;
+use program::ParsedProgram;
 use std::path::PathBuf;
 
-// mod analyzer;
+mod analyzer;
 mod lexer;
 mod parser;
 
@@ -36,14 +38,13 @@ pub fn build(project_dir: PathBuf) {
         );
         compile_messages.throw(false);
 
-        println!("{:#?}", main);
+        let mut program = ParsedProgram {
+            // standard,
+            main,
+        };
 
-        // let mut program = ParsedProgram {
-        //     standard,
-        //     main,
-        // };
-
-        // let analyzed = analyze(&mut program, &mut errors);
+        let _analyzed = analyze(&mut program, &mut compile_messages);
+        compile_messages.throw(true);
         // println!("{:#?}", analyzed);
     };
 }

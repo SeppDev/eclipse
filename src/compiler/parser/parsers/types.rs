@@ -37,7 +37,7 @@ pub fn parse_type(tokens: &mut Tokens) -> Type {
         Token::Ampersand => return Type::Reference(Box::new(parse_type(tokens))),
         Token::Asterisk => return Type::Pointer(Box::new(parse_type(tokens))),
         Token::Identifier(string) => string,
-        t => return Type::Unkown,
+        _ => return Type::Unkown,
     };
 
     return match name.as_str() {

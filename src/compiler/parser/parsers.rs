@@ -25,6 +25,7 @@ use super::NodeInfo;
 pub struct ParsedFile {
     pub imports: HashMap<String, ParsedFile>,
     pub functions: HashMap<String, NodeInfo>,
+    pub relative_path: Path
 }
 
 pub fn start_parse(
@@ -100,7 +101,7 @@ pub fn start_parse(
 
     tokens.finish(compile_messages);
 
-    let file = ParsedFile { imports, functions };
+    let file = ParsedFile { imports, functions, relative_path };
 
     return file;
 }

@@ -1,5 +1,4 @@
 use crate::compiler::{
-    errors::MessageKind,
     lexer::{Token, Tokens},
     parser::{Node, NodeInfo},
 };
@@ -45,15 +44,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
                 tokens.create_node(Node::Return(expression))
             }
             Token::Variable => parse_variable(tokens),
-            t => {
-                tokens.throw(
-                    MessageKind::Error,
-                    info.location.clone(),
-                    format!("Expected item, got '{}'", t),
-                    "",
-                );
-                continue;
-            }
+            _ => continue
         };
         body.push(node)
     }
