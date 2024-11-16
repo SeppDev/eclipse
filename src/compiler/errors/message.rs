@@ -1,3 +1,5 @@
+use crate::compiler::path::Path;
+
 use super::Location;
 
 #[derive(Debug, PartialEq)]

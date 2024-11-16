@@ -1,11 +1,5 @@
-// pub fn parse_identifier() {
 
-// }
-use crate::compiler::{
-    errors::MessageKind,
-    parser::{Node, NodeInfo},
-    path::Path,
-};
+use crate::compiler::{errors::MessageKind, parser::{Node, NodeInfo}, path::Path};
 
 use super::{
     super::super::lexer::{Token, Tokens},
@@ -14,7 +8,7 @@ use super::{
     variable::parse_set_variable,
 };
 impl Tokens {
-    pub fn parse_identifer(&mut self) -> String {
+    pub fn parse_identifier(&mut self) -> String {
         let info = self.advance();
 
         match info.token {
@@ -22,7 +16,7 @@ impl Tokens {
             _ => {}
         };
 
-        self.file_messages.create(
+        self.throw(
             MessageKind::Error,
             info.location,
             format!("Expected identifier, found '{}'", info.token),

@@ -15,7 +15,7 @@ pub fn parse_function(counter: &mut NameCounter, tokens: &mut Tokens, public: bo
         {
             break;
         }
-        let name = tokens.parse_identifer();
+        let name = tokens.parse_identifier();
         let data_type = parse_type(tokens);
         parameters.push((name, data_type))
     }

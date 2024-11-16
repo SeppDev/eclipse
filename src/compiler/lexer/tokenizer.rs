@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{Location, MessageKind},
+    errors::{CompileMessages, Location, MessageKind},
     path::Path,
 };
 
@@ -8,7 +8,7 @@ use super::{
     Token, TokenInfo, Tokens,
 };
 
-pub fn tokenize(relative_path: Path, source: String) -> Tokens {
+pub fn tokenize(compile_messages: &mut CompileMessages, relative_path: Path, source: String) -> Tokens {
     let mut reader = Reader::new(source);
     let mut cursor: usize = 0;
 
@@ -72,12 +72,14 @@ pub fn tokenize(relative_path: Path, source: String) -> Tokens {
                                     't' => string.push('\t'),
                                     '\\' => string.push('\\'),
                                     c => {
-                                        file_messages.create(
+                                        string.pop();
+                                        compile_messages.create(
                                             MessageKind::Error,
                                             Location::new(
                                                 chr.line..chr.line,
-                                                chr.column - 1..chr.column,
+                                                chr.column - 1..chr.column + 1,
                                             ),
+                                            relative_path.clone(),
                                             format!("Unkown character escape: {:?}", c),
                                             "",
                                         );
@@ -117,9 +119,9 @@ pub fn tokenize(relative_path: Path, source: String) -> Tokens {
     
     let lines = reader.lines.len();
     reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
-    file_messages.set_lines(reader.lines);
+    compile_messages.set_lines(relative_path.clone(), reader.lines);
 
-    return Tokens::new(reader.tokens);
+    return Tokens::new(reader.tokens, relative_path);
 }
 
 fn is_float(source: String) -> Result<Token, String> {

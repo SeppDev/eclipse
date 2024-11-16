@@ -23,7 +23,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         None => {
             if required {
                 let info = tokens.advance();
-                tokens.file_messages.create(
+                tokens.throw(
                     MessageKind::Error,
                     info.location,
                     format!("Expected expression, got '{}'", info.token),

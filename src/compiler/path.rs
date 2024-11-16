@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq, Hash, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
 pub struct Path {
     components: Vec<String>,
 }

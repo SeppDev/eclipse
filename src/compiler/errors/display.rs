@@ -27,13 +27,21 @@ pub fn display_message(relative_path: &Path, lines: &Vec<String>, message: &Mess
         let total_spacing = format!("{}", detail.location.lines.start).len();
         let line_spacing = String::from(" ").repeat(spacing.len() - total_spacing);
 
+        let repeat: usize = {
+            if location.columns.start < location.columns.end {
+                line.len() - location.columns.start + 1
+            } else {
+                (location.columns.end - location.columns.start).max(1)
+            }
+        };
+
         println!(" {} |", spacing);
         println!(" {}{} | {}", line_spacing, location.lines.start, line);
         println!(
             " {} | {}{} {}",
             spacing,
             " ".repeat(location.columns.start - 1),
-            "^".repeat(location.columns.end - location.columns.start + 1),
+            "^".repeat(repeat),
             detail.notice
         );
     }

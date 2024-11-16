@@ -13,8 +13,7 @@ impl ParsedProgram {
     pub fn get_file(&self, path: &Path /* , namespaces: &Vec<Path>*/) -> &ParsedFile {
         let mut components = path.components();
         components.reverse();
-        let root = components.pop().unwrap();
-        let mut file = match root.as_str() {
+        let mut file = match path.first().unwrap().as_str() {
             "std" => &self.standard,
             _ => &self.main,
         };

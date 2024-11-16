@@ -1,6 +1,6 @@
 use crate::compiler::{
-    errors::{FileMessages, Location},
-    parser::{Expression, ExpressionInfo, Node, NodeInfo},
+    errors::{create_error_message, CompileMessages, Location, Message, MessageKind},
+    parser::{Expression, ExpressionInfo, Node, NodeInfo}, path::Path,
 };
 
 use super::{Token, TokenInfo};
@@ -8,37 +8,43 @@ use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
 pub struct Tokens {
+    relative_path: Path,
+    messages: Vec<Message>,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
     tokens: Peekable<IntoIter<TokenInfo>>,
-    pub file_messages: FileMessages
 }
 impl Tokens {
-    pub fn new(tokens: Vec<TokenInfo>, file_messages: FileMessages) -> Self {
+    pub fn new(tokens: Vec<TokenInfo>, relative_path: Path) -> Self {
         return Self {
+            relative_path,
+            messages: Vec::new(),
             starts: Vec::new(),
             current: None,
             tokens: tokens.into_iter().peekable(),
-            file_messages
         };
     }
-    pub fn finish(self) -> FileMessages {
-        return self.file_messages
+    pub fn throw<T: ToString, E: ToString> (
+        &mut self,
+        kind: MessageKind,
+        location: Location,
+        message: T,
+        notice: E,
+    ) -> &mut Message {
+        let message = create_error_message(
+            kind,
+            location,
+            message,
+            notice,
+        );
+        self.messages.push(message);
+        return self.messages.last_mut().unwrap();
     }
-    // pub fn throw<T: ToString, E: ToString> (
-    //     &mut self,
-    //     kind: MessageKind,
-    //     location: Location,
-    //     message: T,
-    //     notice: E,
-    // ) -> &mut Message {
-    //     self.file_messages.create(
-    //         kind,
-    //         location,
-    //         message,
-    //         notice,
-    //     )
-    // }
+    pub fn finish(self, compile_messages: &mut CompileMessages) {
+        for message in self.messages {
+            compile_messages.push(self.relative_path.clone(), message);
+        }
+    }
     pub fn pop_start(&mut self) -> TokenInfo {
         self.starts.pop().unwrap()
     }

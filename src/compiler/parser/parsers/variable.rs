@@ -9,7 +9,7 @@ pub fn parse_variable(tokens: &mut Tokens) -> NodeInfo {
     let mutable = tokens
         .peek_expect_tokens(vec![Token::Mutable], true)
         .is_some();
-    let name = tokens.parse_identifer();
+    let name = tokens.parse_identifier();
 
     let data_type = if tokens
         .peek_expect_tokens(vec![Token::Colon], true)

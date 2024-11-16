@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{FileMessages, MessageKind},
+    errors::MessageKind,
     lexer::{Token, Tokens},
     parser::{Node, NodeInfo},
 };
@@ -46,7 +46,7 @@ pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
             }
             Token::Variable => parse_variable(tokens),
             t => {
-                tokens.file_messages.create(
+                tokens.throw(
                     MessageKind::Error,
                     info.location.clone(),
                     format!("Expected item, got '{}'", t),
