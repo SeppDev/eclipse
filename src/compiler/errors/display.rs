@@ -28,7 +28,7 @@ pub fn display_message(relative_path: &Path, lines: &Vec<String>, message: &Mess
         let line_spacing = String::from(" ").repeat(spacing.len() - total_spacing);
 
         let repeat: usize = {
-            if location.columns.start < location.columns.end {
+            if location.lines.len() > 1 {
                 line.len() - location.columns.start + 1
             } else {
                 (location.columns.end - location.columns.start).max(1)
