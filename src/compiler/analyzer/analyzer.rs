@@ -1,8 +1,10 @@
 use crate::compiler::{
-    errors::{CompileMessages, MessageKind},
+    counter::NameCounter,
+    errors::{CompileMessages, Location, MessageKind},
     parser::{Expression, ExpressionInfo, Node, NodeInfo, ParsedFile},
+    path::Path,
     program::ParsedProgram,
-    types::{BaseType, Type},
+    types::Type,
 };
 
 use super::{
@@ -11,13 +13,17 @@ use super::{
     IRProgram,
 };
 
-pub fn analyze(parsed: &mut ParsedProgram, compile_messages: &mut CompileMessages) -> IRProgram {
+pub fn analyze(
+    parsed: ParsedProgram,
+    compile_messages: &mut CompileMessages,
+    _name_counter: &mut NameCounter,
+) -> IRProgram {
     let mut functions = Vec::new();
 
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    analyze_file(compile_messages, &mut functions, parsed, &parsed.main);
+    analyze_file(compile_messages, &mut functions, parsed.main);
 
     return IRProgram { functions };
 }
@@ -25,15 +31,18 @@ pub fn analyze(parsed: &mut ParsedProgram, compile_messages: &mut CompileMessage
 fn analyze_file(
     compile_messages: &mut CompileMessages,
     functions: &mut Vec<IRFunction>,
-    program: &ParsedProgram,
-    file: &ParsedFile,
+    mut file: ParsedFile,
 ) {
-    // for (name, file) in &file.imports {
-    //     analyze_file(program, functions, messages, file, &path.join(name));
-    // }
+    loop {
+        let (_, file) = match file.imports.pop() {
+            Some((name, file)) => (name, file),
+            None => break,
+        };
+        analyze_file(compile_messages, functions, file);
+    }
 
-    for (name, info) in &file.functions {
-        let (public, name, parameters, return_type, body) = match &info.node {
+    for info in file.functions {
+        let (_, _name, parameters, return_type, body) = match info.node {
             Node::Function {
                 public,
                 name,
@@ -44,18 +53,38 @@ fn analyze_file(
             _ => continue,
         };
 
-        let mut variables = Variables::new(parameters.clone());
-        let body = analyze_body(
+        let mut variables = Variables::new();
+        variables.create_state();
+        for (key, t) in &parameters {
+            let result = variables
+                .insert(&key, false, t.clone(), info.location.clone())
+                .1;
+            match result {
+                Ok(()) => {}
+                Err(var) => {
+                    compile_messages.create(
+                        MessageKind::Error,
+                        var.location.clone(),
+                        file.relative_path.clone(),
+                        format!("Duplicate parameter '{}'", key),
+                        "",
+                    );
+                }
+            }
+        }
+
+        let mut nodes = Vec::new();
+        analyze_body(
             compile_messages,
-            program,
-            file,
+            &file.relative_path,
             &mut variables,
-            return_type,
+            &Some(return_type.clone()),
             body,
+            &mut nodes,
         );
 
         if !return_type.is_void() {
-            body.last().is_none().then(|| {
+            nodes.last().is_none().then(|| {
                 compile_messages.create(
                     MessageKind::Error,
                     info.location.clone(),
@@ -67,39 +96,54 @@ fn analyze_file(
         }
 
         functions.push(IRFunction {
-            name: name.clone(),
-            parameters: parameters.clone(),
-            return_type: return_type.clone(),
-            body,
+            parameters: parameters,
+            return_type,
+            body: nodes,
         })
     }
 }
 
 fn analyze_body(
     compile_messages: &mut CompileMessages,
-    program: &ParsedProgram,
-    file: &ParsedFile,
+    relative_path: &Path,
     variables: &mut Variables,
-    return_type: &Type,
-    nodes: &Vec<NodeInfo>,
-) -> Vec<IRNode> {
+    return_type: &Option<Type>,
+    body: Vec<NodeInfo>,
+    nodes: &mut Vec<IRNode>,
+) {
     use super::super::parser::Node;
-    let mut ir_nodes = Vec::new();
     variables.create_state();
 
-    for info in nodes {
-        let ir_node: IRNode = match &info.node {
+    let mut body = body.into_iter();
+
+    loop {
+        let info = match body.next() {
+            Some(info) => info,
+            None => break,
+        };
+
+        let ir_node: IRNode = match info.node {
+            Node::Scope(body) => {
+                analyze_body(
+                    compile_messages,
+                    relative_path,
+                    variables,
+                    return_type,
+                    body,
+                    nodes,
+                );
+                continue;
+            }
             Node::Return(expression) => {
                 let expression = analyze_expression(
                     compile_messages,
-                    program,
-                    file,
+                    relative_path,
                     variables,
-                    &Some(return_type.clone()),
-                    info,
+                    return_type,
+                    &info.location,
                     expression,
                 );
-                ir_nodes.push(IRNode::Return(expression));
+                nodes.push(IRNode::Return(expression));
                 break;
             }
             Node::DeclareVariable {
@@ -120,28 +164,37 @@ fn analyze_body(
                 }
                 let expression = analyze_expression(
                     compile_messages,
-                    program,
-                    file,
+                    relative_path,
                     variables,
-                    data_type,
-                    info,
+                    &data_type,
+                    &info.location,
                     expression,
                 );
-                variables
-                    .insert(name.clone(), mutable.clone(), expression.data_type.clone())
-                    .unwrap_or_else(|_| {
-                        compile_messages.create(
+                let (current, result) = variables.insert(
+                    &name,
+                    mutable.clone(),
+                    expression.data_type.clone(),
+                    info.location.clone(),
+                );
+
+                match result {
+                    Ok(_) => {}
+                    Err(old) => {
+                        let message = compile_messages.create(
                             MessageKind::Error,
-                            info.location.clone(),
-                            file.relative_path.clone(),
+                            old.location.clone(),
+                            relative_path.clone(),
                             format!("'{}' is already declared", name.clone()),
                             "",
                         );
-                    });
-                IRNode::DeclareVariable(name.clone(), expression)
+                        message.push("", info.location.clone());
+                    }
+                }
+
+                IRNode::DeclareVariable(current.name.clone(), expression)
             }
             Node::SetVariable { name, expression } => {
-                let variable = match variables.get(name) {
+                let variable = match variables.get(&name, true) {
                     Some(var) => var.clone(),
                     None => todo!(),
                 };
@@ -149,7 +202,7 @@ fn analyze_body(
                     compile_messages.create(
                         MessageKind::Error,
                         info.location.clone(),
-                        file.relative_path.clone(),
+                        relative_path.clone(),
                         format!("Cannot asign to immutable variable '{}'", name.clone()),
                         "",
                     );
@@ -157,42 +210,58 @@ fn analyze_body(
                 }
                 let expression = analyze_expression(
                     compile_messages,
-                    program,
-                    file,
+                    relative_path,
                     variables,
                     &Some(variable.data_type),
-                    info,
+                    &info.location,
                     expression,
                 );
-                IRNode::SetVariable(name.clone(), expression)
+
+                IRNode::SetVariable(variable.name.clone(), expression)
             }
             _ => {
                 compile_messages.create(
                     MessageKind::Error,
                     info.location.clone(),
-                    file.relative_path.clone(),
+                    relative_path.clone(),
                     "Unhandled node",
                     "",
                 );
                 continue;
             }
         };
-        ir_nodes.push(ir_node);
+        nodes.push(ir_node);
     }
 
-    variables.pop_state();
-
-    return ir_nodes;
+    let state_variables = variables.pop_state();
+    for (key, var) in state_variables {
+        if !var.read {
+            compile_messages.create(
+                MessageKind::Warning,
+                var.location.clone(),
+                relative_path.clone(),
+                format!("Unused variable '{}'", key),
+                "",
+            );
+        } else if !var.mutated && var.mutable {
+            compile_messages.create(
+                MessageKind::Warning,
+                var.location.clone(),
+                relative_path.clone(),
+                format!("Variable does not need to be mutable '{}'", key),
+                "",
+            );
+        }
+    }
 }
 
 fn analyze_expression(
     compile_messages: &mut CompileMessages,
-    program: &ParsedProgram,
-    file: &ParsedFile,
+    relative_path: &Path,
     variables: &mut Variables,
     return_type: &Option<Type>,
-    node: &NodeInfo,
-    expression: &Option<ExpressionInfo>,
+    node: &Location,
+    expression: Option<ExpressionInfo>,
 ) -> IRExpressionInfo {
     let expression = match expression {
         Some(expr) => expr,
@@ -204,8 +273,8 @@ fn analyze_expression(
             if !rt.is_void() {
                 compile_messages.create(
                     MessageKind::Error,
-                    node.location.clone(),
-                    file.relative_path.clone(),
+                    node.clone(),
+                    relative_path.clone(),
                     format!("Expected type '{}' but no expression was provided.", rt),
                     "",
                 );
@@ -215,7 +284,6 @@ fn analyze_expression(
     };
 
     use super::super::parser::Value;
-    // use super::super::types::{BaseType, Type};
 
     let (ir_expression, data_type) = match &expression.expression {
         Expression::GetVariable(path) => {
@@ -224,13 +292,13 @@ fn analyze_expression(
             } else {
                 panic!()
             };
-            let variable = match variables.get(name) {
+            let variable = match variables.get(name, false) {
                 Some(var) => var,
                 None => {
                     compile_messages.create(
                         MessageKind::Error,
-                        node.location.clone(),
-                        file.relative_path.clone(),
+                        expression.location.clone(),
+                        relative_path.clone(),
                         format!("Could not find variable named: '{}'", name),
                         "",
                     );
@@ -238,7 +306,7 @@ fn analyze_expression(
                 }
             };
             (
-                IRExpression::GetVariable(name.clone()),
+                IRExpression::GetVariable(variable.name.clone()),
                 variable.data_type.clone(),
             )
         }
@@ -255,8 +323,8 @@ fn analyze_expression(
                         } else {
                             compile_messages.create(
                                 MessageKind::Error,
-                                node.location.clone(),
-                                file.relative_path.clone(),
+                                node.clone(),
+                                relative_path.clone(),
                                 format!("Mismatched types, expected '{}', found float", rt),
                                 "",
                             );
@@ -276,8 +344,8 @@ fn analyze_expression(
                         } else {
                             compile_messages.create(
                                 MessageKind::Error,
-                                node.location.clone(),
-                                file.relative_path.clone(),
+                                node.clone(),
+                                relative_path.clone(),
                                 format!("Mismatched types, expected '{}', found integer", rt),
                                 "",
                             );
@@ -290,7 +358,16 @@ fn analyze_expression(
                 (IRExpression::Integer(integer.clone()), rt)
             }
         },
-        _ => panic!(), //file.throw_error("Unhandled expression", &expression.location),
+        _ => {
+            compile_messages.create(
+                MessageKind::Error,
+                expression.location.clone(),
+                relative_path.clone(),
+                "Unhandled expression",
+                "",
+            );
+            return IRExpressionInfo::void();
+        }
     };
 
     match return_type {
@@ -299,7 +376,7 @@ fn analyze_expression(
                 compile_messages.create(
                     MessageKind::Error,
                     expression.location.clone(),
-                    file.relative_path.clone(),
+                    relative_path.clone(),
                     format!("Wrong types, expected: '{}', got: '{}'", rt, data_type),
                     "",
                 );

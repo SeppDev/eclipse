@@ -6,26 +6,26 @@ pub struct ParsedProgram {
     pub main: ParsedFile,
 }
 impl ParsedProgram {
-    pub fn get_file(&self, path: &Path /* , namespaces: &Vec<Path>*/) -> &ParsedFile {
-        let mut components = path.components();
-        components.reverse();
-        let mut file = match path.first().unwrap().as_str() {
-            // "std" => &self.standard,
-            _ => &self.main,
-        };
+    // pub fn get_file(&self, path: &Path /* , namespaces: &Vec<Path>*/) -> &ParsedFile {
+    //     let mut components = path.components();
+    //     components.reverse();
+    //     let mut file = match path.first().unwrap().as_str() {
+    //         // "std" => &self.standard,
+    //         _ => &self.main,
+    //     };
 
-        loop {
-            let name = match components.pop() {
-                Some(s) => s,
-                None => break,
-            };
-            file = match file.imports.get(&name) {
-                Some(file) => file,
-                None => panic!("Could not find '{}'", name),
-            }
-        }
-        return file;
-    }
+    //     loop {
+    //         let name = match components.pop() {
+    //             Some(s) => s,
+    //             None => break,
+    //         };
+    //         file = match file.imports.get(&name) {
+    //             Some(file) => file,
+    //             None => panic!("Could not find '{}'", name),
+    //         }
+    //     }
+    //     return file;
+    // }
     // pub fn create_error<T: ToString, E: ToString>(
     //     &mut self,
     //     message: T,

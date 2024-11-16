@@ -7,7 +7,8 @@ use crate::compiler::{
 
 use super::{body::parse_body, types::parse_type};
 
-pub fn parse_function(name_counter: &mut NameCounter, tokens: &mut Tokens, public: bool) -> NodeInfo {
+pub fn parse_function(tokens: &mut Tokens, public: bool) -> NodeInfo {
+    let name = tokens.parse_identifier().unwrap();
     tokens.expect_tokens(vec![Token::OpenParen], false);
 
     let mut parameters: Vec<(String, Type)> = Vec::new();
@@ -23,7 +24,13 @@ pub fn parse_function(name_counter: &mut NameCounter, tokens: &mut Tokens, publi
             None => break,
         };
         let data_type = parse_type(tokens);
-        parameters.push((name, data_type))
+        parameters.push((name, data_type));
+
+        match tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false).token {
+            Token::CloseParen => break,
+            Token::Comma => continue,
+            _ => break
+        }
     }
 
     let return_type = if tokens
@@ -36,12 +43,11 @@ pub fn parse_function(name_counter: &mut NameCounter, tokens: &mut Tokens, publi
     };
 
     tokens.expect_tokens(vec![Token::StartScope], false);
-    let body = parse_body(name_counter, tokens);
-
+    let body = parse_body(tokens);
 
     tokens.create_node(Node::Function {
         public,
-        name: name_counter.increment(),
+        name,
         parameters,
         return_type,
         body,

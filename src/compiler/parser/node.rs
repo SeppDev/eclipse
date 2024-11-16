@@ -8,6 +8,14 @@ use crate::compiler::{
 pub enum Node {
     #[default]
     Uknown,
+    Enum {
+        name: String,
+        fields: Vec<String>,
+    },
+    Struct {
+        name: String,
+        fields: Vec<(String, Type)>,
+    },
     Function {
         public: bool,
         name: String,
@@ -29,7 +37,7 @@ pub enum Node {
     IfStatement {
         expression: (ExpressionInfo, Vec<NodeInfo>),
         elseif: Vec<(ExpressionInfo, Vec<NodeInfo>)>,
-        else_expression: Option<Vec<NodeInfo>>
+        else_expression: Option<Vec<NodeInfo>>,
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),
@@ -53,6 +61,7 @@ pub enum Expression {
     BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>),
     Tuple(Vec<ExpressionInfo>),
     Minus(Box<ExpressionInfo>),
+    Not(Box<ExpressionInfo>),
     Pointer(Box<ExpressionInfo>),
     Reference(Box<ExpressionInfo>), // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
 }
@@ -76,7 +85,6 @@ pub enum Operator {
     LessThan,
     LessThanOrEquals,
 }
-
 
 // #[derive(Debug)]
 // pub enum ArithmeticOperator {

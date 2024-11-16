@@ -30,22 +30,17 @@ pub fn build(project_dir: PathBuf) {
         // standard.imported.insert(String::from("io") );
 
         let main_path = Path::from("src").join("main");
-        let main = start_parse(
-            &mut name_counter,
-            &mut compile_messages,
-            &project_dir,
-            main_path,
-        );
+        let main = start_parse(&mut compile_messages, &project_dir, main_path);
         compile_messages.throw(false);
 
-        let mut program = ParsedProgram {
+        let program = ParsedProgram {
             // standard,
             main,
         };
 
-        let analyzed = analyze(&mut program, &mut compile_messages);
+        let _analyzed = analyze(program, &mut compile_messages, &mut name_counter);
         compile_messages.throw(true);
-        println!("{:#?}", analyzed);
+        // println!("{:#?}", analyzed);
     };
 }
 

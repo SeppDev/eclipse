@@ -1,5 +1,8 @@
 use crate::compiler::{
-    errors::MessageKind, lexer::{Token, Tokens}, parser::{Expression, ExpressionInfo, Operator, Value}, path::Path
+    errors::MessageKind,
+    lexer::{Token, Tokens},
+    parser::{Expression, ExpressionInfo, Operator, Value},
+    path::Path,
 };
 
 use super::{arguments::parse_arguments, path::parse_path};
@@ -77,7 +80,7 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
         Token::Identifier(name) => parse_identifier(tokens, name),
         _ => panic!(),
     };
-    let expression_info = tokens.create_expression(expression);
+    let first_expression_info = tokens.create_expression(expression);
 
     let info = match tokens.peek_expect_tokens(
         vec![
@@ -87,29 +90,42 @@ pub fn parse_expression(tokens: &mut Tokens, required: bool) -> Option<Expressio
             Token::Asterisk,
             Token::Compare,
             Token::NotEquals,
-            
+            Token::LessThan,
+            Token::LessThanOrEquals,
+            Token::GreaterThan,
+            Token::GreaterThanOrEquals,
         ],
         false,
     ) {
         Some(_) => tokens.start(),
-        None => return Some(expression_info),
+        None => return Some(first_expression_info),
     };
     let operator = match info.token {
         Token::Plus => Operator::Plus,
         Token::Minus => Operator::Minus,
         Token::ForwardSlash => Operator::Division,
         Token::Asterisk => Operator::Multiply,
+
         Token::Compare => Operator::Equals,
+        Token::NotEquals => Operator::NotEquals,
+        Token::LessThan => Operator::LessThan,
+        Token::LessThanOrEquals => Operator::LessThanOrEquals,
+        Token::GreaterThan => Operator::GreaterThan,
+        Token::GreaterThanOrEquals => Operator::GreaterThanOrEquals,
         _ => panic!(),
     };
 
     let second_expression = parse_expression(tokens, true).unwrap();
+    let mut first_location = first_expression_info.location.clone();
+    first_location.columns.end = second_expression.location.columns.end;
 
-    Some(tokens.create_expression(Expression::BinaryOperation(
-        Box::new(expression_info),
+    let mut info = tokens.create_expression(Expression::BinaryOperation(
+        Box::new(first_expression_info),
         operator,
         Box::new(second_expression),
-    )))
+    ));
+    info.location = first_location;
+    return Some(info)
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> Expression {

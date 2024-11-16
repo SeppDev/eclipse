@@ -1,13 +1,14 @@
 use crate::compiler::{parser::Operator, types::Type};
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct IRFunction {
-    pub name: String,
     pub parameters: Vec<(String, Type)>,
     pub return_type: Type,
     pub body: Vec<IRNode>,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum IRNode {
     Label(String),
@@ -16,14 +17,15 @@ pub enum IRNode {
     Return(IRExpressionInfo),
 }
 
+
+#[allow(unused)]
 #[derive(Debug)]
 pub enum IRExpression {
     Void,
-    Allocate,
+    Allocate(Type),
     Integer(String),
     Float(String),
     Boolean(bool),
-    // StaticString
     GetVariable(String),
     Call(String, Vec<IRExpressionInfo>),
     BinaryOperation(Box<IRExpressionInfo>, Operator, Box<IRExpressionInfo>),
@@ -33,6 +35,7 @@ pub enum IRExpression {
     Closure(Vec<(String, Type)>, Vec<IRNode>),
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct IRExpressionInfo {
     pub data_type: Type,

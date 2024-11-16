@@ -6,15 +6,15 @@ use crate::compiler::{
 };
 
 use super::{body::parse_body, expression::parse_expression};
-pub fn parse_ifstatement(name_counter: &mut NameCounter, tokens: &mut Tokens) -> NodeInfo {
+pub fn parse_ifstatement(tokens: &mut Tokens) -> NodeInfo {
     let expression = parse_expression(tokens, true).unwrap();
     tokens.expect_tokens(vec![Token::StartScope], false);
 
-    let body = parse_body(name_counter, tokens);
+    let body = parse_body(tokens);
 
     let else_expression = if tokens.peek_expect_tokens(vec![Token::Else], true).is_some() {
         tokens.expect_tokens(vec![Token::StartScope], false);
-        let body = parse_body(name_counter, tokens);
+        let body = parse_body(tokens);
         Some(body)
     } else {
         None

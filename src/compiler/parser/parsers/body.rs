@@ -6,7 +6,7 @@ use super::{
     expression::parse_expression, identifier::parse_after_identifier, ifstatement::parse_ifstatement, namespace::parse_namespace, variable::parse_variable
 };
 
-pub fn parse_body(name_counter: &mut NameCounter, tokens: &mut Tokens) -> Vec<NodeInfo> {
+pub fn parse_body(tokens: &mut Tokens) -> Vec<NodeInfo> {
     let mut body: Vec<NodeInfo> = Vec::new();
 
     loop {
@@ -32,11 +32,11 @@ pub fn parse_body(name_counter: &mut NameCounter, tokens: &mut Tokens) -> Vec<No
 
         let node = match info.token {
             Token::StartScope => {
-                let nodes = parse_body(name_counter, tokens);
+                let nodes = parse_body(tokens);
                 // tokens.expect_tokens(vec![Token::EndScope], false);
                 tokens.create_node(Node::Scope(nodes))
             }
-            Token::If => parse_ifstatement(name_counter, tokens),
+            Token::If => parse_ifstatement(tokens),
             Token::Use => parse_namespace(tokens, false),
             Token::Identifier(name) => parse_after_identifier(tokens, name),
             Token::Return => {

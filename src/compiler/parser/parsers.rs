@@ -6,11 +6,15 @@ mod expect_token;
 mod expression;
 mod function;
 mod identifier;
+mod ifstatement;
+mod import;
 mod namespace;
 mod path;
 mod types;
 mod variable;
-mod ifstatement;
+
+use function::parse_function;
+use import::handle_import;
 
 use crate::compiler::{
     counter::NameCounter,
@@ -24,13 +28,13 @@ use super::NodeInfo;
 
 #[derive(Debug)]
 pub struct ParsedFile {
-    pub imports: HashMap<String, ParsedFile>,
-    pub functions: HashMap<String, NodeInfo>,
+    pub imports: Vec<(String, ParsedFile)>,
+    pub functions: Vec<NodeInfo>,
+    pub types: Vec<NodeInfo>,
     pub relative_path: Path,
 }
 
 pub fn start_parse(
-    name_counter: &mut NameCounter,
     compile_messages: &mut CompileMessages,
     project_dir: &PathBuf,
     relative_path: Path,
@@ -44,8 +48,9 @@ pub fn start_parse(
     let source = read_file(&file_path);
     let mut tokens = tokenize(compile_messages, relative_path.clone(), source);
 
-    let mut imports: HashMap<String, ParsedFile> = HashMap::new();
-    let mut functions: HashMap<String, NodeInfo> = HashMap::new();
+    let mut imports = Vec::new();
+    let mut functions = Vec::new();
+    let types = Vec::new();
 
     use super::super::lexer::Token;
     loop {
@@ -57,49 +62,13 @@ pub fn start_parse(
 
         match info.token {
             Token::Import => {
-                let name = match tokens.parse_identifier() {
-                    Some(s) => s,
-                    None => {
-                        tokens.finish(compile_messages);
-                        compile_messages.quit();
-                    }
-                };
-                let import = start_parse(
-                    name_counter,
-                    compile_messages,
-                    project_dir,
-                    relative_path.parent().join(&name),
-                );
-                imports.insert(name, import);
-                tokens.pop_start();
-                continue;
+                let (name, import) =
+                    handle_import(compile_messages, project_dir, &relative_path, &mut tokens);
+                imports.push((name, import));
             }
-            Token::Function => {
-                let name = match tokens.parse_identifier() {
-                    Some(s) => s,
-                    None => {
-                        tokens.finish(compile_messages);
-                        compile_messages.quit();
-                    },
-                };
-                let function = function::parse_function(name_counter, &mut tokens, false);
-
-                match functions.remove(&name) {
-                    Some(old) => {
-                        let message = tokens.throw(
-                            MessageKind::Error,
-                            old.location,
-                            format!("There's already a function named '{}'", name),
-                            "",
-                        );
-                        message.push("", function.location.clone());
-                    }
-                    None => {}
-                }
-
-                functions.insert(name.clone(), function);
-                continue;
-            }
+            Token::Function => functions.push(parse_function(&mut tokens, false)),
+            Token::Enum => todo!(),
+            Token::Struct => todo!(),
             _ => continue,
         }
     }
@@ -109,6 +78,7 @@ pub fn start_parse(
     let file = ParsedFile {
         imports,
         functions,
+        types,
         relative_path,
     };
 

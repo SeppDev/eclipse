@@ -22,7 +22,7 @@ impl Tokens {
             format!("Expected identifier, found '{}'", info.token),
             "expected identifier",
         );
-        panic!()
+        return None;
     }
 }
 
