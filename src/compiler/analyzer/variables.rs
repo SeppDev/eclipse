@@ -30,7 +30,13 @@ impl Variables {
         self.count += 1;
         return self.count.to_string();
     }
-    pub fn insert(&mut self, key: &String, mutable: bool, data_type: Type, location: Location) -> (&Variable, Result<(), Variable>) {
+    pub fn insert(
+        &mut self,
+        key: &String,
+        mutable: bool,
+        data_type: Type,
+        location: Location,
+    ) -> (&Variable, Result<(), Variable>) {
         let name = self.increment();
         let current_state = self.states.last_mut().unwrap();
 
@@ -45,9 +51,9 @@ impl Variables {
                 read: false,
             },
         );
-        
+
         let current_var = self.variables.get(key).unwrap();
-        
+
         match result {
             Some(var) => return (current_var, Err(var)),
             None => {}
@@ -70,9 +76,10 @@ impl Variables {
     pub fn get(&mut self, key: &String, mutate: bool) -> Option<&Variable> {
         return match self.variables.get_mut(key) {
             Some(t) => {
-                t.read = true;
                 if mutate {
                     t.mutated = true
+                } else {
+                    t.read = true;
                 }
                 Some(t)
             }

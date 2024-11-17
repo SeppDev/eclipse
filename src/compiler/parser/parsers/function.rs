@@ -4,7 +4,7 @@ use crate::compiler::{
 
 use super::{body::parse_body, types::parse_type};
 
-pub fn parse_function(tokens: &mut Tokens, public: bool) -> CompileResult<NodeInfo> {
+pub fn parse_function(tokens: &mut Tokens, export: bool) -> CompileResult<NodeInfo> {
     let name = tokens.parse_identifier()?;
     tokens.expect_tokens(vec![Token::OpenParen], false)?;
 
@@ -41,7 +41,7 @@ pub fn parse_function(tokens: &mut Tokens, public: bool) -> CompileResult<NodeIn
     let body = parse_body(tokens)?;
 
     return Ok(tokens.create_node(Node::Function {
-        public,
+        export,
         name,
         parameters,
         return_type,

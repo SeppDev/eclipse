@@ -1,6 +1,6 @@
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileMessages, Location, MessageKind},
+    errors::{CompileMessages, CompileResult, Location, MessageKind},
     parser::{Expression, ExpressionInfo, Node, NodeInfo, ParsedFile},
     path::Path,
     program::ParsedProgram,
@@ -9,23 +9,26 @@ use crate::compiler::{
 
 use super::{
     node::{IRExpression, IRExpressionInfo, IRFunction, IRNode},
+    parse_types,
     variables::Variables,
     IRProgram,
 };
 
 pub fn analyze(
-    parsed: ParsedProgram,
+    program: ParsedProgram,
     compile_messages: &mut CompileMessages,
-    _name_counter: &mut NameCounter,
-) -> IRProgram {
+    name_counter: &mut NameCounter,
+) -> CompileResult<IRProgram> {
     let mut functions = Vec::new();
+    let types = parse_types(compile_messages, name_counter, &program)?;
+    println!("{:#?}", types);
 
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    analyze_file(compile_messages, &mut functions, parsed.main);
+    // analyze_file(compile_messages, &mut functions, parsed.main);
 
-    return IRProgram { functions };
+    return Ok(IRProgram { functions });
 }
 
 fn analyze_file(
@@ -42,14 +45,14 @@ fn analyze_file(
     }
 
     for info in file.functions {
-        let (_, _name, parameters, return_type, body) = match info.node {
+        let (_, key, parameters, return_type, body) = match info.node {
             Node::Function {
-                public,
+                export,
                 name,
                 parameters,
                 return_type,
                 body,
-            } => (public, name, parameters, return_type, body),
+            } => (export, name, parameters, return_type, body),
             _ => continue,
         };
 
@@ -96,6 +99,7 @@ fn analyze_file(
         }
 
         functions.push(IRFunction {
+            name: key,
             parameters: parameters,
             return_type,
             body: nodes,
@@ -206,7 +210,6 @@ fn analyze_body(
                         format!("Cannot asign to immutable variable '{}'", name.clone()),
                         "",
                     );
-                    continue;
                 }
                 let expression = analyze_expression(
                     compile_messages,
