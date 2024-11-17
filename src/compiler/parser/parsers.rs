@@ -28,8 +28,7 @@ use super::NodeInfo;
 #[derive(Debug)]
 pub struct ParsedFile {
     pub imports: Vec<(String, ParsedFile)>,
-    pub functions: Vec<NodeInfo>,
-    pub types: Vec<NodeInfo>,
+    pub body: Vec<NodeInfo>,
     pub relative_path: Path,
 }
 
@@ -48,8 +47,7 @@ pub fn start_parse(
     let mut tokens = tokenize(compile_messages, relative_path.clone(), source);
 
     let mut imports = Vec::new();
-    let mut functions = Vec::new();
-    let types = Vec::new();
+    let mut body = Vec::new();
 
     use super::super::lexer::Token;
     loop {
@@ -70,7 +68,7 @@ pub fn start_parse(
                     Ok(f) => f,
                     Err(()) => break,
                 };
-                functions.push(function)
+                body.push(function)
             },
             Token::Enum => todo!(),
             Token::Struct => todo!(),
@@ -82,8 +80,7 @@ pub fn start_parse(
 
     let file = ParsedFile {
         imports,
-        functions,
-        types,
+        body,
         relative_path,
     };
 

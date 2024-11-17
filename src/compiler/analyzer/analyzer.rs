@@ -19,8 +19,8 @@ pub fn analyze(
     compile_messages: &mut CompileMessages,
     name_counter: &mut NameCounter,
 ) -> CompileResult<IRProgram> {
-    let mut functions = Vec::new();
-    let types = parse_types(compile_messages, name_counter, &program)?;
+    // let mut functions = Vec::new();
+    let types = parse_types(compile_messages, name_counter, program)?;
     println!("{:#?}", types);
 
     // let std_path = Path::from("std");
@@ -28,84 +28,85 @@ pub fn analyze(
 
     // analyze_file(compile_messages, &mut functions, parsed.main);
 
-    return Ok(IRProgram { functions });
+    todo!()
+    // return Ok(IRProgram { functions });
 }
 
-fn analyze_file(
-    compile_messages: &mut CompileMessages,
-    functions: &mut Vec<IRFunction>,
-    mut file: ParsedFile,
-) {
-    loop {
-        let (_, file) = match file.imports.pop() {
-            Some((name, file)) => (name, file),
-            None => break,
-        };
-        analyze_file(compile_messages, functions, file);
-    }
+// fn analyze_file(
+//     compile_messages: &mut CompileMessages,
+//     functions: &mut Vec<IRFunction>,
+//     mut file: ParsedFile,
+// ) {
+//     loop {
+//         let (_, file) = match file.imports.pop() {
+//             Some((name, file)) => (name, file),
+//             None => break,
+//         };
+//         analyze_file(compile_messages, functions, file);
+//     }
 
-    for info in file.functions {
-        let (_, key, parameters, return_type, body) = match info.node {
-            Node::Function {
-                export,
-                name,
-                parameters,
-                return_type,
-                body,
-            } => (export, name, parameters, return_type, body),
-            _ => continue,
-        };
+//     for info in file.functions {
+//         let (_, key, parameters, return_type, body) = match info.node {
+//             Node::Function {
+//                 export,
+//                 name,
+//                 parameters,
+//                 return_type,
+//                 body,
+//             } => (export, name, parameters, return_type, body),
+//             _ => continue,
+//         };
 
-        let mut variables = Variables::new();
-        variables.create_state();
-        for (key, t) in &parameters {
-            let result = variables
-                .insert(&key, false, t.clone(), info.location.clone())
-                .1;
-            match result {
-                Ok(()) => {}
-                Err(var) => {
-                    compile_messages.create(
-                        MessageKind::Error,
-                        var.location.clone(),
-                        file.relative_path.clone(),
-                        format!("Duplicate parameter '{}'", key),
-                        "",
-                    );
-                }
-            }
-        }
+//         let mut variables = Variables::new();
+//         variables.create_state();
+//         for (key, t) in &parameters {
+//             let result = variables
+//                 .insert(&key, false, t.clone(), info.location.clone())
+//                 .1;
+//             match result {
+//                 Ok(()) => {}
+//                 Err(var) => {
+//                     compile_messages.create(
+//                         MessageKind::Error,
+//                         var.location.clone(),
+//                         file.relative_path.clone(),
+//                         format!("Duplicate parameter '{}'", key),
+//                         "",
+//                     );
+//                 }
+//             }
+//         }
 
-        let mut nodes = Vec::new();
-        analyze_body(
-            compile_messages,
-            &file.relative_path,
-            &mut variables,
-            &Some(return_type.clone()),
-            body,
-            &mut nodes,
-        );
+//         let mut nodes = Vec::new();
+//         analyze_body(
+//             compile_messages,
+//             &file.relative_path,
+//             &mut variables,
+//             &Some(return_type.clone()),
+//             body,
+//             &mut nodes,
+//         );
 
-        if !return_type.is_void() {
-            nodes.last().is_none().then(|| {
-                compile_messages.create(
-                    MessageKind::Error,
-                    info.location.clone(),
-                    file.relative_path.clone(),
-                    format!("Expected return"),
-                    "",
-                );
-            });
-        }
+//         if !return_type.is_void() {
+//             nodes.last().is_none().then(|| {
+//                 compile_messages.create(
+//                     MessageKind::Error,
+//                     info.location.clone(),
+//                     file.relative_path.clone(),
+//                     format!("Expected return"),
+//                     "",
+//                 );
+//             });
+//         }
 
-        functions.push(IRFunction {
-            name: key,
-            parameters: parameters,
-            return_type,
-            body: nodes,
-        })
-    }
-}
+//         functions.push(IRFunction {
+//             name: key,
+//             parameters: parameters,
+//             return_type,
+//             body: nodes,
+//         })
+//     }
+// }
 
 fn analyze_body(
     compile_messages: &mut CompileMessages,

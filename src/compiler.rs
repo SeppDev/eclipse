@@ -20,6 +20,7 @@ mod types;
 pub static FILE_EXTENSION: &str = "ecl";
 // pub static POINTER_WIDTH: usize = 8;
 
+
 pub fn build(project_dir: PathBuf) {
     let _executable = {
         let mut name_counter = NameCounter::new();
