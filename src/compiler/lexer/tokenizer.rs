@@ -17,17 +17,25 @@ pub fn tokenize(
     let mut cursor: usize = 0;
 
     loop {
+        let start = std::time::Instant::now();
         let mut chars = match reader.next(&cursor) {
             Some(chrs) => chrs,
             None => break,
         };
+        
+        let elapsed = start.elapsed();
+        if elapsed > std::time::Duration::from_millis(1) {
+            println!("next {:?}", start.elapsed());
+        }
+        
         let mut token: Option<Token> = None;
-
+        
         loop {
             let mut string = match Char::to_string(&chars) {
                 Some(s) => s,
                 None => break,
             };
+            println!("{:?}", string);
 
             string = match match_word(string) {
                 Ok(t) => {
@@ -192,7 +200,7 @@ fn is_identifier(source: String) -> Result<Token, String> {
 }
 
 fn match_word(word: String) -> Result<Token, String> {
-    let token = match word.as_str() {
+    let token = match &word[..] {
         "func" => Token::Function,
         "{" => Token::StartScope,
         "}" => Token::EndScope,

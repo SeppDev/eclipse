@@ -21,7 +21,7 @@ pub fn analyze(
 ) -> CompileResult<IRProgram> {
     // let mut functions = Vec::new();
     let types = parse_types(compile_messages, name_counter, program)?;
-    println!("{:#?}", types);
+    // println!("{:#?}", types);
 
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);

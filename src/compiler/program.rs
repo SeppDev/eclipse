@@ -1,4 +1,4 @@
-use super::{parser::ParsedFile, path::Path};
+use super::parser::ParsedFile;
 
 #[derive(Debug)]
 pub struct ParsedProgram {

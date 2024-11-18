@@ -33,7 +33,7 @@ pub fn parse_types(
     program: ParsedProgram,
 ) -> CompileResult<FileTypes> {
     let main = handle_file(compile_messages, name_counter, program.main)?;
-    println!("{:#?}", main);
+    // println!("{:#?}", main);
     todo!()
 }
 

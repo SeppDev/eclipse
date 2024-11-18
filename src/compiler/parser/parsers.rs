@@ -44,7 +44,10 @@ pub fn start_parse(
     file_path.set_extension(FILE_EXTENSION);
 
     let source = read_file(&file_path);
+
+    let start = std::time::Instant::now();
     let mut tokens = tokenize(compile_messages, relative_path.clone(), source);
+    println!("{:?}", start.elapsed());
 
     let mut imports = Vec::new();
     let mut body = Vec::new();
