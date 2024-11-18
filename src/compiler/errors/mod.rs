@@ -20,7 +20,7 @@ impl Location {
 }
 impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "x: {}-{}, y: {}-{}", self.columns.start, self.columns.end, self.lines.start, self.lines.end)
+        write!(f, "columns: {}-{}, lines: {}-{}", self.columns.start, self.columns.end, self.lines.start, self.lines.end)
     }
 }
 

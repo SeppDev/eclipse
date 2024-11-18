@@ -1,13 +1,6 @@
-use crate::compiler::{
-    errors::{CompileMessages, Location, MessageKind},
-    path::Path,
-};
+use crate::compiler::{errors::CompileMessages, path::Path};
 
-use super::{
-    reader::{Char, Reader},
-    Token, TokenInfo, Tokens,
-};
-
+use super::{reader::Reader, Token, Tokens};
 
 pub fn tokenize(
     compile_messages: &mut CompileMessages,
@@ -20,20 +13,23 @@ pub fn tokenize(
 
     loop {
         let (token, kind, location) = match reader.next_string() {
-            Some((t, k, l)) => (t, k, l),
-            None => break
+            Ok(result) => match result {
+                Some((t, k, l)) => (t, k, l),
+                None => break,
+            },
+            Err(()) => panic!(),
         };
 
         println!("{} {:?} {}", token, kind, location)
     }
-    
+
     // let lines = reader.lines.len();
-    
+
     // reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
     // compile_messages.set_lines(relative_path.clone(), reader.lines);
-    
+
     // panic!("{:#?}", reader.tokens);
-    
+
     // return Tokens::new(reader.tokens, relative_path);
     println!("lexer: {:?}", lexer_time.elapsed());
     todo!()

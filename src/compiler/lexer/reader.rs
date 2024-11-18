@@ -1,6 +1,6 @@
-use std::time::Instant;
+use core::panic;
 
-use crate::compiler::errors::Location;
+use crate::compiler::errors::{CompileResult, Location};
 
 #[derive(Debug)]
 pub struct Char {
@@ -44,6 +44,7 @@ impl Reader {
     pub fn new(source: String) -> Self {
         let mut output = Vec::with_capacity(source.len());
         let mut input: Vec<char> = source.chars().collect();
+        input.reverse();
 
         let mut lines: Vec<String> = Vec::new();
         let mut line_string: String = String::new();
@@ -78,7 +79,7 @@ impl Reader {
         }
         lines.push(line_string);
 
-        // output.reverse();
+        output.reverse();
         Self {
             lines,
             chars: output, //output.into_iter().peekable(),
@@ -90,26 +91,26 @@ impl Reader {
     fn peek(&self) -> Option<&Char> {
         self.chars.last()
     }
-    pub fn next_string(&mut self) -> Option<(String, TokenKind, Location)> {
+    pub fn next_string(&mut self) -> CompileResult<Option<(String, TokenKind, Location)>> {
         // let mut previous: Option<&Char> = None;
 
         let start = match self.advance() {
-            Some(c) => c,
-            None => return None,
+            Some(c) => &c,
+            None => return Ok(None),
         };
 
         match start.char {
-            '"' => {
-                let (string, last) = match self.parse_string() {
-                    Some(s) => s,
-                    None => panic!("Failed to close string"),
+            '"' | '\'' => {
+                let (string, last) = match self.parse_string(&start.char) {
+                    Ok(s) => s,
+                    Err(()) => panic!("Failed to close string"),
                 };
 
-                return Some((
+                return Ok(Some((
                     string,
                     TokenKind::String,
                     Location::new(start.line..last.line, start.column..last.column),
-                ));
+                )));
             }
             '/' => match self.peek() {
                 Some(p) => match p.char {
@@ -117,7 +118,10 @@ impl Reader {
                         self.handle_line_comment();
                         return self.next_string();
                     }
-                    '*' => todo!(),
+                    '*' => {
+                        self.handle_multi_line_comment();
+                        return self.next_string();
+                    }
                     _ => {}
                 },
                 None => {}
@@ -125,14 +129,56 @@ impl Reader {
             '\n' => return self.next_string(),
             _ => {}
         }
+
+        let mut body = String::from(start.char);
+        let mut previous: &Char = start;
+
         if start.char.is_ascii_alphabetic() {
+            loop {
+                let current = match self.peek() {
+                    Some(c) => c,
+                    None => panic!(),
+                };
+                if !(current.char.is_ascii_alphabetic() || current.char.is_ascii_digit()) {
+                    break;
+                }
 
+                let current = self.advance().unwrap();
+                body.push(current.char);
+                previous = current;
+            }
+            return Ok(Some((
+                body,
+                TokenKind::Identifier,
+                Location::new(start.line.clone()..previous.line, start.column.clone()..previous.column),
+            )));
         } else if start.char.is_ascii_digit() {
-
         } else if start.char.is_ascii_punctuation() {
-
+        } else if start.char.is_whitespace() {
+            return self.next_string();
+        } else {
+            panic!("Unkown character: {}", start)
         }
-        panic!("unkown character: {}", start)
+        todo!()
+    }
+    fn handle_multi_line_comment(&mut self) {
+        loop {
+            let char = match self.advance() {
+                Some(c) => c,
+                None => break,
+            };
+            if char.char == '*' {
+                let char = match self.peek() {
+                    Some(c) => c,
+                    None => panic!(),
+                };
+                if char.char != '/' {
+                    continue;
+                }
+                self.advance();
+                break;
+            }
+        }
     }
     fn handle_line_comment(&mut self) {
         loop {
@@ -145,24 +191,28 @@ impl Reader {
             }
         }
     }
-    fn parse_string(&mut self) -> Option<(String, Char)> {
+    fn parse_string(&mut self, start: &char) -> CompileResult<(String, Char)> {
         let mut body = String::new();
         loop {
             let char = match self.advance() {
                 Some(c) => c,
-                None => return None,
+                None => return Err(()),
             };
             match char.char {
-                '"' => return Some((body, char)),
+                start => return Ok((body, char)),
                 '\\' => {
                     let escape = match self.advance() {
-                        Some()
+                        Some(char) => char,
+                        None => panic!(),
                     };
-                },
-                chr => body.push(chr)
+                    match escape.char {
+                        'n' | 't' | '\\' | '\"' | '\'' => todo!(),
+                        _ => panic!("Unkown escape character"),
+                    }
+                }
+                chr => body.push(chr),
             }
-        };
-        
+        }
     }
 }
 
