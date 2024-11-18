@@ -125,7 +125,14 @@ impl Reader {
             '\n' => return self.next_string(),
             _ => {}
         }
-        todo!("{}", start);
+        if start.char.is_ascii_alphabetic() {
+
+        } else if start.char.is_ascii_digit() {
+
+        } else if start.char.is_ascii_punctuation() {
+
+        }
+        panic!("unkown character: {}", start)
     }
     fn handle_line_comment(&mut self) {
         loop {
@@ -139,7 +146,23 @@ impl Reader {
         }
     }
     fn parse_string(&mut self) -> Option<(String, Char)> {
-        todo!()
+        let mut body = String::new();
+        loop {
+            let char = match self.advance() {
+                Some(c) => c,
+                None => return None,
+            };
+            match char.char {
+                '"' => return Some((body, char)),
+                '\\' => {
+                    let escape = match self.advance() {
+                        Some()
+                    };
+                },
+                chr => body.push(chr)
+            }
+        };
+        
     }
 }
 
