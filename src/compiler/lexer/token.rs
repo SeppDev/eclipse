@@ -149,3 +149,8 @@ impl TokenInfo {
         }
     }
 }
+impl std::fmt::Display for TokenInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Token: {} : {}", self.token, self.location)
+    }
+}

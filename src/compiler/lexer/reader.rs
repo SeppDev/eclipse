@@ -1,6 +1,6 @@
-use std::{iter::Peekable, time::Instant, vec::IntoIter};
+use std::time::Instant;
 
-use super::TokenInfo;
+use crate::compiler::errors::Location;
 
 #[derive(Debug)]
 pub struct Char {
@@ -25,16 +25,25 @@ impl Char {
         return Some(string);
     }
 }
+impl std::fmt::Display for Char {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?}, column: {}, line: {}",
+            self.char, self.column, self.line
+        )
+    }
+}
 
 #[derive(Debug)]
 pub struct Reader {
-    // pub lines: Vec<String>,
-    chars: Peekable<IntoIter<Char>>,
+    pub lines: Vec<String>,
+    chars: Vec<Char>,
 }
 impl Reader {
     pub fn new(source: String) -> Self {
-        let mut output = Vec::with_capacity(source.len() + 1);
-        let mut input = source.chars().into_iter();
+        let mut output = Vec::with_capacity(source.len());
+        let mut input: Vec<char> = source.chars().collect();
 
         let mut lines: Vec<String> = Vec::new();
         let mut line_string: String = String::new();
@@ -42,9 +51,8 @@ impl Reader {
         let mut line: usize = 1;
         let mut column: usize = 0;
 
-        let s = Instant::now();
         loop {
-            let char = match input.next() {
+            let char = match input.pop() {
                 Some(char) => char,
                 None => break,
             };
@@ -58,7 +66,7 @@ impl Reader {
                 }
                 '\t' => {
                     column += 4;
-                    line_string.push_str("    ")
+                    line_string.push_str("    ");
                 }
                 ch => {
                     line_string.push(ch);
@@ -66,27 +74,80 @@ impl Reader {
                 }
             }
 
-            output.push(Char {
-                char,
-                column,
-                line,
-            });
+            output.push(Char { char, column, line });
         }
-        println!("chars: {:?}", s.elapsed());
-
-        output.push(Char {
-            char: ' ',
-            column: 0,
-            line: 0,
-        });
         lines.push(line_string);
 
+        // output.reverse();
         Self {
-            // lines,
-            chars: output.into_iter().peekable(),
+            lines,
+            chars: output, //output.into_iter().peekable(),
         }
     }
-    pub fn next(&mut self) -> Option<Char> {
-        self.chars.next()
+    fn advance(&mut self) -> Option<Char> {
+        self.chars.pop()
     }
+    fn peek(&self) -> Option<&Char> {
+        self.chars.last()
+    }
+    pub fn next_string(&mut self) -> Option<(String, TokenKind, Location)> {
+        // let mut previous: Option<&Char> = None;
+
+        let start = match self.advance() {
+            Some(c) => c,
+            None => return None,
+        };
+
+        match start.char {
+            '"' => {
+                let (string, last) = match self.parse_string() {
+                    Some(s) => s,
+                    None => panic!("Failed to close string"),
+                };
+
+                return Some((
+                    string,
+                    TokenKind::String,
+                    Location::new(start.line..last.line, start.column..last.column),
+                ));
+            }
+            '/' => match self.peek() {
+                Some(p) => match p.char {
+                    '/' => {
+                        self.handle_line_comment();
+                        return self.next_string();
+                    }
+                    '*' => todo!(),
+                    _ => {}
+                },
+                None => {}
+            },
+            '\n' => return self.next_string(),
+            _ => {}
+        }
+        todo!("{}", start);
+    }
+    fn handle_line_comment(&mut self) {
+        loop {
+            let char = match self.advance() {
+                Some(c) => c,
+                None => break,
+            };
+            if char.char == '\n' {
+                break;
+            }
+        }
+    }
+    fn parse_string(&mut self) -> Option<(String, Char)> {
+        todo!()
+    }
+}
+
+#[derive(Debug)]
+pub enum TokenKind {
+    Comment,
+    String,
+    Identifier,
+    Integer,
+    Special,
 }

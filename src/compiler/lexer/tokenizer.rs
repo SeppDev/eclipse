@@ -8,24 +8,34 @@ use super::{
     Token, TokenInfo, Tokens,
 };
 
+
 pub fn tokenize(
     compile_messages: &mut CompileMessages,
     relative_path: Path,
     source: String,
 ) -> Tokens {
     use std::time::Instant;
-    let reader_time = Instant::now();
+    let lexer_time = Instant::now();
     let mut reader = Reader::new(source);
-    println!("reader: {:?}", reader_time.elapsed());
 
+    loop {
+        let (token, kind, location) = match reader.next_string() {
+            Some((t, k, l)) => (t, k, l),
+            None => break
+        };
+
+        println!("{} {:?} {}", token, kind, location)
+    }
+    
     // let lines = reader.lines.len();
-
+    
     // reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
     // compile_messages.set_lines(relative_path.clone(), reader.lines);
-
+    
     // panic!("{:#?}", reader.tokens);
-
+    
     // return Tokens::new(reader.tokens, relative_path);
+    println!("lexer: {:?}", lexer_time.elapsed());
     todo!()
 }
 
@@ -92,7 +102,7 @@ fn is_identifier(source: String) -> Result<Token, String> {
     return Ok(Token::Identifier(source));
 }
 
-fn match_word(word: String) -> Result<Token, String> {
+fn match_token(word: String) -> Result<Token, String> {
     let token = match &word[..] {
         "func" => Token::Function,
         "{" => Token::StartScope,
