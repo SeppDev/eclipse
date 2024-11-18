@@ -2,7 +2,7 @@ use core::panic;
 
 use crate::compiler::errors::{CompileResult, Location};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Char {
     pub char: char,
     pub column: usize,
@@ -35,8 +35,21 @@ impl std::fmt::Display for Char {
     }
 }
 
+pub fn read_source(source: String) -> CompileResult<Vec<(Location, TokenKind)>> {
+    let mut reader = Reader::new(source);
+    let mut tokens = Vec::new();
+    loop {
+        let (location, token) = match reader.next_string()? {
+            Some((l, t)) => (l, t),
+            None => break,
+        };
+        tokens.push((location, token));
+    }
+    return Ok(tokens);
+}
+
 #[derive(Debug)]
-pub struct Reader {
+struct Reader {
     pub lines: Vec<String>,
     chars: Vec<Char>,
 }
@@ -91,25 +104,24 @@ impl Reader {
     fn peek(&self) -> Option<&Char> {
         self.chars.last()
     }
-    pub fn next_string(&mut self) -> CompileResult<Option<(String, TokenKind, Location)>> {
+    pub fn next_string(&mut self) -> CompileResult<Option<(Location, TokenKind)>> {
         // let mut previous: Option<&Char> = None;
 
         let start = match self.advance() {
-            Some(c) => &c,
+            Some(c) => c,
             None => return Ok(None),
         };
 
         match start.char {
             '"' | '\'' => {
-                let (string, last) = match self.parse_string(&start.char) {
+                let (string, last) = match self.parse_string() {
                     Ok(s) => s,
                     Err(()) => panic!("Failed to close string"),
                 };
 
                 return Ok(Some((
-                    string,
-                    TokenKind::String,
                     Location::new(start.line..last.line, start.column..last.column),
+                    TokenKind::String(string),
                 )));
             }
             '/' => match self.peek() {
@@ -131,15 +143,18 @@ impl Reader {
         }
 
         let mut body = String::from(start.char);
-        let mut previous: &Char = start;
+        let mut previous: Char = start.clone();
 
-        if start.char.is_ascii_alphabetic() {
+        if start.char.is_ascii_alphabetic() || start.char == '_' {
             loop {
                 let current = match self.peek() {
                     Some(c) => c,
-                    None => panic!(),
+                    None => return Err(()),
                 };
-                if !(current.char.is_ascii_alphabetic() || current.char.is_ascii_digit()) {
+                if !(current.char.is_ascii_alphabetic()
+                    || current.char.is_ascii_digit()
+                    || current.char == '_')
+                {
                     break;
                 }
 
@@ -148,18 +163,73 @@ impl Reader {
                 previous = current;
             }
             return Ok(Some((
-                body,
-                TokenKind::Identifier,
-                Location::new(start.line.clone()..previous.line, start.column.clone()..previous.column),
+                Location::new(start.line..previous.line, start.column..previous.column),
+                TokenKind::Identifier(body),
             )));
         } else if start.char.is_ascii_digit() {
+            loop {
+                let current = match self.peek() {
+                    Some(c) => c,
+                    None => return Err(()),
+                };
+                
+                if current.char == '.' {
+                    self.advance();
+                    let char = match self.advance() {
+                        Some(c) => c,
+                        None => return Err(()),
+                    };
+                    if !char.char.is_ascii_digit() {
+                        return Err(());
+                    }
+
+                    let mut decimal = String::from(char.char);
+                    loop {
+                        let current = match self.peek() {
+                            Some(c) => c,
+                            None => panic!(),
+                        };
+                        if !(current.char.is_ascii_digit()) {
+                            if current.char.is_whitespace() {
+                                break;
+                            }
+                            return Err(());
+                        }
+                        let current = self.advance().unwrap();
+                        decimal.push(current.char);
+                        previous = current;
+                    }
+                    return Ok(Some((
+                        Location::new(start.line..previous.line, start.column..previous.column),
+                        TokenKind::Float(body, decimal),
+                    )));
+                }
+                if !(current.char.is_ascii_digit()) {
+
+                    if current.char.is_ascii_whitespace() {
+                        break;
+                    }
+                    return Err(());
+                }
+
+                let current = self.advance().unwrap();
+                body.push(current.char);
+                previous = current;
+            }
+            return Ok(Some((
+                Location::new(start.line..previous.line, start.column..previous.column),
+                TokenKind::Integer(body),
+            )));
         } else if start.char.is_ascii_punctuation() {
+            return Ok(Some((
+                Location::new(start.line..previous.line, start.column..previous.column),
+                TokenKind::Punctuation(start.char),
+            )));
         } else if start.char.is_whitespace() {
             return self.next_string();
         } else {
             panic!("Unkown character: {}", start)
         }
-        todo!()
     }
     fn handle_multi_line_comment(&mut self) {
         loop {
@@ -191,7 +261,7 @@ impl Reader {
             }
         }
     }
-    fn parse_string(&mut self, start: &char) -> CompileResult<(String, Char)> {
+    fn parse_string(&mut self) -> CompileResult<(String, Char)> {
         let mut body = String::new();
         loop {
             let char = match self.advance() {
@@ -199,14 +269,14 @@ impl Reader {
                 None => return Err(()),
             };
             match char.char {
-                start => return Ok((body, char)),
+                '"' => return Ok((body, char)),
                 '\\' => {
                     let escape = match self.advance() {
                         Some(char) => char,
                         None => panic!(),
                     };
                     match escape.char {
-                        'n' | 't' | '\\' | '\"' | '\'' => todo!(),
+                        'n' | 't' | '\\' | '"' | '\'' => todo!(),
                         _ => panic!("Unkown escape character"),
                     }
                 }
@@ -218,9 +288,10 @@ impl Reader {
 
 #[derive(Debug)]
 pub enum TokenKind {
-    Comment,
-    String,
-    Identifier,
-    Integer,
-    Special,
+    // Comment(String),
+    String(String),
+    Identifier(String),
+    Integer(String),
+    Float(String, String),
+    Punctuation(char),
 }
