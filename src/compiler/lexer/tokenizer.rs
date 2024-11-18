@@ -13,127 +13,20 @@ pub fn tokenize(
     relative_path: Path,
     source: String,
 ) -> Tokens {
+    use std::time::Instant;
+    let reader_time = Instant::now();
     let mut reader = Reader::new(source);
-    let mut cursor: usize = 0;
+    println!("reader: {:?}", reader_time.elapsed());
 
-    loop {
-        let start = std::time::Instant::now();
-        let mut chars = match reader.next(&cursor) {
-            Some(chrs) => chrs,
-            None => break,
-        };
-        
-        let elapsed = start.elapsed();
-        if elapsed > std::time::Duration::from_millis(1) {
-            println!("next {:?}", start.elapsed());
-        }
-        
-        let mut token: Option<Token> = None;
-        
-        loop {
-            let mut string = match Char::to_string(&chars) {
-                Some(s) => s,
-                None => break,
-            };
-            println!("{:?}", string);
+    // let lines = reader.lines.len();
 
-            string = match match_word(string) {
-                Ok(t) => {
-                    token = Some(t);
-                    break;
-                }
-                Err(source) => source,
-            };
+    // reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
+    // compile_messages.set_lines(relative_path.clone(), reader.lines);
 
-            string = match is_number(string) {
-                Ok(t) => {
-                    token = Some(t);
-                    break;
-                }
-                Err(source) => source,
-            };
+    // panic!("{:#?}", reader.tokens);
 
-            string = match is_identifier(string) {
-                Ok(t) => {
-                    token = Some(t);
-                    break;
-                }
-                Err(source) => source,
-            };
-
-            match string.as_str() {
-                "\"" => {
-                    let mut string = String::new();
-                    loop {
-                        cursor += 1;
-                        let start_chr = match reader.get(&cursor) {
-                            Some(c) => c,
-                            None => panic!("Failed to close string")
-                        };
-                        match start_chr.char {
-                            '"' => break,
-                            '\\' => {
-                                cursor += 1;
-                                let chr = match reader.get(&cursor) {
-                                    Some(c) => c,
-                                    None => break,
-                                };
-                                match chr.char {
-                                    'n' => string.push('\n'),
-                                    'r' => string.push('\r'),
-                                    't' => string.push('\t'),
-                                    '\\' => string.push('\\'),
-                                    c => {
-                                        string.pop();
-                                        compile_messages.create(
-                                            MessageKind::Error,
-                                            Location::new(
-                                                chr.line..chr.line,
-                                                chr.column - 1..chr.column + 1,
-                                            ),
-                                            relative_path.clone(),
-                                            format!("Unkown character escape: {:?}", c),
-                                            "",
-                                        );
-                                    } //panic!("Unrecognized character: {:?}", c),
-                                }
-                            }
-                            _ => string.push(start_chr.char),
-                        }
-                    }
-
-                    token = Some(Token::String(string));
-                    break;
-                }
-                _ => {}
-            }
-
-            chars.pop();
-        }
-
-        match token {
-            Some(token) => {
-                let start = chars.first().unwrap();
-                let end = chars.last().unwrap();
-
-                cursor += chars.len().max(1);
-                reader.push(TokenInfo::new(
-                    token,
-                    start.line..end.line,
-                    start.column..end.column + 1,
-                ));
-            }
-            None => {
-                cursor += chars.len().max(1);
-            }
-        }
-    }
-
-    let lines = reader.lines.len();
-    reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
-    compile_messages.set_lines(relative_path.clone(), reader.lines);
-
-    return Tokens::new(reader.tokens, relative_path);
+    // return Tokens::new(reader.tokens, relative_path);
+    todo!()
 }
 
 fn is_float(source: String) -> Result<Token, String> {
@@ -219,6 +112,7 @@ fn match_word(word: String) -> Result<Token, String> {
         "if" => Token::If,
         "else" => Token::Else,
         "elseif" => Token::ElseIf,
+        "!" => Token::ExclamationMark,
         "+" => Token::Plus,
         "-" => Token::Minus,
         "*" => Token::Asterisk,
