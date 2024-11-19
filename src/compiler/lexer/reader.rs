@@ -35,21 +35,8 @@ impl std::fmt::Display for Char {
     }
 }
 
-pub fn read_source(source: String) -> CompileResult<Vec<(Location, TokenKind)>> {
-    let mut reader = Reader::new(source);
-    let mut tokens = Vec::new();
-    loop {
-        let (location, token) = match reader.next_string()? {
-            Some((l, t)) => (l, t),
-            None => break,
-        };
-        tokens.push((location, token));
-    }
-    return Ok(tokens);
-}
-
 #[derive(Debug)]
-struct Reader {
+pub struct Reader {
     pub lines: Vec<String>,
     chars: Vec<Char>,
 }
@@ -95,18 +82,16 @@ impl Reader {
         output.reverse();
         Self {
             lines,
-            chars: output, //output.into_iter().peekable(),
+            chars: output,
         }
     }
-    fn advance(&mut self) -> Option<Char> {
+    pub fn advance(&mut self) -> Option<Char> {
         self.chars.pop()
     }
-    fn peek(&self) -> Option<&Char> {
+    pub fn peek(&self) -> Option<&Char> {
         self.chars.last()
     }
-    pub fn next_string(&mut self) -> CompileResult<Option<(Location, TokenKind)>> {
-        // let mut previous: Option<&Char> = None;
-
+    pub fn next_string(&mut self) -> CompileResult<Option<TokenKind>> {
         let start = match self.advance() {
             Some(c) => c,
             None => return Ok(None),
@@ -119,9 +104,9 @@ impl Reader {
                     Err(()) => panic!("Failed to close string"),
                 };
 
-                return Ok(Some((
+                return Ok(Some(TokenKind::String(
                     Location::new(start.line..last.line, start.column..last.column),
-                    TokenKind::String(string),
+                    string,
                 )));
             }
             '/' => match self.peek() {
@@ -151,6 +136,7 @@ impl Reader {
                     Some(c) => c,
                     None => return Err(()),
                 };
+
                 if !(current.char.is_ascii_alphabetic()
                     || current.char.is_ascii_digit()
                     || current.char == '_')
@@ -162,68 +148,36 @@ impl Reader {
                 body.push(current.char);
                 previous = current;
             }
-            return Ok(Some((
+
+            return Ok(Some(TokenKind::Identifier(
                 Location::new(start.line..previous.line, start.column..previous.column),
-                TokenKind::Identifier(body),
+                body,
             )));
+        } else if start.char.is_ascii_punctuation() {
+            return Ok(Some(TokenKind::Punctuation(start)));
         } else if start.char.is_ascii_digit() {
             loop {
                 let current = match self.peek() {
                     Some(c) => c,
                     None => return Err(()),
                 };
-                
+
                 if current.char == '.' {
-                    self.advance();
-                    let char = match self.advance() {
-                        Some(c) => c,
-                        None => return Err(()),
-                    };
-                    if !char.char.is_ascii_digit() {
-                        return Err(());
-                    }
-
-                    let mut decimal = String::from(char.char);
-                    loop {
-                        let current = match self.peek() {
-                            Some(c) => c,
-                            None => panic!(),
-                        };
-                        if !(current.char.is_ascii_digit()) {
-                            if current.char.is_whitespace() {
-                                break;
-                            }
-                            return Err(());
-                        }
-                        let current = self.advance().unwrap();
-                        decimal.push(current.char);
-                        previous = current;
-                    }
-                    return Ok(Some((
-                        Location::new(start.line..previous.line, start.column..previous.column),
-                        TokenKind::Float(body, decimal),
-                    )));
+                    todo!("float implementation")
                 }
-                if !(current.char.is_ascii_digit()) {
 
-                    if current.char.is_ascii_whitespace() {
-                        break;
-                    }
-                    return Err(());
+                if !(current.char.is_ascii_digit()) {
+                    break;
                 }
 
                 let current = self.advance().unwrap();
                 body.push(current.char);
                 previous = current;
             }
-            return Ok(Some((
+
+            return Ok(Some(TokenKind::Integer(
                 Location::new(start.line..previous.line, start.column..previous.column),
-                TokenKind::Integer(body),
-            )));
-        } else if start.char.is_ascii_punctuation() {
-            return Ok(Some((
-                Location::new(start.line..previous.line, start.column..previous.column),
-                TokenKind::Punctuation(start.char),
+                body,
             )));
         } else if start.char.is_whitespace() {
             return self.next_string();
@@ -289,9 +243,9 @@ impl Reader {
 #[derive(Debug)]
 pub enum TokenKind {
     // Comment(String),
-    String(String),
-    Identifier(String),
-    Integer(String),
-    Float(String, String),
-    Punctuation(char),
+    String(Location, String),
+    Identifier(Location, String),
+    Integer(Location, String),
+    Float(Location, String, String),
+    Punctuation(Char),
 }

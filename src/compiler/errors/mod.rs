@@ -17,6 +17,12 @@ impl Location {
     pub fn new(lines: Range<usize>, columns: Range<usize>) -> Self {
         Self { lines, columns }
     }
+    pub fn single(line: usize, column: usize) -> Self {
+        Self {
+            lines: line..line,
+            columns: column..column
+        }
+    }
 }
 impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

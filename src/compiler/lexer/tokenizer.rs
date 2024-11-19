@@ -1,10 +1,13 @@
 use crate::compiler::{
     errors::{CompileMessages, CompileResult, Location},
-    lexer::reader::{read_source, TokenKind},
+    lexer::reader::TokenKind,
     path::Path,
 };
 
-use super::{reader::Char, Token, TokenInfo, Tokens};
+use super::{
+    reader::{Char, Reader},
+    Token, TokenInfo, Tokens,
+};
 
 type TokenIter =
     std::iter::Peekable<std::vec::IntoIter<(crate::compiler::errors::Location, TokenKind)>>;
@@ -14,18 +17,16 @@ pub fn tokenize(
     relative_path: Path,
     source: String,
 ) -> CompileResult<Tokens> {
-    use std::time::Instant;
-    let strings = read_source(source)?;
-    let mut strings: TokenIter = strings.into_iter().peekable();
-    let mut tokens = Vec::new();
+    let mut reader = Reader::new(source);
+    let mut tokens: Vec<TokenInfo> = Vec::new();
 
     loop {
-        let (location, token) = match strings.next() {
-            Some(result) => result,
+        let token = match reader.next_string()? {
+            Some(a) => a,
             None => break,
         };
-
-        tokens.push(handle_token(&mut strings, location, token)?)
+        let info = handle_token(&mut reader, token)?;
+        tokens.push(info)
     }
 
     // let lines = reader.lines.len();
@@ -36,60 +37,63 @@ pub fn tokenize(
     // panic!("{:#?}", reader.tokens);
 
     // return Tokens::new(reader.tokens, relative_path);
-    println!("{:#?}", tokens);
+
     return Ok(Tokens::new(tokens, relative_path));
 }
 
-fn handle_token(
-    tokens: &mut TokenIter,
-    mut location: Location,
-    token: TokenKind,
-) -> CompileResult<TokenInfo> {
-    let token = match token {
-        TokenKind::String(string) => Token::String(string),
-        TokenKind::Integer(integer) => Token::Integer(integer),
-        TokenKind::Float(int, decimal) => Token::Float(format!("{}.{}", int, decimal)),
-        TokenKind::Identifier(string) => match_token(&string).unwrap_or(Token::Identifier(string)),
-        TokenKind::Punctuation(char) => match expect_punctuation(tokens) {
-            Some(second) => match match_token(&format!("{}{}", char, second.char)) {
-                Some(t) => {
-                    location.columns.end = second.column;
-                    location.lines.end = second.line;
-                    t
-                }
-                None => match match_token(&char.to_string()) {
-                    Some(t) => t,
-                    None => panic!("{}", char),
-                },
-            },
-            None => match match_token(&char.to_string()) {
-                Some(t) => t,
-                None => panic!("{}", char),
-            },
-        },
-    };
-    return Ok(TokenInfo { token, location });
-}
-
-fn expect_punctuation(tokens: &mut TokenIter) -> Option<Char> {
-    let (_, token) = match tokens.peek() {
-        Some(result) => result,
-        None => return None,
-    };
-    match token {
-        TokenKind::Punctuation(_) => {
-            let (location, token) = tokens.next().unwrap();
-            let char = match token {
-                TokenKind::Punctuation(char) => char,
-                _ => panic!(),
-            };
-            return Some(Char {
-                char,
-                column: location.columns.start,
-                line: location.lines.start,
-            });
+fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo> {
+    match kind {
+        TokenKind::Identifier(location, token) => {
+            let token = match_token(&token).unwrap_or(Token::Identifier(token));
+            return Ok(TokenInfo { location, token });
         }
-        _ => return None,
+        TokenKind::Integer(location, integer) => {
+            let token = Token::Integer(integer);
+            return Ok(TokenInfo { location, token });
+        }
+        TokenKind::String(location, string) => {
+            let token = Token::String(string);
+            return Ok(TokenInfo { location, token });
+        }
+        TokenKind::Float(location, base, decimal) => {
+            let token = Token::Float(format!("{}.{}", base, decimal));
+            return Ok(TokenInfo { location, token });
+        }
+        TokenKind::Punctuation(char) => {
+            let second: Option<Char> = match reader.peek() {
+                Some(second) => second
+                    .char
+                    .is_ascii_punctuation()
+                    .then_some(reader.advance().unwrap()),
+                None => None,
+            };
+            match second {
+                Some(second) => match match_token(&format!("{}{}", char.char, second.char)) {
+                    Some(token) => {
+                        return Ok(TokenInfo {
+                            token,
+                            location: Location::new(
+                                char.line..second.line,
+                                char.column..second.line,
+                            ),
+                        })
+                    }
+                    None => {}
+                },
+                None => {}
+            }
+
+            match match_token(&char.char.to_string()) {
+                Some(token) => {
+                    return Ok(TokenInfo {
+                        token,
+                        location: Location::single(char.line, char.column),
+                    })
+                }
+                None => return Err(()),
+            }
+        }
+        _ => todo!("{:#?}", kind),
     }
 }
 
