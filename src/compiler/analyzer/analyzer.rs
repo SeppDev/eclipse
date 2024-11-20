@@ -11,7 +11,7 @@ use super::{
     node::{IRExpression, IRExpressionInfo, IRFunction, IRNode},
     parse_types,
     variables::Variables,
-    IRProgram,
+    FileTypes, IRProgram,
 };
 
 pub fn analyze(
@@ -19,97 +19,98 @@ pub fn analyze(
     compile_messages: &mut CompileMessages,
     name_counter: &mut NameCounter,
 ) -> CompileResult<IRProgram> {
-    // let mut functions = Vec::new();
-    let types = parse_types(compile_messages, name_counter, program)?;
-    // println!("{:#?}", types);
+    let mut functions = Vec::new();
+    let types = parse_types(compile_messages, name_counter, &program)?;
 
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    // analyze_file(compile_messages, &mut functions, parsed.main);
+    analyze_file(compile_messages, &mut functions, &types, program.main);
 
-    todo!()
-    // return Ok(IRProgram { functions });
+    return Ok(IRProgram { functions });
 }
 
-// fn analyze_file(
-//     compile_messages: &mut CompileMessages,
-//     functions: &mut Vec<IRFunction>,
-//     mut file: ParsedFile,
-// ) {
-//     loop {
-//         let (_, file) = match file.imports.pop() {
-//             Some((name, file)) => (name, file),
-//             None => break,
-//         };
-//         analyze_file(compile_messages, functions, file);
-//     }
+fn analyze_file(
+    compile_messages: &mut CompileMessages,
+    functions: &mut Vec<IRFunction>,
+    types: &FileTypes,
+    mut file: ParsedFile,
+) {
+    loop {
+        let (_, file) = match file.imports.pop() {
+            Some((name, file)) => (name, file),
+            None => break,
+        };
+        analyze_file(compile_messages, functions, types, file);
+    }
 
-//     for info in file.functions {
-//         let (_, key, parameters, return_type, body) = match info.node {
-//             Node::Function {
-//                 export,
-//                 name,
-//                 parameters,
-//                 return_type,
-//                 body,
-//             } => (export, name, parameters, return_type, body),
-//             _ => continue,
-//         };
+    for info in file.body {
+        let (_, key, parameters, return_type, body) = match info.node {
+            Node::Function {
+                export,
+                name,
+                parameters,
+                return_type,
+                body,
+            } => (export, name, parameters, return_type, body),
+            _ => continue,
+        };
 
-//         let mut variables = Variables::new();
-//         variables.create_state();
-//         for (key, t) in &parameters {
-//             let result = variables
-//                 .insert(&key, false, t.clone(), info.location.clone())
-//                 .1;
-//             match result {
-//                 Ok(()) => {}
-//                 Err(var) => {
-//                     compile_messages.create(
-//                         MessageKind::Error,
-//                         var.location.clone(),
-//                         file.relative_path.clone(),
-//                         format!("Duplicate parameter '{}'", key),
-//                         "",
-//                     );
-//                 }
-//             }
-//         }
+        let mut variables = Variables::new();
+        variables.create_state();
+        for (key, t) in &parameters {
+            let result = variables
+                .insert(&key, false, t.clone(), info.location.clone())
+                .1;
+            match result {
+                Ok(()) => {}
+                Err(var) => {
+                    compile_messages.create(
+                        MessageKind::Error,
+                        var.location.clone(),
+                        file.relative_path.clone(),
+                        format!("Duplicate parameter '{}'", key),
+                        "",
+                    );
+                }
+            }
+        }
 
-//         let mut nodes = Vec::new();
-//         analyze_body(
-//             compile_messages,
-//             &file.relative_path,
-//             &mut variables,
-//             &Some(return_type.clone()),
-//             body,
-//             &mut nodes,
-//         );
+        let mut nodes = Vec::new();
+        analyze_body(
+            compile_messages,
+            types,
+            &file.relative_path,
+            &mut variables,
+            &Some(return_type.clone()),
+            body,
+            &mut nodes,
+        );
 
-//         if !return_type.is_void() {
-//             nodes.last().is_none().then(|| {
-//                 compile_messages.create(
-//                     MessageKind::Error,
-//                     info.location.clone(),
-//                     file.relative_path.clone(),
-//                     format!("Expected return"),
-//                     "",
-//                 );
-//             });
-//         }
+        if !return_type.is_void() {
+            nodes.last().is_none().then(|| {
+                compile_messages.create(
+                    MessageKind::Error,
+                    info.location.clone(),
+                    file.relative_path.clone(),
+                    format!("Expected return"),
+                    "",
+                );
+            });
+        }
 
-//         functions.push(IRFunction {
-//             name: key,
-//             parameters: parameters,
-//             return_type,
-//             body: nodes,
-//         })
-//     }
-// }
+        functions.push(IRFunction {
+            name: key,
+            parameters,
+            return_type,
+            body: nodes,
+        })
+    }
+}
 
 fn analyze_body(
     compile_messages: &mut CompileMessages,
+    types: &FileTypes,
     relative_path: &Path,
     variables: &mut Variables,
     return_type: &Option<Type>,
@@ -131,6 +132,7 @@ fn analyze_body(
             Node::Scope(body) => {
                 analyze_body(
                     compile_messages,
+                    types,
                     relative_path,
                     variables,
                     return_type,
@@ -143,6 +145,7 @@ fn analyze_body(
                 let expression = analyze_expression(
                     compile_messages,
                     relative_path,
+                    types,
                     variables,
                     return_type,
                     &info.location,
@@ -170,6 +173,7 @@ fn analyze_body(
                 let expression = analyze_expression(
                     compile_messages,
                     relative_path,
+                    types,
                     variables,
                     &data_type,
                     &info.location,
@@ -215,6 +219,7 @@ fn analyze_body(
                 let expression = analyze_expression(
                     compile_messages,
                     relative_path,
+                    types,
                     variables,
                     &Some(variable.data_type),
                     &info.location,
@@ -262,6 +267,7 @@ fn analyze_body(
 fn analyze_expression(
     compile_messages: &mut CompileMessages,
     relative_path: &Path,
+    types: &FileTypes,
     variables: &mut Variables,
     return_type: &Option<Type>,
     node: &Location,
@@ -290,6 +296,11 @@ fn analyze_expression(
     use super::super::parser::Value;
 
     let (ir_expression, data_type) = match &expression.expression {
+        Expression::Call(path,  arguments) => {
+            let function = types.get_function(relative_path, path);
+            println!("{:?}", function);
+            todo!()
+        }
         Expression::GetVariable(path) => {
             let name = if &path.len() == &1 {
                 path.first().unwrap()

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 mod arguments;
 mod body;
@@ -44,15 +44,11 @@ pub fn start_parse(
     file_path.set_extension(FILE_EXTENSION);
 
     let source = read_file(&file_path);
-
-    let start = std::time::Instant::now();
+    
     let mut tokens = tokenize(compile_messages, relative_path.clone(), source)?;
-    println!("{:?}", start.elapsed());
 
     let mut imports = Vec::new();
     let mut body = Vec::new();
-
-    
 
     use super::super::lexer::Token;
     loop {
@@ -74,7 +70,7 @@ pub fn start_parse(
                     Err(()) => break,
                 };
                 body.push(function)
-            },
+            }
             Token::Enum => todo!(),
             Token::Struct => todo!(),
             _ => continue,
@@ -91,72 +87,3 @@ pub fn start_parse(
 
     return Ok(file);
 }
-
-// fn parse_tokens(
-//     messages: &mut CompileMessages,
-//     project_dir: &PathBuf,
-//     relative_path: Path,
-// ) -> ParsedFile {
-
-//     loop {
-//         if tokens.is_eof() {
-//             break;
-//         }
-
-//         let public = tokens.peek_expect_tokens(vec![Token::Pub], true).is_some();
-//         let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
-
-//         match info.token {
-//             Token::Use => parse_namespace(&mut tokens, public),
-//             Token::Import => {
-//                 let name = tokens.parse_identifer();
-//                 let relative_path = relative_path.parent().join(&name);
-
-//                 let mut file_path = project_dir.join(relative_path.convert());
-//                 file_path.set_extension(FILE_EXTENSION);
-
-//                 let source = read_file(&file_path);
-//                 let newfile = parse(counter, messages, project_dir, relative_path, source);
-//                 tokens.pop_start();
-
-//                 parsed_file.imported.insert(name, newfile);
-//                 continue;
-//             }
-//             Token::Function => {
-//                 let name = tokens.parse_identifer();
-//                 let function = function::parse_function(counter, &mut tokens, public);
-
-//                 match parsed_file.functions.remove(&name) {
-//                     Some(old) => {
-//                         let message = tokens.throw(
-//                             MessageKind::Error,
-//                             old.location,
-//                             format!("There's already a function named '{}'", name),
-//                             "",
-//                         );
-//                         message.push("", function.location.clone());
-//                     }
-//                     None => {}
-//                 }
-
-//                 parsed_file.functions.insert(name.clone(), function);
-//                 continue;
-//             }
-//             t => {
-//                 tokens.throw(
-//                     MessageKind::Error,
-//                     info.location,
-//                     format!("Expected item, found '{}'", t),
-//                     "",
-//                 );
-//                 continue;
-//             }
-//         };
-//     }
-
-//     let mut file_messages = tokens.finish();
-//     file_messages.set_path(relative_path);
-//     parsed_file.messages = file_messages;
-
-//     return parsed_file;
-// }

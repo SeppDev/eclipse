@@ -8,23 +8,6 @@ pub struct Char {
     pub column: usize,
     pub line: usize,
 }
-impl Char {
-    pub fn is_end(&self) -> bool {
-        return self.line == 0;
-    }
-    pub fn to_string(chars: Vec<&Self>) -> Option<String> {
-        if chars.len() == 0 {
-            return None;
-        }
-
-        let mut string = String::new();
-        for chr in chars {
-            string.push(chr.char);
-        }
-
-        return Some(string);
-    }
-}
 impl std::fmt::Display for Char {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
@@ -163,7 +146,34 @@ impl Reader {
                 };
 
                 if current.char == '.' {
-                    todo!("float implementation")
+                    self.advance();
+                    let float_start = match self.advance() {
+                        Some(c) => c,
+                        None => return Err(()),
+                    };
+                    if !float_start.char.is_ascii_digit() {
+                        return Err(());
+                    }
+                    let mut decimal = String::from(float_start.char);
+
+                    loop {
+                        let current = match self.peek() {
+                            Some(c) => c,
+                            None => break,
+                        };
+                        if !current.char.is_ascii_digit() {
+                            return Err(());
+                        }
+                        decimal.push(current.char);
+
+                        previous = self.advance().unwrap();
+                        break;
+                    }
+                    return Ok(Some(TokenKind::Float(
+                        Location::new(start.line..previous.line, start.column..previous.column),
+                        body,
+                        decimal,
+                    )));
                 }
 
                 if !(current.char.is_ascii_digit()) {

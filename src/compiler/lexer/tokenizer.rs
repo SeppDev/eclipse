@@ -9,9 +9,6 @@ use super::{
     Token, TokenInfo, Tokens,
 };
 
-type TokenIter =
-    std::iter::Peekable<std::vec::IntoIter<(crate::compiler::errors::Location, TokenKind)>>;
-
 pub fn tokenize(
     compile_messages: &mut CompileMessages,
     relative_path: Path,
