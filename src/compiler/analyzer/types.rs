@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path};
 
 use crate::compiler::{
     counter::NameCounter,
@@ -14,19 +14,44 @@ pub struct FileTypes {
     pub imports: HashMap<String, FileTypes>,
     pub functions: HashMap<String, Function>,
     // pub types: HashMap<String, Type>
-    pub relative_path: Path,
+    // export: bool,
 }
 impl FileTypes {
     pub fn get_function(&self, relative_path: &Path, static_path: &Path) -> Option<&Function> {
-        
-
         let mut components = static_path.components();
         let name = components.pop().unwrap();
 
-        if components.len() == 0 {
-            return self.functions.get(&name);
+        let mut new_path = relative_path.clone();
+        while components.len() > 0 {
+            let key = components.pop().unwrap();
+            match &key[..] {
+                "root" => new_path.clear(),
+                "super" => {
+                    new_path.pop();
+                }
+                _ => new_path.push(key),
+            }
         }
-        todo!()
+        
+        let file = {
+            let mut path_components = new_path.components();
+            path_components.reverse();
+            path_components.pop();
+
+            let mut file = self;
+            while path_components.len() > 0 {
+                let key = path_components.pop().unwrap();
+                let f = match file.imports.get(&key) {
+                    Some(f) => f,
+                    None => panic!()
+                };
+                file = f;
+            }
+            file
+        };
+
+        println!("{}: {:#?}", name, file.functions);
+        return file.functions.get(&name);
     }
 }
 
@@ -47,7 +72,7 @@ pub fn parse_types(
     let mut src = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        relative_path: Path::from("src")
+        // export: true
     };
     src.imports.insert(String::from("main"), main);
 
@@ -62,7 +87,7 @@ fn handle_file(
     let mut types = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        relative_path: file.relative_path.clone(),
+        // export: true
     };
 
     for (name, import) in &file.imports {
@@ -84,7 +109,7 @@ fn handle_file(
                 body,
             } => {
                 let new_name =
-                    if file.relative_path == Path::from("src").join("main") && name.eq("main") {
+                    if file.relative_file_path == Path::from("src").join("main") && name.eq("main") {
                         String::from("main")
                     } else {
                         name_counter.increment()

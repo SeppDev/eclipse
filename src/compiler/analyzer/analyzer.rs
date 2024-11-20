@@ -62,13 +62,14 @@ fn analyze_file(
             let result = variables
                 .insert(&key, false, t.clone(), info.location.clone())
                 .1;
+
             match result {
                 Ok(()) => {}
                 Err(var) => {
                     compile_messages.create(
                         MessageKind::Error,
                         var.location.clone(),
-                        file.relative_path.clone(),
+                        file.relative_file_path.clone(),
                         format!("Duplicate parameter '{}'", key),
                         "",
                     );
@@ -80,7 +81,7 @@ fn analyze_file(
         analyze_body(
             compile_messages,
             types,
-            &file.relative_path,
+            &file.relative_file_path,
             &mut variables,
             &Some(return_type.clone()),
             body,
@@ -92,7 +93,7 @@ fn analyze_file(
                 compile_messages.create(
                     MessageKind::Error,
                     info.location.clone(),
-                    file.relative_path.clone(),
+                    file.relative_file_path.clone(),
                     format!("Expected return"),
                     "",
                 );
@@ -116,7 +117,7 @@ fn analyze_body(
     return_type: &Option<Type>,
     body: Vec<NodeInfo>,
     nodes: &mut Vec<IRNode>,
-) {
+) -> CompileResult<()> {
     use super::super::parser::Node;
     variables.create_state();
 
@@ -129,6 +130,13 @@ fn analyze_body(
         };
 
         let ir_node: IRNode = match info.node {
+            Node::Call(path, arguments) => {
+                let function = match types.get_function(relative_path, &path) {
+                    Some(f) => f,
+                    None => return Err(()),
+                };
+                IRNode::Call(function.name.clone(), Vec::new())
+            }
             Node::Scope(body) => {
                 analyze_body(
                     compile_messages,
@@ -150,7 +158,7 @@ fn analyze_body(
                     return_type,
                     &info.location,
                     expression,
-                );
+                )?;
                 nodes.push(IRNode::Return(expression));
                 break;
             }
@@ -161,14 +169,7 @@ fn analyze_body(
                 expression,
             } => {
                 if expression.is_none() {
-                    // errors.create(
-                    //     MessageKind::Error,
-                    //     relative_path.clone(),
-                    //     info.location.clone(),
-                    //     "Expected expression",
-                    //     "",
-                    // );
-                    continue;
+                    todo!("Expression required");
                 }
                 let expression = analyze_expression(
                     compile_messages,
@@ -178,7 +179,8 @@ fn analyze_body(
                     &data_type,
                     &info.location,
                     expression,
-                );
+                )?;
+
                 let (current, result) = variables.insert(
                     &name,
                     mutable.clone(),
@@ -224,7 +226,7 @@ fn analyze_body(
                     &Some(variable.data_type),
                     &info.location,
                     expression,
-                );
+                )?;
 
                 IRNode::SetVariable(variable.name.clone(), expression)
             }
@@ -244,13 +246,16 @@ fn analyze_body(
 
     let state_variables = variables.pop_state();
     for (key, var) in state_variables {
-        if !var.read {
+        if !var.read && !key.starts_with("_") {
             compile_messages.create(
                 MessageKind::Warning,
                 var.location.clone(),
                 relative_path.clone(),
                 format!("Unused variable '{}'", key),
-                "",
+                format!(
+                    "If this is intentional, prefix it with an underscore: '_{}'",
+                    key
+                ),
             );
         } else if !var.mutated && var.mutable {
             compile_messages.create(
@@ -262,6 +267,8 @@ fn analyze_body(
             );
         }
     }
+
+    return Ok(());
 }
 
 fn analyze_expression(
@@ -272,13 +279,13 @@ fn analyze_expression(
     return_type: &Option<Type>,
     node: &Location,
     expression: Option<ExpressionInfo>,
-) -> IRExpressionInfo {
+) -> CompileResult<IRExpressionInfo> {
     let expression = match expression {
         Some(expr) => expr,
         None => {
             let rt = match return_type {
                 Some(t) => t,
-                None => return IRExpressionInfo::void(),
+                None => return Ok(IRExpressionInfo::void()),
             };
             if !rt.is_void() {
                 compile_messages.create(
@@ -289,17 +296,22 @@ fn analyze_expression(
                     "",
                 );
             }
-            return IRExpressionInfo::void();
+            return Ok(IRExpressionInfo::void());
         }
     };
 
     use super::super::parser::Value;
 
-    let (ir_expression, data_type) = match &expression.expression {
-        Expression::Call(path,  arguments) => {
-            let function = types.get_function(relative_path, path);
-            println!("{:?}", function);
-            todo!()
+    let (ir_expression, data_type): (IRExpression, Type) = match &expression.expression {
+        Expression::Call(path, arguments) => {
+            let function = match types.get_function(relative_path, path) {
+                Some(f) => f,
+                None => return Err(()),
+            };
+            (
+                IRExpression::Call(function.name.clone(), Vec::new()),
+                function.return_type.clone(),
+            )
         }
         Expression::GetVariable(path) => {
             let name = if &path.len() == &1 {
@@ -317,7 +329,7 @@ fn analyze_expression(
                         format!("Could not find variable named: '{}'", name),
                         "",
                     );
-                    return IRExpressionInfo::void();
+                    return Ok(IRExpressionInfo::void());
                 }
             };
             (
@@ -381,7 +393,7 @@ fn analyze_expression(
                 "Unhandled expression",
                 "",
             );
-            return IRExpressionInfo::void();
+            return Ok(IRExpressionInfo::void());
         }
     };
 
@@ -400,5 +412,5 @@ fn analyze_expression(
         None => {}
     }
 
-    return IRExpressionInfo::from(ir_expression, data_type);
+    return Ok(IRExpressionInfo::from(ir_expression, data_type));
 }

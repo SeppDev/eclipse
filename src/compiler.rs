@@ -42,17 +42,18 @@ pub fn build(project_dir: PathBuf) {
             main,
         };
 
-        let _analyzed = analyze(program, &mut compile_messages, &mut name_counter);
+        let analyzed = match analyze(program, &mut compile_messages, &mut name_counter) {
+            Ok(a) => a,
+            Err(()) => compile_messages.quit()
+        };
         compile_messages.throw(true);
-        // println!("{:#?}", analyzed);
+        println!("{:#?}", analyzed);
     };
 }
 
 fn read_file(path: &PathBuf) -> String {
-    let source = match std::fs::read_to_string(path) {
+    match std::fs::read_to_string(path) {
         Ok(source) => source,
         Err(error) => panic!("{:?}: {:?}", path, error),
-    };
-
-    source
+    }
 }

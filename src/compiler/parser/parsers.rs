@@ -29,23 +29,20 @@ use super::NodeInfo;
 pub struct ParsedFile {
     pub imports: Vec<(String, ParsedFile)>,
     pub body: Vec<NodeInfo>,
-    pub relative_path: Path,
+    pub relative_file_path: Path,
 }
 
 pub fn start_parse(
     compile_messages: &mut CompileMessages,
     project_dir: &PathBuf,
-    relative_path: Path,
+    relative_file_path: Path,
 ) -> CompileResult<ParsedFile> {
-    let mut file_path = {
-        // let first = path.first().unwrap();
-        project_dir.join(relative_path.convert())
-    };
+    let mut file_path = project_dir.join(relative_file_path.convert());
     file_path.set_extension(FILE_EXTENSION);
 
     let source = read_file(&file_path);
-    
-    let mut tokens = tokenize(compile_messages, relative_path.clone(), source)?;
+
+    let mut tokens = tokenize(compile_messages, relative_file_path.clone(), source)?;
 
     let mut imports = Vec::new();
     let mut body = Vec::new();
@@ -60,8 +57,12 @@ pub fn start_parse(
 
         match info.token {
             Token::Import => {
-                let (name, import) =
-                    handle_import(compile_messages, project_dir, &relative_path, &mut tokens)?;
+                let (name, import) = handle_import(
+                    compile_messages,
+                    project_dir,
+                    relative_file_path.clone(),
+                    &mut tokens,
+                )?;
                 imports.push((name, import));
             }
             Token::Function => {
@@ -82,7 +83,7 @@ pub fn start_parse(
     let file = ParsedFile {
         imports,
         body,
-        relative_path,
+        relative_file_path,
     };
 
     return Ok(file);

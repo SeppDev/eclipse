@@ -1,4 +1,4 @@
-use crate::compiler::types::Type;
+use crate::compiler::{parser::ExpressionInfo, types::Type};
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -15,6 +15,7 @@ pub enum IRNode {
     Label(String),
     DeclareVariable(String, IRExpressionInfo),
     SetVariable(String, IRExpressionInfo),
+    Call(String, Vec<ExpressionInfo>),
     Return(IRExpressionInfo),
 }
 

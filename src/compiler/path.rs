@@ -53,6 +53,9 @@ impl Path {
     pub fn components(&self) -> Vec<String> {
         return self.components.clone()
     }
+    pub fn clear(&mut self) {
+        self.components.clear();
+    }
 }
 
 // #[derive(Debug, PartialEq, Hash, Clone)]

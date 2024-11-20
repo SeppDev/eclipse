@@ -93,28 +93,6 @@ impl std::fmt::Display for Type {
     }
 }
 impl Type {
-    // The bool in the return type is true if the integer is signed
-    pub fn integer_info(&self) -> Option<(bool, usize)> {
-        use BaseType::*;
-
-        return Some(match &self {
-            Type::Base(base) => match base {
-                UInt8 => (false, 8),
-                Int8 => (true, 8),
-
-                UInt16 => (false, 16),
-                Int16 => (true, 16),
-
-                UInt32 => (false, 32),
-                Int32 => (true, 32),
-
-                UInt64 => (false, 64),
-                Int64 => (true, 64),
-                _ => return None,
-            },
-            _ => return None,
-        });
-    }
     pub fn void() -> Self {
         self::Type::Base(BaseType::Void)
     }
