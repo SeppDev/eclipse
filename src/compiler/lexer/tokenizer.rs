@@ -29,14 +29,9 @@ pub fn tokenize(
         tokens.push(info)
     }
 
-    // let lines = reader.lines.len();
-
-    // reader.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
-    // compile_messages.set_lines(relative_path.clone(), reader.lines);
-
-    // panic!("{:#?}", reader.tokens);
-
-    // return Tokens::new(reader.tokens, relative_path);
+    let lines = reader.lines.len();
+    tokens.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
+    compile_messages.set_lines(relative_path.clone(), reader.lines);
 
     return Ok(Tokens::new(tokens, relative_path));
 }
@@ -64,12 +59,14 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                 Some(second) => second
                     .char
                     .is_ascii_punctuation()
-                    .then_some(reader.advance().unwrap()),
+                    .then_some(reader.peek().unwrap().clone()),
                 None => None,
             };
+
             match second {
                 Some(second) => match match_token(&format!("{}{}", char.char, second.char)) {
                     Some(token) => {
+                        reader.advance();
                         return Ok(TokenInfo {
                             token,
                             location: Location::new(
@@ -93,7 +90,6 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                 None => return Err(()),
             }
         }
-        _ => todo!("{:#?}", kind),
     }
 }
 

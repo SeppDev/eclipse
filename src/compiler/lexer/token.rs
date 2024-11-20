@@ -109,7 +109,7 @@ impl std::fmt::Display for Token {
                 Compare => "==",
                 Comma => ",",
                 Mutable => "mut",
-                Variable => "let",
+                Variable => "var",
                 Give => "give",
                 If => "if",
                 ElseIf => "elseif",
