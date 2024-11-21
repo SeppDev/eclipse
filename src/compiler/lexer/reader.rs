@@ -168,7 +168,7 @@ impl Reader {
                             break;
                         }
                         decimal.push(current.char);
-                        self.advance();
+                        previous = self.advance().unwrap();
                     }
                     return Ok(Some(TokenKind::Float(
                         Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
