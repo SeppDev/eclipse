@@ -74,8 +74,6 @@ pub fn handle_import(
     let mut import = start_parse(compile_messages, project_dir, path)?;
     import.is_module = is_mod_file;
 
-    println!("{:?}", import);
-
     tokens.pop_start();
     return Ok((name, import));
 }

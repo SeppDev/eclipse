@@ -89,7 +89,7 @@ impl CompileMessages {
         &mut self,
         kind: MessageKind,
         location: Location,
-        relative_path: Path,
+        relative_file_path: Path,
         message: T,
         notice: E,
     ) -> &mut Message {
@@ -104,7 +104,7 @@ impl CompileMessages {
             message: message.to_string(),
             details: vec![Detail::new(notice.to_string(), location)],
         };
-        vec_to_push.push((relative_path, message));
+        vec_to_push.push((relative_file_path, message));
         let (_, message) = vec_to_push.last_mut().unwrap();
         return message;
     }

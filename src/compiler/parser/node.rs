@@ -120,3 +120,8 @@ impl Value {
         });
     }
 }
+
+
+pub fn void() -> i32 {
+    todo!()
+}

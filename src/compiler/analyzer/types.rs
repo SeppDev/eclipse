@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path};
+use std::collections::HashMap;
 
 use crate::compiler::{
     counter::NameCounter,
@@ -33,7 +33,7 @@ impl FileTypes {
                 _ => new_path.push(key),
             }
         }
-        
+
         let file = {
             let mut path_components = new_path.components();
             path_components.reverse();
@@ -44,10 +44,13 @@ impl FileTypes {
                 let key = path_components.pop().unwrap();
                 let f = match file.imports.get(&key) {
                     Some(f) => f,
-                    None => panic!()
+                    None => panic!(),
                 };
                 if f.is_module {
-                    file = f.imports.get(&key).unwrap();
+                    file = match f.imports.get(&key) {
+                        Some(f) => f,
+                        None => f,
+                    }
                 } else {
                     file = f;
                 }
@@ -93,8 +96,7 @@ fn handle_file(
     let mut types = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        is_module: file.is_module
-        // export: true
+        is_module: file.is_module, // export: true
     };
 
     for (name, import) in &file.imports {
@@ -115,12 +117,13 @@ fn handle_file(
                 return_type,
                 body,
             } => {
-                let new_name =
-                    if file.relative_file_path == Path::from("src").join("main") && name.eq("main") {
-                        String::from("main")
-                    } else {
-                        name_counter.increment()
-                    };
+                let new_name = if file.relative_file_path == Path::from("src").join("main")
+                    && name.eq("main")
+                {
+                    String::from("main")
+                } else {
+                    name_counter.increment()
+                };
 
                 types.functions.insert(
                     name.clone(),

@@ -21,7 +21,7 @@ pub fn analyze(
 ) -> CompileResult<IRProgram> {
     let mut functions = Vec::new();
     let types = parse_types(compile_messages, name_counter, &program)?;
-
+    println!("{:#?}", types);
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
@@ -115,7 +115,7 @@ fn analyze_file(
 fn analyze_body(
     compile_messages: &mut CompileMessages,
     types: &FileTypes,
-    relative_path: &Path,
+    relative_file_path: &Path,
     variables: &mut Variables,
     return_type: &Option<Type>,
     body: Vec<NodeInfo>,
@@ -134,9 +134,18 @@ fn analyze_body(
 
         let ir_node: IRNode = match info.node {
             Node::Call(path, arguments) => {
-                let function = match types.get_function(relative_path, &path) {
+                let function = match types.get_function(relative_file_path, &path) {
                     Some(f) => f,
-                    None => return Err(()),
+                    None => {
+                        compile_messages.create(
+                            MessageKind::Error,
+                            info.location.clone(),
+                            relative_file_path.clone(),
+                            format!("Failed to find function: {}", path.components().join("::")),
+                            "",
+                        );
+                        continue;
+                    }
                 };
                 IRNode::Call(function.name.clone(), Vec::new())
             }
@@ -144,7 +153,7 @@ fn analyze_body(
                 analyze_body(
                     compile_messages,
                     types,
-                    relative_path,
+                    relative_file_path,
                     variables,
                     return_type,
                     body,
@@ -155,7 +164,7 @@ fn analyze_body(
             Node::Return(expression) => {
                 let expression = analyze_expression(
                     compile_messages,
-                    relative_path,
+                    relative_file_path,
                     types,
                     variables,
                     return_type,
@@ -176,7 +185,7 @@ fn analyze_body(
                 }
                 let expression = analyze_expression(
                     compile_messages,
-                    relative_path,
+                    relative_file_path,
                     types,
                     variables,
                     &data_type,
@@ -197,7 +206,7 @@ fn analyze_body(
                         let message = compile_messages.create(
                             MessageKind::Error,
                             old.location.clone(),
-                            relative_path.clone(),
+                            relative_file_path.clone(),
                             format!("'{}' is already declared", name.clone()),
                             "",
                         );
@@ -216,14 +225,14 @@ fn analyze_body(
                     compile_messages.create(
                         MessageKind::Error,
                         info.location.clone(),
-                        relative_path.clone(),
+                        relative_file_path.clone(),
                         format!("Cannot asign to immutable variable '{}'", name.clone()),
                         "",
                     );
                 }
                 let expression = analyze_expression(
                     compile_messages,
-                    relative_path,
+                    relative_file_path,
                     types,
                     variables,
                     &Some(variable.data_type),
@@ -237,7 +246,7 @@ fn analyze_body(
                 compile_messages.create(
                     MessageKind::Error,
                     info.location.clone(),
-                    relative_path.clone(),
+                    relative_file_path.clone(),
                     "Unhandled node",
                     "",
                 );
@@ -253,7 +262,7 @@ fn analyze_body(
             compile_messages.create(
                 MessageKind::Warning,
                 var.location.clone(),
-                relative_path.clone(),
+                relative_file_path.clone(),
                 format!("Unused variable '{}'", key),
                 format!(
                     "If this is intentional, prefix it with an underscore: '_{}'",
@@ -264,7 +273,7 @@ fn analyze_body(
             compile_messages.create(
                 MessageKind::Warning,
                 var.location.clone(),
-                relative_path.clone(),
+                relative_file_path.clone(),
                 format!("Variable does not need to be mutable '{}'", key),
                 "",
             );

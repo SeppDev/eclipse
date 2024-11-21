@@ -64,7 +64,6 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                 Some(second) => match match_token(&format!("{}{}", char.char, second.char)) {
                     Some(token) => {
                         reader.advance();
-                        println!("{}", second);
                         return Ok(TokenInfo {
                             token,
                             location: Location::new(
