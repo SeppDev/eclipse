@@ -1,6 +1,6 @@
 use analyzer::analyze;
 use counter::NameCounter;
-use errors::CompileMessages;
+use errors::{CompileMessages, CompileResult};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
@@ -36,6 +36,7 @@ pub fn build(project_dir: PathBuf) {
             Err(()) => compile_messages.quit(),
         };
         compile_messages.throw(false);
+        println!("{:#?}", main);
 
         let program = ParsedProgram {
             // standard,
@@ -51,9 +52,9 @@ pub fn build(project_dir: PathBuf) {
     };
 }
 
-fn read_file(path: &PathBuf) -> String {
+fn read_file(path: &PathBuf) -> CompileResult<String> {
     match std::fs::read_to_string(path) {
-        Ok(source) => source,
+        Ok(source) => Ok(source),
         Err(error) => panic!("{:?}: {:?}", path, error),
     }
 }

@@ -50,7 +50,7 @@ impl FileTypes {
             file
         };
 
-        println!("{}: {:#?}", name, file.functions);
+        // println!("{}: {:#?}", name, file.functions);
         return file.functions.get(&name);
     }
 }

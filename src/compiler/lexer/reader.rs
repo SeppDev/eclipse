@@ -1,19 +1,22 @@
 use core::panic;
+use std::ops::Range;
 
 use crate::compiler::errors::{CompileResult, Location};
 
 #[derive(Debug, Clone)]
 pub struct Char {
     pub char: char,
-    pub column: usize,
     pub line: usize,
+    pub columns: Range<usize>,
+    // pub column: usize,
+    // pub line: usize,
 }
 impl std::fmt::Display for Char {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "{:?}, column: {}, line: {}",
-            self.char, self.column, self.line
+            "{:?}, line: {}, colum: {}-{}",
+            self.char, self.line, self.columns.start, self.columns.end
         )
     }
 }
@@ -58,7 +61,7 @@ impl Reader {
                 }
             }
 
-            output.push(Char { char, column, line });
+            output.push(Char { char, line, columns: column..column + 1 });
         }
         lines.push(line_string);
 
@@ -88,7 +91,7 @@ impl Reader {
                 };
 
                 return Ok(Some(TokenKind::String(
-                    Location::new(start.line..last.line, start.column..last.column + 1),
+                    Location::new(start.line..last.line, start.columns.start..last.columns.end),
                     string,
                 )));
             }
@@ -133,7 +136,7 @@ impl Reader {
             }
 
             return Ok(Some(TokenKind::Identifier(
-                Location::new(start.line..previous.line, start.column..previous.column + 1),
+                Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
                 body,
             )));
         } else if start.char.is_ascii_punctuation() {
@@ -162,22 +165,19 @@ impl Reader {
                             None => break,
                         };
                         if !current.char.is_ascii_digit() {
-                            return Err(());
+                            break;
                         }
                         decimal.push(current.char);
-
-                        previous = self.advance().unwrap();
-                        break;
+                        self.advance();
                     }
                     return Ok(Some(TokenKind::Float(
-                        Location::new(start.line..previous.line, start.column..previous.column),
+                        Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
                         body,
                         decimal,
                     )));
                 }
 
                 if !(current.char.is_ascii_digit()) {
-                    previous = current.clone();
                     break;
                 }
 
@@ -187,7 +187,7 @@ impl Reader {
             }
 
             return Ok(Some(TokenKind::Integer(
-                Location::new(start.line..previous.line, start.column..previous.column),
+                Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
                 body,
             )));
         } else if start.char.is_whitespace() {

@@ -25,7 +25,7 @@ pub fn analyze(
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    analyze_file(compile_messages, &mut functions, &types, program.main);
+    analyze_file(compile_messages, &mut functions, &types, program.main)?;
 
     return Ok(IRProgram { functions });
 }
@@ -35,13 +35,13 @@ fn analyze_file(
     functions: &mut Vec<IRFunction>,
     types: &FileTypes,
     mut file: ParsedFile,
-) {
+) -> CompileResult<()> {
     loop {
         let (_, file) = match file.imports.pop() {
             Some((name, file)) => (name, file),
             None => break,
         };
-        analyze_file(compile_messages, functions, types, file);
+        analyze_file(compile_messages, functions, types, file)?;
     }
 
     for info in file.body {
@@ -86,7 +86,7 @@ fn analyze_file(
             &Some(return_type.clone()),
             body,
             &mut nodes,
-        );
+        )?;
 
         if !return_type.is_void() {
             nodes.last().is_none().then(|| {
@@ -107,6 +107,8 @@ fn analyze_file(
             body: nodes,
         })
     }
+
+    return Ok(());
 }
 
 fn analyze_body(
@@ -146,7 +148,7 @@ fn analyze_body(
                     return_type,
                     body,
                     nodes,
-                );
+                )?;
                 continue;
             }
             Node::Return(expression) => {

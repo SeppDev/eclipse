@@ -59,6 +59,7 @@ impl CompileMessages {
     }
     pub fn quit(&self) -> ! {
         self.throw(true);
+        println!("No debuginfo found, but quitted");
         exit(1)
     }
     pub fn throw(&self, finish: bool) {

@@ -127,9 +127,9 @@ impl std::fmt::Display for Token {
                 NotEquals => "!=",
                 Boolean(_) => "bool",
                 String(_) => "\"string\"",
-                Integer(_) => "1234",
-                Float(_) => "3.14",
-                Identifier(_) => "Identifier",
+                Integer(i) => i,
+                Float(f) => f,
+                Identifier(i) => i,
             }
         )
     }

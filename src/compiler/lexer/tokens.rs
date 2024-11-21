@@ -41,12 +41,12 @@ impl Tokens {
             compile_messages.push(self.relative_path.clone(), message);
         }
     }
+    pub fn current(&self) -> &TokenInfo {
+        return self.current.as_ref().unwrap();
+    }
     pub fn pop_start(&mut self) -> TokenInfo {
         self.starts.pop().unwrap()
     }
-    // pub fn push_start(&mut self, token: &TokenInfo) {
-    //     self.starts.push(token.clone());
-    // }
     pub fn create_node(&mut self, node: Node) -> NodeInfo {
         let start = self.starts.pop().unwrap_or_else(|| {
             panic!("No starting node for: {:#?}", node);

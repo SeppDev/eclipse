@@ -30,6 +30,7 @@ pub struct ParsedFile {
     pub imports: Vec<(String, ParsedFile)>,
     pub body: Vec<NodeInfo>,
     pub relative_file_path: Path,
+    is_module: bool
 }
 
 pub fn start_parse(
@@ -39,11 +40,11 @@ pub fn start_parse(
 ) -> CompileResult<ParsedFile> {
     let mut file_path = project_dir.join(relative_file_path.convert());
     file_path.set_extension(FILE_EXTENSION);
-
-    let source = read_file(&file_path);
-
-    let mut tokens = tokenize(compile_messages, relative_file_path.clone(), source)?;
+    let source = read_file(&file_path)?;
     
+    let mut tokens = tokenize(compile_messages, relative_file_path.clone(), source)?;
+    println!("{:#?}", tokens);
+
     let mut imports = Vec::new();
     let mut body = Vec::new();
 
@@ -54,7 +55,7 @@ pub fn start_parse(
         }
 
         let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true)?;
-
+        
         match info.token {
             Token::Import => {
                 let (name, import) = handle_import(
@@ -84,7 +85,9 @@ pub fn start_parse(
         imports,
         body,
         relative_file_path,
+        is_module: false,
     };
+
 
     return Ok(file);
 }

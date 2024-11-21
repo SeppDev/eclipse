@@ -12,6 +12,8 @@ impl Tokens {
             }
         }
 
+        println!("{:#?}", info);
+
         self.throw(
             MessageKind::Error,
             info.location.clone(),
