@@ -43,7 +43,7 @@ pub fn start_parse(
     let source = read_file(&file_path);
 
     let mut tokens = tokenize(compile_messages, relative_file_path.clone(), source)?;
-
+    
     let mut imports = Vec::new();
     let mut body = Vec::new();
 

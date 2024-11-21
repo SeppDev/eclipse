@@ -88,7 +88,7 @@ impl Reader {
                 };
 
                 return Ok(Some(TokenKind::String(
-                    Location::new(start.line..last.line, start.column..last.column),
+                    Location::new(start.line..last.line, start.column..last.column + 1),
                     string,
                 )));
             }
@@ -129,11 +129,11 @@ impl Reader {
 
                 let current = self.advance().unwrap();
                 body.push(current.char);
-                previous = current;
+                previous = current
             }
 
             return Ok(Some(TokenKind::Identifier(
-                Location::new(start.line..previous.line, start.column..previous.column),
+                Location::new(start.line..previous.line, start.column..previous.column + 1),
                 body,
             )));
         } else if start.char.is_ascii_punctuation() {
@@ -177,6 +177,7 @@ impl Reader {
                 }
 
                 if !(current.char.is_ascii_digit()) {
+                    previous = current.clone();
                     break;
                 }
 

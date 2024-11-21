@@ -68,7 +68,7 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                             token,
                             location: Location::new(
                                 char.line..second.line,
-                                char.column..second.line,
+                                char.column..second.line + 1,
                             ),
                         })
                     }
