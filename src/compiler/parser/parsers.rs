@@ -30,7 +30,7 @@ pub struct ParsedFile {
     pub imports: Vec<(String, ParsedFile)>,
     pub body: Vec<NodeInfo>,
     pub relative_file_path: Path,
-    is_module: bool
+    pub is_module: bool
 }
 
 pub fn start_parse(

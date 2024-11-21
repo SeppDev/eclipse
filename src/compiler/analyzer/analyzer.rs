@@ -27,6 +27,7 @@ pub fn analyze(
 
     analyze_file(compile_messages, &mut functions, &types, program.main)?;
 
+    println!("{:#?}", functions);
     return Ok(IRProgram { functions });
 }
 

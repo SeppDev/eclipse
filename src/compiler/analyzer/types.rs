@@ -13,6 +13,7 @@ use crate::compiler::{
 pub struct FileTypes {
     pub imports: HashMap<String, FileTypes>,
     pub functions: HashMap<String, Function>,
+    is_module: bool,
     // pub types: HashMap<String, Type>
     // export: bool,
 }
@@ -45,7 +46,11 @@ impl FileTypes {
                     Some(f) => f,
                     None => panic!()
                 };
-                file = f;
+                if f.is_module {
+                    file = f.imports.get(&key).unwrap();
+                } else {
+                    file = f;
+                }
             }
             file
         };
@@ -72,6 +77,7 @@ pub fn parse_types(
     let mut src = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
+        is_module: false,
         // export: true
     };
     src.imports.insert(String::from("main"), main);
@@ -87,6 +93,7 @@ fn handle_file(
     let mut types = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
+        is_module: file.is_module
         // export: true
     };
 
