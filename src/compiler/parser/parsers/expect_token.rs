@@ -1,4 +1,7 @@
-use crate::compiler::{errors::{CompileResult, MessageKind}, lexer::TokenInfo};
+use crate::compiler::{
+    errors::{CompileResult, DebugInfo, MessageKind},
+    lexer::TokenInfo,
+};
 
 use super::super::super::lexer::{Token, Tokens};
 
@@ -12,11 +15,23 @@ impl Tokens {
             }
         }
 
-        println!("{:#?}", info);
-
-        self.throw(
-            MessageKind::Error,
+        // self.throw(
+        //     MessageKind::Error,
+        //     info.location.clone(),
+        //     format!(
+        //         "Expected one of {}, found '{}'",
+        //         expected
+        //             .into_iter()
+        //             .map(|x| format!("'{}'", x))
+        //             .collect::<Vec<String>>()
+        //             .join(" or "),
+        //         info.token
+        //     ),
+        //     "",
+        // );
+        return Err(DebugInfo::new(
             info.location.clone(),
+            self.relative_file_path.clone(),
             format!(
                 "Expected one of {}, found '{}'",
                 expected
@@ -27,8 +42,7 @@ impl Tokens {
                 info.token
             ),
             "",
-        );
-        return Err(())
+        ));
     }
     pub fn peek_require_token(&mut self, expected: Vec<Token>) -> CompileResult<TokenInfo> {
         let info = self.peek().clone();
@@ -39,9 +53,9 @@ impl Tokens {
             }
         }
 
-        self.throw(
-            MessageKind::Error,
+        return Err(DebugInfo::new(
             info.location.clone(),
+            self.relative_file_path.clone(),
             format!(
                 "Expected one of {}, found '{}'",
                 expected
@@ -52,9 +66,7 @@ impl Tokens {
                 info.token
             ),
             "",
-        );
-
-        return Err(());
+        ));
     }
     pub fn peek_expect_tokens(
         &mut self,

@@ -1,7 +1,7 @@
 use super::{start_parse, ParsedFile};
 
 use crate::compiler::{
-    errors::{CompileMessages, CompileResult, MessageKind},
+    errors::{CompileMessages, CompileResult, DebugInfo, MessageKind},
     lexer::Tokens,
     path::Path,
     FILE_EXTENSION,
@@ -48,28 +48,22 @@ pub fn handle_import(
     let path = match found_paths.pop() {
         Some(p) => p,
         None => {
-            compile_messages.create(
-                MessageKind::Error,
+            return Err(DebugInfo::new(
                 tokens.current().location.clone(),
-                relative_file_path,
+                tokens.relative_file_path.clone(),
                 format!("Failed to find import path {}, {}", paths[0], paths[1]),
                 "",
-            );
-            return Err(());
+            ));
         }
     };
     if !found_paths.is_empty() {
-        compile_messages.create(
-            MessageKind::Error,
+        return Err(DebugInfo::new(
             tokens.current().location.clone(),
-            relative_file_path,
+            tokens.relative_file_path.clone(),
             format!("Cannot import multiple paths {}, {}", paths[0], paths[1]),
             "",
-        );
-        return Err(());
+        ));
     }
-
-    
 
     let mut import = start_parse(compile_messages, project_dir, path)?;
     import.is_module = is_mod_file;

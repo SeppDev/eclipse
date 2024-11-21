@@ -37,11 +37,7 @@ fn analyze_file(
     types: &FileTypes,
     mut file: ParsedFile,
 ) -> CompileResult<()> {
-    loop {
-        let (_, file) = match file.imports.pop() {
-            Some((name, file)) => (name, file),
-            None => break,
-        };
+    for (key, file) in file.imports {
         analyze_file(compile_messages, functions, types, file)?;
     }
 
@@ -134,7 +130,7 @@ fn analyze_body(
 
         let ir_node: IRNode = match info.node {
             Node::Call(path, arguments) => {
-                let function = match types.get_function(relative_file_path, &path) {
+                let function = match types.get_function(relative_file_path, &path)? {
                     Some(f) => f,
                     None => {
                         compile_messages.create(
@@ -316,9 +312,18 @@ fn analyze_expression(
 
     let (ir_expression, data_type): (IRExpression, Type) = match &expression.expression {
         Expression::Call(path, arguments) => {
-            let function = match types.get_function(relative_path, path) {
+            let function = match types.get_function(relative_path, path)? {
                 Some(f) => f,
-                None => return Err(()),
+                None => {
+                    compile_messages.create(
+                        MessageKind::Error,
+                        node.clone(),
+                        relative_path.clone(),
+                        format!("Could not find path {}", path.components().join("::")),
+                        "",
+                    );
+                    return Ok(IRExpressionInfo::void());
+                }
             };
             (
                 IRExpression::Call(function.name.clone(), Vec::new()),

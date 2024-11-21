@@ -6,7 +6,29 @@ pub use display::*;
 pub use message::{Detail, Message, MessageKind};
 use std::{collections::HashMap, ops::Range, process::exit};
 
-pub type CompileResult<T> = Result<T, ()>;
+pub type CompileResult<T> = Result<T, DebugInfo>;
+
+pub struct DebugInfo {
+    pub relative_file_path: Path,
+    pub message: Message,
+}
+impl DebugInfo {
+    pub fn new<T: ToString, E: ToString>(
+        location: Location,
+        relative_file_path: Path,
+        message: T,
+        notice: E,
+    ) -> Self {
+        Self {
+            relative_file_path,
+            message: Message {
+                kind: MessageKind::Error,
+                message: message.to_string(),
+                details: vec![Detail::new(notice.to_string(), location)],
+            },
+        }
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct Location {
@@ -20,13 +42,17 @@ impl Location {
     pub fn single(line: usize, column: usize) -> Self {
         Self {
             lines: line..line,
-            columns: column..column
+            columns: column..column,
         }
     }
 }
 impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "columns: {}-{}, lines: {}-{}", self.columns.start, self.columns.end, self.lines.start, self.lines.end)
+        write!(
+            f,
+            "columns: {}-{}, lines: {}-{}",
+            self.columns.start, self.columns.end, self.lines.start, self.lines.end
+        )
     }
 }
 
@@ -76,15 +102,16 @@ impl CompileMessages {
             exit(1)
         }
     }
-    pub fn push(&mut self, relative_path: Path, message: Message) {
+    pub fn push(&mut self, relative_file_path: Path, message: Message) {
         let vec_to_push = match &message.kind {
             MessageKind::Note => &mut self.messages.notes,
             MessageKind::Warning => &mut self.messages.warnings,
             MessageKind::Error => &mut self.messages.errors,
         };
 
-        vec_to_push.push((relative_path, message));
+        vec_to_push.push((relative_file_path, message));
     }
+    // pub fn compile_result<T: ToString, E: ToString>(location: Location, relative_file_path: Path) {}
     pub fn create<T: ToString, E: ToString>(
         &mut self,
         kind: MessageKind,

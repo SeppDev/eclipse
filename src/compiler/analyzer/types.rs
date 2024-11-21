@@ -18,7 +18,11 @@ pub struct FileTypes {
     // export: bool,
 }
 impl FileTypes {
-    pub fn get_function(&self, relative_path: &Path, static_path: &Path) -> Option<&Function> {
+    pub fn get_function(
+        &self,
+        relative_path: &Path,
+        static_path: &Path,
+    ) -> CompileResult<Option<&Function>> {
         let mut components = static_path.components();
         let name = components.pop().unwrap();
 
@@ -44,7 +48,7 @@ impl FileTypes {
                 let key = path_components.pop().unwrap();
                 let f = match file.imports.get(&key) {
                     Some(f) => f,
-                    None => panic!(),
+                    None => return Ok(None),
                 };
                 if f.is_module {
                     file = match f.imports.get(&key) {
@@ -58,8 +62,7 @@ impl FileTypes {
             file
         };
 
-        // println!("{}: {:#?}", name, file.functions);
-        return file.functions.get(&name);
+        return Ok(file.functions.get(&name));
     }
 }
 
@@ -101,11 +104,7 @@ fn handle_file(
 
     for (name, import) in &file.imports {
         let file = handle_file(compile_messages, name_counter, import)?;
-        let _old = match types.imports.insert(name.clone(), file) {
-            Some(old) => old,
-            None => continue,
-        };
-        return Err(());
+        types.imports.insert(name.clone(), file);
     }
 
     for info in &file.body {

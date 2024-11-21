@@ -9,16 +9,16 @@ use std::{iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
 pub struct Tokens {
-    relative_path: Path,
+    pub relative_file_path: Path,
     messages: Vec<Message>,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
     tokens: Peekable<IntoIter<TokenInfo>>,
 }
 impl Tokens {
-    pub fn new(tokens: Vec<TokenInfo>, relative_path: Path) -> Self {
+    pub fn new(tokens: Vec<TokenInfo>, relative_file_path: Path) -> Self {
         return Self {
-            relative_path,
+            relative_file_path,
             messages: Vec::new(),
             starts: Vec::new(),
             current: None,
@@ -38,7 +38,7 @@ impl Tokens {
     }
     pub fn finish(self, compile_messages: &mut CompileMessages) {
         for message in self.messages {
-            compile_messages.push(self.relative_path.clone(), message);
+            compile_messages.push(self.relative_file_path.clone(), message);
         }
     }
     pub fn current(&self) -> &TokenInfo {

@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileMessages, CompileResult, Location},
+    errors::{CompileMessages, CompileResult, DebugInfo, Location},
     lexer::reader::TokenKind,
     path::Path,
 };
@@ -11,10 +11,10 @@ use super::{
 
 pub fn tokenize(
     compile_messages: &mut CompileMessages,
-    relative_path: Path,
+    relative_file_path: Path,
     source: String,
 ) -> CompileResult<Tokens> {
-    let mut reader = Reader::new(source);
+    let mut reader = Reader::new(source, relative_file_path.clone());
     let mut tokens: Vec<TokenInfo> = Vec::new();
 
     loop {
@@ -28,9 +28,9 @@ pub fn tokenize(
 
     let lines = reader.lines.len();
     tokens.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
-    compile_messages.set_lines(relative_path.clone(), reader.lines);
+    compile_messages.set_lines(relative_file_path.clone(), reader.lines);
 
-    return Ok(Tokens::new(tokens, relative_path));
+    return Ok(Tokens::new(tokens, relative_file_path));
 }
 
 fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo> {
@@ -70,21 +70,29 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                                 char.line..second.line,
                                 char.columns.start..second.columns.end,
                             ),
-                        })
+                        });
                     }
                     None => {}
                 },
                 None => {}
             }
 
-            match match_token(&char.char.to_string()) {
+            let string = char.char.to_string();
+            match match_token(&string) {
                 Some(token) => {
                     return Ok(TokenInfo {
                         token,
                         location: Location::single(char.line, char.columns.start),
                     })
                 }
-                None => return Err(()),
+                None => {
+                    return Err(DebugInfo::new(
+                        Location::single(char.line, char.columns.start),
+                        reader.relative_file_path.clone(),
+                        format!("Failed to find token: '{}'", string),
+                        "",
+                    ))
+                }
             }
         }
     }

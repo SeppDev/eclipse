@@ -1,7 +1,10 @@
 use core::panic;
 use std::ops::Range;
 
-use crate::compiler::errors::{CompileResult, Location};
+use crate::compiler::{
+    errors::{CompileResult, DebugInfo, Location},
+    path::Path,
+};
 
 #[derive(Debug, Clone)]
 pub struct Char {
@@ -24,10 +27,11 @@ impl std::fmt::Display for Char {
 #[derive(Debug)]
 pub struct Reader {
     pub lines: Vec<String>,
+    pub relative_file_path: Path,
     chars: Vec<Char>,
 }
 impl Reader {
-    pub fn new(source: String) -> Self {
+    pub fn new(source: String, relative_file_path: Path) -> Self {
         let mut output = Vec::with_capacity(source.len());
         let mut input: Vec<char> = source.chars().collect();
         input.reverse();
@@ -61,13 +65,18 @@ impl Reader {
                 }
             }
 
-            output.push(Char { char, line, columns: column..column + 1 });
+            output.push(Char {
+                char,
+                line,
+                columns: column..column + 1,
+            });
         }
         lines.push(line_string);
 
         output.reverse();
         Self {
             lines,
+            relative_file_path,
             chars: output,
         }
     }
@@ -86,10 +95,16 @@ impl Reader {
         match start.char {
             '"' | '\'' => {
                 let (string, last) = match self.parse_string() {
-                    Ok(s) => s,
-                    Err(()) => panic!("Failed to close string"),
+                    Some(a) => a,
+                    None => {
+                        return Err(DebugInfo::new(
+                            Location::new(start.line..self.lines.len(), start.columns),
+                            self.relative_file_path.clone(),
+                            "Failed to end string",
+                            "",
+                        ))
+                    }
                 };
-
                 return Ok(Some(TokenKind::String(
                     Location::new(start.line..last.line, start.columns.start..last.columns.end),
                     string,
@@ -120,7 +135,7 @@ impl Reader {
             loop {
                 let current = match self.peek() {
                     Some(c) => c,
-                    None => return Err(()),
+                    None => break,
                 };
 
                 if !(current.char.is_ascii_alphabetic()
@@ -136,7 +151,10 @@ impl Reader {
             }
 
             return Ok(Some(TokenKind::Identifier(
-                Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
+                Location::new(
+                    start.line..previous.line,
+                    start.columns.start..previous.columns.end,
+                ),
                 body,
             )));
         } else if start.char.is_ascii_punctuation() {
@@ -145,17 +163,17 @@ impl Reader {
             loop {
                 let current = match self.peek() {
                     Some(c) => c,
-                    None => return Err(()),
+                    None => break,
                 };
 
                 if current.char == '.' {
                     self.advance();
                     let float_start = match self.advance() {
                         Some(c) => c,
-                        None => return Err(()),
+                        None => break,
                     };
                     if !float_start.char.is_ascii_digit() {
-                        return Err(());
+                        break;
                     }
                     let mut decimal = String::from(float_start.char);
 
@@ -171,7 +189,10 @@ impl Reader {
                         previous = self.advance().unwrap();
                     }
                     return Ok(Some(TokenKind::Float(
-                        Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
+                        Location::new(
+                            start.line..previous.line,
+                            start.columns.start..previous.columns.end,
+                        ),
                         body,
                         decimal,
                     )));
@@ -187,7 +208,10 @@ impl Reader {
             }
 
             return Ok(Some(TokenKind::Integer(
-                Location::new(start.line..previous.line, start.columns.start..previous.columns.end),
+                Location::new(
+                    start.line..previous.line,
+                    start.columns.start..previous.columns.end,
+                ),
                 body,
             )));
         } else if start.char.is_whitespace() {
@@ -226,18 +250,18 @@ impl Reader {
             }
         }
     }
-    fn parse_string(&mut self) -> CompileResult<(String, Char)> {
+    fn parse_string(&mut self) -> Option<(String, Char)> {
         let mut body = String::new();
         loop {
-            let char = match self.advance() {
+            let current = match self.advance() {
                 Some(c) => c,
-                None => return Err(()),
+                None => return None,
             };
-            match char.char {
-                '"' => return Ok((body, char)),
+            match current.char {
+                '"' => return Some((body, current)),
                 '\\' => {
                     let escape = match self.advance() {
-                        Some(char) => char,
+                        Some(current) => current,
                         None => panic!(),
                     };
                     match escape.char {
