@@ -63,7 +63,7 @@ pub fn start_parse(
                     &mut tokens,
                 )?;
                 match imports.insert(name.clone(), import) {
-                    Some(_) => {},
+                    Some(_) => {}
                     None => continue,
                 };
                 return Err(DebugInfo::new(
@@ -85,11 +85,14 @@ pub fn start_parse(
 
     tokens.finish(compile_messages);
 
+    let file_name = relative_file_path.clone().pop().unwrap();
+
     let file = ParsedFile {
         imports,
         body,
+        is_module: file_name == "mod"
+            || (relative_file_path == Path::from("src").join("main") && file_name == "main"),
         relative_file_path,
-        is_module: false,
     };
 
     return Ok(file);

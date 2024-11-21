@@ -83,7 +83,7 @@ pub fn parse_types(
     let mut src = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        is_module: false,
+        is_module: true,
         // export: true
     };
     src.imports.insert(String::from("main"), main);

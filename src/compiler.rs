@@ -48,7 +48,7 @@ pub fn build(project_dir: PathBuf) {
         };
         compile_messages.throw(true);
 
-        println!("{:#?}", analyzed);
+        // println!("{:#?}", analyzed);
     };
 }
 
