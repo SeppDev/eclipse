@@ -107,27 +107,29 @@ fn handle_file(
         types.imports.insert(name.clone(), file);
     }
 
+    #[allow(unused)]
     for info in &file.body {
         match &info.node {
             Node::Function {
                 export,
                 name,
+                key,
                 parameters,
                 return_type,
                 body,
             } => {
-                let new_name = if file.relative_file_path == Path::from("src").join("main")
+                let key = if file.relative_file_path == Path::from("src").join("main")
                     && name.eq("main")
                 {
                     String::from("main")
                 } else {
-                    name_counter.increment()
+                    key.clone()
                 };
 
                 types.functions.insert(
                     name.clone(),
                     Function {
-                        name: new_name,
+                        name: key,
                         parameters: {
                             let mut params = Vec::new();
                             for (_, t) in parameters {

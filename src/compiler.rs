@@ -1,14 +1,16 @@
 use analyzer::analyze;
+use codegen::codegen;
 use counter::NameCounter;
 use errors::{CompileMessages, CompileResult, DebugInfo};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
-use std::path::PathBuf;
+use std::{path::PathBuf, process::{Command, Output}};
 
 mod analyzer;
 mod lexer;
 mod parser;
+mod codegen;
 
 mod counter;
 mod errors;
@@ -31,7 +33,7 @@ pub fn build(project_dir: PathBuf) {
         let mut compile_messages = CompileMessages::new();
 
         let main_path = Path::from("src").join("main");
-        let main = match start_parse(&mut compile_messages, &project_dir, main_path) {
+        let main = match start_parse(&mut compile_messages, &mut name_counter,  &project_dir, main_path) {
             Ok(file) => file,
             Err(info) => handle_debug_info(compile_messages, info),
         };
@@ -47,9 +49,34 @@ pub fn build(project_dir: PathBuf) {
             Err(info) => handle_debug_info(compile_messages, info)
         };
         compile_messages.throw(true);
+        let source = codegen(analyzed);
+        
+        let build_path = project_dir.join("build");
+        let build_file_path = build_path.join("build.ll");
+        let final_path = build_path.join("build.exe");
 
-        println!("{:#?}", analyzed);
+        let build_command = format!("clang -O3 {} -o {}", build_file_path.to_string_lossy(), final_path.to_string_lossy());
+
+        std::fs::create_dir_all(&build_path).unwrap();
+        
+        std::fs::write(&build_file_path, source).unwrap();
+
+        println!("{}", build_command);
+        execute(build_command).unwrap();
+
     };
+}
+
+pub fn execute(command: String) -> Result<Output, String> {
+    let cmd = match std::process::Command::new("cmd")
+        .args(["/C", &command])
+        .output()
+    {
+        Ok(a) => a,
+        Err(a) => return Err(a.to_string()),
+    };
+
+    return Ok(cmd)
 }
 
 fn read_file(path: &PathBuf) -> CompileResult<String> {

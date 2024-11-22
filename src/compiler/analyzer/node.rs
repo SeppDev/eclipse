@@ -1,6 +1,6 @@
 use crate::compiler::{parser::ExpressionInfo, types::Type};
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub struct IRFunction {
     pub name: String,
@@ -9,7 +9,7 @@ pub struct IRFunction {
     pub body: Vec<IRNode>,
 }
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub enum IRNode {
     Label(String),
@@ -19,7 +19,6 @@ pub enum IRNode {
     Return(IRExpressionInfo),
 }
 
-#[allow(unused)]
 #[derive(Debug)]
 pub enum IRExpression {
     Void,

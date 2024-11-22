@@ -4,6 +4,7 @@ mod variables;
 mod program;
 mod types;
 
-use types::*;
+pub use types::*;
+pub use node::*;
 pub use program::*;
 pub use analyzer::*;

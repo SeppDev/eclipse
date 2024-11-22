@@ -21,13 +21,11 @@ pub fn analyze(
 ) -> CompileResult<IRProgram> {
     let mut functions = Vec::new();
     let types = parse_types(compile_messages, name_counter, &program)?;
-    println!("{:#?}", types);
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
     analyze_file(compile_messages, &mut functions, &types, program.main)?;
 
-    println!("{:#?}", functions);
     return Ok(IRProgram { functions });
 }
 
@@ -35,21 +33,22 @@ fn analyze_file(
     compile_messages: &mut CompileMessages,
     functions: &mut Vec<IRFunction>,
     types: &FileTypes,
-    mut file: ParsedFile,
+    file: ParsedFile,
 ) -> CompileResult<()> {
-    for (key, file) in file.imports {
+    for (_, file) in file.imports {
         analyze_file(compile_messages, functions, types, file)?;
     }
 
     for info in file.body {
-        let (_, key, parameters, return_type, body) = match info.node {
+        let (_, _, key, parameters, return_type, body) = match info.node {
             Node::Function {
                 export,
                 name,
+                key,
                 parameters,
                 return_type,
                 body,
-            } => (export, name, parameters, return_type, body),
+            } => (export, name, key, parameters, return_type, body),
             _ => continue,
         };
 

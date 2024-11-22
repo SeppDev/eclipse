@@ -19,6 +19,7 @@ pub enum Node {
     Function {
         export: bool,
         name: String,
+        key: String,
         parameters: Vec<(String, Type)>,
         return_type: Type,
         body: Vec<NodeInfo>,
@@ -119,9 +120,4 @@ impl Value {
             Self::StaticString(_) => BaseType::StaticString,
         });
     }
-}
-
-
-pub fn void() -> i32 {
-    todo!()
 }

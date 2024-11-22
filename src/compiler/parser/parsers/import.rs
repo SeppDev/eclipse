@@ -1,6 +1,7 @@
 use super::{start_parse, ParsedFile};
 
 use crate::compiler::{
+    counter::NameCounter,
     errors::{CompileMessages, CompileResult, DebugInfo, MessageKind},
     lexer::Tokens,
     path::Path,
@@ -10,6 +11,7 @@ use std::path::PathBuf;
 
 pub fn handle_import(
     compile_messages: &mut CompileMessages,
+    name_counter: &mut NameCounter,
     project_dir: &PathBuf,
     relative_file_path: Path,
     tokens: &mut Tokens,
@@ -65,7 +67,7 @@ pub fn handle_import(
         ));
     }
 
-    let mut import = start_parse(compile_messages, project_dir, path)?;
+    let mut import = start_parse(compile_messages, name_counter, project_dir, path)?;
     import.is_module = is_mod_file;
 
     tokens.pop_start();

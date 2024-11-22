@@ -17,6 +17,7 @@ use function::parse_function;
 use import::handle_import;
 
 use crate::compiler::{
+    counter::NameCounter,
     errors::{CompileMessages, CompileResult, DebugInfo},
     lexer::tokenize,
     path::Path,
@@ -35,6 +36,7 @@ pub struct ParsedFile {
 
 pub fn start_parse(
     compile_messages: &mut CompileMessages,
+    name_counter: &mut NameCounter,
     project_dir: &PathBuf,
     relative_file_path: Path,
 ) -> CompileResult<ParsedFile> {
@@ -45,6 +47,8 @@ pub fn start_parse(
     let mut tokens = tokenize(compile_messages, relative_file_path.clone(), source)?;
     let mut imports = BTreeMap::new();
     let mut body = Vec::new();
+
+    let is_main = relative_file_path == Path::from("src").join("main");
 
     use super::super::lexer::Token;
     loop {
@@ -58,23 +62,24 @@ pub fn start_parse(
             Token::Import => {
                 let (name, import) = handle_import(
                     compile_messages,
+                    name_counter,
                     project_dir,
                     relative_file_path.clone(),
                     &mut tokens,
                 )?;
                 match imports.insert(name.clone(), import) {
-                    Some(_) => {},
+                    Some(_) => {}
                     None => continue,
                 };
                 return Err(DebugInfo::new(
                     info.location,
                     relative_file_path,
-                    format!("There is already an import named: '{}'", name),
+                    format!("There is already an import named: '{name}'"),
                     "",
                 ));
             }
             Token::Function => {
-                let function = parse_function(&mut tokens, false)?;
+                let function = parse_function(&mut tokens, is_main, name_counter, false)?;
                 body.push(function)
             }
             Token::Enum => todo!(),
