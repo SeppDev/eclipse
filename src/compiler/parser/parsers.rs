@@ -66,7 +66,7 @@ pub fn start_parse(
                     project_dir,
                     relative_file_path.clone(),
                     &mut tokens,
-                )?;
+                )?; 
                 match imports.insert(name.clone(), import) {
                     Some(_) => {}
                     None => continue,

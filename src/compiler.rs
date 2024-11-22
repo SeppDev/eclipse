@@ -5,12 +5,12 @@ use errors::{CompileMessages, CompileResult, DebugInfo};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
-use std::{path::PathBuf, process::{Command, Output}};
+use std::{path::PathBuf, process::{exit, Output}};
 
 mod analyzer;
+mod codegen;
 mod lexer;
 mod parser;
-mod codegen;
 
 mod counter;
 mod errors;
@@ -27,13 +27,18 @@ fn handle_debug_info(mut compile_messages: CompileMessages, info: DebugInfo) -> 
     compile_messages.quit();
 }
 
-pub fn build(project_dir: PathBuf) {
-    let _executable = {
+pub fn build(project_dir: PathBuf) -> PathBuf  {
+    let executable = {
         let mut name_counter = NameCounter::new();
         let mut compile_messages = CompileMessages::new();
 
         let main_path = Path::from("src").join("main");
-        let main = match start_parse(&mut compile_messages, &mut name_counter,  &project_dir, main_path) {
+        let main = match start_parse(
+            &mut compile_messages,
+            &mut name_counter,
+            &project_dir,
+            main_path,
+        ) {
             Ok(file) => file,
             Err(info) => handle_debug_info(compile_messages, info),
         };
@@ -46,25 +51,35 @@ pub fn build(project_dir: PathBuf) {
 
         let analyzed = match analyze(program, &mut compile_messages, &mut name_counter) {
             Ok(a) => a,
-            Err(info) => handle_debug_info(compile_messages, info)
+            Err(info) => handle_debug_info(compile_messages, info),
         };
         compile_messages.throw(true);
         let source = codegen(analyzed);
-        
+
         let build_path = project_dir.join("build");
         let build_file_path = build_path.join("build.ll");
         let final_path = build_path.join("build.exe");
 
-        let build_command = format!("clang -O3 {} -o {}", build_file_path.to_string_lossy(), final_path.to_string_lossy());
+        let build_command = format!(
+            "clang -O3 {} -o {}",
+            build_file_path.to_string_lossy(),
+            final_path.to_string_lossy()
+        );
 
         std::fs::create_dir_all(&build_path).unwrap();
-        
+
         std::fs::write(&build_file_path, source).unwrap();
 
-        println!("{}", build_command);
-        execute(build_command).unwrap();
+        let output = execute(build_command).unwrap();
+        if !output.status.success() {
+            println!("{}", String::from_utf8(output.stderr).unwrap());
+            exit(2)
+        }
 
+        final_path
     };
+
+    return executable
 }
 
 pub fn execute(command: String) -> Result<Output, String> {
@@ -76,7 +91,7 @@ pub fn execute(command: String) -> Result<Output, String> {
         Err(a) => return Err(a.to_string()),
     };
 
-    return Ok(cmd)
+    return Ok(cmd);
 }
 
 fn read_file(path: &PathBuf) -> CompileResult<String> {

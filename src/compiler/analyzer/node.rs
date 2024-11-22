@@ -1,5 +1,6 @@
 use crate::compiler::{parser::ExpressionInfo, types::Type};
 
+use super::convert_type;
 
 #[derive(Debug)]
 pub struct IRFunction {
@@ -9,10 +10,10 @@ pub struct IRFunction {
     pub body: Vec<IRNode>,
 }
 
-
 #[derive(Debug)]
 pub enum IRNode {
     Label(String),
+    Allocate(String, IRType),
     DeclareVariable(String, IRExpressionInfo),
     SetVariable(String, IRExpressionInfo),
     Call(String, Vec<ExpressionInfo>),
@@ -37,20 +38,53 @@ pub enum IRExpression {
     Pointer(Box<IRExpressionInfo>),
 }
 
-#[allow(unused)]
 #[derive(Debug)]
 pub struct IRExpressionInfo {
-    pub data_type: Type,
+    pub data_type: IRType,
     pub expression: IRExpression,
 }
 impl IRExpressionInfo {
-    pub fn from(expression: IRExpression, data_type: Type) -> Self {
+    pub fn from(expression: IRExpression, data_type: &Type) -> Self {
         Self {
             expression,
-            data_type,
+            data_type: convert_type(data_type),
         }
     }
     pub fn void() -> Self {
-        Self::from(IRExpression::Void, Type::void())
+        Self::from(IRExpression::Void, &Type::void())
+    }
+}
+
+#[derive(Debug)]
+pub enum IRType {
+    Tuple(Vec<IRType>),
+    Pointer(Box<IRType>),
+    Integer(usize),
+    Array(usize, Box<IRType>),
+    Float,
+    Double,
+    Void,
+}
+impl std::fmt::Display for IRType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                IRType::Void => "void".to_string(),
+                IRType::Double => "double".to_string(),
+                IRType::Float => "float".to_string(),
+                IRType::Array(size, t) => format!("[ {} x {} ]", size, t),
+                IRType::Integer(bits) => format!("i{}", bits),
+                IRType::Pointer(t) => format!("*{}", t),
+                IRType::Tuple(types) => format!("{{ {} }}", {
+                    let mut strings = Vec::new();
+                    for t in types {
+                        strings.push(format!("{}", t))
+                    }
+                    strings.join(", ")
+                }),
+            }
+        )
     }
 }

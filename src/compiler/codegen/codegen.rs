@@ -1,6 +1,5 @@
 use crate::compiler::{
-    analyzer::{IRFunction, IRNode, IRProgram},
-    string::BetterString, types::{BaseType, Type},
+    analyzer::{IRExpression, IRExpressionInfo, IRFunction, IRNode, IRProgram}, string::BetterString
 };
 
 pub fn codegen(program: IRProgram) -> String  {
@@ -15,7 +14,7 @@ pub fn codegen(program: IRProgram) -> String  {
 }
 
 fn handle_function(source: &mut BetterString, function: IRFunction) {
-    let data_type = convert_type(&function.return_type);
+    let data_type = &function.return_type;
     let name = &function.name;
     source.pushln(format!("define {data_type} @{name}() {{"));
     source.pushln("entry:");
@@ -30,25 +29,27 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     source.pushln("}");
 }
 
-fn handle_node(node: IRNode,  body: &mut BetterString) {
+fn handle_node(node: IRNode, body: &mut BetterString) {
     match node {
         IRNode::Return(info) => {
-            let data_type = convert_type(&info.data_type);
-            let value = 0; // info.expression
+            let data_type = &info.data_type;
+            let value = handle_expression(body, &info);
+
             body.pushln(format!("ret {data_type} {value}"));
         },
         _ => todo!()
     }  
 }
 
-fn convert_type(data_type: &Type) -> String {
-    match data_type {
-        Type::Base(base) => match base {
-            BaseType::Void => "void",
-            BaseType::Boolean => "i1",
-            BaseType::Int32 => "i32", 
-            _ => todo!()
-        }
-        _ => todo!()
-    }.to_string()
+fn handle_expression(body: &mut BetterString, info: &IRExpressionInfo) -> String {
+    let mut expression = BetterString::new();
+
+    // let data_type = &info.data_type;
+    match &info.expression {
+        IRExpression::Void => {},
+        IRExpression::Integer(int) => expression.push(int),
+        _ => todo!("{:?}", info)
+    }
+
+    return expression.to_string();
 }

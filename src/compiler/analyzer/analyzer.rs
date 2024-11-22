@@ -4,14 +4,14 @@ use crate::compiler::{
     parser::{Expression, ExpressionInfo, Node, NodeInfo, ParsedFile},
     path::Path,
     program::ParsedProgram,
-    types::Type,
+    types::{BaseType, Type},
 };
 
 use super::{
     node::{IRExpression, IRExpressionInfo, IRFunction, IRNode},
     parse_types,
     variables::Variables,
-    FileTypes, IRProgram,
+    FileTypes, IRProgram, IRType,
 };
 
 pub fn analyze(
@@ -84,7 +84,22 @@ fn analyze_file(
             &mut nodes,
         )?;
 
-        if !return_type.is_void() {
+        if return_type.is_void() {
+            let last = nodes.last();
+            match last {
+                Some(node) => match node {
+                    IRNode::Return(_) => {}
+                    _ => nodes.push(IRNode::Return(IRExpressionInfo::from(
+                        IRExpression::Void,
+                        &Type::void(),
+                    ))),
+                },
+                None => nodes.push(IRNode::Return(IRExpressionInfo::from(
+                    IRExpression::Void,
+                    &Type::void(),
+                ))),
+            }
+        } else {
             nodes.last().is_none().then(|| {
                 compile_messages.create(
                     MessageKind::Error,
@@ -157,7 +172,7 @@ fn analyze_body(
                 continue;
             }
             Node::Return(expression) => {
-                let expression = analyze_expression(
+                let (expression, _) = analyze_expression(
                     compile_messages,
                     relative_file_path,
                     types,
@@ -178,7 +193,7 @@ fn analyze_body(
                 if expression.is_none() {
                     todo!("Expression required");
                 }
-                let expression = analyze_expression(
+                let (expression, data_type) = analyze_expression(
                     compile_messages,
                     relative_file_path,
                     types,
@@ -191,7 +206,7 @@ fn analyze_body(
                 let (current, result) = variables.insert(
                     &name,
                     mutable.clone(),
-                    expression.data_type.clone(),
+                    data_type.clone(),
                     info.location.clone(),
                 );
 
@@ -225,7 +240,7 @@ fn analyze_body(
                         "",
                     );
                 }
-                let expression = analyze_expression(
+                let (expression, _data_type) = analyze_expression(
                     compile_messages,
                     relative_file_path,
                     types,
@@ -285,14 +300,14 @@ fn analyze_expression(
     variables: &mut Variables,
     return_type: &Option<Type>,
     node: &Location,
-    expression: Option<ExpressionInfo>,
-) -> CompileResult<IRExpressionInfo> {
-    let expression = match expression {
+    expression_info: Option<ExpressionInfo>,
+) -> CompileResult<(IRExpressionInfo, Type)> {
+    let expression_info = match expression_info {
         Some(expr) => expr,
         None => {
             let rt = match return_type {
                 Some(t) => t,
-                None => return Ok(IRExpressionInfo::void()),
+                None => return Ok((IRExpressionInfo::void(), Type::void())),
             };
             if !rt.is_void() {
                 compile_messages.create(
@@ -303,13 +318,13 @@ fn analyze_expression(
                     "",
                 );
             }
-            return Ok(IRExpressionInfo::void());
+            return Ok((IRExpressionInfo::void(), Type::void()));
         }
     };
 
     use super::super::parser::Value;
 
-    let (ir_expression, data_type): (IRExpression, Type) = match &expression.expression {
+    let (expression, data_type): (IRExpression, Type) = match &expression_info.expression {
         Expression::Call(path, arguments) => {
             let function = match types.get_function(relative_path, path)? {
                 Some(f) => f,
@@ -321,7 +336,7 @@ fn analyze_expression(
                         format!("Could not find path {}", path.components().join("::")),
                         "",
                     );
-                    return Ok(IRExpressionInfo::void());
+                    return Ok((IRExpressionInfo::void(), Type::void()));
                 }
             };
             (
@@ -340,12 +355,12 @@ fn analyze_expression(
                 None => {
                     compile_messages.create(
                         MessageKind::Error,
-                        expression.location.clone(),
+                        expression_info.location.clone(),
                         relative_path.clone(),
                         format!("Could not find variable named: '{}'", name),
                         "",
                     );
-                    return Ok(IRExpressionInfo::void());
+                    return Ok((IRExpressionInfo::void(), Type::void()));
                 }
             };
             (
@@ -397,19 +412,18 @@ fn analyze_expression(
                     }
                     None => value.default_type(),
                 };
-
                 (IRExpression::Integer(integer.clone()), rt)
             }
         },
         _ => {
             compile_messages.create(
                 MessageKind::Error,
-                expression.location.clone(),
+                expression_info.location.clone(),
                 relative_path.clone(),
                 "Unhandled expression",
                 "",
             );
-            return Ok(IRExpressionInfo::void());
+            return Ok((IRExpressionInfo::void(), Type::void()));
         }
     };
 
@@ -418,9 +432,9 @@ fn analyze_expression(
             if rt != &data_type {
                 compile_messages.create(
                     MessageKind::Error,
-                    expression.location.clone(),
+                    expression_info.location.clone(),
                     relative_path.clone(),
-                    format!("Wrong types, expected: '{}', got: '{}'", rt, data_type),
+                    format!("Wrong types, expected: '{}', got: '{}'", rt, &data_type),
                     "",
                 );
             }
@@ -428,5 +442,22 @@ fn analyze_expression(
         None => {}
     }
 
-    return Ok(IRExpressionInfo::from(ir_expression, data_type));
+    return Ok((IRExpressionInfo::from(expression, &data_type), data_type));
+}
+
+pub fn convert_type(data_type: &Type) -> IRType {
+    match data_type {
+        Type::Base(base) => match base {
+            BaseType::Int8 | BaseType::UInt8 => IRType::Integer(8),
+            BaseType::Int16 | BaseType::UInt16 => IRType::Integer(16),
+            BaseType::Int32 | BaseType::UInt32 => IRType::Integer(32),
+            BaseType::Int64 | BaseType::UInt64 => IRType::Integer(64),
+            BaseType::Boolean => IRType::Integer(1),
+            BaseType::Void | BaseType::Never => IRType::Void,
+            BaseType::Float32 => IRType::Float,
+            BaseType::Float64 => IRType::Double,
+            BaseType::StaticString => todo!(),
+        },
+        _ => todo!("{}", data_type),
+    }
 }
