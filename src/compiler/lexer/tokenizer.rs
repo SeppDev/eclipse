@@ -82,7 +82,7 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                 Some(token) => {
                     return Ok(TokenInfo {
                         token,
-                        location: Location::single(char.line, char.columns.start),
+                        location: Location::new(char.line..char.line, char.columns),
                     })
                 }
                 None => {

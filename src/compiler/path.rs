@@ -57,22 +57,3 @@ impl Path {
         self.components.clear();
     }
 }
-
-// #[derive(Debug, PartialEq, Hash, Clone)]
-// struct Chain {
-//     method: bool,
-//     body: String,
-// }
-// impl Chain {
-//     pub fn join(&self) -> String {
-            
-//     }
-// }
-
-// impl std::fmt::Display for Chain {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "{}", "")
-//         // if self.method {
-//         // }
-//     }
-// }

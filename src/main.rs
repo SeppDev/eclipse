@@ -17,4 +17,4 @@ fn main() {
     compiler::build(project_dir);
 
     println!("{:?}", start.elapsed());
-}
+} 

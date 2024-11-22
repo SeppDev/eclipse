@@ -2,7 +2,7 @@ use super::{start_parse, ParsedFile};
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileMessages, CompileResult, DebugInfo, MessageKind},
+    errors::{CompileMessages, CompileResult, DebugInfo},
     lexer::Tokens,
     path::Path,
     FILE_EXTENSION,
@@ -17,10 +17,9 @@ pub fn handle_import(
     tokens: &mut Tokens,
 ) -> CompileResult<(String, ParsedFile)> {
     let from = relative_file_path.clone().pop().unwrap();
-    let is_mod_file =
-        from == "mod" || (relative_file_path == Path::from("src").join("main") && from == "main");
 
     let name = tokens.parse_identifier()?;
+    let is_mod_file = from == "mod" ||  (relative_file_path == Path::from("src").join("main") && from == "main");
 
     let paths: [Path; 2] = if is_mod_file {
         [
