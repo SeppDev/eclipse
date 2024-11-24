@@ -1,59 +1,29 @@
-use crate::compiler::{parser::ExpressionInfo, types::Type};
 
-use super::convert_type;
+
 
 #[derive(Debug)]
 pub struct IRFunction {
     pub name: String,
-    pub parameters: Vec<(String, Type)>,
-    pub return_type: Type,
-    pub body: Vec<IRNode>,
+    pub parameters: Vec<(String, IRType)>,
+    pub return_type: IRType,
+    pub body: Vec<Operation>,
 }
 
 #[derive(Debug)]
-pub enum IRNode {
+pub enum Operation {
     Label(String),
     Allocate(String, IRType),
-    DeclareVariable(String, IRExpressionInfo),
-    SetVariable(String, IRExpressionInfo),
-    Call(String, Vec<ExpressionInfo>),
-    Return(IRExpressionInfo),
+    Return(IRType, IRValue),
 }
 
 #[derive(Debug)]
-pub enum IRExpression {
-    Void,
-    Allocate,
-
-    Integer(String),
-    Float(String),
-    Boolean(bool),
-
-    Minus(Box<IRExpressionInfo>),
-    Add(Box<IRExpression>, Box<IRExpression>),
-
-    GetVariable(String),
-    Call(String, Vec<IRExpressionInfo>),
-    Tuple(Vec<IRExpressionInfo>),
-    Pointer(Box<IRExpressionInfo>),
+pub enum IRValue {
+    IntLiteral(String),
+    FloatLiteral(String),
+    Variable(String),
+    Null
 }
 
-#[derive(Debug)]
-pub struct IRExpressionInfo {
-    pub data_type: IRType,
-    pub expression: IRExpression,
-}
-impl IRExpressionInfo {
-    pub fn from(expression: IRExpression, data_type: &Type) -> Self {
-        Self {
-            expression,
-            data_type: convert_type(data_type),
-        }
-    }
-    pub fn void() -> Self {
-        Self::from(IRExpression::Void, &Type::void())
-    }
-}
 
 #[derive(Debug)]
 pub enum IRType {

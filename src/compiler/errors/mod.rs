@@ -59,18 +59,18 @@ impl std::fmt::Display for Location {
 type Map = Vec<(Path, Message)>;
 
 #[derive(Default)]
-struct Messages {
+struct MsgMap {
     notes: Map,
     warnings: Map,
     errors: Map,
 }
 
 #[derive(Default)]
-pub struct CompileMessages {
-    messages: Messages,
+pub struct CompileCtx {
+    messages: MsgMap,
     lines: HashMap<Path, Vec<String>>,
 }
-impl CompileMessages {
+impl CompileCtx {
     pub fn new() -> Self {
         Self::default()
     }

@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{create_error_message, CompileMessages, Location, Message, MessageKind},
+    errors::{create_error_message, CompileCtx, Location, Message, MessageKind},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
     path::Path,
 };
@@ -36,9 +36,9 @@ impl Tokens {
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
-    pub fn finish(self, compile_messages: &mut CompileMessages) {
+    pub fn finish(self, debug: &mut CompileCtx) {
         for message in self.messages {
-            compile_messages.push(self.relative_file_path.clone(), message);
+            debug.push(self.relative_file_path.clone(), message);
         }
     }
     pub fn current(&self) -> &TokenInfo {

@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{IRExpression, IRExpressionInfo, IRFunction, IRNode, IRProgram}, string::BetterString
+    analyzer::{IRFunction, IRProgram}, string::BetterString
 };
 
 pub fn codegen(program: IRProgram) -> String  {
@@ -19,37 +19,37 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     source.pushln(format!("define {data_type} @{name}() {{"));
     source.pushln("entry:");
 
-    let mut body = BetterString::new();
+    let body = BetterString::new();
 
-    for node in function.body {
-        handle_node(node, &mut body);
-    }
+    // for node in function.body {
+    //     handle_node(node, &mut body);
+    // }
     
     source.push(body.to_string());
     source.pushln("}");
 }
 
-fn handle_node(node: IRNode, body: &mut BetterString) {
-    match node {
-        IRNode::Return(info) => {
-            let data_type = &info.data_type;
-            let value = handle_expression(body, &info);
+// fn handle_node(node: IRNode, body: &mut BetterString) {
+//     match node {
+//         Operation::Return(info) => {
+//             let data_type = &info.data_type;
+//             let value = handle_expression(body, &info);
 
-            body.pushln(format!("ret {data_type} {value}"));
-        },
-        _ => todo!()
-    }  
-}
+//             body.pushln(format!("ret {data_type} {value}"));
+//         },
+//         _ => todo!()
+//     }  
+// }
 
-fn handle_expression(body: &mut BetterString, info: &IRExpressionInfo) -> String {
-    let mut expression = BetterString::new();
+// fn handle_expression(body: &mut BetterString, info: &IRExpressionInfo) -> String {
+//     let mut expression = BetterString::new();
 
-    // let data_type = &info.data_type;
-    match &info.expression {
-        IRExpression::Void => {},
-        IRExpression::Integer(int) => expression.push(int),
-        _ => todo!("{:?}", info)
-    }
+//     // let data_type = &info.data_type;
+//     match &info.expression {
+//         IRExpression::Void => {},
+//         IRExpression::Integer(int) => expression.push(int),
+//         _ => todo!("{:?}", info)
+//     }
 
-    return expression.to_string();
-}
+//     return expression.to_string();
+// }

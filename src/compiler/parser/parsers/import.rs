@@ -2,7 +2,7 @@ use super::{start_parse, ParsedFile};
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileMessages, CompileResult, DebugInfo},
+    errors::{CompileCtx, CompileResult, DebugInfo},
     lexer::Tokens,
     path::Path,
     FILE_EXTENSION,
@@ -10,7 +10,7 @@ use crate::compiler::{
 use std::path::PathBuf;
 
 pub fn handle_import(
-    compile_messages: &mut CompileMessages,
+    compile_messages: &mut CompileCtx,
     name_counter: &mut NameCounter,
     project_dir: &PathBuf,
     relative_file_path: Path,

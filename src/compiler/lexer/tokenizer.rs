@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileMessages, CompileResult, DebugInfo, Location},
+    errors::{CompileCtx, CompileResult, DebugInfo, Location},
     lexer::reader::TokenKind,
     path::Path,
 };
@@ -10,7 +10,7 @@ use super::{
 };
 
 pub fn tokenize(
-    compile_messages: &mut CompileMessages,
+    debug: &mut CompileCtx,
     relative_file_path: Path,
     source: String,
 ) -> CompileResult<Tokens> {
@@ -28,7 +28,7 @@ pub fn tokenize(
 
     let lines = reader.lines.len();
     tokens.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
-    compile_messages.set_lines(relative_file_path.clone(), reader.lines);
+    debug.set_lines(relative_file_path.clone(), reader.lines);
 
     return Ok(Tokens::new(tokens, relative_file_path));
 }

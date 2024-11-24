@@ -1,11 +1,14 @@
-use analyzer::analyze;
+use analyzer::{analyze, parse_types};
 use codegen::codegen;
 use counter::NameCounter;
-use errors::{CompileMessages, CompileResult, DebugInfo};
+use errors::{CompileCtx, CompileResult, DebugInfo};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
-use std::{path::PathBuf, process::{exit, Output}};
+use std::{
+    path::PathBuf,
+    process::{exit, Output},
+};
 
 mod analyzer;
 mod codegen;
@@ -22,76 +25,89 @@ mod types;
 pub static FILE_EXTENSION: &str = "ecl";
 // pub static POINTER_WIDTH: usize = 8;
 
-fn handle_debug_info(mut compile_messages: CompileMessages, info: DebugInfo) -> ! {
-    compile_messages.push(info.relative_file_path, info.message);
-    compile_messages.quit();
+fn handle_debug_info(debug: &mut CompileCtx, info: DebugInfo) -> ! {
+    debug.push(info.relative_file_path, info.message);
+    debug.quit();
 }
 
-pub fn build(project_dir: PathBuf) -> PathBuf  {
-    let executable = {
-        let mut name_counter = NameCounter::new();
-        let mut compile_messages = CompileMessages::new();
+fn parse_program(
+    debug: &mut CompileCtx,
+    count: &mut NameCounter,
+    project_dir: &PathBuf,
+) -> CompileResult<ParsedProgram> {
+    let main_path = Path::from("src").join("main");
+    let main = start_parse(debug, count, project_dir, main_path)?;
 
-        let main_path = Path::from("src").join("main");
-        let main = match start_parse(
-            &mut compile_messages,
-            &mut name_counter,
-            &project_dir,
-            main_path,
-        ) {
-            Ok(file) => file,
-            Err(info) => handle_debug_info(compile_messages, info),
-        };
-        compile_messages.throw(false);
+    // let main_path = Path::from("src").join("main");
+    // let standard = start_parse(debug, count, project_dir, relative_file_path);
 
-        let program = ParsedProgram {
-            // standard,
-            main,
-        };
-
-        let analyzed = match analyze(program, &mut compile_messages, &mut name_counter) {
-            Ok(a) => a,
-            Err(info) => handle_debug_info(compile_messages, info),
-        };
-        compile_messages.throw(true);
-        let source = codegen(analyzed);
-
-        let build_path = project_dir.join("build");
-        let build_file_path = build_path.join("build.ll");
-        let final_path = build_path.join("build.exe");
-
-        let build_command = format!(
-            "clang -O3 {} -o {}",
-            build_file_path.to_string_lossy(),
-            final_path.to_string_lossy()
-        );
-
-        std::fs::create_dir_all(&build_path).unwrap();
-
-        std::fs::write(&build_file_path, source).unwrap();
-
-        let output = execute(build_command).unwrap();
-        if !output.status.success() {
-            println!("{}", String::from_utf8(output.stderr).unwrap());
-            exit(2)
-        }
-
-        final_path
-    };
-
-    return executable
+    return Ok(ParsedProgram {
+        // standard,
+        main,
+    });
 }
 
-pub fn execute(command: String) -> Result<Output, String> {
-    let cmd = match std::process::Command::new("cmd")
-        .args(["/C", &command])
-        .output()
-    {
-        Ok(a) => a,
-        Err(a) => return Err(a.to_string()),
+fn compile(debug: &mut CompileCtx, project_dir: &PathBuf) -> CompileResult<PathBuf> {
+    let mut count = NameCounter::new();
+
+    let program = parse_program(debug, &mut count, &project_dir)?;
+    debug.throw(false);
+    
+    let types = parse_types(debug, &mut count, &program)?;
+    debug.throw(false);
+
+    let analyzed = analyze(debug, &mut count, types, program)?;
+    debug.throw(true);
+
+    let source = codegen(analyzed);
+
+    let build_path = project_dir.join("build");
+    let build_file_path = build_path.join("build.ll");
+    let final_path = build_path.join("build.exe");
+
+    let build_command = format!(
+        "clang -O3 {} -o {}",
+        build_file_path.to_string_lossy(),
+        final_path.to_string_lossy()
+    );
+
+    std::fs::create_dir_all(&build_path).unwrap();
+    std::fs::write(&build_file_path, source).unwrap();
+
+    let output = execute(build_command);
+    if !output.status.success() {
+        println!("{}", String::from_utf8(output.stderr).unwrap());
+        exit(2)
+    }
+
+    return Ok(final_path);
+}
+
+pub fn build(project_dir: PathBuf) -> PathBuf {
+    let mut debug = CompileCtx::new();
+    let path = compile(&mut debug, &project_dir)
+        .unwrap_or_else(|info| handle_debug_info(&mut debug, info));
+
+    return path;
+}
+
+pub fn execute(command: String) -> Output {
+    use std::process::Command;
+
+    let output = if cfg!(target_os = "windows") {
+        Command::new("cmd")
+            .args(["/C", &command])
+            .output()
+            .expect("failed to execute process")
+    } else {
+        Command::new("sh")
+            .arg("-c")
+            .arg(&command)
+            .output()
+            .expect("failed to execute process")
     };
 
-    return Ok(cmd);
+    return output;
 }
 
 fn read_file(path: &PathBuf) -> CompileResult<String> {

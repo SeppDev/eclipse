@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileMessages, CompileResult},
+    errors::{CompileCtx, CompileResult},
     parser::{Node, ParsedFile},
     path::Path,
     program::ParsedProgram,
@@ -74,11 +74,11 @@ pub struct Function {
 }
 
 pub fn parse_types(
-    compile_messages: &mut CompileMessages,
-    name_counter: &mut NameCounter,
+    debug: &mut CompileCtx,
+    count: &mut NameCounter,
     program: &ParsedProgram,
 ) -> CompileResult<FileTypes> {
-    let main = handle_file(compile_messages, name_counter, &program.main)?;
+    let main = handle_file(debug, count, &program.main)?;
 
     let mut src = FileTypes {
         imports: HashMap::new(),
@@ -92,18 +92,18 @@ pub fn parse_types(
 }
 
 fn handle_file(
-    compile_messages: &mut CompileMessages,
-    name_counter: &mut NameCounter,
+    compile_messages: &mut CompileCtx,
+    count: &mut NameCounter,
     file: &ParsedFile,
 ) -> CompileResult<FileTypes> {
     let mut types = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        is_module: file.is_module, // export: true
+        is_module: file.is_module,
     };
 
     for (name, import) in &file.imports {
-        let file = handle_file(compile_messages, name_counter, import)?;
+        let file = handle_file(compile_messages, count, import)?;
         types.imports.insert(name.clone(), file);
     }
 
