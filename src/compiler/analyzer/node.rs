@@ -13,6 +13,7 @@ pub enum Operation {
     Label(String),
     Allocate(String, IRType),
     Store(IRType, IRValue, String),
+    Load(String, IRType, String),
     Return(IRType, IRValue),
 }
 
@@ -30,6 +31,7 @@ impl std::fmt::Display for IRValue {
             "{}",
             match self {
                 Self::IntLiteral(int) => format!("{}", int),
+                Self::Variable(key) => format!("%{}", key),
                 _ => todo!("{:#?}", self)
             }
         )
