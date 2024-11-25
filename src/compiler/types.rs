@@ -64,9 +64,9 @@ impl std::fmt::Display for BaseType {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
-    // Custom(String),
     Unkown,
     Base(BaseType),
+    Struct(String),
     Array(Box<Type>, usize),
     Tuple(Vec<Type>),
     Pointer(Box<Type>),
@@ -76,6 +76,7 @@ impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Unkown => write!(f, "{{unkown}}"),
+            Self::Struct(name) => write!(f, "struct {}", name),
             Self::Base(base) => write!(f, "{}", base),
             Self::Array(t, size) => write!(f, "[{}; {}]", t, size),
             Self::Pointer(t) => write!(f, "*{}", t),

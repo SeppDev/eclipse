@@ -2,7 +2,7 @@ use core::panic;
 use std::ops::Range;
 
 use crate::compiler::{
-    errors::{CompileResult, DebugInfo, Location},
+    errors::{CompileResult, Location},
     path::Path,
 };
 
@@ -96,14 +96,7 @@ impl Reader {
             '"' | '\'' => {
                 let (string, last) = match self.parse_string() {
                     Some(a) => a,
-                    None => {
-                        return Err(DebugInfo::new(
-                            Location::new(start.line..self.lines.len(), start.columns),
-                            self.relative_file_path.clone(),
-                            "Failed to end string",
-                            "",
-                        ))
-                    }
+                    None => return Err(())
                 };
                 return Ok(Some(TokenKind::String(
                     Location::new(start.line..last.line, start.columns.start..last.columns.end),

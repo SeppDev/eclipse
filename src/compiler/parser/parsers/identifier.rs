@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileResult, MessageKind},
+    errors::CompileResult,
     parser::{Node, NodeInfo},
     path::Path,
 };
@@ -12,6 +12,7 @@ use super::{
 };
 impl Tokens {
     pub fn parse_identifier(&mut self) -> CompileResult<String> {
+        let current = self.current().clone();
         let info = self.advance();
 
         match info.token {
@@ -19,19 +20,19 @@ impl Tokens {
             _ => {}
         };
 
-        self.throw(
-            MessageKind::Error,
-            info.location,
+        self.error(
+            current.location,
             format!("Expected identifier, found '{}'", info.token),
-            "expected identifier",
         );
         return Ok("x".to_string());
     }
 }
 
 pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResult<NodeInfo> {
-    let info =
-        tokens.peek_require_token(vec![Token::OpenParen, Token::Equals, Token::DoubleColon])?;
+    let info = tokens.expect_tokens(
+        vec![Token::OpenParen, Token::Equals, Token::DoubleColon],
+        false,
+    );
 
     match info.token {
         Token::DoubleColon => {

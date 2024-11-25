@@ -36,7 +36,7 @@ impl Variables {
         mutable: bool,
         data_type: Type,
         location: Location,
-    ) -> (&Variable, Result<(), Variable>) {
+    ) -> Result<(), Variable> {
         let name = self.increment();
         let current_state = self.states.last_mut().unwrap();
 
@@ -52,15 +52,13 @@ impl Variables {
             },
         );
 
-        let current_var = self.variables.get(key).unwrap();
-
         match result {
-            Some(var) => return (current_var, Err(var)),
+            Some(var) => return Err(var),
             None => {}
         }
         current_state.push(key.clone());
 
-        return (current_var, Ok(()));
+        return Ok(());
     }
     pub fn create_state(&mut self) {
         self.states.push(Vec::new());

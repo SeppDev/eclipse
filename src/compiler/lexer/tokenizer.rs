@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileCtx, CompileResult, DebugInfo, Location},
+    errors::{CompileCtx, CompileResult, Location},
     lexer::reader::TokenKind,
     path::Path,
 };
@@ -86,12 +86,7 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                     })
                 }
                 None => {
-                    return Err(DebugInfo::new(
-                        Location::single(char.line, char.columns.start),
-                        reader.relative_file_path.clone(),
-                        format!("Failed to find token: '{}'", string),
-                        "",
-                    ))
+                    return Err(())
                 }
             }
         }

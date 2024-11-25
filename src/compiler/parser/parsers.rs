@@ -18,7 +18,7 @@ use import::handle_import;
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileCtx, CompileResult, DebugInfo},
+    errors::{CompileCtx, CompileResult},
     lexer::tokenize,
     path::Path,
     read_file, FILE_EXTENSION,
@@ -56,27 +56,25 @@ pub fn start_parse(
             break;
         }
 
-        let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true)?;
+        let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
 
         match info.token {
             Token::Import => {
-                let (name, import) = handle_import(
+                let (name, import) = match handle_import(
                     debug,
                     count,
                     project_dir,
                     relative_file_path.clone(),
                     &mut tokens,
-                )?; 
+                ) {
+                    Ok(a) => a,
+                    Err(()) => continue
+                }; 
                 match imports.insert(name.clone(), import) {
                     Some(_) => {}
                     None => continue,
                 };
-                return Err(DebugInfo::new(
-                    info.location,
-                    relative_file_path,
-                    format!("There is already an import named: '{name}'"),
-                    "",
-                ));
+                return Err(());
             }
             Token::Function => {
                 let function = parse_function(&mut tokens, is_main, count, false)?;

@@ -15,7 +15,7 @@ pub fn parse_function(
     export: bool,
 ) -> CompileResult<NodeInfo> {
     let name = tokens.parse_identifier()?;
-    tokens.expect_tokens(vec![Token::OpenParen], false)?;
+    tokens.expect_tokens(vec![Token::OpenParen], false);
 
     let mut parameters: Vec<(String, Type)> = Vec::new();
     loop {
@@ -29,7 +29,7 @@ pub fn parse_function(
         let data_type = parse_type(tokens)?;
         parameters.push((name, data_type));
 
-        let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
+        let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
         match result.token {
             Token::CloseParen => break,
             Token::Comma => continue,
@@ -46,7 +46,7 @@ pub fn parse_function(
         Type::Base(BaseType::Void)
     };
 
-    tokens.expect_tokens(vec![Token::StartScope], false)?;
+    tokens.expect_tokens(vec![Token::StartScope], false);
     let body = parse_body(tokens)?;
 
     return Ok(tokens.create_node(Node::Function {

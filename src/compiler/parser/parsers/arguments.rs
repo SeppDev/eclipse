@@ -16,9 +16,13 @@ pub fn parse_arguments(tokens: &mut Tokens) -> CompileResult<Vec<ExpressionInfo>
         {
             break;
         };
+        let expression = match parse_expression(tokens, true)? {
+            Some(e) => e,
+            None => break
+        };
 
-        arguments.push(parse_expression(tokens, true)?.unwrap());
-        let result = tokens.expect_tokens(vec![Token::Comma, Token::CloseParen], false)?;
+        arguments.push(expression);
+        let result = tokens.expect_tokens(vec![Token::Comma, Token::CloseParen], false);
         match result.token {
             Token::Comma => continue,
             Token::CloseParen => break,

@@ -1,8 +1,9 @@
 use crate::compiler::{
-    analyzer::{IRFunction, IRProgram}, string::BetterString
+    analyzer::{IRFunction, IRProgram, Operation},
+    string::BetterString,
 };
 
-pub fn codegen(program: IRProgram) -> String  {
+pub fn codegen(program: IRProgram) -> String {
     let mut source = BetterString::new();
     source.pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
 
@@ -19,12 +20,21 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     source.pushln(format!("define {data_type} @{name}() {{"));
     source.pushln("entry:");
 
-    let body = BetterString::new();
+    let mut body = BetterString::new();
 
-    // for node in function.body {
-    //     handle_node(node, &mut body);
-    // }
-    
+    for operation in function.operations {
+        body.pushln(match operation {
+            Operation::Label(label) => format!("{}:", label),
+            Operation::Allocate(location, data_type) => {
+                format!("%{} = alloca {}", location, data_type)
+            }
+            Operation::Store(data_type, value, location) => {
+                format!("store {} {}, ptr %{}", data_type, value, location)
+            }
+            Operation::Return(data_type, value) => format!("ret {} {}", data_type, value),
+        });
+    }
+
     source.push(body.to_string());
     source.pushln("}");
 }
@@ -38,7 +48,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
 //             body.pushln(format!("ret {data_type} {value}"));
 //         },
 //         _ => todo!()
-//     }  
+//     }
 // }
 
 // fn handle_expression(body: &mut BetterString, info: &IRExpressionInfo) -> String {

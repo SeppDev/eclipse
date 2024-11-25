@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileResult, MessageKind},
+    errors::CompileResult,
     lexer::{Token, Tokens},
     parser::{Expression, ExpressionInfo, Operator, Value},
     path::Path,
@@ -29,11 +29,9 @@ pub fn parse_expression(
         None => {
             if required {
                 let info = tokens.advance();
-                tokens.throw(
-                    MessageKind::Error,
+                tokens.error(
                     info.location,
                     format!("Expected expression, got '{}'", info.token),
-                    "",
                 );
             }
             return Ok(None);
@@ -76,12 +74,12 @@ pub fn parse_expression(
                 let new_expression = match parse_expression(tokens, false)? {
                     Some(expression) => expression,
                     None => {
-                        tokens.expect_tokens(vec![Token::CloseParen], false)?;
+                        tokens.expect_tokens(vec![Token::CloseParen], false);
                         break;
                     }
                 };
                 expressions.push(new_expression);
-                let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
+                let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
                 match result.token {
                     Token::CloseParen => break,
                     Token::Comma => continue,

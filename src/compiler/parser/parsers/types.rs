@@ -14,7 +14,7 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
             let new_type = parse_type(tokens)?;
             tuple.push(new_type);
 
-            let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
+            let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
             match result.token {
                 Token::CloseParen => break,
                 Token::Comma => continue,
@@ -31,7 +31,8 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
             Token::Identifier(String::new()),
         ],
         false,
-    )?;
+    );
+    
     let name = match info.token {
         Token::Ampersand => return Ok(Type::Reference(Box::new(parse_type(tokens)?))),
         Token::Asterisk => return Ok(Type::Pointer(Box::new(parse_type(tokens)?))),
@@ -40,25 +41,23 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
     };
 
     let t = match name.as_str() {
-        "int64" => Type::Base(BaseType::Int64),
-        "uint64" => Type::Base(BaseType::UInt64),
-        "int32" => Type::Base(BaseType::Int32),
-        "uint32" => Type::Base(BaseType::UInt32),
-        "int16" => Type::Base(BaseType::Int16),
-        "uint16" => Type::Base(BaseType::UInt16),
-        "int8" => Type::Base(BaseType::Int8),
-        "uint8" => Type::Base(BaseType::UInt8),
+        "i64" => Type::Base(BaseType::Int64),
+        "u64" => Type::Base(BaseType::UInt64),
+        "i32" => Type::Base(BaseType::Int32),
+        "u32" => Type::Base(BaseType::UInt32),
+        "i16" => Type::Base(BaseType::Int16),
+        "u16" => Type::Base(BaseType::UInt16),
+        "i8" => Type::Base(BaseType::Int8),
+        "u8" => Type::Base(BaseType::UInt8),
         // "f16" => Type::Base(BaseType::Float16),
-        "float32" => Type::Base(BaseType::Float32),
-        "float64" => Type::Base(BaseType::Float64),
+        "f32" => Type::Base(BaseType::Float32),
+        "f64" => Type::Base(BaseType::Float64),
         // "f128" => Type::Base(BaseType::Float128),
         "bool" => Type::Base(BaseType::Boolean),
         str => {
-            tokens.throw(
-                MessageKind::Error,
+            tokens.error(
                 info.location.clone(),
-                format!("Expected type, got {}", str),
-                "",
+                format!("Expected type, got {}", str)
             );
             Type::Unkown
         }

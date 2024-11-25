@@ -31,7 +31,7 @@ pub fn parse_body(tokens: &mut Tokens) -> CompileResult<Vec<NodeInfo>> {
                 Token::Identifier(String::new()),
             ],
             true,
-        )?;
+        );
 
         let node = match info.token {
             Token::StartScope => {

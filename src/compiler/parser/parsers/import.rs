@@ -2,7 +2,7 @@ use super::{start_parse, ParsedFile};
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileCtx, CompileResult, DebugInfo},
+    errors::{CompileCtx, CompileResult},
     lexer::Tokens,
     path::Path,
     FILE_EXTENSION,
@@ -10,8 +10,8 @@ use crate::compiler::{
 use std::path::PathBuf;
 
 pub fn handle_import(
-    compile_messages: &mut CompileCtx,
-    name_counter: &mut NameCounter,
+    debug: &mut CompileCtx,
+    count: &mut NameCounter,
     project_dir: &PathBuf,
     relative_file_path: Path,
     tokens: &mut Tokens,
@@ -49,24 +49,27 @@ pub fn handle_import(
     let path = match found_paths.pop() {
         Some(p) => p,
         None => {
-            return Err(DebugInfo::new(
-                tokens.current().location.clone(),
-                tokens.relative_file_path.clone(),
-                format!("Failed to find import path {}, {}", paths[0], paths[1]),
-                "",
-            ));
+            
+            return Err(())
+            // return Err(DebugInfo::new(
+            //     tokens.current().location.clone(),
+            //     tokens.relative_file_path.clone(),
+            //     format!("Failed to find import path {}, {}", paths[0], paths[1]),
+            //     "",
+            // ));
         }
     };
     if !found_paths.is_empty() {
-        return Err(DebugInfo::new(
-            tokens.current().location.clone(),
-            tokens.relative_file_path.clone(),
-            format!("Cannot import multiple paths {}, {}", paths[0], paths[1]),
-            "",
-        ));
+        // return Err(DebugInfo::new(
+        //     tokens.current().location.clone(),
+        //     tokens.relative_file_path.clone(),
+        //     format!("Cannot import multiple paths {}, {}", paths[0], paths[1]),
+        //     "",
+        // ));
+        return Err(())
     }
 
-    let mut import = start_parse(compile_messages, name_counter, project_dir, path)?;
+    let mut import = start_parse(debug, count, project_dir, path)?;
     import.is_module = is_mod_file;
 
     tokens.pop_start();

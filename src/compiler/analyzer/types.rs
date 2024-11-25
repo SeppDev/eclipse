@@ -11,8 +11,8 @@ use crate::compiler::{
 
 #[derive(Debug)]
 pub struct FileTypes {
-    pub imports: HashMap<String, FileTypes>,
-    pub functions: HashMap<String, Function>,
+    functions: HashMap<String, Function>,
+    imports: HashMap<String, FileTypes>,
     is_module: bool,
     // pub types: HashMap<String, Type>
     // export: bool,
@@ -68,7 +68,7 @@ impl FileTypes {
 
 #[derive(Debug)]
 pub struct Function {
-    pub name: String,
+    pub key: String,
     pub parameters: Vec<Type>,
     pub return_type: Type,
 }
@@ -107,16 +107,15 @@ fn handle_file(
         types.imports.insert(name.clone(), file);
     }
 
-    #[allow(unused)]
     for info in &file.body {
         match &info.node {
             Node::Function {
-                export,
+                export: _,
                 name,
                 key,
                 parameters,
                 return_type,
-                body,
+                body: _,
             } => {
                 let key = if file.relative_file_path == Path::from("src").join("main")
                     && name.eq("main")
@@ -129,7 +128,7 @@ fn handle_file(
                 types.functions.insert(
                     name.clone(),
                     Function {
-                        name: key,
+                        key,
                         parameters: {
                             let mut params = Vec::new();
                             for (_, t) in parameters {

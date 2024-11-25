@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{create_error_message, CompileCtx, Location, Message, MessageKind},
+    errors::{CompileCtx, Location, Message},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
     path::Path,
 };
@@ -25,17 +25,38 @@ impl Tokens {
             tokens: tokens.into_iter().peekable(),
         };
     }
-    pub fn throw<T: ToString, E: ToString>(
+
+    pub fn error<T: ToString>(
         &mut self,
-        kind: MessageKind,
         location: Location,
         message: T,
-        notice: E,
     ) -> &mut Message {
-        let message = create_error_message(kind, location, message, notice);
+        let mut message = Message::error(message.to_string());
+        message.push("", location);
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
+    pub fn warning<T: ToString>(
+        &mut self,
+        location: Location,
+        message: T,
+    ) -> &mut Message {
+        let mut message = Message::warning(message.to_string());
+        message.push("", location);
+        self.messages.push(message);
+        return self.messages.last_mut().unwrap();
+    }
+    pub fn note<T: ToString>(
+        &mut self,
+        location: Location,
+        message: T,
+    ) -> &mut Message {
+        let mut message = Message::note(message.to_string());
+        message.push("", location);
+        self.messages.push(message);
+        return self.messages.last_mut().unwrap();
+    }
+
     pub fn finish(self, debug: &mut CompileCtx) {
         for message in self.messages {
             debug.push(self.relative_file_path.clone(), message);
@@ -83,13 +104,9 @@ impl Tokens {
             Some(info) => {
                 match info.token {
                     Token::EndOfFile => {
-                        self.throw(
-                            MessageKind::Error,
-                            info.location.clone(),
-                            format!("Early {}", info.token),
-                            "",
-                        );
+                        self.error(info.location.clone(), format!("Early {}", info.token));
                     }
+
                     _ => {}
                 }
                 self.current = Some(info.clone());
@@ -97,11 +114,9 @@ impl Tokens {
             }
             None => {
                 let current = self.current.clone().unwrap();
-                self.throw(
-                    MessageKind::Error,
+                self.error(
                     current.location.clone(),
                     format!("No token found {}", current.token),
-                    "",
                 );
                 current
             }

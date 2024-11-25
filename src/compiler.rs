@@ -1,7 +1,7 @@
 use analyzer::{analyze, parse_types};
 use codegen::codegen;
 use counter::NameCounter;
-use errors::{CompileCtx, CompileResult, DebugInfo};
+use errors::{CompileResult, CompileCtx};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
@@ -25,11 +25,6 @@ mod types;
 pub static FILE_EXTENSION: &str = "ecl";
 // pub static POINTER_WIDTH: usize = 8;
 
-fn handle_debug_info(debug: &mut CompileCtx, info: DebugInfo) -> ! {
-    debug.push(info.relative_file_path, info.message);
-    debug.quit();
-}
-
 fn parse_program(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
@@ -47,16 +42,18 @@ fn parse_program(
     });
 }
 
-fn compile(debug: &mut CompileCtx, project_dir: &PathBuf) -> CompileResult<PathBuf> {
-    let mut count = NameCounter::new();
-
-    let program = parse_program(debug, &mut count, &project_dir)?;
+fn compile(
+    debug: &mut CompileCtx,
+    count: &mut NameCounter,
+    project_dir: &PathBuf,
+) -> CompileResult<PathBuf> {
+    let program = parse_program(debug, count, &project_dir)?;
     debug.throw(false);
-    
-    let types = parse_types(debug, &mut count, &program)?;
+
+    let types = parse_types(debug, count, &program)?;
     debug.throw(false);
 
-    let analyzed = analyze(debug, &mut count, types, program)?;
+    let analyzed = analyze(debug, count, types, program)?;
     debug.throw(true);
 
     let source = codegen(analyzed);
@@ -85,8 +82,12 @@ fn compile(debug: &mut CompileCtx, project_dir: &PathBuf) -> CompileResult<PathB
 
 pub fn build(project_dir: PathBuf) -> PathBuf {
     let mut debug = CompileCtx::new();
-    let path = compile(&mut debug, &project_dir)
-        .unwrap_or_else(|info| handle_debug_info(&mut debug, info));
+    let mut count = NameCounter::new();
+
+    let path = match compile(&mut debug, &mut count, &project_dir) {
+        Ok(p) => p,
+        Err(()) => debug.quit()
+    };
 
     return path;
 }

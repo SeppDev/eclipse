@@ -1,34 +1,10 @@
-mod display;
 mod message;
 
 use super::path::Path;
-pub use display::*;
-pub use message::{Detail, Message, MessageKind};
-use std::{collections::HashMap, ops::Range, process::exit};
+pub use message::{Message, MessageKind};
+use std::{borrow::BorrowMut, collections::HashMap, ops::Range, process::exit};
 
-pub type CompileResult<T> = Result<T, DebugInfo>;
-
-pub struct DebugInfo {
-    pub relative_file_path: Path,
-    pub message: Message,
-}
-impl DebugInfo {
-    pub fn new<T: ToString, E: ToString>(
-        location: Location,
-        relative_file_path: Path,
-        message: T,
-        notice: E,
-    ) -> Self {
-        Self {
-            relative_file_path,
-            message: Message {
-                kind: MessageKind::Error,
-                message: message.to_string(),
-                details: vec![Detail::new(notice.to_string(), location)],
-            },
-        }
-    }
-}
+pub type CompileResult<T> = Result<T, ()>;
 
 #[derive(Debug, Clone, Default)]
 pub struct Location {
@@ -58,14 +34,14 @@ impl std::fmt::Display for Location {
 
 type Map = Vec<(Path, Message)>;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct MsgMap {
     notes: Map,
     warnings: Map,
     errors: Map,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct CompileCtx {
     messages: MsgMap,
     lines: HashMap<Path, Vec<String>>,
@@ -74,12 +50,6 @@ impl CompileCtx {
     pub fn new() -> Self {
         Self::default()
     }
-    fn display(&self, messages: &Map) {
-        for (relative_path, msg) in messages {
-            let lines = self.lines.get(relative_path).unwrap();
-            display_message(relative_path, lines, msg);
-        }
-    }
     pub fn set_lines(&mut self, relative_path: Path, lines: Vec<String>) {
         self.lines.insert(relative_path, lines);
     }
@@ -87,6 +57,13 @@ impl CompileCtx {
         self.throw(true);
         println!("No debuginfo found, but quitted");
         exit(1)
+    }
+    pub fn push(&mut self, relative_file_path: Path, message: Message) {
+        match &message.kind {
+            MessageKind::Note => self.messages.errors.push((relative_file_path, message)),
+            MessageKind::Warning => self.messages.warnings.push((relative_file_path, message)),
+            MessageKind::Error => self.messages.errors.push((relative_file_path, message)),
+        }
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.messages.errors.len() > 0;
@@ -102,51 +79,38 @@ impl CompileCtx {
             exit(1)
         }
     }
-    pub fn push(&mut self, relative_file_path: Path, message: Message) {
-        let vec_to_push = match &message.kind {
-            MessageKind::Note => &mut self.messages.notes,
-            MessageKind::Warning => &mut self.messages.warnings,
-            MessageKind::Error => &mut self.messages.errors,
-        };
 
-        vec_to_push.push((relative_file_path, message));
-    }
-    // pub fn compile_result<T: ToString, E: ToString>(location: Location, relative_file_path: Path) {}
-    pub fn create<T: ToString, E: ToString>(
+    pub fn error<T: ToString>(
         &mut self,
-        kind: MessageKind,
-        location: Location,
         relative_file_path: Path,
+        location: Location,
         message: T,
-        notice: E,
     ) -> &mut Message {
-        let vec_to_push = match &kind {
-            MessageKind::Note => &mut self.messages.notes,
-            MessageKind::Warning => &mut self.messages.warnings,
-            MessageKind::Error => &mut self.messages.errors,
-        };
-
-        let message = Message {
-            kind,
-            message: message.to_string(),
-            details: vec![Detail::new(notice.to_string(), location)],
-        };
-        vec_to_push.push((relative_file_path, message));
-        let (_, message) = vec_to_push.last_mut().unwrap();
-        return message;
+        let mut message = Message::error(message.to_string());
+        message.push("", location);
+        self.messages.errors.push((relative_file_path, message));
+        return self.messages.errors.last_mut().unwrap().1.borrow_mut();
     }
-}
-
-pub fn create_error_message<T: ToString, E: ToString>(
-    kind: MessageKind,
-    location: Location,
-    message: T,
-    notice: E,
-) -> Message {
-    let message = Message {
-        kind,
-        message: message.to_string(),
-        details: vec![Detail::new(notice.to_string(), location)],
-    };
-    return message;
+    pub fn warning<T: ToString>(
+        &mut self,
+        relative_file_path: Path,
+        location: Location,
+        message: T,
+    ) -> &mut Message {
+        let mut message = Message::error(message.to_string());
+        message.push("", location);
+        self.messages.errors.push((relative_file_path, message));
+        return self.messages.warnings.last_mut().unwrap().1.borrow_mut();
+    }
+    pub fn note<T: ToString>(
+        &mut self,
+        relative_file_path: Path,
+        location: Location,
+        message: T,
+    ) -> &mut Message {
+        let mut message = Message::error(message.to_string());
+        message.push("", location);
+        self.messages.errors.push((relative_file_path, message));
+        return self.messages.notes.last_mut().unwrap().1.borrow_mut();
+    }
 }
