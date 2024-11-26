@@ -60,7 +60,7 @@ fn compile(
 
     let build_path = project_dir.join("build");
     let build_file_path = build_path.join("build.ll");
-    let final_path = build_path.join("build.exe");
+    let final_path = build_path.join("build.d");
 
     let build_command = format!(
         "clang -O3 {} -o {}",
@@ -73,7 +73,8 @@ fn compile(
 
     let output = execute(build_command);
     if !output.status.success() {
-        println!("{}", String::from_utf8(output.stderr).unwrap());
+        // println!("{}", String::from_utf8(output.stderr).unwrap());
+        println!("{:#?}", output);
         exit(2)
     }
 

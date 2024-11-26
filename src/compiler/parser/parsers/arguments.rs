@@ -18,7 +18,7 @@ pub fn parse_arguments(tokens: &mut Tokens) -> CompileResult<Vec<ExpressionInfo>
         };
         let expression = match parse_expression(tokens, true)? {
             Some(e) => e,
-            None => break
+            None => break,
         };
 
         arguments.push(expression);

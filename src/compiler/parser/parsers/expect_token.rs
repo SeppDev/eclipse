@@ -30,6 +30,30 @@ impl Tokens {
 
         return info;
     }
+    pub fn peek_require_tokens(&mut self, expected: Vec<Token>) -> TokenInfo {
+        let info = self.peek().clone();
+
+        for token in &expected {
+            if info.token.better_eq(&token) {
+                return info;
+            }
+        }
+
+        self.error(
+            info.location.clone(),
+            format!(
+                "Expected one of {}, found '{}'",
+                expected
+                    .into_iter()
+                    .map(|x| format!("'{}'", x))
+                    .collect::<Vec<String>>()
+                    .join(" or "),
+                info.token
+            ),
+        );
+
+        return info;
+    }
     pub fn peek_expect_tokens(
         &mut self,
         expected: Vec<Token>,
