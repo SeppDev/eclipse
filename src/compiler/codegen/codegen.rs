@@ -39,13 +39,13 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 format!("%{to} = call {data_type} @{name}({arguments})")
             }
             Operation::Allocate(location, data_type) => {
-                format!("%{} = alloca {}", location, data_type)
+                format!("%{location} = alloca {data_type}")
             }
             Operation::Store(data_type, value, location) => {
-                format!("store {} {}, ptr %{}", data_type, value, location)
+                format!("store {data_type} {value}, ptr %{location}")
             }
             Operation::Load(to, data_type, from) => {
-                format!("%{} = load {}, {}* %{}", to, data_type, data_type, from)
+                format!("%{to} = load {data_type},  %{from}")
             }
             Operation::Return(data_type, value) => format!("ret {} {}", data_type, value),
         });
