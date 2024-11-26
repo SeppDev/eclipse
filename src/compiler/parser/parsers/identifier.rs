@@ -29,10 +29,8 @@ impl Tokens {
 }
 
 pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResult<NodeInfo> {
-    let info = tokens.expect_tokens(
-        vec![Token::OpenParen, Token::Equals, Token::DoubleColon],
-        false,
-    );
+    let info =
+        tokens.peek_require_tokens(vec![Token::OpenParen, Token::Equals, Token::DoubleColon]);
 
     match info.token {
         Token::DoubleColon => {

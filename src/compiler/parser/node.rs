@@ -53,6 +53,14 @@ pub struct NodeInfo {
     pub location: Location,
     pub node: Node,
 }
+impl NodeInfo {
+    pub fn void() -> Self {
+        Self {
+            location: Location::void(),
+            node: Node::Uknown
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum Expression {

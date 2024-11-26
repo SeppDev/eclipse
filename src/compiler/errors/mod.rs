@@ -21,6 +21,9 @@ impl Location {
             columns: column..column,
         }
     }
+    pub fn void() -> Self {
+        Self::single(0, 0)
+    }
 }
 impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -65,6 +68,9 @@ impl CompileCtx {
             MessageKind::Warning => self.messages.warnings.push((relative_file_path, message)),
             MessageKind::Error => self.messages.errors.push((relative_file_path, message)),
         }
+    }
+    pub fn set_path(&mut self, path: &Path) {
+        self.current_file_path = path.clone()
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.messages.errors.len() > 0;

@@ -1,7 +1,4 @@
-use crate::compiler::{
-    errors::{CompileResult, MessageKind},
-    lexer::TokenInfo,
-};
+use crate::compiler::lexer::TokenInfo;
 
 use super::super::super::lexer::{Token, Tokens};
 

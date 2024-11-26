@@ -8,6 +8,8 @@ pub struct Variable {
     pub data_type: Type,
     pub name: String,
     pub location: Location,
+
+    // pub initialized: bool
     pub mutated: bool,
     pub read: bool,
 }

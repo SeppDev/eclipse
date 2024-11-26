@@ -19,6 +19,7 @@ pub enum Operation {
 
 #[derive(Debug)]
 pub enum IRValue {
+    BoolLiteral(bool),
     IntLiteral(String),
     FloatLiteral(String),
     Variable(String),
@@ -30,14 +31,15 @@ impl std::fmt::Display for IRValue {
             f,
             "{}",
             match self {
+                Self::BoolLiteral(bool) => format!("{}", if bool == &true { 1 } else { 0 }),
                 Self::IntLiteral(int) => format!("{}", int),
                 Self::Variable(key) => format!("%{}", key),
-                _ => todo!("{:#?}", self)
+                Self::Null => String::new(),
+                _ => todo!("{:#?}", self),
             }
         )
     }
 }
-
 
 #[derive(Debug)]
 pub enum IRType {

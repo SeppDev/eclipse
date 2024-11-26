@@ -6,7 +6,9 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{expression::handle_expression, variables::Variables, FileTypes, IRFunction, IRProgram, Operation};
+use super::{
+    expression::handle_expression, variables::Variables, FileTypes, IRFunction, IRProgram, IRType, IRValue, Operation
+};
 
 pub struct ProgramCtx<'a> {
     pub debug: &'a mut CompileCtx,
@@ -48,6 +50,8 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
         handle_file(program, import)?;
     }
 
+    program.debug.set_path(&file.relative_file_path);
+
     for info in file.body {
         match info.node {
             Node::Function {
@@ -56,7 +60,7 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 key,
                 parameters,
                 return_type,
-                body,
+                mut body,
             } => {
                 let mut variables = Variables::new();
                 variables.create_state();
@@ -68,6 +72,19 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                         .unwrap();
                 }
 
+
+                let missing_return = match body.last() {
+                    Some(info) => match info.node {
+                        Node::Return(_) => false,
+                        _ => !return_type.is_void()
+                    },
+                    None => !return_type.is_void()
+                };
+
+                if missing_return {
+                    program.debug.error(info.location, "Missing return");
+                }
+
                 let ir_type = return_type.convert();
                 let mut ctx = FunctionCtx {
                     variables,
@@ -75,8 +92,19 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 };
                 let mut operations = Vec::new();
 
-                handle_body(program, &mut ctx, &mut operations, &file, body)?;
+                handle_body(program, &mut ctx, &mut operations, body)?;
+
                 ctx.variables.pop_state();
+
+                if match operations.last() {
+                    Some(operation) => match operation {
+                        Operation::Return(_, _) => false,
+                        _ => true
+                    },
+                    None => true
+                } {
+                    operations.push(Operation::Return(IRType::Void, IRValue::Null))
+                }
 
                 program.functions.push(IRFunction {
                     name: key,
@@ -142,6 +170,7 @@ fn handle_body(
                 )?;
 
                 operations.push(Operation::Return(data_type.convert(), value));
+                break;
             }
             _ => todo!("{:#?}", info),
         }
@@ -149,4 +178,4 @@ fn handle_body(
 
     function.variables.pop_state();
     return Ok(());
-} 
+}

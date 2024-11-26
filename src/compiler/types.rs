@@ -111,6 +111,16 @@ impl Type {
     //         _ => todo!(),
     //     }
     // }
+    pub fn is_bool(&self) -> bool {
+        use BaseType::*;
+        match &self {
+            Type::Base(base) => match base {
+                Boolean => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
     pub fn is_integer(&self) -> bool {
         use BaseType::*;
         match &self {

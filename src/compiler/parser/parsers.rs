@@ -44,6 +44,8 @@ pub fn start_parse(
     file_path.set_extension(FILE_EXTENSION);
     let source = read_file(&file_path)?;
 
+    debug.set_path(&relative_file_path);
+
     let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;
     let mut imports = BTreeMap::new();
     let mut body = Vec::new();

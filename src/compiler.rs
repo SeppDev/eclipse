@@ -73,8 +73,8 @@ fn compile(
 
     let output = execute(build_command);
     if !output.status.success() {
-        // println!("{}", String::from_utf8(output.stderr).unwrap());
-        println!("{:#?}", output);
+        println!("{}", String::from_utf8(output.stderr).unwrap());
+        // println!("{:#?}", output);
         exit(2)
     }
 
