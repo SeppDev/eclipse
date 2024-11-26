@@ -60,7 +60,7 @@ fn compile(
 
     let build_path = project_dir.join("build");
     let build_file_path = build_path.join("build.ll");
-    let final_path = build_path.join("build.d");
+    let final_path = build_path.join("build.exe");
 
     let build_command = format!(
         "clang -O3 {} -o {}",

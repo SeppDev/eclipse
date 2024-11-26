@@ -3,6 +3,7 @@ mod node;
 mod variables;
 mod program;
 mod types;
+mod expression;
 
 pub use types::*;
 pub use node::*;

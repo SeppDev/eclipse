@@ -45,6 +45,7 @@ struct MsgMap {
 pub struct CompileCtx {
     messages: MsgMap,
     lines: HashMap<Path, Vec<String>>,
+    current_file_path: Path,
 }
 impl CompileCtx {
     pub fn new() -> Self {
@@ -82,35 +83,32 @@ impl CompileCtx {
 
     pub fn error<T: ToString>(
         &mut self,
-        relative_file_path: Path,
         location: Location,
         message: T,
     ) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
-        self.messages.errors.push((relative_file_path, message));
+        self.messages.errors.push((self.current_file_path.clone(), message));
         return self.messages.errors.last_mut().unwrap().1.borrow_mut();
     }
     pub fn warning<T: ToString>(
         &mut self,
-        relative_file_path: Path,
         location: Location,
         message: T,
     ) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
-        self.messages.errors.push((relative_file_path, message));
+        self.messages.errors.push((self.current_file_path.clone(), message));
         return self.messages.warnings.last_mut().unwrap().1.borrow_mut();
     }
     pub fn note<T: ToString>(
         &mut self,
-        relative_file_path: Path,
         location: Location,
         message: T,
     ) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
-        self.messages.errors.push((relative_file_path, message));
+        self.messages.errors.push((self.current_file_path.clone(), message));
         return self.messages.notes.last_mut().unwrap().1.borrow_mut();
     }
 }

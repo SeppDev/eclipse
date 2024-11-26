@@ -1,23 +1,23 @@
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
-    parser::{Expression, ExpressionInfo, Node, NodeInfo, ParsedFile, Value},
+    parser::{Node, NodeInfo, ParsedFile},
     program::ParsedProgram,
     types::Type,
 };
 
-use super::{variables::Variables, FileTypes, IRFunction, IRProgram, IRValue, Operation};
+use super::{expression::handle_expression, variables::Variables, FileTypes, IRFunction, IRProgram, Operation};
 
-struct ProgramCtx<'a> {
-    debug: &'a mut CompileCtx,
-    count: &'a mut NameCounter,
-    functions: &'a mut Vec<IRFunction>,
-    types: &'a FileTypes,
+pub struct ProgramCtx<'a> {
+    pub debug: &'a mut CompileCtx,
+    pub count: &'a mut NameCounter,
+    pub functions: &'a mut Vec<IRFunction>,
+    pub types: &'a FileTypes,
 }
 
-struct FunctionCtx {
-    variables: Variables,
-    return_type: Option<Type>,
+pub struct FunctionCtx {
+    pub variables: Variables,
+    pub return_type: Option<Type>,
 }
 
 pub fn analyze(
@@ -75,7 +75,7 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 };
                 let mut operations = Vec::new();
 
-                handle_body(program, &mut ctx, &mut operations, body)?;
+                handle_body(program, &mut ctx, &mut operations, &file, body)?;
                 ctx.variables.pop_state();
 
                 program.functions.push(IRFunction {
@@ -149,42 +149,4 @@ fn handle_body(
 
     function.variables.pop_state();
     return Ok(());
-}
-
-fn handle_expression(
-    program: &mut ProgramCtx,
-    operations: &mut Vec<Operation>,
-    variables: &mut Variables,
-    return_type: &Option<Type>,
-    expression: Option<ExpressionInfo>,
-) -> CompileResult<(IRValue, Type)> {
-    let info = match expression {
-        Some(info) => info,
-        None => return Ok((IRValue::Null, Type::void())),
-    };
-
-    let expected_type = match return_type {
-        Some(t) => t,
-        None => todo!(),
-    };
-
-    return Ok(match info.expression {
-        Expression::Value(value) => match value {
-            Value::Integer(int) => (IRValue::IntLiteral(int), expected_type.clone()),
-            _ => todo!("{:?}", value),
-        },
-        Expression::GetVariable(path) => {
-            let key = path.first().unwrap();
-            let location = variables.increment();
-            let variable = match variables.get(key, false) {
-                Some(var) => var,
-                None => todo!()
-            };
-
-            operations.push(Operation::Load(location.clone(), variable.data_type.convert(), variable.name.clone()));
-
-            (IRValue::Variable(location), expected_type.clone())
-        }
-        _ => todo!("{:#?}", info),
-    });
-}
+} 
