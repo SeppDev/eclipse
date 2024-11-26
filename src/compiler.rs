@@ -88,12 +88,16 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
     let mut debug = CompileCtx::new();
     let mut count = NameCounter::new();
 
+    let start = std::time::Instant::now();
+
     let path = match compile(&mut debug, &mut count, &project_dir) {
         Ok(p) => p,
         Err(()) => debug.quit(),
     };
 
     debug.finish();
+
+    println!("Compiling took: {} seconds", start.elapsed().as_secs());
 
     return path;
 }

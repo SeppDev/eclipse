@@ -8,8 +8,6 @@ enum Action {
 }
 
 fn main() {
-    let start = std::time::Instant::now();
-
     let mut project_dir = std::env::current_dir().unwrap();
     let mut args = std::env::args();
     args.next();
@@ -39,8 +37,6 @@ fn main() {
         Action::Run => run(executable_path),
         Action::Build => {}
     }
-
-    println!("{:?}", start.elapsed());
 }
 
 fn run(executable_path: PathBuf) {
@@ -77,5 +73,15 @@ fn run(executable_path: PathBuf) {
         }
     }
 
-    println!("{:?}", thread.wait().unwrap());
+    let output = thread.wait().unwrap();
+    if !output.success() {
+        match output.code() {
+            Some(code) => {
+                println!("Program failed with code: {code}");
+            }
+            None => {
+                println!("Program failed: {}", output.to_string())
+            }
+        }
+    }
 }
