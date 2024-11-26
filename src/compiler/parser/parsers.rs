@@ -31,6 +31,7 @@ pub struct ParsedFile {
     pub imports: BTreeMap<String, ParsedFile>,
     pub body: Vec<NodeInfo>,
     pub relative_file_path: Path,
+    pub relative_path: Path,
     pub is_module: bool,
 }
 
@@ -39,12 +40,16 @@ pub fn start_parse(
     count: &mut NameCounter,
     project_dir: &PathBuf,
     relative_file_path: Path,
+    relative_path: Path,
 ) -> CompileResult<ParsedFile> {
+    debug.set_status(format!("Parsing: {}", relative_file_path));
+
     let mut file_path = project_dir.join(relative_file_path.convert());
     file_path.set_extension(FILE_EXTENSION);
     let source = read_file(&file_path)?;
 
     debug.set_path(&relative_file_path);
+
 
     let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;
     let mut imports = BTreeMap::new();
@@ -67,6 +72,7 @@ pub fn start_parse(
                     count,
                     project_dir,
                     relative_file_path.clone(),
+                    &relative_path,
                     &mut tokens,
                 ) {
                     Ok(a) => a,
@@ -98,6 +104,7 @@ pub fn start_parse(
         is_module: file_name == "mod"
             || (relative_file_path == Path::from("src").join("main") && file_name == "main"),
         relative_file_path,
+        relative_path
     };
 
     return Ok(file);

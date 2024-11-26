@@ -1,3 +1,5 @@
+use std::fmt::Arguments;
+
 use crate::compiler::types::{BaseType, Type};
 
 #[derive(Debug)]
@@ -14,6 +16,8 @@ pub enum Operation {
     Allocate(String, IRType),
     Store(IRType, IRValue, String),
     Load(String, IRType, String),
+    Call(String, IRType, IRValue),
+    StoreCall(String, String, IRType, IRValue),
     Return(IRType, IRValue),
 }
 
@@ -23,6 +27,7 @@ pub enum IRValue {
     IntLiteral(String),
     FloatLiteral(String),
     Variable(String),
+    Arguments(Vec<(IRType, IRValue)>),
     Null,
 }
 impl std::fmt::Display for IRValue {
@@ -33,9 +38,14 @@ impl std::fmt::Display for IRValue {
             match self {
                 Self::BoolLiteral(bool) => format!("{}", if bool == &true { 1 } else { 0 }),
                 Self::IntLiteral(int) => format!("{}", int),
+                Self::FloatLiteral(float) => format!("{}", float),
                 Self::Variable(key) => format!("%{}", key),
+                Self::Arguments(arguments) => arguments
+                    .iter()
+                    .map(|(data_type, value)| format!("{data_type} {value}"))
+                    .collect::<Vec<String>>()
+                    .join(", "),
                 Self::Null => String::new(),
-                _ => todo!("{:#?}", self),
             }
         )
     }

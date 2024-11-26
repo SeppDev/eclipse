@@ -17,7 +17,14 @@ pub fn codegen(program: IRProgram) -> String {
 fn handle_function(source: &mut BetterString, function: IRFunction) {
     let data_type = &function.return_type;
     let name = &function.name;
-    source.pushln(format!("define {data_type} @{name}() {{"));
+
+    let parameters = function
+        .parameters
+        .into_iter()
+        .map(|(key, data_type)| format!("{data_type}* %{key}"))
+        .collect::<Vec<String>>()
+        .join(", ");
+    source.pushln(format!("define {data_type} @{name}({parameters}) {{"));
     source.pushln("entry:");
 
     let mut body = BetterString::new();
@@ -25,6 +32,12 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     for operation in function.operations {
         body.pushln(match operation {
             Operation::Label(label) => format!("{}:", label),
+            Operation::Call(name, data_type, arguments) => {
+                format!("call {data_type} @{name}({arguments})")
+            }
+            Operation::StoreCall(to, name, data_type, arguments) => {
+                format!("%{to} = call {data_type} @{name}({arguments})")
+            }
             Operation::Allocate(location, data_type) => {
                 format!("%{} = alloca {}", location, data_type)
             }

@@ -1,14 +1,11 @@
 use analyzer::{analyze, parse_types};
 use codegen::codegen;
 use counter::NameCounter;
-use errors::{CompileResult, CompileCtx};
+use errors::{CompileCtx, CompileResult};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
-use std::{
-    path::PathBuf,
-    process::{exit, Output},
-};
+use std::{path::PathBuf, process::Output};
 
 mod analyzer;
 mod codegen;
@@ -31,7 +28,7 @@ fn parse_program(
     project_dir: &PathBuf,
 ) -> CompileResult<ParsedProgram> {
     let main_path = Path::from("src").join("main");
-    let main = start_parse(debug, count, project_dir, main_path)?;
+    let main = start_parse(debug, count, project_dir, main_path.clone(), main_path)?;
 
     // let main_path = Path::from("src").join("main");
     // let standard = start_parse(debug, count, project_dir, relative_file_path);
@@ -74,8 +71,7 @@ fn compile(
     let output = execute(build_command);
     if !output.status.success() {
         println!("{}", String::from_utf8(output.stderr).unwrap());
-        // println!("{:#?}", output);
-        exit(2)
+        debug.quit();
     }
 
     return Ok(final_path);
@@ -87,8 +83,10 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
 
     let path = match compile(&mut debug, &mut count, &project_dir) {
         Ok(p) => p,
-        Err(()) => debug.quit()
+        Err(()) => debug.quit(),
     };
+
+    debug.finish();
 
     return path;
 }

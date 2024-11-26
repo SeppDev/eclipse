@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::compiler::{errors::Location, types::Type};
+use crate::compiler::{counter::NameCounter, errors::Location, types::Type};
 
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub mutable: bool,
-    pub data_type: Type,
-    pub name: String,
+    pub data_type: Option<Type>,
+    pub key: String,
     pub location: Location,
 
     // pub initialized: bool
@@ -16,7 +16,7 @@ pub struct Variable {
 
 #[derive(Debug)]
 pub struct Variables {
-    count: usize,
+    counter: NameCounter,
     states: Vec<Vec<String>>,
     variables: HashMap<String, Variable>,
 }
@@ -25,30 +25,31 @@ impl Variables {
         Self {
             states: Vec::new(),
             variables: HashMap::new(),
-            count: 0,
+            counter: NameCounter::new(),
         }
     }
     pub fn increment(&mut self) -> String {
-        self.count += 1;
-        return self.count.to_string();
+        // self.count += 1;
+        // return self.count.to_string();
+        self.counter.increment()
     }
     pub fn insert(
         &mut self,
-        key: &String,
+        name: &String,
         mutable: bool,
         data_type: Type,
         location: Location,
     ) -> Result<(), Variable> {
-        let name = self.increment();
+        let key = self.increment();
         let current_state = self.states.last_mut().unwrap();
 
         let result = self.variables.insert(
-            key.clone(),
+            name.clone(),
             Variable {
                 location,
-                name,
+                key,
                 mutable,
-                data_type,
+                data_type: Some(data_type),
                 mutated: false,
                 read: false,
             },
@@ -58,7 +59,7 @@ impl Variables {
             Some(var) => return Err(var),
             None => {}
         }
-        current_state.push(key.clone());
+        current_state.push(name.clone());
 
         return Ok(());
     }
@@ -73,17 +74,25 @@ impl Variables {
         }
         return vars;
     }
-    pub fn get(&mut self, key: &String, mutate: bool) -> Option<&Variable> {
-        return match self.variables.get_mut(key) {
-            Some(t) => {
-                if mutate {
-                    t.mutated = true
-                } else {
-                    t.read = true;
-                }
-                Some(t)
+    pub fn get(&self, key: &String) -> Option<&Variable> {
+        return self.variables.get(key);
+    }
+    pub fn write(&mut self, key: &String) -> bool {
+        match self.variables.get_mut(key) {
+            Some(var) => {
+                var.mutated = true;
             }
-            None => None,
+            None => return false,
         };
+        return true;
+    }
+    pub fn read(&mut self, key: &String) -> bool {
+        match self.variables.get_mut(key) {
+            Some(var) => {
+                var.read = true;
+            }
+            None => return false,
+        };
+        return true;
     }
 }

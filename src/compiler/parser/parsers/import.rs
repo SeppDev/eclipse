@@ -14,6 +14,7 @@ pub fn handle_import(
     count: &mut NameCounter,
     project_dir: &PathBuf,
     relative_file_path: Path,
+    relative_path: &Path,
     tokens: &mut Tokens,
 ) -> CompileResult<(String, ParsedFile)> {
     let from = relative_file_path.clone().pop().unwrap();
@@ -69,7 +70,7 @@ pub fn handle_import(
         return Err(())
     }
 
-    let mut import = start_parse(debug, count, project_dir, path)?;
+    let mut import = start_parse(debug, count, project_dir, path, relative_path.join(&name))?;
     import.is_module = is_mod_file;
 
     tokens.pop_start();

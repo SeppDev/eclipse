@@ -2,12 +2,15 @@ use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
     parser::{Node, NodeInfo, ParsedFile},
+    path::Path,
     program::ParsedProgram,
     types::Type,
 };
 
 use super::{
-    expression::handle_expression, variables::Variables, FileTypes, IRFunction, IRProgram, IRType, IRValue, Operation
+    expression::handle_expression,
+    variables::{self, Variables},
+    FileTypes, IRFunction, IRProgram, IRType, IRValue, Operation,
 };
 
 pub struct ProgramCtx<'a> {
@@ -50,6 +53,10 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
         handle_file(program, import)?;
     }
 
+    program
+        .debug
+        .set_status(format!("Analying: {}", file.relative_file_path));
+
     program.debug.set_path(&file.relative_file_path);
 
     for info in file.body {
@@ -60,25 +67,29 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 key,
                 parameters,
                 return_type,
-                mut body,
+                body,
             } => {
                 let mut variables = Variables::new();
                 variables.create_state();
 
-                let new_params = Vec::new();
-                for (key, data_type) in parameters {
-                    variables
-                        .insert(&key, false, data_type, info.location.clone())
-                        .unwrap();
-                }
+                let mut new_params = Vec::new();
+                for (name, data_type) in parameters {
+                    let irt = data_type.convert();
 
+                    variables
+                        .insert(&name, false, data_type, info.location.clone())
+                        .unwrap();
+                    let variable = variables.get(&name).unwrap();
+
+                    new_params.push((variable.key.clone(), irt));
+                }
 
                 let missing_return = match body.last() {
                     Some(info) => match info.node {
                         Node::Return(_) => false,
-                        _ => !return_type.is_void()
+                        _ => !return_type.is_void(),
                     },
-                    None => !return_type.is_void()
+                    None => !return_type.is_void(),
                 };
 
                 if missing_return {
@@ -92,16 +103,22 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 };
                 let mut operations = Vec::new();
 
-                handle_body(program, &mut ctx, &mut operations, body)?;
+                handle_body(
+                    program,
+                    &mut ctx,
+                    &mut operations,
+                    &file.relative_path,
+                    body,
+                )?;
 
                 ctx.variables.pop_state();
 
                 if match operations.last() {
                     Some(operation) => match operation {
                         Operation::Return(_, _) => false,
-                        _ => true
+                        _ => true,
                     },
-                    None => true
+                    None => true,
                 } {
                     operations.push(Operation::Return(IRType::Void, IRValue::Null))
                 }
@@ -124,11 +141,55 @@ fn handle_body(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     operations: &mut Vec<Operation>,
+    relative_path: &Path,
     nodes: Vec<NodeInfo>,
 ) -> CompileResult<()> {
     function.variables.create_state();
+
     for info in nodes {
         match info.node {
+            Node::Call(path, arguments) => {
+                let found = match program.types.get_function(relative_path, &path)? {
+                    Some(f) => f,
+                    None => todo!(),
+                };
+
+                function.variables.increment();
+                operations.push(Operation::Call(
+                    found.key.clone(),
+                    found.return_type.convert(),
+                    IRValue::Arguments(Vec::new()),
+                ));
+            }
+            Node::SetVariable { name, expression } => {
+                let variable = match function.variables.get(&name) {
+                    Some(var) => var.clone(),
+                    None => todo!(),
+                };
+
+                let (value, data_type) = handle_expression(
+                    program,
+                    operations,
+                    &mut function.variables,
+                    relative_path,
+                    &variable.data_type,
+                    &info.location,
+                    expression,
+                )?;
+
+                if !variable.mutable {
+                    program.debug.error(
+                        info.location.clone(),
+                        format!("Cannot mutate unmutable value '{}'", name),
+                    );
+                }
+
+                operations.push(Operation::Store(
+                    data_type.convert(),
+                    value,
+                    variable.key.clone(),
+                ));
+            }
             Node::DeclareVariable {
                 name,
                 mutable,
@@ -139,23 +200,25 @@ fn handle_body(
                     program,
                     operations,
                     &mut function.variables,
+                    relative_path,
                     &data_type,
+                    &info.location,
                     expression,
                 )?;
                 function
                     .variables
                     .insert(&name, mutable, data_type.clone(), info.location)
                     .unwrap();
-                let variable = function.variables.get(&name, false).unwrap();
+                let variable = function.variables.get(&name).unwrap();
 
                 operations.push(Operation::Allocate(
-                    variable.name.clone(),
+                    variable.key.clone(),
                     data_type.convert(),
                 ));
                 operations.push(Operation::Store(
                     data_type.convert(),
                     value,
-                    variable.name.clone(),
+                    variable.key.clone(),
                 ));
             }
             Node::Return(expression) => {
@@ -165,7 +228,9 @@ fn handle_body(
                     program,
                     operations,
                     &mut function.variables,
+                    relative_path,
                     return_type,
+                    &info.location,
                     expression,
                 )?;
 

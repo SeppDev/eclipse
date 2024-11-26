@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::compiler::{
     counter::NameCounter,
-    errors::{CompileCtx, CompileResult},
+    errors::{CompileCtx, CompileResult, Location},
     parser::{Node, ParsedFile},
     path::Path,
     program::ParsedProgram,
@@ -69,7 +69,7 @@ impl FileTypes {
 #[derive(Debug)]
 pub struct Function {
     pub key: String,
-    pub parameters: Vec<Type>,
+    pub parameters: Vec<Option<Type>>,
     pub return_type: Type,
 }
 
@@ -92,7 +92,7 @@ pub fn parse_types(
 }
 
 fn handle_file(
-    compile_messages: &mut CompileCtx,
+    debug: &mut CompileCtx,
     count: &mut NameCounter,
     file: &ParsedFile,
 ) -> CompileResult<FileTypes> {
@@ -103,8 +103,10 @@ fn handle_file(
     };
 
     for (name, import) in &file.imports {
-        let file = handle_file(compile_messages, count, import)?;
-        types.imports.insert(name.clone(), file);
+        let file = handle_file(debug, count, import)?;
+        if types.imports.insert(name.clone(), file).is_some() {
+            debug.error(Location::void(), format!("'{}' is already imported", name));
+        };
     }
 
     for info in &file.body {
@@ -132,7 +134,7 @@ fn handle_file(
                         parameters: {
                             let mut params = Vec::new();
                             for (_, t) in parameters {
-                                params.push(t.clone());
+                                params.push(Some(t.clone()));
                             }
                             params
                         },
