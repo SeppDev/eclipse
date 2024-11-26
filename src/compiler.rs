@@ -44,6 +44,14 @@ fn compile(
     count: &mut NameCounter,
     project_dir: &PathBuf,
 ) -> CompileResult<PathBuf> {
+    let build_path = project_dir.join("build");
+    let build_file_path = build_path.join("build.ll");
+    let final_path = build_path.join("build.exe");
+
+    let _ = std::fs::remove_file(&build_file_path);
+    let _ = std::fs::remove_file(&final_path);
+
+
     let program = parse_program(debug, count, &project_dir)?;
     debug.throw(false);
 
@@ -53,11 +61,10 @@ fn compile(
     let analyzed = analyze(debug, count, types, program)?;
     debug.throw(true);
 
+    debug.set_status("Building");
+
     let source = codegen(analyzed);
 
-    let build_path = project_dir.join("build");
-    let build_file_path = build_path.join("build.ll");
-    let final_path = build_path.join("build.exe");
 
     let build_command = format!(
         "clang -O3 {} -o {}",

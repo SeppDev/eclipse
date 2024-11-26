@@ -8,9 +8,8 @@ use crate::compiler::{
 };
 
 use super::{
-    expression::handle_expression,
-    variables::{self, Variables},
-    FileTypes, IRFunction, IRProgram, IRType, IRValue, Operation,
+    expression::handle_expression, variables::Variables, FileTypes, IRFunction, IRProgram, IRType,
+    IRValue, Operation,
 };
 
 pub struct ProgramCtx<'a> {
@@ -55,7 +54,7 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
 
     program
         .debug
-        .set_status(format!("Analying: {}", file.relative_file_path));
+        .set_status(format!("Analyzing: {}", file.relative_file_path));
 
     program.debug.set_path(&file.relative_file_path);
 

@@ -52,55 +52,47 @@ struct MsgMap {
     errors: Map,
 }
 
+type Status = Option<String>;
+
 #[derive(Debug)]
 pub struct CompileCtx {
     messages: MsgMap,
     lines: HashMap<Path, Vec<String>>,
     current_file_path: Path,
 
-    sender: Sender<Option<String>>,
+    sender: Sender<Status>,
     done: Receiver<()>,
 }
 impl CompileCtx {
     pub fn new() -> Self {
-        let (sender, receiver): (Sender<Option<String>>, Receiver<Option<String>>) =
+        let (sender, receiver): (Sender<Status>, Receiver<Status>) =
             mpsc::channel();
 
         let (done_sender, done) = mpsc::channel();
+        let tick = sender.clone();
 
         let start = std::time::Instant::now();
 
         std::thread::spawn(move || {
             let mut message = String::new();
             loop {
-                match receiver.recv() {
+                match receiver.recv_timeout(Duration::from_millis(100)) {
                     Ok(m) => match m {
-                        Some(a) => {
-                            if a.len() > 0 {
-                                message = a
-                            }
-                        }
-                        None => break,
+                        Some(m) => message = m,
+                        None => break
                     },
-                    Err(_) => break,
+                    Err(_) => {},
                 };
-                print!("\r({:?}s) - {}\r", start.elapsed().as_secs(), message);
-                std::io::stdout().flush().unwrap();
+                print!("\r\x1b[2K({:?}s) - {}", start.elapsed().as_secs(), message);
+                let _ = std::io::stdout().flush();
             }
 
             // Clearing output
-            print!("\r");
-            std::io::stdout().flush().unwrap();
-            done_sender.send(()).unwrap();
+            print!("\r\x1b[2K");
+            let _ = std::io::stdout().flush();
+            let _ = done_sender.send(());
         });
 
-        let tick = sender.clone();
-        
-        #[allow(unused_must_use)]
-        std::thread::spawn(move || loop {
-            tick.send(Some(String::new()));
-            std::thread::sleep(Duration::from_millis(1));
-        });
 
         Self {
             messages: MsgMap::default(),
@@ -129,26 +121,28 @@ impl CompileCtx {
     pub fn set_path(&mut self, path: &Path) {
         self.current_file_path = path.clone()
     }
+
     pub fn set_status<T: ToString>(&self, message: T) {
-        self.sender.send(Some(message.to_string())).unwrap();
+        let _ = self.sender.send(Some(message.to_string()));
     }
 
-    #[allow(unused_must_use)]
     pub fn finish(&self) {
-        self.sender.send(None);
-        self.done.recv_timeout(Duration::from_secs(1));
+        let _ = self.sender.send(None);
+        let _ = self.done.recv_timeout(Duration::from_secs(1));
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.messages.errors.len() > 0;
         if !has_errors && !finish {
             return;
         }
-        self.finish();
-
+        if has_errors {
+            self.finish();
+        }
+        
         self.display(&self.messages.notes);
         self.display(&self.messages.warnings);
         self.display(&self.messages.errors);
-
+        
         if has_errors {
             exit(1)
         }
