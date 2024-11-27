@@ -92,7 +92,8 @@ pub fn handle_expression(
             operations.push(Operation::Load(
                 location.clone(),
                 data_type.convert(),
-                variable.key.clone(),
+                data_type.convert().pointer(),
+                variable.key.clone()
             ));
 
             (IRValue::Variable(location), expected_type.clone())

@@ -44,8 +44,8 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
             Operation::Store(data_type, value, location) => {
                 format!("store {data_type} {value}, ptr %{location}")
             }
-            Operation::Load(to, data_type, from) => {
-                format!("%{to} = load {data_type}, ptr %{from}")
+            Operation::Load(to, to_type, from_type, from) => {
+                format!("%{to} = load {to_type}, {from_type} %{from}")
             }
             Operation::Return(data_type, value) => format!("ret {} {}", data_type, value),
         });

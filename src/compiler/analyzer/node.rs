@@ -14,8 +14,8 @@ pub struct IRFunction {
 pub enum Operation {
     Label(String),
     Allocate(String, IRType),
-    Store(IRType, IRValue, String),
-    Load(String, IRType, String),
+    Store(IRType, IRValue, IRValue),
+    Load(String, IRType, IRType, IRValue),
     Call(String, IRType, IRValue),
     StoreCall(String, String, IRType, IRValue),
     Return(IRType, IRValue),
@@ -28,6 +28,7 @@ pub enum IRValue {
     FloatLiteral(String),
     Variable(String),
     Arguments(Vec<(IRType, IRValue)>),
+    Pointer(Box<IRValue>),
     Null,
 }
 impl std::fmt::Display for IRValue {
@@ -37,9 +38,10 @@ impl std::fmt::Display for IRValue {
             "{}",
             match self {
                 Self::BoolLiteral(bool) => format!("{}", if bool == &true { 1 } else { 0 }),
-                Self::IntLiteral(int) => format!("{}", int),
-                Self::FloatLiteral(float) => format!("{}", float),
-                Self::Variable(key) => format!("%{}", key),
+                Self::IntLiteral(int) => format!("{int}"),
+                Self::Pointer(value) => format!("{value}*"), 
+                Self::FloatLiteral(float) => format!("{float}"),
+                Self::Variable(key) => format!("%{key}"),
                 Self::Arguments(arguments) => arguments
                     .iter()
                     .map(|(data_type, value)| format!("{data_type} {value}"))
@@ -63,6 +65,13 @@ pub enum IRType {
     Double,
     Void,
 }
+
+impl IRType {
+    pub fn pointer(self) -> IRType {
+        return IRType::Pointer(Box::new(self))
+    }
+}
+
 impl std::fmt::Display for IRType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
@@ -72,16 +81,16 @@ impl std::fmt::Display for IRType {
                 Self::Void => "void".to_string(),
                 Self::Double => "double".to_string(),
                 Self::Float => "float".to_string(),
-                Self::Array(t, size) => format!("[ {} x {} ]", size, t),
-                Self::Integer(bits) | IRType::UInteger(bits) => format!("i{}", bits),
-                Self::Pointer(t) => format!("*{}", t),
-                Self::Struct(name) => format!("%{}", name),
+                Self::Array(t, size) => format!("[ {t} x {size} ]"),
+                Self::Integer(bits) | IRType::UInteger(bits) => format!("i{bits}"),
+                Self::Pointer(t) => format!("{t}*"),
+                Self::Struct(name) => format!("%{name}",),
                 Self::Tuple(types) => format!("{{ {} }}", {
-                    let mut strings = Vec::new();
-                    for t in types {
-                        strings.push(format!("{}", t))
-                    }
-                    strings.join(", ")
+                    types
+                        .iter()
+                        .map(|value| format!("{value}"))
+                        .collect::<Vec<String>>()
+                        .join(", ")
                 }),
             }
         )

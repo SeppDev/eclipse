@@ -73,14 +73,16 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
 
                 let mut new_params = Vec::new();
                 for (name, data_type) in parameters {
-                    let irt = data_type.convert();
+                    let param_key = variables.increment();
 
-                    variables
-                        .insert(&name, false, data_type, info.location.clone())
-                        .unwrap();
-                    let variable = variables.get(&name).unwrap();
+                    
 
-                    new_params.push((variable.key.clone(), irt));
+                    // variables
+                        // .insert(&name, false, data_type, info.location.clone())
+                        // .unwrap();
+                    // let variable = variables.get(&name).unwrap();
+
+                    new_params.push((param_key, data_type.convert())); 
                 }
 
                 let missing_return = match body.last() {
