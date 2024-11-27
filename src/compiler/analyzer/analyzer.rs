@@ -75,14 +75,13 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 for (name, data_type) in parameters {
                     let param_key = variables.increment();
 
-                    
+                    new_params.push((param_key.clone(), data_type.convert()));
 
-                    // variables
-                        // .insert(&name, false, data_type, info.location.clone())
-                        // .unwrap();
-                    // let variable = variables.get(&name).unwrap();
+                    variables
+                        .insert(&name, false, data_type, info.location.clone())
+                        .unwrap();
 
-                    new_params.push((param_key, data_type.convert())); 
+                    variables.set_key(&name, param_key);
                 }
 
                 let missing_return = match body.last() {
@@ -116,12 +115,18 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
 
                 if match operations.last() {
                     Some(operation) => match operation {
-                        Operation::Return(_, _) => false,
+                        Operation::Return {
+                            data_type: _,
+                            value: _,
+                        } => false,
                         _ => true,
                     },
                     None => true,
                 } {
-                    operations.push(Operation::Return(IRType::Void, IRValue::Null))
+                    operations.push(Operation::Return {
+                        data_type: IRType::Void,
+                        value: IRValue::Null,
+                    })
                 }
 
                 program.functions.push(IRFunction {
@@ -156,11 +161,18 @@ fn handle_body(
                 };
 
                 function.variables.increment();
-                operations.push(Operation::Call(
-                    found.key.clone(),
-                    found.return_type.convert(),
-                    IRValue::Arguments(Vec::new()),
-                ));
+                // operations.push(Operation::Call(
+                // found.key.clone(),
+                // found.return_type.convert(),
+                // IRValue::Arguments(Vec::new()),
+                // ));
+
+                operations.push(Operation::Call {
+                    function: found.key.clone(),
+                    return_type: found.return_type.convert(),
+                    arguments: IRValue::Arguments(Vec::new()),
+                });
+                todo!()
             }
             Node::SetVariable { name, expression } => {
                 let variable = match function.variables.get(&name) {
@@ -185,11 +197,11 @@ fn handle_body(
                     );
                 }
 
-                operations.push(Operation::Store(
-                    data_type.convert(),
+                operations.push(Operation::Store {
+                    data_type: data_type.convert(),
                     value,
-                    variable.key.clone(),
-                ));
+                    destination: variable.key.clone(),
+                });
             }
             Node::DeclareVariable {
                 name,
@@ -206,21 +218,24 @@ fn handle_body(
                     &info.location,
                     expression,
                 )?;
+
                 function
                     .variables
                     .insert(&name, mutable, data_type.clone(), info.location)
                     .unwrap();
+
                 let variable = function.variables.get(&name).unwrap();
 
-                operations.push(Operation::Allocate(
-                    variable.key.clone(),
-                    data_type.convert(),
-                ));
-                operations.push(Operation::Store(
-                    data_type.convert(),
+                operations.push(Operation::Allocate {
+                    destination: variable.key.clone(),
+                    data_type: data_type.convert(),
+                });
+
+                operations.push(Operation::Store {
+                    data_type: data_type.convert(),
                     value,
-                    variable.key.clone(),
-                ));
+                    destination: variable.key.clone(),
+                });
             }
             Node::Return(expression) => {
                 let return_type = &function.return_type;
@@ -235,7 +250,10 @@ fn handle_body(
                     expression,
                 )?;
 
-                operations.push(Operation::Return(data_type.convert(), value));
+                operations.push(Operation::Return {
+                    data_type: data_type.convert(),
+                    value,
+                });
                 break;
             }
             _ => todo!("{:#?}", info),

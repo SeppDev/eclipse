@@ -73,6 +73,8 @@ fn run(executable_path: PathBuf) {
         }
     }
 
+    
+
     let output = thread.wait().unwrap();
     if !output.success() {
         match output.code() {

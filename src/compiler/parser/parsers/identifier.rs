@@ -15,15 +15,15 @@ impl Tokens {
         let current = self.current().clone();
         let info = self.advance();
 
-        match info.token {
-            Token::Identifier(string) => return Ok(string),
-            _ => {}
-        };
+        if let Token::Identifier(name) = info.token {
+            return Ok(name);
+        } else {
+            self.error(
+                current.location,
+                format!("Expected identifier, found '{}'", info.token),
+            );
+        }
 
-        self.error(
-            current.location,
-            format!("Expected identifier, found '{}'", info.token),
-        );
         return Ok("x".to_string());
     }
 }

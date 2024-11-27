@@ -1,5 +1,3 @@
-use std::fmt::Arguments;
-
 use crate::compiler::types::{BaseType, Type};
 
 #[derive(Debug)]
@@ -13,12 +11,35 @@ pub struct IRFunction {
 #[derive(Debug)]
 pub enum Operation {
     Label(String),
-    Allocate(String, IRType),
-    Store(IRType, IRValue, IRValue),
-    Load(String, IRType, IRType, IRValue),
-    Call(String, IRType, IRValue),
-    StoreCall(String, String, IRType, IRValue),
-    Return(IRType, IRValue),
+    Allocate {
+        destination: String,
+        data_type: IRType,
+    },
+    Store {
+        data_type: IRType,
+        value: IRValue,
+        destination: String,
+    },
+    Load {
+        destination: String,
+        destination_type: IRType,
+        value: IRValue,
+    },
+    Call {
+        function: String,
+        return_type: IRType,
+        arguments: IRValue,
+    },
+    StoreCall {
+        destination: String,
+        function: String,
+        return_type: IRType,
+        arguments: IRValue,
+    },
+    Return {
+        data_type: IRType,
+        value: IRValue,
+    },
 }
 
 #[derive(Debug)]
@@ -39,7 +60,7 @@ impl std::fmt::Display for IRValue {
             match self {
                 Self::BoolLiteral(bool) => format!("{}", if bool == &true { 1 } else { 0 }),
                 Self::IntLiteral(int) => format!("{int}"),
-                Self::Pointer(value) => format!("{value}*"), 
+                Self::Pointer(value) => format!("{value}*"),
                 Self::FloatLiteral(float) => format!("{float}"),
                 Self::Variable(key) => format!("%{key}"),
                 Self::Arguments(arguments) => arguments
@@ -68,7 +89,7 @@ pub enum IRType {
 
 impl IRType {
     pub fn pointer(self) -> IRType {
-        return IRType::Pointer(Box::new(self))
+        return IRType::Pointer(Box::new(self));
     }
 }
 

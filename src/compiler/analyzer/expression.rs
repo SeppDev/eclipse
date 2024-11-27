@@ -5,7 +5,7 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{variables::Variables, IRValue, Operation, ProgramCtx};
+use super::{variables::Variables, IRType, IRValue, Operation, ProgramCtx};
 
 pub fn handle_expression(
     program: &mut ProgramCtx,
@@ -76,9 +76,16 @@ pub fn handle_expression(
         Expression::GetVariable(path) => {
             let key = path.first().unwrap();
             let location = variables.increment();
-            let variable = match variables.get(key) {
+            let variable = match variables.get(&key) {
                 Some(var) => var,
-                None => todo!(),
+                None => {
+                    program.debug.error(
+                        info.location.clone(),
+                        format!("Could not find variable named '{key}'"),
+                    );
+
+                    return Ok((IRValue::Null, Type::void()));
+                }
             };
             let data_type = variable.data_type.as_ref().unwrap();
 
@@ -89,13 +96,19 @@ pub fn handle_expression(
                 );
             }
 
-            operations.push(Operation::Load(
-                location.clone(),
-                data_type.convert(),
-                data_type.convert().pointer(),
-                variable.key.clone()
-            ));
+            // operations.push(Operation::Load(
+            //     location.clone(),
+            //     data_type.convert(),
+            //     data_type.convert().pointer(),
+            //     variable.key.clone()
+            // ));
 
+            operations.push(Operation::Load {
+                destination: location.clone(),
+                destination_type: data_type.convert(),
+                // from_type: data_type.convert(),
+                value: IRValue::Variable(variable.key.clone()),
+            });
             (IRValue::Variable(location), expected_type.clone())
         }
         Expression::Call(path, mut arguments) => {
@@ -119,7 +132,7 @@ pub fn handle_expression(
             arguments.reverse();
 
             let mut ir_arguments = Vec::new();
-            
+
             // operations.push(Operation::Allocate(to.clone(), expected_type.convert()));
 
             for param_type in &found.parameters {
@@ -137,14 +150,21 @@ pub fn handle_expression(
                 ir_arguments.push((data_type.convert(), value));
             }
 
-            operations.push(Operation::StoreCall(
-                to.clone(),
-                found.key.clone(),
-                found.return_type.convert(),
-                IRValue::Arguments(ir_arguments),
-            ));
+            operations.push(Operation::StoreCall {
+                destination: to.clone(),
+                function: found.key.clone(),
+                return_type: found.return_type.convert(),
+                arguments: IRValue::Arguments(ir_arguments),
+            });
             (IRValue::Variable(to), found.return_type.clone())
         }
+        Expression::Reference(expression) => {
+            let (value, t) = handle_expression(program, operations, variables, relative_path, return_type, location, Some(*expression))?;
+
+            (value, Type::Reference(Box::new(t)))
+        }
+        
+
         _ => todo!("{:#?}", info),
     });
 }
@@ -168,6 +188,10 @@ fn what_type(
                 None => todo!(),
             };
             found.return_type.clone()
+        }
+        Expression::Reference(expression) => {
+            let t = what_type(expression, variables, program, relative_path)?;
+            Type::Reference(Box::new(t))
         }
         _ => todo!(),
     });

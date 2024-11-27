@@ -21,7 +21,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     let parameters = function
         .parameters
         .into_iter()
-        .map(|(key, data_type)| format!("{data_type}* %{key}"))
+        .map(|(key, data_type)| format!("{data_type} %{key}"))
         .collect::<Vec<String>>()
         .join(", ");
     source.pushln(format!("define {data_type} @{name}({parameters}) {{"));
@@ -32,22 +32,22 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     for operation in function.operations {
         body.pushln(match operation {
             Operation::Label(label) => format!("{}:", label),
-            Operation::Call(name, data_type, arguments) => {
-                format!("call {data_type} @{name}({arguments})")
+            Operation::Call {function, return_type, arguments} => {
+                format!("call {return_type} @{function}({arguments})")
             }
-            Operation::StoreCall(to, name, data_type, arguments) => {
-                format!("%{to} = call {data_type} @{name}({arguments})")
+            Operation::StoreCall { destination, function, return_type, arguments } => {
+                format!("%{destination} = call {return_type} @{function}({arguments})")
             }
-            Operation::Allocate(location, data_type) => {
-                format!("%{location} = alloca {data_type}")
+            Operation::Allocate { destination, data_type }=> {
+                format!("%{destination} = alloca {data_type}")
             }
-            Operation::Store(data_type, value, location) => {
-                format!("store {data_type} {value}, ptr %{location}")
+            Operation::Store { data_type, value, destination } => {
+                format!("store {data_type} {value}, ptr %{destination}")
             }
-            Operation::Load(to, to_type, from_type, from) => {
-                format!("%{to} = load {to_type}, {from_type} %{from}")
+            Operation::Load { destination, destination_type, value } => {
+                format!("%{destination} = load {destination_type}, ptr {value}")
             }
-            Operation::Return(data_type, value) => format!("ret {} {}", data_type, value),
+            Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
         });
     }
 
