@@ -94,7 +94,7 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
         Ok(p) => p,
         Err(()) => debug.quit(),
     };
-
+    
     debug.finish();
 
     println!("Compiling took: {} seconds", start.elapsed().as_secs());

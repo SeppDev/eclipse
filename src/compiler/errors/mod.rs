@@ -56,7 +56,9 @@ type Status = Option<String>;
 
 #[derive(Debug)]
 pub struct CompileCtx {
-    messages: MsgMap,
+    debuginfo: MsgMap,
+    messages: Vec<String>,
+
     lines: HashMap<Path, Vec<String>>,
     current_file_path: Path,
 
@@ -65,11 +67,9 @@ pub struct CompileCtx {
 }
 impl CompileCtx {
     pub fn new() -> Self {
-        let (sender, receiver): (Sender<Status>, Receiver<Status>) =
-            mpsc::channel();
+        let (sender, receiver) = mpsc::channel::<Status>();
 
         let (done_sender, done) = mpsc::channel();
-        let tick = sender.clone();
 
         let start = std::time::Instant::now();
 
@@ -95,7 +95,8 @@ impl CompileCtx {
 
 
         Self {
-            messages: MsgMap::default(),
+            debuginfo: MsgMap::default(),
+            messages: Vec::new(),
             lines: HashMap::new(),
             current_file_path: Path::default(),
 
@@ -113,9 +114,9 @@ impl CompileCtx {
     }
     pub fn push(&mut self, relative_file_path: Path, message: Message) {
         match &message.kind {
-            MessageKind::Note => self.messages.errors.push((relative_file_path, message)),
-            MessageKind::Warning => self.messages.warnings.push((relative_file_path, message)),
-            MessageKind::Error => self.messages.errors.push((relative_file_path, message)),
+            MessageKind::Note => self.debuginfo.errors.push((relative_file_path, message)),
+            MessageKind::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
+            MessageKind::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
     }
     pub fn set_path(&mut self, path: &Path) {
@@ -125,13 +126,22 @@ impl CompileCtx {
     pub fn set_status<T: ToString>(&self, message: T) {
         let _ = self.sender.send(Some(message.to_string()));
     }
+    pub fn result_print<T: ToString>(&mut self, message: T) {
+        self.messages.push(message.to_string());
+    }
+
 
     pub fn finish(&self) {
         let _ = self.sender.send(None);
         let _ = self.done.recv_timeout(Duration::from_secs(1));
+
+    
+        for msg in &self.messages {
+            println!("{}", msg);
+        }        
     }
     pub fn throw(&self, finish: bool) {
-        let has_errors = self.messages.errors.len() > 0;
+        let has_errors = self.debuginfo.errors.len() > 0;
         if !has_errors && !finish {
             return;
         }
@@ -139,9 +149,13 @@ impl CompileCtx {
             self.finish();
         }
         
-        self.display(&self.messages.notes);
-        self.display(&self.messages.warnings);
-        self.display(&self.messages.errors);
+        self.display(&self.debuginfo.notes);
+        self.display(&self.debuginfo.warnings);
+        self.display(&self.debuginfo.errors);
+
+        for msg in &self.messages {
+            println!("{}", msg);
+        }
         
         if has_errors {
             exit(1)
@@ -151,25 +165,25 @@ impl CompileCtx {
     pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
-        self.messages
+        self.debuginfo
             .errors
             .push((self.current_file_path.clone(), message));
-        return self.messages.errors.last_mut().unwrap().1.borrow_mut();
+        return self.debuginfo.errors.last_mut().unwrap().1.borrow_mut();
     }
     pub fn warning<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
-        self.messages
+        self.debuginfo
             .errors
             .push((self.current_file_path.clone(), message));
-        return self.messages.warnings.last_mut().unwrap().1.borrow_mut();
+        return self.debuginfo.warnings.last_mut().unwrap().1.borrow_mut();
     }
     pub fn note<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
-        self.messages
+        self.debuginfo
             .errors
             .push((self.current_file_path.clone(), message));
-        return self.messages.notes.last_mut().unwrap().1.borrow_mut();
+        return self.debuginfo.notes.last_mut().unwrap().1.borrow_mut();
     }
 }

@@ -23,7 +23,6 @@ impl Tokens {
                 format!("Expected identifier, found '{}'", info.token),
             );
         }
-
         return Ok("x".to_string());
     }
 }

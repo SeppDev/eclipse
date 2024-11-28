@@ -5,12 +5,12 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{variables::Variables, IRType, IRValue, Operation, ProgramCtx};
+use super::{variables::VariablesMap, IRValue, Operation, ProgramCtx};
 
 pub fn handle_expression(
     program: &mut ProgramCtx,
     operations: &mut Vec<Operation>,
-    variables: &mut Variables,
+    variables: &mut VariablesMap,
     relative_path: &Path,
     return_type: &Option<Type>,
     location: &Location,
@@ -76,7 +76,7 @@ pub fn handle_expression(
         Expression::GetVariable(path) => {
             let key = path.first().unwrap();
             let location = variables.increment();
-            let variable = match variables.get(&key) {
+            let variable = match variables.borrow(&key) {
                 Some(var) => var,
                 None => {
                     program.debug.error(
@@ -171,7 +171,7 @@ pub fn handle_expression(
 
 fn what_type(
     info: &ExpressionInfo,
-    variables: &Variables,
+    variables: &VariablesMap,
     program: &ProgramCtx,
     relative_path: &Path,
 ) -> CompileResult<Type> {
@@ -179,7 +179,7 @@ fn what_type(
         Expression::Value(value) => value.default_type(),
         Expression::GetVariable(path) => {
             let key = path.first().unwrap();
-            let variable = variables.get(key).unwrap();
+            let variable = variables.read(key).unwrap();
             variable.data_type.clone().unwrap()
         }
         Expression::Call(path, _) => {

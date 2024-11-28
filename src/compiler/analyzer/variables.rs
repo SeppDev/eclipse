@@ -2,25 +2,30 @@ use std::collections::HashMap;
 
 use crate::compiler::{counter::NameCounter, errors::Location, types::Type};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
+pub enum ReferenceState {
+    None,
+    Shared,
+    Mutable,
+    Pointer(usize)
+}
+
+#[derive(Debug)]
 pub struct Variable {
     pub mutable: bool,
     pub data_type: Option<Type>,
     pub key: String,
     pub location: Location,
-
-    // pub initialized: bool
-    pub mutated: bool,
-    pub read: bool,
+    pub ref_state: ReferenceState
 }
 
 #[derive(Debug)]
-pub struct Variables {
+pub struct VariablesMap {
     counter: NameCounter,
     states: Vec<Vec<String>>,
     variables: HashMap<String, Variable>,
 }
-impl Variables {
+impl VariablesMap {
     pub fn new() -> Self {
         Self {
             states: Vec::new(),
@@ -39,7 +44,7 @@ impl Variables {
         mutable: bool,
         data_type: Type,
         location: Location,
-    ) -> Result<(), Variable> {
+    ) -> Result<&Variable, Variable> {
         let key = self.increment();
         let current_state = self.states.last_mut().unwrap();
 
@@ -50,8 +55,7 @@ impl Variables {
                 key,
                 mutable,
                 data_type: Some(data_type),
-                mutated: false,
-                read: false,
+                ref_state: ReferenceState::None
             },
         );
 
@@ -59,9 +63,10 @@ impl Variables {
             Some(var) => return Err(var),
             None => {}
         }
+
         current_state.push(name.clone());
 
-        return Ok(());
+        return Ok(self.read(&name).unwrap());
     }
     pub fn create_state(&mut self) {
         self.states.push(Vec::new());
@@ -74,29 +79,36 @@ impl Variables {
         }
         return vars;
     }
-    pub fn get(&self, key: &String) -> Option<&Variable> {
+    pub fn borrow(&mut self, key: &String) -> Option<Variable> {
+        return self.variables.remove(key);
+    }
+    pub fn push(&mut self, name: String, variable: Variable) {
+        self.variables.insert(name, variable).unwrap();
+    }
+    pub fn read(&self, key: &String) -> Option<&Variable> {
         return self.variables.get(key);
     }
+
     pub fn set_key(&mut self, name: &String, key: String) {
         let variable = self.variables.get_mut(name).unwrap();
         variable.key = key
     }
-    pub fn write(&mut self, key: &String) -> bool {
-        match self.variables.get_mut(key) {
-            Some(var) => {
-                var.mutated = true;
-            }
-            None => return false,
-        };
-        return true;
-    }
-    pub fn read(&mut self, key: &String) -> bool {
-        match self.variables.get_mut(key) {
-            Some(var) => {
-                var.read = true;
-            }
-            None => return false,
-        };
-        return true;
-    }
+    // pub fn write(&mut self, key: &String) -> bool {
+    //     match self.variables.get_mut(key) {
+    //         Some(var) => {
+    //             var.mutated = true;
+    //         }
+    //         None => return false,
+    //     };
+    //     return true;
+    // }
+    // pub fn read(&mut self, key: &String) -> bool {
+    //     match self.variables.get_mut(key) {
+    //         Some(var) => {
+    //             var.read = true;
+    //         }
+    //         None => return false,
+    //     };
+    //     return true;
+    // }
 }

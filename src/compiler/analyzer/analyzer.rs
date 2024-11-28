@@ -8,8 +8,8 @@ use crate::compiler::{
 };
 
 use super::{
-    expression::handle_expression, variables::Variables, FileTypes, IRFunction, IRProgram, IRType,
-    IRValue, Operation,
+    expression::handle_expression, variables::VariablesMap, FileTypes, IRFunction, IRProgram,
+    IRType, IRValue, Operation,
 };
 
 pub struct ProgramCtx<'a> {
@@ -20,7 +20,7 @@ pub struct ProgramCtx<'a> {
 }
 
 pub struct FunctionCtx {
-    pub variables: Variables,
+    pub variables: VariablesMap,
     pub return_type: Option<Type>,
 }
 
@@ -68,7 +68,7 @@ fn handle_file(program: &mut ProgramCtx, file: ParsedFile) -> CompileResult<()> 
                 return_type,
                 body,
             } => {
-                let mut variables = Variables::new();
+                let mut variables = VariablesMap::new();
                 variables.create_state();
 
                 let mut new_params = Vec::new();
@@ -175,9 +175,15 @@ fn handle_body(
                 todo!()
             }
             Node::SetVariable { name, expression } => {
-                let variable = match function.variables.get(&name) {
-                    Some(var) => var.clone(),
-                    None => todo!(),
+                let variable = match function.variables.borrow(&name) {
+                    Some(var) => var,
+                    None => {
+                        program.debug.error(
+                            info.location.clone(),
+                            format!("Cannot mutate a variable that does not exist '{}'", name),
+                        );
+                        continue;
+                    }
                 };
 
                 let (value, data_type) = handle_expression(
@@ -185,7 +191,7 @@ fn handle_body(
                     operations,
                     &mut function.variables,
                     relative_path,
-                    &variable.data_type,
+                    &variable.data_type.clone(),
                     &info.location,
                     expression,
                 )?;
@@ -196,12 +202,14 @@ fn handle_body(
                         format!("Cannot mutate unmutable value '{}'", name),
                     );
                 }
-
+                
                 operations.push(Operation::Store {
                     data_type: data_type.convert(),
                     value,
                     destination: variable.key.clone(),
                 });
+                
+                function.variables.push(name, variable);
             }
             Node::DeclareVariable {
                 name,
@@ -224,7 +232,7 @@ fn handle_body(
                     .insert(&name, mutable, data_type.clone(), info.location)
                     .unwrap();
 
-                let variable = function.variables.get(&name).unwrap();
+                let variable = function.variables.read(&name).unwrap();
 
                 operations.push(Operation::Allocate {
                     destination: variable.key.clone(),

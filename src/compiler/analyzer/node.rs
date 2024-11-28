@@ -49,7 +49,6 @@ pub enum IRValue {
     FloatLiteral(String),
     Variable(String),
     Arguments(Vec<(IRType, IRValue)>),
-    Pointer(Box<IRValue>),
     Null,
 }
 impl std::fmt::Display for IRValue {
@@ -60,7 +59,6 @@ impl std::fmt::Display for IRValue {
             match self {
                 Self::BoolLiteral(bool) => format!("{}", if bool == &true { 1 } else { 0 }),
                 Self::IntLiteral(int) => format!("{int}"),
-                Self::Pointer(value) => format!("{value}*"),
                 Self::FloatLiteral(float) => format!("{float}"),
                 Self::Variable(key) => format!("%{key}"),
                 Self::Arguments(arguments) => arguments
@@ -86,7 +84,6 @@ pub enum IRType {
     Double,
     Void,
 }
-
 impl IRType {
     pub fn pointer(self) -> IRType {
         return IRType::Pointer(Box::new(self));
