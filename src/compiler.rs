@@ -51,7 +51,6 @@ fn compile(
     let _ = std::fs::remove_file(&build_file_path);
     let _ = std::fs::remove_file(&final_path);
 
-
     let program = parse_program(debug, count, &project_dir)?;
     debug.throw(false);
 
@@ -65,7 +64,6 @@ fn compile(
 
     let source = codegen(analyzed);
 
-
     let build_command = format!(
         "clang -O3 {} -o {}",
         build_file_path.to_string_lossy(),
@@ -77,7 +75,7 @@ fn compile(
 
     let output = execute(build_command);
     if !output.status.success() {
-        println!("{}", String::from_utf8(output.stderr).unwrap());
+        debug.result_print(format!("{}", String::from_utf8(output.stderr).unwrap()));
         debug.quit();
     }
 
@@ -94,7 +92,7 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
         Ok(p) => p,
         Err(()) => debug.quit(),
     };
-    
+
     debug.finish();
 
     println!("Compiling took: {} seconds", start.elapsed().as_secs());

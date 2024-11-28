@@ -48,6 +48,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 format!("%{destination} = load {destination_type}, ptr {value}")
             }
             Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
+            Operation::Unkown => panic!()
         });
     }
 

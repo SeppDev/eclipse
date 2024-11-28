@@ -1,5 +1,6 @@
 use crate::compiler::types::{BaseType, Type};
 
+
 #[derive(Debug)]
 pub struct IRFunction {
     pub name: String,
@@ -8,8 +9,10 @@ pub struct IRFunction {
     pub operations: Vec<Operation>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum Operation {
+    #[default]
+    Unkown,
     Label(String),
     Allocate {
         destination: String,

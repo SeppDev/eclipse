@@ -68,12 +68,10 @@ pub struct CompileCtx {
 impl CompileCtx {
     pub fn new() -> Self {
         let (sender, receiver) = mpsc::channel::<Status>();
-
         let (done_sender, done) = mpsc::channel();
 
-        let start = std::time::Instant::now();
-
         std::thread::spawn(move || {
+            let start = std::time::Instant::now();
             let mut message = String::new();
             loop {
                 match receiver.recv_timeout(Duration::from_millis(100)) {
@@ -109,7 +107,6 @@ impl CompileCtx {
     }
     pub fn quit(&self) -> ! {
         self.throw(true);
-        println!("No debuginfo found, but quitted");
         exit(1)
     }
     pub fn push(&mut self, relative_file_path: Path, message: Message) {
@@ -130,24 +127,17 @@ impl CompileCtx {
         self.messages.push(message.to_string());
     }
 
-
     pub fn finish(&self) {
         let _ = self.sender.send(None);
-        let _ = self.done.recv_timeout(Duration::from_secs(1));
-
-    
-        for msg in &self.messages {
-            println!("{}", msg);
-        }        
+        let _ = self.done.recv_timeout(Duration::from_secs(5));
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.debuginfo.errors.len() > 0;
         if !has_errors && !finish {
             return;
         }
-        if has_errors {
-            self.finish();
-        }
+
+        self.finish();
         
         self.display(&self.debuginfo.notes);
         self.display(&self.debuginfo.warnings);
