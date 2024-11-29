@@ -3,12 +3,12 @@ use crate::compiler::path::Path;
 use super::{CompileCtx, Location, Map};
 
 #[derive(Debug, PartialEq)]
-pub enum MessageKind {
+pub enum MessageVariant {
     Note,
     Warning,
     Error,
 }
-impl std::fmt::Display for MessageKind {
+impl std::fmt::Display for MessageVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Note => write!(f, "note"),
@@ -20,28 +20,28 @@ impl std::fmt::Display for MessageKind {
 
 #[derive(Debug)]
 pub struct Message {
-    pub kind: MessageKind,
+    pub variant: MessageVariant,
     message: String,
     details: Vec<Detail>,
 }
 impl Message {
     pub fn error(message: String) -> Self {
         Self {
-            kind: MessageKind::Error,
+            variant: MessageVariant::Error,
             message,
             details: Vec::new()
         }
     }
     pub fn warning(message: String) -> Self {
         Self {
-            kind: MessageKind::Warning,
+            variant: MessageVariant::Warning,
             message,
             details: Vec::new()
         }
     }
     pub fn note(message: String) -> Self {
         Self {
-            kind: MessageKind::Note,
+            variant: MessageVariant::Note,
             message,
             details: Vec::new()
         }
@@ -75,7 +75,7 @@ impl CompileCtx {
 }
 
 fn display(relative_path: &Path, message: &Message, lines: &Vec<String>) {
-    println!("{}: {}", message.kind, message.message);
+    println!("{}: {}", message.variant, message.message);
 
     let first = message.details.first().unwrap();
     println!(

@@ -22,7 +22,7 @@ impl FileTypes {
         &self,
         relative_path: &Path,
         static_path: &Path,
-    ) -> CompileResult<Option<&Function>> {
+    ) -> Option<&Function> {
         let mut components = static_path.components();
         let name = components.pop().unwrap();
 
@@ -48,7 +48,7 @@ impl FileTypes {
                 let key = path_components.pop().unwrap();
                 let f = match file.imports.get(&key) {
                     Some(f) => f,
-                    None => return Ok(None),
+                    None => return None,
                 };
                 if f.is_module {
                     file = match f.imports.get(&key) {
@@ -62,7 +62,7 @@ impl FileTypes {
             file
         };
 
-        return Ok(file.functions.get(&name));
+        return file.functions.get(&name);
     }
 }
 

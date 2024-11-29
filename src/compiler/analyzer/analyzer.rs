@@ -7,8 +7,8 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{variables::VariablesMap, FileTypes, IRFunction, IRProgram,
-    IRType, IRValue, Operation,
+use super::{
+    variables::VariablesMap, FileTypes, IRFunction, IRProgram, IRType, IRValue, Operation,
 };
 
 pub struct ProgramCtx<'a> {
@@ -20,7 +20,7 @@ pub struct ProgramCtx<'a> {
 
 pub struct FunctionCtx<'a> {
     pub variables: VariablesMap,
-    pub return_type: Option<Type>,
+    pub return_type: &'a Option<Type>,
     pub operations: Vec<Operation>,
     pub relative_path: &'a Path,
 }
@@ -103,7 +103,7 @@ fn handle_function(
     body: Vec<NodeInfo>,
 ) {
     let mut variables = VariablesMap::new();
-    variables.create_state();
+    variables.push_scope();
 
     let mut new_params = Vec::new();
     for (name, data_type) in parameters {
@@ -112,8 +112,7 @@ fn handle_function(
         new_params.push((param_key.clone(), data_type.convert()));
 
         variables
-            .insert(&name, false, data_type, location.clone())
-            .unwrap();
+            .insert(&name, false, data_type, location.clone());
 
         variables.set_key(&name, param_key);
     }
@@ -133,14 +132,14 @@ fn handle_function(
     let ir_type = return_type.convert();
     let mut function = FunctionCtx {
         variables,
-        return_type: Some(return_type),
+        return_type: &Some(return_type),
         relative_path: &file.relative_path,
         operations: Vec::new(),
     };
 
     handle_body(program, &mut function, body);
 
-    function.variables.pop_state();
+    function.variables.pop_scope();
 
     // if !matches!(
     //     function.operations.last().unwrap_or(&Operation::Unkown),
@@ -169,8 +168,10 @@ use nodes::*;
 mod expressions;
 use expressions::*;
 
+
+
 fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) {
-    function.variables.create_state();
+    function.variables.push_scope();
 
     for info in nodes {
         match info.node {
@@ -179,10 +180,24 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 mutable,
                 data_type,
                 expression,
-            } => variable_declaration(program, function, name,  mutable, data_type, expression),
-            _ => program.debug.result_print(format!("Todo: {:#?}", info.node)),
+            } => handle_variable_declaration(
+                program,
+                function,
+                info.location,
+                name,
+                mutable,
+                data_type,
+                expression,
+            ),
+            Node::Call(path, arguments) => {
+                handle_call(program, function, info.location, path, arguments)
+            }
+            Node::Return(expression) => handle_return(program, function, info.location, expression),
+            _ => program
+                .debug
+                .result_print(format!("Todo: {:#?}", info.node)),
         }
     }
 
-    function.variables.pop_state();
+    function.variables.pop_scope();
 }

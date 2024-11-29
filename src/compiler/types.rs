@@ -97,20 +97,6 @@ impl Type {
     pub fn void() -> Self {
         self::Type::Base(BaseType::Void)
     }
-    // pub fn size(&self) -> usize {
-    //     match self {
-    //         Self::Base(base) => base.size(),
-    //         Self::Array(t, size) => t.size() * size,
-    //         Self::Tuple(types) => {
-    //             let mut size = 0;
-    //             for x in types {
-    //                 size += x.size();
-    //             }
-    //             size
-    //         }
-    //         _ => todo!(),
-    //     }
-    // }
     pub fn is_bool(&self) -> bool {
         use BaseType::*;
         match &self {

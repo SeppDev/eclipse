@@ -1,7 +1,8 @@
 mod message;
 
 use super::path::Path;
-pub use message::{Message, MessageKind};
+pub use message::Message;
+use message::MessageVariant;
 use std::{
     borrow::BorrowMut,
     collections::HashMap,
@@ -11,6 +12,7 @@ use std::{
     sync::mpsc::{self, Receiver, Sender},
     time::Duration,
 };
+
 
 pub type CompileResult<T> = Result<T, ()>;
 
@@ -77,9 +79,9 @@ impl CompileCtx {
                 match receiver.recv_timeout(Duration::from_millis(100)) {
                     Ok(m) => match m {
                         Some(m) => message = m,
-                        None => break
+                        None => break,
                     },
-                    Err(_) => {},
+                    Err(_) => {}
                 };
                 print!("\r\x1b[2K({:?}s) - {}", start.elapsed().as_secs(), message);
                 let _ = std::io::stdout().flush();
@@ -90,7 +92,6 @@ impl CompileCtx {
             let _ = std::io::stdout().flush();
             let _ = done_sender.send(());
         });
-
 
         Self {
             debuginfo: MsgMap::default(),
@@ -110,10 +111,10 @@ impl CompileCtx {
         exit(1)
     }
     pub fn push(&mut self, relative_file_path: Path, message: Message) {
-        match &message.kind {
-            MessageKind::Note => self.debuginfo.errors.push((relative_file_path, message)),
-            MessageKind::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
-            MessageKind::Error => self.debuginfo.errors.push((relative_file_path, message)),
+        match &message.variant {
+            MessageVariant::Note => self.debuginfo.errors.push((relative_file_path, message)),
+            MessageVariant::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
+            MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
     }
     pub fn set_path(&mut self, path: &Path) {
@@ -138,7 +139,7 @@ impl CompileCtx {
         }
 
         self.finish();
-        
+
         self.display(&self.debuginfo.notes);
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
@@ -146,7 +147,7 @@ impl CompileCtx {
         for msg in &self.messages {
             println!("{}", msg);
         }
-        
+
         if has_errors {
             exit(1)
         }

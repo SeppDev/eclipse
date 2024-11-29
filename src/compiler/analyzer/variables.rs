@@ -1,28 +1,30 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::compiler::{counter::NameCounter, errors::Location, types::Type};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum ReferenceState {
+    #[default]
     None,
     Shared,
     Mutable,
-    Pointer(usize)
+    Pointer(usize),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Variable {
     pub mutable: bool,
     pub data_type: Option<Type>,
     pub key: String,
     pub location: Location,
-    pub ref_state: ReferenceState
+    // pub ref_state: ReferenceState
+    pub borrowed: bool,
 }
 
 #[derive(Debug)]
 pub struct VariablesMap {
     counter: NameCounter,
-    states: Vec<Vec<String>>,
+    states: Vec<HashSet<String>>,
     variables: HashMap<String, Variable>,
 }
 impl VariablesMap {
@@ -34,8 +36,6 @@ impl VariablesMap {
         }
     }
     pub fn increment(&mut self) -> String {
-        // self.count += 1;
-        // return self.count.to_string();
         self.counter.increment()
     }
     pub fn insert(
@@ -44,49 +44,50 @@ impl VariablesMap {
         mutable: bool,
         data_type: Type,
         location: Location,
-    ) -> Result<&Variable, Variable> {
+    ) -> &Variable {
         let key = self.increment();
         let current_state = self.states.last_mut().unwrap();
 
-        let result = self.variables.insert(
-            name.clone(),
-            Variable {
-                location,
-                key,
-                mutable,
-                data_type: Some(data_type),
-                ref_state: ReferenceState::None
-            },
-        );
+        let data_type = Some(data_type);
 
-        match result {
-            Some(var) => return Err(var),
-            None => {}
-        }
+        let variable = Variable {
+            key,
+            mutable,
+            data_type,
+            location,
+            borrowed: false
+        };
 
-        current_state.push(name.clone());
+        let _ = self.variables.insert(name.clone(), variable);
 
-        return Ok(self.read(&name).unwrap());
+        current_state.insert(name.clone());
+
+        return self.read(&name).unwrap();
     }
-    pub fn create_state(&mut self) {
-        self.states.push(Vec::new());
+    pub fn push_scope(&mut self) {
+        self.states.push(HashSet::new());
     }
-    pub fn pop_state(&mut self) -> Vec<(String, Variable)> {
+    pub fn pop_scope(&mut self) {
         let state = self.states.pop().unwrap();
-        let mut vars = Vec::new();
         for key in state {
-            vars.push((key.clone(), self.variables.remove(&key).unwrap()));
+            self.variables.remove(&key);
         }
-        return vars;
     }
-    pub fn borrow(&mut self, key: &String) -> Option<Variable> {
-        return self.variables.remove(key);
+    pub fn is_borrowed(&self, name: &String) -> Option<bool> {
+        match self.variables.get(name) {
+            Some(var) => return Some(var.borrowed),
+            None => return None,
+        };
     }
-    pub fn push(&mut self, name: String, variable: Variable) {
-        self.variables.insert(name, variable).unwrap();
+    pub fn borrow(&mut self, name: &String) -> Option<&Variable> {
+        match self.variables.get_mut(name) {
+            Some(var) => var.borrowed = true,
+            None => return None,
+        };
+        return self.variables.get(name);
     }
-    pub fn read(&self, key: &String) -> Option<&Variable> {
-        return self.variables.get(key);
+    pub fn read(&self, name: &String) -> Option<&Variable> {
+        return self.variables.get(name);
     }
 
     pub fn set_key(&mut self, name: &String, key: String) {
@@ -112,3 +113,7 @@ impl VariablesMap {
     //     return true;
     // }
 }
+
+// pub fn create_missing_message<'a>(debug: &'a mut CompileCtx, location: Location, name: &String) -> &'a mut Message {
+//     return debug.error(location, format!("Could not find variabled named: '{name}'"))
+// }
