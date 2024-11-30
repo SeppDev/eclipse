@@ -1,10 +1,7 @@
 use core::panic;
 use std::ops::Range;
 
-use crate::compiler::{
-    errors::{CompileResult, Location},
-    path::Path,
-};
+use crate::compiler::errors::{CompileResult, Location};
 
 #[derive(Debug, Clone)]
 pub struct Char {
@@ -27,11 +24,10 @@ impl std::fmt::Display for Char {
 #[derive(Debug)]
 pub struct Reader {
     pub lines: Vec<String>,
-    pub relative_file_path: Path,
     chars: Vec<Char>,
 }
-impl Reader {
-    pub fn new(source: String, relative_file_path: Path) -> Self {
+impl Reader { 
+    pub fn new(source: String) -> Self {
         let mut output = Vec::with_capacity(source.len());
         let mut input: Vec<char> = source.chars().collect();
         input.reverse();
@@ -76,7 +72,6 @@ impl Reader {
         output.reverse();
         Self {
             lines,
-            relative_file_path,
             chars: output,
         }
     }
@@ -96,7 +91,7 @@ impl Reader {
             '"' | '\'' => {
                 let (string, last) = match self.parse_string() {
                     Some(a) => a,
-                    None => return Err(())
+                    None => return Err(()),
                 };
                 return Ok(Some(TokenKind::String(
                     Location::new(start.line..last.line, start.columns.start..last.columns.end),

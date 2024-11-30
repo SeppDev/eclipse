@@ -3,7 +3,7 @@ use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
     parser::{Node, NodeInfo},
-    types::{BaseType, Type},
+    types::Type,
 };
 
 use super::{body::parse_body, types::parse_type};
@@ -43,7 +43,7 @@ pub fn parse_function(
     {
         parse_type(tokens)?
     } else {
-        Type::Base(BaseType::Void)
+        Type::void()
     };
 
     tokens.expect_tokens(vec![Token::StartScope], false);

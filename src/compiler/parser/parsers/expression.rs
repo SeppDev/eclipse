@@ -2,7 +2,7 @@ use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
     parser::{Expression, ExpressionInfo, Operator, Value},
-    path::Path,
+    path::Path, types::ReferenceManager,
 };
 
 use super::{arguments::parse_arguments, path::parse_path};
@@ -45,16 +45,20 @@ pub fn parse_expression(
         Token::String(string) => Expression::Value(Value::StaticString(string)),
         Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
         Token::Ampersand => {
-            let new_expression = parse_expression(tokens, true)?.unwrap();
-            return Ok(Some(tokens.create_expression(Expression::Reference(
-                Box::new(new_expression),
-            ))));
+            let mut new_expression = parse_expression(tokens, true)?.unwrap();
+            let info = tokens.pop_start();
+            new_expression.add_reference().unwrap();
+            new_expression.location.columns.start = info.location.columns.start;
+            
+            return Ok(Some(new_expression))
         }
         Token::Asterisk => {
-            let new_expression = parse_expression(tokens, true)?.unwrap();
-            return Ok(Some(
-                tokens.create_expression(Expression::Pointer(Box::new(new_expression))),
-            ));
+            let mut new_expression = parse_expression(tokens, true)?.unwrap();
+            let info = tokens.pop_start();
+            new_expression.add_pointer().unwrap();
+            new_expression.location.columns.start = info.location.columns.start;
+            
+            return Ok(Some(new_expression))
         }
         Token::Minus => {
             let new_expression = parse_expression(tokens, true)?.unwrap();

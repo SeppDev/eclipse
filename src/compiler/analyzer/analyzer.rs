@@ -1,3 +1,5 @@
+use std::os::linux::raw::stat;
+
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult, Location},
@@ -13,9 +15,17 @@ use super::{
 
 pub struct ProgramCtx<'a> {
     pub debug: &'a mut CompileCtx,
-    pub count: &'a mut NameCounter,
     pub functions: &'a mut Vec<IRFunction>,
     pub types: &'a FileTypes,
+    count: &'a mut NameCounter,
+    static_strings: &'a mut Vec<(String, String)>,
+}
+impl<'a> ProgramCtx<'a> {
+    pub fn push_string(&mut self, string: String) -> String {
+        let key = self.count.increment();
+        self.static_strings.push((key.clone(), string));
+        return key;
+    }
 }
 
 pub struct FunctionCtx<'a> {
@@ -35,17 +45,22 @@ pub fn analyze(
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
+    let mut static_strings = Vec::new();
+
     let mut ctx = ProgramCtx {
         debug,
         count,
         functions: &mut functions,
         types: &types,
+        static_strings: &mut static_strings,
     };
 
     handle_file(&mut ctx, &mut program.main);
-    // handle_file(debug, &mut functions, &types, program.main)?;
 
-    return Ok(IRProgram { functions });
+    return Ok(IRProgram {
+        functions,
+        static_strings,
+    });
 }
 
 fn handle_file(program: &mut ProgramCtx, file: &mut ParsedFile) {
@@ -111,23 +126,22 @@ fn handle_function(
 
         new_params.push((param_key.clone(), data_type.convert()));
 
-        variables
-            .insert(&name, false, data_type, location.clone());
+        variables.insert(&name, false, data_type, location.clone());
 
         variables.set_key(&name, param_key);
     }
 
-    let missing_return = match body.last() {
-        Some(info) => match info.node {
-            Node::Return(_) => false,
-            _ => !return_type.is_void(),
-        },
-        None => !return_type.is_void(),
-    };
+    // let missing_return = match body.last() {
+    //     Some(info) => match info.node {
+    //         Node::Return(_) => false,
+    //         _ => !return_type.is_void(),
+    //     },
+    //     None => !return_type.is_void(),
+    // };
 
-    if missing_return {
-        program.debug.error(location, "Missing return");
-    }
+    // if missing_return {
+    //     program.debug.error(location, "Missing return");
+    // }
 
     let ir_type = return_type.convert();
     let mut function = FunctionCtx {
@@ -141,19 +155,18 @@ fn handle_function(
 
     function.variables.pop_scope();
 
-    // if !matches!(
-    //     function.operations.last().unwrap_or(&Operation::Unkown),
-    //     Operation::Return {
-    //         data_type: _,
-    //         value: _
-    //     }
-    // ) {
-    //     program.debug.result_print("No return found, added one!");
-    //     function.operations.push(Operation::Return {
-    //         data_type: IRType::Void,
-    //         value: IRValue::Null,
-    //     })
-    // }
+    if !matches!(
+        function.operations.last().unwrap_or(&Operation::Unkown),
+        Operation::Return {
+            data_type: _,
+            value: _
+        }
+    ) {
+        function.operations.push(Operation::Return {
+            data_type: IRType::Void,
+            value: IRValue::Null,
+        })
+    }
 
     program.functions.push(IRFunction {
         name: key,
@@ -167,8 +180,6 @@ mod nodes;
 use nodes::*;
 mod expressions;
 use expressions::*;
-
-
 
 fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) {
     function.variables.push_scope();

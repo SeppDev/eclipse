@@ -49,7 +49,7 @@ type Map = Vec<(Path, Message)>;
 
 #[derive(Debug, Default)]
 struct MsgMap {
-    notes: Map,
+    // notes: Map,
     warnings: Map,
     errors: Map,
 }
@@ -140,7 +140,7 @@ impl CompileCtx {
 
         self.finish();
 
-        self.display(&self.debuginfo.notes);
+        // self.display(&self.debuginfo.notes);
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
 
@@ -168,13 +168,5 @@ impl CompileCtx {
             .errors
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.warnings.last_mut().unwrap().1.borrow_mut();
-    }
-    pub fn note<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::error(message.to_string());
-        message.push("", location);
-        self.debuginfo
-            .errors
-            .push((self.current_file_path.clone(), message));
-        return self.debuginfo.notes.last_mut().unwrap().1.borrow_mut();
     }
 }

@@ -6,7 +6,7 @@ use crate::compiler::{
     parser::{Node, ParsedFile},
     path::Path,
     program::ParsedProgram,
-    types::Type,
+    types::{BaseType, Type},
 };
 
 #[derive(Debug)]
@@ -18,11 +18,7 @@ pub struct FileTypes {
     // export: bool,
 }
 impl FileTypes {
-    pub fn get_function(
-        &self,
-        relative_path: &Path,
-        static_path: &Path,
-    ) -> Option<&Function> {
+    pub fn get_function(&self, relative_path: &Path, static_path: &Path) -> Option<&Function> {
         let mut components = static_path.components();
         let name = components.pop().unwrap();
 
@@ -78,7 +74,7 @@ pub fn parse_types(
     count: &mut NameCounter,
     program: &ParsedProgram,
 ) -> CompileResult<FileTypes> {
-    let main = handle_file(debug, count, &program.main)?;
+    let mut main = handle_file(debug, count, &program.main)?;
 
     let mut src = FileTypes {
         imports: HashMap::new(),
@@ -86,6 +82,18 @@ pub fn parse_types(
         is_module: true,
         // export: true
     };
+
+    
+    main.functions.insert(
+        "print".to_string(),
+        Function {
+            key: "print".to_string(),
+            parameters: vec![(Some(Type::reference(BaseType::Int32)))],
+            return_type: Type::void(),
+        },
+    );
+
+
     src.imports.insert(String::from("main"), main);
 
     return Ok(src);

@@ -14,7 +14,7 @@ pub fn tokenize(
     relative_file_path: Path,
     source: String,
 ) -> CompileResult<Tokens> {
-    let mut reader = Reader::new(source, relative_file_path.clone());
+    let mut reader = Reader::new(source);
     let mut tokens: Vec<TokenInfo> = Vec::new();
 
     loop {

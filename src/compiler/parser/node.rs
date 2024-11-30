@@ -1,9 +1,10 @@
 use crate::compiler::{
-    errors::Location,
+    errors::{CompileResult, Location},
     path::Path,
-    types::{BaseType, Type},
+    types::{BaseType, ReferenceManager, ReferenceState, Type},
 };
 
+#[allow(unused)]
 #[derive(Debug, Default)]
 pub enum Node {
     #[default]
@@ -71,15 +72,32 @@ pub enum Expression {
     Tuple(Vec<ExpressionInfo>),
     Minus(Box<ExpressionInfo>),
     Not(Box<ExpressionInfo>),
-    Pointer(Box<ExpressionInfo>),
-    Reference(Box<ExpressionInfo>), // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
+    // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
 }
 
 #[derive(Debug)]
 pub struct ExpressionInfo {
     pub location: Location,
+    pub ref_state: ReferenceState,
     pub expression: Expression,
 }
+impl ReferenceManager for ExpressionInfo {
+    fn add_pointer(&mut self) -> CompileResult<()> {
+        match self.ref_state {
+            ReferenceState::None => self.ref_state = ReferenceState::Pointer(1),
+            ReferenceState::Pointer(p) => self.ref_state = ReferenceState::Pointer(p + 1),
+            _ => return Err(())
+        }
+        return Ok(())
+    }
+    fn add_reference(&mut self) -> CompileResult<()> {
+        match self.ref_state {
+            ReferenceState::None | ReferenceState::Shared => self.ref_state = ReferenceState::Shared,
+            _ => return Err(())
+        }
+        return Ok(())
+    }
+} 
 
 #[derive(Debug)]
 pub enum Operator {
@@ -121,11 +139,13 @@ pub enum Value {
 }
 impl Value {
     pub fn default_type(&self) -> Type {
-        return Type::Base(match self {
-            Self::Boolean(_) => BaseType::Boolean,
-            Self::Float(_) => BaseType::Float64,
-            Self::Integer(_) => BaseType::Int32,
-            Self::StaticString(_) => BaseType::StaticString,
-        });
+        let mut a = Type::default();
+        match &self {
+            Self::Boolean(_) => a.base = BaseType::Boolean,
+            Self::Float(_) => a.base = BaseType::Float64,
+            Self::Integer(_) => a.base = BaseType::Int32,
+            Self::StaticString(_) => todo!()
+        }
+        return a;
     }
 }

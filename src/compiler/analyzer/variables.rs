@@ -2,22 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use crate::compiler::{counter::NameCounter, errors::Location, types::Type};
 
-#[derive(Debug, Default)]
-pub enum ReferenceState {
-    #[default]
-    None,
-    Shared,
-    Mutable,
-    Pointer(usize),
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Variable {
     pub mutable: bool,
-    pub data_type: Option<Type>,
+    pub data_type: Type,
     pub key: String,
     pub location: Location,
-    // pub ref_state: ReferenceState
     pub borrowed: bool,
 }
 
@@ -47,9 +37,7 @@ impl VariablesMap {
     ) -> &Variable {
         let key = self.increment();
         let current_state = self.states.last_mut().unwrap();
-
-        let data_type = Some(data_type);
-
+        
         let variable = Variable {
             key,
             mutable,

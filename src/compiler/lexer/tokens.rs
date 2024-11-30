@@ -1,7 +1,7 @@
 use crate::compiler::{
     errors::{CompileCtx, Location, Message},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
-    path::Path,
+    path::Path, types::ReferenceState,
 };
 
 use super::{Token, TokenInfo};
@@ -46,16 +46,6 @@ impl Tokens {
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
-    pub fn note<T: ToString>(
-        &mut self,
-        location: Location,
-        message: T,
-    ) -> &mut Message {
-        let mut message = Message::note(message.to_string());
-        message.push("", location);
-        self.messages.push(message);
-        return self.messages.last_mut().unwrap();
-    }
 
     pub fn finish(self, debug: &mut CompileCtx) {
         for message in self.messages {
@@ -91,6 +81,7 @@ impl Tokens {
 
         ExpressionInfo {
             expression,
+            ref_state: ReferenceState::None,
             location,
         }
     }

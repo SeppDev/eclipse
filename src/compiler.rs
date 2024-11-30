@@ -57,6 +57,7 @@ fn compile(
     let types = parse_types(debug, count, &program)?;
     debug.throw(false);
 
+
     let analyzed = analyze(debug, count, types, program)?;
     debug.throw(true);
 

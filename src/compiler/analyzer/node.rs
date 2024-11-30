@@ -1,5 +1,4 @@
-use crate::compiler::types::{BaseType, Type};
-
+use crate::compiler::types::{BaseType, ReferenceState, Type};
 
 #[derive(Debug)]
 pub struct IRFunction {
@@ -64,6 +63,7 @@ impl std::fmt::Display for IRValue {
                 Self::IntLiteral(int) => format!("{int}"),
                 Self::FloatLiteral(float) => format!("{float}"),
                 Self::Variable(key) => format!("%{key}"),
+                // Self::StringLiteral(str) => format!("\"{str}\\00\""),
                 Self::Arguments(arguments) => arguments
                     .iter()
                     .map(|(data_type, value)| format!("{data_type} {value}"))
@@ -81,14 +81,14 @@ pub enum IRType {
     Pointer(Box<IRType>),
     Integer(usize),
     UInteger(usize),
-    Array(Box<IRType>, usize),
+    Array(usize, Box<IRType>),
     Struct(String),
     Float,
     Double,
     Void,
 }
 impl IRType {
-    pub fn pointer(self) -> IRType {
+    fn pointer(self) -> IRType {
         return IRType::Pointer(Box::new(self));
     }
 }
@@ -102,7 +102,7 @@ impl std::fmt::Display for IRType {
                 Self::Void => "void".to_string(),
                 Self::Double => "double".to_string(),
                 Self::Float => "float".to_string(),
-                Self::Array(t, size) => format!("[ {t} x {size} ]"),
+                Self::Array(size, t) => format!("[ {size} x {t} ]"),
                 Self::Integer(bits) | IRType::UInteger(bits) => format!("i{bits}"),
                 Self::Pointer(t) => format!("{t}*"),
                 Self::Struct(name) => format!("%{name}",),
@@ -119,38 +119,50 @@ impl std::fmt::Display for IRType {
 }
 impl Type {
     pub fn convert(&self) -> IRType {
-        match self {
-            Type::Base(base) => match base {
-                BaseType::Boolean => IRType::Integer(1),
-                BaseType::Float32 => IRType::Float,
-                BaseType::Float64 => IRType::Double,
-                BaseType::Void => IRType::Void,
-                BaseType::Never => IRType::Void,
-                BaseType::Int8 => IRType::Integer(8),
-                BaseType::Int16 => IRType::Integer(16),
-                BaseType::Int32 => IRType::Integer(32),
-                BaseType::Int64 => IRType::Integer(64),
+        let mut ir = match &self.base {
+            BaseType::Void => IRType::Void,
+            BaseType::Never => IRType::Void,
 
-                BaseType::UInt8 => IRType::UInteger(8),
-                BaseType::UInt16 => IRType::UInteger(16),
-                BaseType::UInt32 => IRType::UInteger(32),
-                BaseType::UInt64 => IRType::UInteger(64),
-                BaseType::StaticString => todo!(),
-            },
-            Type::Struct(name) => IRType::Struct(name.clone()),
-            Type::Pointer(dt) | Type::Reference(dt) => IRType::Pointer(Box::new(dt.convert())),
-            Type::Array(dt, size) => IRType::Array(Box::new(dt.convert()), size.clone()),
-            Type::Tuple(dts) => {
+            BaseType::Float32 => IRType::Float,
+            BaseType::Float64 => IRType::Double,
+
+            BaseType::Boolean => IRType::Integer(1),
+            BaseType::Int8 => IRType::Integer(8),
+            BaseType::Int16 => IRType::Integer(16),
+            BaseType::Int32 => IRType::Integer(32),
+            BaseType::Int64 => IRType::Integer(64),
+            BaseType::UInt8 => IRType::UInteger(8),
+            BaseType::UInt16 => IRType::UInteger(16),
+            BaseType::UInt32 => IRType::UInteger(32),
+            BaseType::UInt64 => IRType::UInteger(64),
+
+            BaseType::StaticString(_size) => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
+
+            BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
+            BaseType::Tuple(dts) => {
                 if dts.len() == 0 {
                     return IRType::Void;
+                } else if dts.len() == 1 {
+                    return dts.clone().pop().unwrap().convert();
                 }
+
                 return IRType::Tuple(
                     dts.into_iter()
                         .map(|t| t.convert())
                         .collect::<Vec<IRType>>(),
                 );
             }
-            Type::Unkown => panic!(),
+        };
+        let count = match self.ref_state {
+            ReferenceState::Pointer(p) => p,
+            ReferenceState::Mutable | ReferenceState::Shared => 1,
+            _ => 0
+        };
+        
+        for _ in 0..count {
+            ir = ir.pointer()
         }
+
+        return ir;
     }
 }

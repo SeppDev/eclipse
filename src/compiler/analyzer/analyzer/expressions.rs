@@ -1,33 +1,75 @@
 use crate::compiler::{
-    analyzer::IRValue,
+    analyzer::{IRValue, Operation},
     parser::{Expression, ExpressionInfo, Value},
-    types::Type,
+    types::{BaseType, Type},
 };
 
 use super::{FunctionCtx, ProgramCtx};
 
 fn void() -> (IRValue, Type) {
-    return (IRValue::Null, Type::void());
+    return (IRValue::Null, Type::default());
 }
 
-fn parse_type(
-    _program: &mut ProgramCtx,
+impl BaseType {
+    fn is_integer(&self) -> bool {
+        matches!(
+            &self,
+            Self::Int8
+                | Self::Int16
+                | Self::Int32
+                | Self::Int64
+                | Self::UInt8
+                | Self::UInt16
+                | Self::UInt32
+                | Self::UInt64
+        )
+    }
+    fn is_bool(&self) -> bool {
+        matches!(&self, Self::Boolean)
+    }
+}
+
+
+fn what_type(
+    program: &mut ProgramCtx,
     function: &mut FunctionCtx,
+    expected_type: Option<&Type>,
     expression: &ExpressionInfo,
 ) -> Type {
-    return match &expression.expression {
-        Expression::Value(value) => value.default_type(),
+    let mut data_type: Type = match &expression.expression {
+        Expression::Value(value) => match expected_type {
+            Some(expected) => {
+                if match value {
+                    Value::Integer(_) => expected.base.is_integer(),
+                    Value::Boolean(_) => expected.base.is_bool(),
+                    _ => todo!(),
+                } {
+                    expected.clone()
+                } else {
+                    value.default_type()
+                }
+            }
+
+            None => value.default_type(),
+        },
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
-            let variable = match function.variables.read(&name) {
+            let variable = match function.variables.read(name) {
                 Some(var) => var,
-                None => todo!(),
+                None => {
+                    program.debug.error(
+                        expression.location.clone(),
+                        format!("Could not find variable named: '{name}'"),
+                    );
+                    return Type::void();
+                }
             };
-
-            variable.data_type.clone().unwrap()
+            variable.data_type.clone()
         }
         _ => todo!(),
     };
+    data_type.ref_state = expression.ref_state.clone();
+    return data_type;
 }
 
 pub fn handle_expression(
@@ -41,23 +83,33 @@ pub fn handle_expression(
         None => return void(),
     };
 
-    let infered_type = match expected_type {
-        Some(t) => t.clone(),
-        None => parse_type(program, function, &expression),
+    let infered_type: Type = match expected_type {
+        Some(t) => {
+            let specified = t.clone();
+            let expected = what_type(program, function, Some(&specified), &expression);
+
+            if specified != expected {
+                program.debug.error(
+                    expression.location.clone(),
+                    format!("Wrong types, expected: '{specified}' but got: '{expected}'"),
+                );
+                return void();
+            }
+
+            specified
+        }
+        None => what_type(program, function, None, &expression),
     };
 
-    match expression.expression {
+    let value = match expression.expression {
+        Expression::Value(value) => match value {
+            Value::Integer(int) => IRValue::IntLiteral(int),
+            _ => todo!(),
+        },
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
-
-            match function.variables.is_borrowed(name) {
-                Some(bool) => if bool {
-                    program.debug.error(
-                        expression.location,
-                        format!("Cannot use after borrow: '{name}'"),
-                    );
-                    return void();
-                },
+            let variable = match function.variables.read(name) {
+                Some(var) => var,
                 None => {
                     program.debug.error(
                         expression.location,
@@ -65,23 +117,18 @@ pub fn handle_expression(
                     );
                     return void();
                 }
-            }
+            };
 
-            let variable = function.variables.borrow(&name).unwrap();
-
-
-            (
-                IRValue::Variable(variable.key.clone()),
-                variable.data_type.clone().unwrap(),
-            )
+            
+            IRValue::Variable(variable.key.clone())
         }
-        Expression::Value(value) => (
-            match value {
-                Value::Integer(int) => IRValue::IntLiteral(int),
-                _ => todo!(),
-            },
-            infered_type,
-        ),
-        _ => todo!("{:#?}", expression.expression),
-    }
+        _ => {
+            program
+                .debug
+                .result_print(format!("{:#?}", expression.expression));
+            return void();
+        }
+    };
+
+    return (value, infered_type);
 }

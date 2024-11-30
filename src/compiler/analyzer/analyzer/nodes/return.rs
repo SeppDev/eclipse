@@ -1,14 +1,13 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_expression, FunctionCtx, IRType, Operation, ProgramCtx},
+    analyzer::{analyzer::handle_expression, FunctionCtx, Operation, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
-    types::Type,
 };
 
 pub fn handle_return(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
-    location: Location,
+    _location: Location,
     expression: Option<ExpressionInfo>,
 ) {
     let (value, data_type) = handle_expression(program, function, function.return_type, expression);
