@@ -4,7 +4,7 @@ use crate::compiler::{
     parser::{Node, NodeInfo, ParsedFile},
     path::Path,
     program::ParsedProgram,
-    types::{ReferenceManager, ReferenceState, Type},
+    types::{ReferenceState, Type},
 };
 
 use super::{

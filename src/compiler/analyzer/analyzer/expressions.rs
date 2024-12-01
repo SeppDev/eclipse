@@ -1,7 +1,7 @@
 use crate::compiler::{
     analyzer::{IRValue, Operation},
     parser::{Expression, ExpressionInfo, Value},
-    types::{BaseType, ReferenceState, Type},
+    types::{BaseType, Type},
 };
 
 use super::{FunctionCtx, ProgramCtx};
@@ -109,6 +109,7 @@ pub fn handle_expression(
     let value = match expression.expression {
         Expression::Value(value) => match value {
             Value::Integer(int) => IRValue::IntLiteral(int),
+            Value::Boolean(bool) => IRValue::BoolLiteral(bool),
             _ => todo!(),
         },
         Expression::GetVariable(path) => {

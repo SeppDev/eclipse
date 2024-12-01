@@ -2,7 +2,8 @@ use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
     parser::{Expression, ExpressionInfo, Operator, Value},
-    path::Path, types::ReferenceManager,
+    path::Path,
+    types::ReferenceManager,
 };
 
 use super::{arguments::parse_arguments, path::parse_path};
@@ -18,6 +19,7 @@ pub fn parse_expression(
             Token::Float(String::new()),
             Token::Boolean(true),
             Token::Identifier(String::new()),
+            Token::OpenBracket,
             Token::Asterisk,
             Token::Ampersand,
             Token::Minus,
@@ -44,21 +46,18 @@ pub fn parse_expression(
         Token::Float(float) => Expression::Value(Value::Float(float)),
         Token::String(string) => Expression::Value(Value::StaticString(string)),
         Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
-        Token::Ampersand => {
+        Token::Ampersand | Token::Asterisk => {
             let mut new_expression = parse_expression(tokens, true)?.unwrap();
             let info = tokens.pop_start();
-            new_expression.add_reference().unwrap();
+
+            if matches!(info.token, Token::Ampersand) {
+                new_expression.add_reference().unwrap();
+            } else {
+                new_expression.add_pointer().unwrap();
+            }
             new_expression.location.columns.start = info.location.columns.start;
-            
-            return Ok(Some(new_expression))
-        }
-        Token::Asterisk => {
-            let mut new_expression = parse_expression(tokens, true)?.unwrap();
-            let info = tokens.pop_start();
-            new_expression.add_pointer().unwrap();
-            new_expression.location.columns.start = info.location.columns.start;
-            
-            return Ok(Some(new_expression))
+
+            return Ok(Some(new_expression));
         }
         Token::Minus => {
             let new_expression = parse_expression(tokens, true)?.unwrap();
@@ -72,27 +71,43 @@ pub fn parse_expression(
                 tokens.create_expression(Expression::Not(Box::new(new_expression))),
             ));
         }
-        Token::OpenParen => {
+        Token::OpenParen | Token::OpenBracket => {
+            let is_tuple = matches!(info.token, Token::OpenParen);
             let mut expressions = Vec::new();
             loop {
                 let new_expression = match parse_expression(tokens, false)? {
                     Some(expression) => expression,
                     None => {
-                        tokens.expect_tokens(vec![Token::CloseParen], false);
+                        if is_tuple {
+                            tokens.expect_tokens(vec![Token::CloseParen], false);
+                        } else {
+                            tokens.expect_tokens(vec![Token::CloseBracket], false);
+                        }
                         break;
                     }
                 };
                 expressions.push(new_expression);
-                let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
+                let result = if is_tuple {
+                    tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)
+                } else {
+                    tokens.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)
+                };
+
                 match result.token {
-                    Token::CloseParen => break,
+                    Token::CloseParen | Token::CloseBracket => break,
                     Token::Comma => continue,
                     _ => panic!(),
                 };
             }
-            return Ok(Some(
-                tokens.create_expression(Expression::Tuple(expressions)),
-            ));
+            if is_tuple {
+                return Ok(Some(
+                    tokens.create_expression(Expression::Tuple(expressions)),
+                ));
+            } else {
+                return Ok(Some(
+                    tokens.create_expression(Expression::Array(expressions)),
+                ));
+            }
         }
         Token::Identifier(name) => parse_identifier(tokens, name)?,
         _ => panic!(),

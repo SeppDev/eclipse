@@ -69,6 +69,7 @@ pub enum Expression {
     GetVariable(Path),
     Call(Path, Vec<ExpressionInfo>),
     BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>),
+    Array(Vec<ExpressionInfo>),
     Tuple(Vec<ExpressionInfo>),
     Minus(Box<ExpressionInfo>),
     Not(Box<ExpressionInfo>),

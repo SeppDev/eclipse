@@ -20,7 +20,6 @@ pub fn codegen(program: IRProgram) -> String {
 
 define void @print(i32 %x) {
 start:
-
     %fmt_ptr = getelementptr [5 x i8], ptr @format, i32 0, i32 0
     call i32 @printf(i8* %fmt_ptr, i32 %x)
     ret void
