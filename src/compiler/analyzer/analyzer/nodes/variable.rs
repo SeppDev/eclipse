@@ -33,3 +33,38 @@ pub fn handle_variable_declaration(
         destination: variable.key.clone(),
     });
 }
+
+pub fn handle_set_variable(
+    program: &mut ProgramCtx,
+    function: &mut FunctionCtx,
+    location: Location,
+    name: String,
+    expression: Option<ExpressionInfo>,
+) {
+    let variable = match function.variables.read(&name) {
+        Some(var) => var.clone(),
+        None => {
+            program.debug.error(
+                location,
+                format!("Could not find variable named: '{name}'"),
+            );
+            return;
+        }
+    };
+    
+    if !variable.mutable {
+        program.debug.error(
+            location,
+            format!("Cannot mutate unmutable variable: '{name}'"),
+        );
+        return;
+    }
+
+    let (value, data_type) = handle_expression(program, function, &Some(variable.data_type.clone()), expression);
+
+    function.operations.push(Operation::Store {
+        data_type: data_type.convert(),
+        value,
+        destination: variable.key.clone(),
+    });
+}

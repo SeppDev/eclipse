@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::compiler::{counter::NameCounter, errors::Location, types::Type};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     pub mutable: bool,
     pub data_type: Type,

@@ -17,7 +17,7 @@ pub fn parse_function(
     let name = tokens.parse_identifier()?;
     tokens.expect_tokens(vec![Token::OpenParen], false);
 
-    let mut parameters: Vec<(String, Type)> = Vec::new();
+    let mut parameters: Vec<(bool, String, Type)> = Vec::new();
     loop {
         if tokens
             .peek_expect_tokens(vec![Token::CloseParen], true)
@@ -25,9 +25,12 @@ pub fn parse_function(
         {
             break;
         }
+
+        let mutable = tokens.peek_expect_tokens(vec![Token::Mutable], true).is_some();
+
         let name = tokens.parse_identifier()?;
         let data_type = parse_type(tokens)?;
-        parameters.push((name, data_type));
+        parameters.push((mutable, name, data_type));
 
         let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
         match result.token {

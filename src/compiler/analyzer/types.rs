@@ -141,7 +141,7 @@ fn handle_file(
                         key,
                         parameters: {
                             let mut params = Vec::new();
-                            for (_, t) in parameters {
+                            for (_, _, t) in parameters {
                                 params.push(Some(t.clone()));
                             }
                             params

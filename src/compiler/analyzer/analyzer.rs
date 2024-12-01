@@ -4,7 +4,7 @@ use crate::compiler::{
     parser::{Node, NodeInfo, ParsedFile},
     path::Path,
     program::ParsedProgram,
-    types::{ReferenceManager, Type},
+    types::{ReferenceManager, ReferenceState, Type},
 };
 
 use super::{
@@ -111,41 +111,59 @@ fn handle_function(
     location: Location,
 
     key: String,
-    parameters: Vec<(String, Type)>,
+    parameters: Vec<(bool, String, Type)>,
     return_type: Type,
     body: Vec<NodeInfo>,
 ) {
     let mut variables = VariablesMap::new();
     variables.push_scope();
 
+    let mut operations = Vec::new();
+
     let mut new_params = Vec::new();
-    for (name, data_type) in parameters {
-        let param_key = variables.increment();
-
-        new_params.push((param_key.clone(), data_type.convert()));
-        variables.insert(true, &name, false, data_type, location.clone());
-
-        variables.set_key(&name, param_key);
+    for (mutable, name, data_type) in parameters {
+        
+        if mutable {
+            if !matches!(
+                data_type.ref_state,
+                ReferenceState::None | ReferenceState::Pointer(_)
+            ) {
+                let mut location = location.clone();
+                location.lines = location.lines.start..location.lines.start;
+                
+                program.debug.error(
+                    location,
+                    format!("Cannot mutate a value that has a reference: '{name}'"),
+                );
+            }
+            
+            let temp_param_key = variables.increment();
+            new_params.push((temp_param_key.clone(), data_type.convert()));
+            
+            let param_variable = variables.insert(false, &name, true, data_type.clone(), location.clone());
+            
+            operations.push(Operation::Allocate {
+                destination: param_variable.key.clone(),
+                data_type: data_type.convert(),
+            });
+            operations.push(Operation::Store {
+                data_type: data_type.convert(),
+                value: IRValue::Variable(temp_param_key),
+                destination: param_variable.key.clone(),
+            });
+        } else {
+            let ir = data_type.convert();
+            let variable = variables.insert(true, &name, false, data_type, location.clone());
+            new_params.push((variable.key.clone(), ir));
+        }
     }
-
-    // let missing_return = match body.last() {
-    //     Some(info) => match info.node {
-    //         Node::Return(_) => false,
-    //         _ => !return_type.is_void(),
-    //     },
-    //     None => !return_type.is_void(),
-    // };
-
-    // if missing_return {
-    //     program.debug.error(location, "Missing return");
-    // }
 
     let ir_type = return_type.convert();
     let mut function = FunctionCtx {
         variables,
         return_type: &Some(return_type),
         relative_path: &file.relative_path,
-        operations: Vec::new(),
+        operations,
     };
 
     handle_body(program, &mut function, body);
@@ -176,7 +194,7 @@ fn handle_function(
 mod nodes;
 use nodes::*;
 mod expressions;
-use expressions::*; 
+use expressions::*;
 
 fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) {
     function.variables.push_scope();
@@ -197,6 +215,9 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 data_type,
                 expression,
             ),
+            Node::SetVariable { name, expression } => {
+                handle_set_variable(program, function, info.location, name, expression)
+            }
             Node::Call(path, arguments) => {
                 handle_call(program, function, info.location, path, arguments)
             }

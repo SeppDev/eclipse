@@ -19,12 +19,13 @@ pub fn codegen(program: IRProgram) -> String {
 @format = private constant [4 x i8] c\"%d\\0A\\00\"
 
 define void @print(i32 %x) {
-    entry:
+start:
 
     %fmt_ptr = getelementptr [5 x i8], ptr @format, i32 0, i32 0
     call i32 @printf(i8* %fmt_ptr, i32 %x)
     ret void
-}",
+}
+",
     );
 
     for function in program.functions {
@@ -45,12 +46,12 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
         .collect::<Vec<String>>()
         .join(", ");
     source.pushln(format!("define {data_type} @{name}({parameters}) {{"));
-    source.pushln("entry:");
+    source.pushln("start:");
 
     let mut body = BetterString::new();
 
-
     for operation in function.operations {
+        body.push("\t");
         body.pushln(match operation {
             Operation::Label(label) => format!("{}:", label),
             Operation::Call {
@@ -94,7 +95,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     }
 
     source.push(body.to_string());
-    source.pushln("}");
+    source.pushln("}\n");
 }
 
 // fn handle_node(node: IRNode, body: &mut BetterString) {
