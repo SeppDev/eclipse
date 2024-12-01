@@ -8,7 +8,8 @@ pub struct Variable {
     pub data_type: Type,
     pub key: String,
     pub location: Location,
-    pub borrowed: bool,
+    pub is_parameter: bool,
+    pub is_borrowed: bool,
 }
 
 #[derive(Debug)]
@@ -28,8 +29,10 @@ impl VariablesMap {
     pub fn increment(&mut self) -> String {
         self.counter.increment()
     }
+
     pub fn insert(
         &mut self,
+        is_parameter: bool,
         name: &String,
         mutable: bool,
         data_type: Type,
@@ -43,7 +46,8 @@ impl VariablesMap {
             mutable,
             data_type,
             location,
-            borrowed: false
+            is_parameter,
+            is_borrowed: false
         };
 
         let _ = self.variables.insert(name.clone(), variable);
@@ -63,13 +67,13 @@ impl VariablesMap {
     }
     pub fn is_borrowed(&self, name: &String) -> Option<bool> {
         match self.variables.get(name) {
-            Some(var) => return Some(var.borrowed),
+            Some(var) => return Some(var.is_borrowed),
             None => return None,
         };
     }
     pub fn borrow(&mut self, name: &String) -> Option<&Variable> {
         match self.variables.get_mut(name) {
-            Some(var) => var.borrowed = true,
+            Some(var) => var.is_borrowed = true,
             None => return None,
         };
         return self.variables.get(name);

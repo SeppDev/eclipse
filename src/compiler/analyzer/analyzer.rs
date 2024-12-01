@@ -4,7 +4,7 @@ use crate::compiler::{
     parser::{Node, NodeInfo, ParsedFile},
     path::Path,
     program::ParsedProgram,
-    types::Type,
+    types::{ReferenceManager, Type},
 };
 
 use super::{
@@ -123,8 +123,7 @@ fn handle_function(
         let param_key = variables.increment();
 
         new_params.push((param_key.clone(), data_type.convert()));
-
-        variables.insert(&name, false, data_type, location.clone());
+        variables.insert(true, &name, false, data_type, location.clone());
 
         variables.set_key(&name, param_key);
     }

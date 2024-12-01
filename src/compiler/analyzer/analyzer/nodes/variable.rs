@@ -14,13 +14,13 @@ pub fn handle_variable_declaration(
     data_type: Option<Type>,
     expression: Option<ExpressionInfo>,
 ) {
-    let (value, data_type) = handle_expression(program, function, &data_type, false, expression);
+    let (value, data_type) = handle_expression(program, function, &data_type, expression);
     let t1 = data_type.convert();
     let t2 = data_type.convert();
 
     let variable = function
         .variables
-        .insert(&name, mutable, data_type, location);
+        .insert(false, &name, mutable, data_type, location);
 
     function.operations.push(Operation::Allocate {
         destination: variable.key.clone(),

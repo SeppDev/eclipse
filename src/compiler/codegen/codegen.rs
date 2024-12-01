@@ -48,8 +48,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     source.pushln("entry:");
 
     let mut body = BetterString::new();
-    
-    println!("{:#?}", function.operations);
+
 
     for operation in function.operations {
         body.pushln(match operation {

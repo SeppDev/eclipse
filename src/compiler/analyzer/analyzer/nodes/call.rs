@@ -24,14 +24,14 @@ pub fn handle_call(
 
     if arguments.len() != found.parameters.len() {
         program.debug.error(
-            location.clone(),
+            location,
             format!(
                 "Expected {} arguments, but got {}",
                 found.parameters.len(),
                 arguments.len()
             ),
         );
-        return; // Ok((IRValue::Null, expected_type.clone()));
+        return;
     }
 
     arguments.reverse();
@@ -39,7 +39,7 @@ pub fn handle_call(
     let mut ir_arguments = Vec::new();
     for param_type in &found.parameters {
         let expression = arguments.pop();
-        let (value, data_type) = handle_expression(program, function, param_type, true, expression);
+        let (value, data_type) = handle_expression(program, function, param_type, expression);
 
         ir_arguments.push((data_type.convert(), value));
     }

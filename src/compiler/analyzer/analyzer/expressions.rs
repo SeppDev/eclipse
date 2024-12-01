@@ -65,7 +65,14 @@ fn what_type(
             };
             variable.data_type.clone()
         }
-        _ => todo!(),
+        Expression::Call(path, _) => {
+            let found = match program.types.get_function(function.relative_path, path) {
+                Some(f) => f,
+                None => return Type::void(),
+            };
+            found.return_type.clone()
+        }
+        _ => todo!("{:#?}", expression),
     };
     data_type.ref_state = expression.ref_state.clone();
     return data_type;
@@ -75,7 +82,6 @@ pub fn handle_expression(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     expected_type: &Option<Type>,
-    is_argument: bool, 
     expression: Option<ExpressionInfo>,
 ) -> (IRValue, Type) {
     let expression = match expression {
@@ -83,25 +89,22 @@ pub fn handle_expression(
         None => return void(),
     };
 
-    let infered_type: Type = match expected_type {
+    let expected_type: Type = match expected_type {
         Some(t) => {
-            let specified = t.clone();
-            let expected = what_type(program, function, Some(&specified), &expression);
+            let expected = t.clone();
+            let infered = what_type(program, function, Some(&expected), &expression);
 
-            if specified != expected {
+            if infered != expected {
                 program.debug.error(
                     expression.location.clone(),
-                    format!("Wrong types, expected: '{specified}' but got: '{expected}'"),
+                    format!("Wrong types, expected: '{expected}' but got: '{infered}'"),
                 );
-                // return void();
             }
 
             expected
         }
         None => what_type(program, function, None, &expression),
     };
-
-    program.debug.result_print(format!("{}", infered_type));
 
     let value = match expression.expression {
         Expression::Value(value) => match value {
@@ -110,7 +113,7 @@ pub fn handle_expression(
         },
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
-            let new_key = function.variables.increment();
+            let result_key = function.variables.increment();
 
             let variable = match function.variables.read(name) {
                 Some(var) => var,
@@ -123,16 +126,61 @@ pub fn handle_expression(
                 }
             };
 
-            if is_argument || infered_type.ref_state == ReferenceState::Shared {
+            if variable.is_parameter {
                 IRValue::Variable(variable.key.clone())
             } else {
                 function.operations.push(Operation::Load {
-                    destination: new_key.clone(),
-                    destination_type: infered_type.convert(),
+                    destination: result_key.clone(),
+                    destination_type: expected_type.convert(),
                     value: IRValue::Variable(variable.key.clone()),
                 });
-                IRValue::Variable(new_key)
+                IRValue::Variable(result_key)
             }
+        }
+        Expression::Call(path, mut arguments) => {
+            let result_key = function.variables.increment();
+            let found = match program.types.get_function(function.relative_path, &path) {
+                Some(f) => f,
+                None => {
+                    program.debug.error(
+                        expression.location,
+                        format!("Could not find function: '{path}'"),
+                    );
+                    return void();
+                }
+            };
+
+            if arguments.len() != found.parameters.len() {
+                program.debug.error(
+                    expression.location,
+                    format!(
+                        "Expected {} arguments, but got {}",
+                        found.parameters.len(),
+                        arguments.len()
+                    ),
+                );
+                return void();
+            }
+
+            arguments.reverse();
+
+            let mut ir_arguments = Vec::new();
+            for param_type in &found.parameters {
+                let expression = arguments.pop();
+                let (value, data_type) =
+                    handle_expression(program, function, param_type, expression);
+
+                ir_arguments.push((data_type.convert(), value));
+            }
+
+            function.operations.push(Operation::StoreCall {
+                destination: result_key.clone(),
+                function: found.key.clone(),
+                return_type: found.return_type.convert(),
+                arguments: IRValue::Arguments(ir_arguments),
+            });
+            
+            IRValue::Variable(result_key)
         }
         _ => {
             program
@@ -142,5 +190,5 @@ pub fn handle_expression(
         }
     };
 
-    return (value, infered_type);
+    return (value, expected_type);
 }
