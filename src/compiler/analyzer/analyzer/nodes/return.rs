@@ -10,7 +10,7 @@ pub fn handle_return(
     _location: Location,
     expression: Option<ExpressionInfo>,
 ) {
-    let (value, data_type) = handle_expression(program, function, function.return_type, expression);
+    let (value, data_type) = handle_expression(program, function, function.return_type, false, expression);
 
     function.operations.push(Operation::Return {
         data_type: data_type.convert(),

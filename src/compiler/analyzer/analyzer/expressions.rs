@@ -1,7 +1,7 @@
 use crate::compiler::{
     analyzer::{IRValue, Operation},
     parser::{Expression, ExpressionInfo, Value},
-    types::{BaseType, Type},
+    types::{BaseType, ReferenceState, Type},
 };
 
 use super::{FunctionCtx, ProgramCtx};
@@ -28,7 +28,6 @@ impl BaseType {
         matches!(&self, Self::Boolean)
     }
 }
-
 
 fn what_type(
     program: &mut ProgramCtx,
@@ -76,6 +75,7 @@ pub fn handle_expression(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     expected_type: &Option<Type>,
+    is_argument: bool, 
     expression: Option<ExpressionInfo>,
 ) -> (IRValue, Type) {
     let expression = match expression {
@@ -93,13 +93,15 @@ pub fn handle_expression(
                     expression.location.clone(),
                     format!("Wrong types, expected: '{specified}' but got: '{expected}'"),
                 );
-                return void();
+                // return void();
             }
 
-            specified
+            expected
         }
         None => what_type(program, function, None, &expression),
     };
+
+    program.debug.result_print(format!("{}", infered_type));
 
     let value = match expression.expression {
         Expression::Value(value) => match value {
@@ -108,6 +110,8 @@ pub fn handle_expression(
         },
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
+            let new_key = function.variables.increment();
+
             let variable = match function.variables.read(name) {
                 Some(var) => var,
                 None => {
@@ -119,8 +123,16 @@ pub fn handle_expression(
                 }
             };
 
-            
-            IRValue::Variable(variable.key.clone())
+            if is_argument || infered_type.ref_state == ReferenceState::Shared {
+                IRValue::Variable(variable.key.clone())
+            } else {
+                function.operations.push(Operation::Load {
+                    destination: new_key.clone(),
+                    destination_type: infered_type.convert(),
+                    value: IRValue::Variable(variable.key.clone()),
+                });
+                IRValue::Variable(new_key)
+            }
         }
         _ => {
             program

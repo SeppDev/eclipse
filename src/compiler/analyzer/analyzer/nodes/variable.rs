@@ -14,7 +14,7 @@ pub fn handle_variable_declaration(
     data_type: Option<Type>,
     expression: Option<ExpressionInfo>,
 ) {
-    let (value, data_type) = handle_expression(program, function, &data_type, expression);
+    let (value, data_type) = handle_expression(program, function, &data_type, false, expression);
     let t1 = data_type.convert();
     let t2 = data_type.convert();
 

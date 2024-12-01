@@ -39,7 +39,7 @@ pub fn handle_call(
     let mut ir_arguments = Vec::new();
     for param_type in &found.parameters {
         let expression = arguments.pop();
-        let (value, data_type) = handle_expression(program, function, param_type, expression);
+        let (value, data_type) = handle_expression(program, function, param_type, true, expression);
 
         ir_arguments.push((data_type.convert(), value));
     }

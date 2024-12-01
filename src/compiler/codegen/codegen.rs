@@ -18,11 +18,11 @@ pub fn codegen(program: IRProgram) -> String {
         "declare i32 @printf(i8*, ...)
 @format = private constant [4 x i8] c\"%d\\0A\\00\"
 
-define void @print(i32* %x) {
+define void @print(i32 %x) {
     entry:
 
     %fmt_ptr = getelementptr [5 x i8], ptr @format, i32 0, i32 0
-    call i32 @printf(i8* %fmt_ptr, i32* %x)
+    call i32 @printf(i8* %fmt_ptr, i32 %x)
     ret void
 }",
     );

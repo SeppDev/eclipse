@@ -13,7 +13,6 @@ use std::{
     time::Duration,
 };
 
-
 pub type CompileResult<T> = Result<T, ()>;
 
 #[derive(Debug, Clone, Default)]
@@ -49,7 +48,7 @@ type Map = Vec<(Path, Message)>;
 
 #[derive(Debug, Default)]
 struct MsgMap {
-    // notes: Map,
+    notes: Map,
     warnings: Map,
     errors: Map,
 }
@@ -70,10 +69,12 @@ pub struct CompileCtx {
 impl CompileCtx {
     pub fn new() -> Self {
         let (sender, receiver) = mpsc::channel::<Status>();
+
         let (done_sender, done) = mpsc::channel();
 
+        let start = std::time::Instant::now();
+
         std::thread::spawn(move || {
-            let start = std::time::Instant::now();
             let mut message = String::new();
             loop {
                 match receiver.recv_timeout(Duration::from_millis(100)) {
@@ -108,12 +109,13 @@ impl CompileCtx {
     }
     pub fn quit(&self) -> ! {
         self.throw(true);
+        println!("No debuginfo found, but quitted");
         exit(1)
     }
     pub fn push(&mut self, relative_file_path: Path, message: Message) {
         match &message.variant {
-            MessageVariant::Note => self.debuginfo.errors.push((relative_file_path, message)),
-            MessageVariant::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
+            MessageVariant::Note => self.debuginfo.notes.push((relative_file_path, message)),
+            MessageVariant ::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
             MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
     }
@@ -130,14 +132,17 @@ impl CompileCtx {
 
     pub fn finish(&self) {
         let _ = self.sender.send(None);
-        let _ = self.done.recv_timeout(Duration::from_secs(5));
+        let _ = self.done.recv_timeout(Duration::from_secs(1));
+
+        for msg in &self.messages {
+            println!("{}", msg);
+        }
     }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.debuginfo.errors.len() > 0;
         if !has_errors && !finish {
             return;
         }
-
         self.finish();
 
         // self.display(&self.debuginfo.notes);
@@ -168,5 +173,13 @@ impl CompileCtx {
             .errors
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.warnings.last_mut().unwrap().1.borrow_mut();
+    }
+    pub fn note<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
+        let mut message = Message::error(message.to_string());
+        message.push("", location);
+        self.debuginfo
+            .errors
+            .push((self.current_file_path.clone(), message));
+        return self.debuginfo.notes.last_mut().unwrap().1.borrow_mut();
     }
 }

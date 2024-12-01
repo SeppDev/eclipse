@@ -1,5 +1,3 @@
-use std::os::linux::raw::stat;
-
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult, Location},
@@ -179,7 +177,7 @@ fn handle_function(
 mod nodes;
 use nodes::*;
 mod expressions;
-use expressions::*;
+use expressions::*; 
 
 fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) {
     function.variables.push_scope();

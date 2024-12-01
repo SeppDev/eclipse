@@ -104,7 +104,7 @@ impl std::fmt::Display for IRType {
                 Self::Float => "float".to_string(),
                 Self::Array(size, t) => format!("[ {size} x {t} ]"),
                 Self::Integer(bits) | IRType::UInteger(bits) => format!("i{bits}"),
-                Self::Pointer(t) => format!("{t}*"),
+                Self::Pointer(_) => format!("ptr"),
                 Self::Struct(name) => format!("%{name}",),
                 Self::Tuple(types) => format!("{{ {} }}", {
                     types

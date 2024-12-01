@@ -128,6 +128,9 @@ impl Type {
         self.add_pointer()?;
         return Ok(self);
     }
+    pub fn is_reference(self) -> bool {
+        return matches!(self.ref_state, ReferenceState::Mutable | ReferenceState::Shared)
+    }
 }
 
 impl ReferenceManager for Type {
