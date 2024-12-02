@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::compiler::{
     errors::{CompileResult, Location},
     path::Path,
@@ -68,7 +70,8 @@ pub enum Expression {
     Value(Value),
     GetVariable(Path),
     Call(Path, Vec<ExpressionInfo>),
-    BinaryOperation(Box<ExpressionInfo>, Operator, Box<ExpressionInfo>),
+    BinaryOperation(Box<ExpressionInfo>, ArithmeticOperator, Box<ExpressionInfo>),
+    CompareOperation(Box<ExpressionInfo>, CompareOperator, Box<ExpressionInfo>),
     Array(Vec<ExpressionInfo>),
     Tuple(Vec<ExpressionInfo>),
     Minus(Box<ExpressionInfo>),
@@ -101,11 +104,26 @@ impl ReferenceManager for ExpressionInfo {
 } 
 
 #[derive(Debug)]
-pub enum Operator {
+pub enum ArithmeticOperator {
+    // Modulus
     Plus,
     Minus,
     Division,
     Multiply,
+}
+impl Display for ArithmeticOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match &self {
+            ArithmeticOperator::Plus => "add",
+            ArithmeticOperator::Minus => "sub",
+            ArithmeticOperator::Multiply => "mul",
+            ArithmeticOperator::Division => "div",
+        })
+    }
+}
+
+#[derive(Debug)]
+pub enum CompareOperator {
     Equals,
     NotEquals,
     GreaterThan,
@@ -113,22 +131,12 @@ pub enum Operator {
     LessThan,
     LessThanOrEquals,
 }
+// impl Display for CompareOperator {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", match &self {
 
-// #[derive(Debug)]
-// pub enum ArithmeticOperator {
-//     Plus,
-//     Minus,
-//     Division,
-//     Multiply,
-// }
-// #[derive(Debug)]
-// pub enum CompareOperator {
-//     Equals,
-//     NotEquals,
-//     GreaterThan,
-//     GreaterThanOrEquals,
-//     LessThan,
-//     LessThanOrEquals,
+//         })
+//     }
 // }
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,9 @@
+use std::ops::Div;
+
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    parser::{Expression, ExpressionInfo, Operator, Value},
+    parser::{ArithmeticOperator, CompareOperator, Expression, ExpressionInfo, Value},
     path::Path,
     types::ReferenceManager,
 };
@@ -132,30 +134,53 @@ pub fn parse_expression(
         Some(_) => tokens.start(),
         None => return Ok(Some(first_expression_info)),
     };
-    let operator = match info.token {
-        Token::Plus => Operator::Plus,
-        Token::Minus => Operator::Minus,
-        Token::ForwardSlash => Operator::Division,
-        Token::Asterisk => Operator::Multiply,
-
-        Token::Compare => Operator::Equals,
-        Token::NotEquals => Operator::NotEquals,
-        Token::LessThan => Operator::LessThan,
-        Token::LessThanOrEquals => Operator::LessThanOrEquals,
-        Token::GreaterThan => Operator::GreaterThan,
-        Token::GreaterThanOrEquals => Operator::GreaterThanOrEquals,
-        _ => panic!(),
-    };
 
     let second_expression = parse_expression(tokens, true)?.unwrap();
     let mut first_location = first_expression_info.location.clone();
     first_location.columns.end = second_expression.location.columns.end;
 
-    let mut info = tokens.create_expression(Expression::BinaryOperation(
-        Box::new(first_expression_info),
-        operator,
-        Box::new(second_expression),
-    ));
+    let is_arithmetic = matches!(
+        info.token,
+        Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk
+    );
+
+
+    let mut info = if is_arithmetic {
+        let arithmetic_operator = match info.token {
+            Token::Plus => ArithmeticOperator::Plus,
+            Token::Minus => ArithmeticOperator::Minus,
+            Token::ForwardSlash => ArithmeticOperator::Division,
+            Token::Asterisk => ArithmeticOperator::Multiply,
+            _ => panic!(),
+        };
+    
+    
+        tokens.create_expression(Expression::BinaryOperation(
+            Box::new(first_expression_info),
+            arithmetic_operator,
+            Box::new(second_expression),
+        ))
+    } else {
+        let compare_operator = match info.token {
+            Token::Compare => CompareOperator::Equals,
+            Token::NotEquals => CompareOperator::NotEquals,
+            Token::LessThan => CompareOperator::LessThan,
+            Token::LessThanOrEquals => CompareOperator::LessThanOrEquals,
+            Token::GreaterThan => CompareOperator::GreaterThan,
+            Token::GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
+            _ => panic!(),
+        };
+    
+    
+        tokens.create_expression(Expression::CompareOperation(
+            Box::new(first_expression_info),
+            compare_operator,
+            Box::new(second_expression),
+        ))
+    };
+
+
+
     info.location = first_location;
     return Ok(Some(info));
 }

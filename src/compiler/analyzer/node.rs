@@ -1,4 +1,4 @@
-use crate::compiler::{parser::Operator, types::{BaseType, ReferenceState, Type}};
+use crate::compiler::{parser::ArithmeticOperator, parser::CompareOperator, types::{BaseType, ReferenceState, Type}};
 
 #[derive(Debug)]
 pub struct IRFunction {
@@ -45,7 +45,7 @@ pub enum Operation {
     BinaryOperation {
         float: bool,
         destination: String,
-        operator: Operator,
+        operator: ArithmeticOperator,
         data_type: IRType,
         first: IRValue,
         second: IRValue

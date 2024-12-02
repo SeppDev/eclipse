@@ -79,6 +79,8 @@ fn what_type(
             let data_type = what_type(program, function, expected_type, first);
             let data_type = what_type(program, function, Some(&data_type), second);
 
+
+
             data_type
         }
         _ => todo!("{:#?}", expression),
@@ -132,6 +134,8 @@ pub fn handle_expression(
 
             let (first_value, _) = handle_expression(program, function, &et, Some(first));
             let (second_value, _) = handle_expression(program, function, &et, Some(second));
+
+            program.debug.result_print(format!("{:?}", operator));
 
             function.operations.push(Operation::BinaryOperation { float: false, destination: result.clone(), operator, data_type: ir, first: first_value, second: second_value });
             IRValue::Variable(result)
