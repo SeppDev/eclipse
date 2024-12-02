@@ -1,6 +1,5 @@
 use crate::compiler::{
-    analyzer::{IRFunction, IRProgram, Operation},
-    string::BetterString,
+    analyzer::{IRFunction, IRProgram, Operation}, parser::Operator, string::BetterString
 };
 
 pub fn codegen(program: IRProgram) -> String {
@@ -88,6 +87,16 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
             } => {
                 format!("%{destination} = load {destination_type}, ptr {value}")
             }
+            Operation::BinaryOperation {
+                float,
+                destination,
+                operator,
+                data_type,
+                first,
+                second
+            } => {
+                format!("%{destination} = {}{} {data_type} {first}, {second}", to_operation(operator), floatf(float))
+            }
             Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
             Operation::Unkown => panic!(),
         });
@@ -95,6 +104,23 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
 
     source.push(body.to_string());
     source.pushln("}\n");
+}
+
+fn floatf(float: bool) -> &'static str {
+    if float {
+        return "f"
+    }
+    ""
+}
+
+fn to_operation(operator: Operator) -> &'static str {
+    match operator {
+        Operator::Plus => "add",
+        Operator::Minus => "sub",
+        Operator::Multiply => "mul",
+        Operator::Division => "div",
+        _ => panic!()
+    }
 }
 
 // fn handle_node(node: IRNode, body: &mut BetterString) {

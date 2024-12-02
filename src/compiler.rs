@@ -5,7 +5,7 @@ use errors::{CompileCtx, CompileResult};
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
-use std::{path::PathBuf, process::Output};
+use std::{path::PathBuf, process::Output, time::Duration};
 
 mod analyzer;
 mod codegen;
@@ -96,7 +96,10 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
 
     debug.finish();
 
-    println!("Compiling took: {} seconds", start.elapsed().as_secs());
+    let elapsed = start.elapsed();
+    if elapsed > Duration::from_secs(1) {
+        println!("Compiling took: {} seconds", elapsed.as_secs());
+    }
 
     return path;
 }

@@ -1,4 +1,4 @@
-use crate::compiler::types::{BaseType, ReferenceState, Type};
+use crate::compiler::{parser::Operator, types::{BaseType, ReferenceState, Type}};
 
 #[derive(Debug)]
 pub struct IRFunction {
@@ -41,6 +41,14 @@ pub enum Operation {
     Return {
         data_type: IRType,
         value: IRValue,
+    },
+    BinaryOperation {
+        float: bool,
+        destination: String,
+        operator: Operator,
+        data_type: IRType,
+        first: IRValue,
+        second: IRValue
     },
 }
 

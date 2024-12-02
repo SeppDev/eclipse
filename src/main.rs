@@ -7,7 +7,7 @@ enum Action {
     Build,
 }
 
-fn main() {
+fn main() {    
     let mut project_dir = std::env::current_dir().unwrap();
     let mut args = std::env::args();
     args.next();

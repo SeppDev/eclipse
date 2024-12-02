@@ -71,6 +71,15 @@ fn what_type(
                 None => return Type::void(),
             };
             found.return_type.clone()
+        },
+        Expression::BinaryOperation(a, _, b) => {
+            let first = a.as_ref();
+            let second = b.as_ref();
+
+            let data_type = what_type(program, function, expected_type, first);
+            let data_type = what_type(program, function, Some(&data_type), second);
+
+            data_type
         }
         _ => todo!("{:#?}", expression),
     };
@@ -111,6 +120,21 @@ pub fn handle_expression(
             Value::Integer(int) => IRValue::IntLiteral(int),
             Value::Boolean(bool) => IRValue::BoolLiteral(bool),
             _ => todo!(),
+        },
+        Expression::BinaryOperation(a, operator, b) => {
+            let result = function.variables.increment();
+
+            let first = *a;
+            let second = *b;
+
+            let ir = expected_type.convert();
+            let et = Some(expected_type.clone());
+
+            let (first_value, _) = handle_expression(program, function, &et, Some(first));
+            let (second_value, _) = handle_expression(program, function, &et, Some(second));
+
+            function.operations.push(Operation::BinaryOperation { float: false, destination: result.clone(), operator, data_type: ir, first: first_value, second: second_value });
+            IRValue::Variable(result)
         },
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
