@@ -17,6 +17,7 @@ pub fn codegen(program: IRProgram) -> String {
     source.pushln(
         "declare i32 @printf(i8*, ...)
 declare i32 @sleep(i32)
+declare i32 @usleep(i32)
 
 declare i32 @fflush(ptr)
 @stdout = external global ptr
