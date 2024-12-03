@@ -1,9 +1,7 @@
 use std::fmt::Display;
 
 use crate::compiler::{
-    errors::{CompileResult, Location},
-    path::Path,
-    types::{BaseType, ReferenceManager, ReferenceState, Type},
+    analyzer::IRType, errors::{CompileResult, Location}, path::Path, types::{BaseType, ReferenceManager, ReferenceState, Type}
 };
 
 #[derive(Debug, Default)]
@@ -116,13 +114,31 @@ pub enum ArithmeticOperator {
     Division,
     Multiply,
 }
-impl Display for ArithmeticOperator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match &self {
-            ArithmeticOperator::Plus => "add",
-            ArithmeticOperator::Minus => "sub",
-            ArithmeticOperator::Multiply => "mul",
-            ArithmeticOperator::Division => "div",
+impl ArithmeticOperator {
+    pub fn convert(&self, data_type: &IRType) -> String {
+        if data_type.is_float() {
+            return format!("{}", match &self {
+                ArithmeticOperator::Plus => "fadd",
+                ArithmeticOperator::Minus => "fsub",
+                ArithmeticOperator::Multiply => "fmul",
+                ArithmeticOperator::Division => "fdiv",
+            })
+        }
+
+        if data_type.signed() {
+            return format!("{}", match &self {
+                ArithmeticOperator::Plus => "add",
+                ArithmeticOperator::Minus => "sub",
+                ArithmeticOperator::Multiply => "mul",
+                ArithmeticOperator::Division => "div",
+            })
+        }
+
+        format!("{}", match &self {
+            ArithmeticOperator::Plus => "uadd",
+            ArithmeticOperator::Minus => "usub",
+            ArithmeticOperator::Multiply => "umul",
+            ArithmeticOperator::Division => "udiv",
         })
     }
 }
@@ -137,8 +153,19 @@ pub enum CompareOperator {
     LessThanOrEquals,
 }
 impl CompareOperator {
-    pub fn convert(&self, signed: &bool) -> String {
-        if signed == &true {
+    pub fn convert(&self, data_type: &IRType) -> String {
+        if data_type.is_float() {
+            return format!("fcmp {}", match &self {
+                Self::Equals => "oeq",
+                Self::NotEquals => "one",
+                Self::GreaterThan => "ogt",
+                Self::GreaterThanOrEquals => "oge",
+                Self::LessThan => "olt",
+                Self::LessThanOrEquals => "ole",
+            })
+        }
+
+        if data_type.signed() {
             return format!("icmp {}", match &self {
                 Self::Equals => "eq",
                 Self::NotEquals => "ne",

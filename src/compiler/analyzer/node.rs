@@ -43,8 +43,6 @@ pub enum Operation {
         value: IRValue,
     },
     BinaryOperation {
-        float: bool,
-        // signed: bool,
         destination: String,
         operator: ArithmeticOperator,
         data_type: IRType,
@@ -119,8 +117,11 @@ impl IRType {
         match self {
             Self::Integer(_) => true,
             Self::UInteger(_) => false,
-            _ => panic!()
+            _ => panic!("{}", self)
         }
+    }
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::Float | Self::Double)
     }
 }
 

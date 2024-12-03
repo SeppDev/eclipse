@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{IRType, IRValue, Operation},
+    analyzer::{IRValue, Operation},
     parser::{CompareOperator, Expression, ExpressionInfo, Value},
     types::{BaseType, Type},
 };
@@ -11,14 +11,17 @@ fn void() -> (IRValue, Type) {
 }
 
 impl BaseType {
+    fn is_number(&self) -> bool {
+        return self.is_integer() || self.is_float();
+    }
     fn is_integer(&self) -> bool {
         matches!(&self, Self::UInt(_) | Self::Int(_))
     }
-    fn is_bool(&self) -> bool {
-        matches!(&self, Self::Boolean)
-    }
     fn is_float(&self) -> bool {
         matches!(&self, Self::Float32 | Self::Float64)
+    }
+    fn is_bool(&self) -> bool {
+        matches!(&self, Self::Boolean)
     }
 }
 
@@ -71,19 +74,27 @@ fn what_type(
             let second = b.as_ref();
 
             let data_type = what_type(program, function, expected_type, first);
-            let data_type_second = what_type(program, function, Some(&data_type), second);
+            if !data_type.base.is_number() {
+                program.debug.error(
+                    first.location.clone(),
+                    "Number is required for this operator",
+                );
+            }
 
-            if !data_type.base.is_integer() || !data_type_second.base.is_integer() {
+            let data_type_second = what_type(program, function, Some(&data_type), second);
+            if !data_type_second.base.is_number() {
                 program.debug.error(
                     second.location.clone(),
-                    "Integer is required for this operator",
+                    "Number is required for this operator",
                 );
             }
 
             if data_type != data_type_second {
                 program.debug.error(
                     expression.location.clone(),
-                    format!("Compare types haves to be the same: {data_type} != {data_type_second}"),
+                    format!(
+                        "Compare types haves to be the same: {data_type} != {data_type_second}"
+                    ),
                 );
             }
 
@@ -93,31 +104,33 @@ fn what_type(
             let first = a.as_ref();
             let second = b.as_ref();
 
-            let integer_required = !matches!(
+            let number_required = !matches!(
                 operator,
                 CompareOperator::Equals | CompareOperator::NotEquals
             );
 
             let data_type = what_type(program, function, expected_type, first);
-            if integer_required && !data_type.base.is_integer() {
+            if number_required && !data_type.base.is_number() {
                 program.debug.error(
                     first.location.clone(),
-                    "Integer is required for this operator",
+                    "Number is required for this operator",
                 );
             }
 
             let data_type_second = what_type(program, function, Some(&data_type), second);
-            if integer_required && !data_type.base.is_integer() {
+            if number_required && !data_type_second.base.is_number() {
                 program.debug.error(
                     second.location.clone(),
-                    "Integer is required for this operator",
+                    "Number is required for this operator",
                 );
             }
 
             if data_type != data_type_second {
                 program.debug.error(
                     expression.location.clone(),
-                    format!("Compare types haves to be the same: {data_type} != {data_type_second}"),
+                    format!(
+                        "Compare types haves to be the same: {data_type} != {data_type_second}"
+                    ),
                 );
             }
 
@@ -200,7 +213,6 @@ pub fn handle_expression(
                 handle_expression(program, function, &Some(data_type), Some(second));
 
             function.operations.push(Operation::BinaryOperation {
-                float: false,
                 destination: result.clone(),
                 operator,
                 data_type: ir,

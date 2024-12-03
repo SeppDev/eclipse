@@ -1,6 +1,5 @@
 use crate::compiler::{
     analyzer::{IRFunction, IRProgram, Operation},
-    parser::ArithmeticOperator,
     string::BetterString,
 };
 
@@ -50,7 +49,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
 
     let mut body = BetterString::new();
 
-    for operation in function.operations{
+    for operation in function.operations {
         if !matches!(operation, Operation::Label(_)) {
             body.push("\t");
         }
@@ -92,7 +91,6 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 format!("%{destination} = load {destination_type}, ptr {value}")
             }
             Operation::BinaryOperation {
-                float,
                 destination,
                 operator,
                 data_type,
@@ -100,8 +98,8 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 second,
             } => {
                 format!(
-                    "%{destination} = {}{operator} {data_type} {first}, {second}",
-                    floatf(float)
+                    "%{destination} = {} {data_type} {first}, {second}",
+                    operator.convert(&data_type)
                 )
             }
             Operation::CompareOperation {
@@ -111,12 +109,15 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 first,
                 second,
             } => {
-                format!("%{destination} = {} {data_type} {first}, {second}", operator.convert(&data_type.signed()))
+                format!(
+                    "%{destination} = {} {data_type} {first}, {second}",
+                    operator.convert(&data_type)
+                )
             }
             Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
             Operation::Branch { condition, yes, no } => {
                 format!("br i1 {condition}, label %{yes}, label %{no}")
-            },
+            }
             Operation::Goto { label } => format!("br label %{label}"),
             Operation::Unkown => panic!(),
         });
@@ -125,14 +126,6 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
     source.push(body.to_string());
     source.pushln("}\n");
 }
-
-fn floatf(float: bool) -> &'static str {
-    if float {
-        return "f";
-    }
-    ""
-}
-
 // fn handle_node(node: IRNode, body: &mut BetterString) {
 //     match node {
 //         Operation::Return(info) => {
