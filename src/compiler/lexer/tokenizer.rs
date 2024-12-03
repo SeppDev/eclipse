@@ -114,6 +114,7 @@ fn match_token(word: &String) -> Option<Token> {
         "loop" => Token::Loop,
         "while" => Token::While,
         "break" => Token::Break,
+        "continue" => Token::Continue,
 
         "{" => Token::StartScope,
         "}" => Token::EndScope,

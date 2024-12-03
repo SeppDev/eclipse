@@ -6,11 +6,12 @@ use crate::compiler::{
     types::{BaseType, ReferenceManager, ReferenceState, Type},
 };
 
-#[allow(unused)]
 #[derive(Debug, Default)]
 pub enum Node {
     #[default]
     Uknown,
+    Continue,
+    Break,
     Enum {
         name: String,
         fields: Vec<String>,
@@ -42,6 +43,10 @@ pub enum Node {
         expression: (ExpressionInfo, Vec<NodeInfo>),
         elseif: Vec<(ExpressionInfo, Vec<NodeInfo>)>,
         else_body: Option<Vec<NodeInfo>>,
+    },
+    Loop {
+        condition: Option<ExpressionInfo>,
+        body: Vec<NodeInfo>
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),

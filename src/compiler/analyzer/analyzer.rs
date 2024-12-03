@@ -26,11 +26,26 @@ impl<'a> ProgramCtx<'a> {
     }
 }
 
+struct LoopInfo {
+    pub begin: String,
+    pub end: String,
+}
+impl LoopInfo {
+    pub fn new<T: ToString, E: ToString>(begin: T, end: E) -> Self {
+        Self {
+            begin: begin.to_string(),
+            end: end.to_string(),
+        }
+    }
+}
+
 pub struct FunctionCtx<'a> {
     pub variables: VariablesMap,
     pub return_type: &'a Option<Type>,
     pub operations: Vec<Operation>,
     pub relative_path: &'a Path,
+
+    pub loop_info: Vec<LoopInfo>,
 }
 
 pub fn analyze(
@@ -164,6 +179,7 @@ fn handle_function(
         return_type: &Some(return_type),
         relative_path: &file.relative_path,
         operations,
+        loop_info: Vec::new(),
     };
 
     handle_body(program, &mut function, body);
@@ -215,11 +231,21 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 data_type,
                 expression,
             ),
+            Node::Loop { condition, body } => {
+                handle_loop(program, function, info.location, condition, body)
+            }
             Node::IfStatement {
                 expression,
-                elseif,
+                elseif: _,
                 else_body,
-            } => handle_ifstatement(program, function, info.location, expression.0, expression.1, else_body),
+            } => handle_ifstatement(
+                program,
+                function,
+                info.location,
+                expression.0,
+                expression.1,
+                else_body,
+            ),
             Node::SetVariable { name, expression } => {
                 handle_set_variable(program, function, info.location, name, expression)
             }
@@ -227,6 +253,8 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 handle_call(program, function, info.location, path, arguments)
             }
             Node::Return(expression) => handle_return(program, function, info.location, expression),
+            Node::Break => handle_break(program, function, info.location),
+            Node::Continue => handle_continue(program, function, info.location),
             _ => program
                 .debug
                 .result_print(format!("Todo: {:#?}", info.node)),

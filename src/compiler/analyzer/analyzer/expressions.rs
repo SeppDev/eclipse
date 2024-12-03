@@ -139,7 +139,10 @@ pub fn handle_expression(
 
     let value = match expression.expression {
         Expression::Value(value) => match value {
-            Value::Integer(int) => IRValue::IntLiteral(int),
+            Value::Integer(int) => {
+                // Check integer overflow
+                IRValue::IntLiteral(int)
+            },
             Value::Boolean(bool) => IRValue::BoolLiteral(bool),
             Value::Float(float) => IRValue::FloatLiteral(float),
             _ => todo!(),

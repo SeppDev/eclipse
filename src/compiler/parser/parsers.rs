@@ -12,6 +12,7 @@ mod namespace;
 mod path;
 mod types;
 mod variable;
+mod r#loop;
 
 use function::parse_function;
 use import::handle_import;

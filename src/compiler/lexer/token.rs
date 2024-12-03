@@ -14,7 +14,6 @@ pub enum Token {
     CloseParen,
     OpenBracket,
     CloseBracket,
-    Break,
     Pub,
     Import,
     Use,
@@ -46,6 +45,8 @@ pub enum Token {
 
     Loop,
     While,
+    Continue,
+    Break,
 
     Compare,
     NotEquals,
@@ -120,6 +121,7 @@ impl std::fmt::Display for Token {
                 ForwardSlash => "/",
                 Loop => "loop",
                 While => "while",
+                Continue => "continue",
                 LessThan => "<",
                 LessThanOrEquals => "<=",
                 GreaterThan => ">",
