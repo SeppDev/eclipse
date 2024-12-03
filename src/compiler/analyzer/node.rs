@@ -44,12 +44,28 @@ pub enum Operation {
     },
     BinaryOperation {
         float: bool,
+        // signed: bool,
         destination: String,
         operator: ArithmeticOperator,
         data_type: IRType,
         first: IRValue,
         second: IRValue
     },
+    CompareOperation {
+        destination: String,
+        operator: CompareOperator,
+        data_type: IRType,
+        first: IRValue,
+        second: IRValue 
+    },
+    Branch {
+        condition: IRValue,
+        yes: String,
+        no: String
+    },
+    Goto {
+        label: String
+    }
 }
 
 #[derive(Debug)]

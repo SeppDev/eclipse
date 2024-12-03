@@ -11,7 +11,7 @@ pub fn parse_ifstatement(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
 
     let body = parse_body(tokens)?;
 
-    let else_expression = if tokens.peek_expect_tokens(vec![Token::Else], true).is_some() {
+    let else_body = if tokens.peek_expect_tokens(vec![Token::Else], true).is_some() {
         tokens.expect_tokens(vec![Token::StartScope], false);
         let body = parse_body(tokens)?;
         Some(body)
@@ -22,6 +22,6 @@ pub fn parse_ifstatement(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
     return Ok(tokens.create_node(Node::IfStatement {
         expression: (expression, body),
         elseif: Vec::new(),
-        else_expression: else_expression,
+        else_body,
     }));
 }

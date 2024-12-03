@@ -64,7 +64,7 @@ impl Reader {
             output.push(Char {
                 char,
                 line,
-                columns: column..column + 1,
+                columns: column..column + char.len_utf16(),
             });
         }
         lines.push(line_string);

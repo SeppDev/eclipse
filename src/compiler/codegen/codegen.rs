@@ -1,5 +1,7 @@
 use crate::compiler::{
-    analyzer::{IRFunction, IRProgram, Operation}, parser::ArithmeticOperator, string::BetterString
+    analyzer::{IRFunction, IRProgram, Operation},
+    parser::ArithmeticOperator,
+    string::BetterString,
 };
 
 pub fn codegen(program: IRProgram) -> String {
@@ -48,8 +50,10 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
 
     let mut body = BetterString::new();
 
-    for operation in function.operations {
-        body.push("\t");
+    for operation in function.operations{
+        if !matches!(operation, Operation::Label(_)) {
+            body.push("\t");
+        }
         body.pushln(match operation {
             Operation::Label(label) => format!("{}:", label),
             Operation::Call {
@@ -93,11 +97,27 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 operator,
                 data_type,
                 first,
-                second
+                second,
             } => {
-                format!("%{destination} = {}{operator} {data_type} {first}, {second}", floatf(float))
+                format!(
+                    "%{destination} = {}{operator} {data_type} {first}, {second}",
+                    floatf(float)
+                )
+            }
+            Operation::CompareOperation {
+                destination,
+                operator,
+                data_type,
+                first,
+                second,
+            } => {
+                format!("%{destination} = {operator} {data_type} {first}, {second}")
             }
             Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
+            Operation::Branch { condition, yes, no } => {
+                format!("br i1 {condition}, label %{yes}, label %{no}")
+            },
+            Operation::Goto { label } => format!("br label %{label}"),
             Operation::Unkown => panic!(),
         });
     }
@@ -108,7 +128,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
 
 fn floatf(float: bool) -> &'static str {
     if float {
-        return "f"
+        return "f";
     }
     ""
 }

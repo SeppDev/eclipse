@@ -41,7 +41,7 @@ pub enum Node {
     IfStatement {
         expression: (ExpressionInfo, Vec<NodeInfo>),
         elseif: Vec<(ExpressionInfo, Vec<NodeInfo>)>,
-        else_expression: Option<Vec<NodeInfo>>,
+        else_body: Option<Vec<NodeInfo>>,
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),
@@ -131,13 +131,18 @@ pub enum CompareOperator {
     LessThan,
     LessThanOrEquals,
 }
-// impl Display for CompareOperator {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{}", match &self {
-
-//         })
-//     }
-// }
+impl Display for CompareOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "icmp {}", match &self {
+            Self::Equals => "eq",
+            Self::NotEquals => "ne",
+            Self::GreaterThan => "sgt",
+            Self::GreaterThanOrEquals => "sge",
+            Self::LessThan => "slt",
+            Self::LessThanOrEquals => "sle",
+        })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Value {

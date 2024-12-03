@@ -122,7 +122,6 @@ fn handle_function(
 
     let mut new_params = Vec::new();
     for (mutable, name, data_type) in parameters {
-        
         if mutable {
             if !matches!(
                 data_type.ref_state,
@@ -130,18 +129,19 @@ fn handle_function(
             ) {
                 let mut location = location.clone();
                 location.lines = location.lines.start..location.lines.start;
-                
+
                 program.debug.error(
                     location,
                     format!("Cannot mutate a value that has a reference: '{name}'"),
                 );
             }
-            
+
             let temp_param_key = variables.increment();
             new_params.push((temp_param_key.clone(), data_type.convert()));
-            
-            let param_variable = variables.insert(false, &name, true, data_type.clone(), location.clone());
-            
+
+            let param_variable =
+                variables.insert(false, &name, true, data_type.clone(), location.clone());
+
             operations.push(Operation::Allocate {
                 destination: param_variable.key.clone(),
                 data_type: data_type.convert(),
@@ -215,6 +215,11 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 data_type,
                 expression,
             ),
+            Node::IfStatement {
+                expression,
+                elseif,
+                else_body,
+            } => handle_ifstatement(program, function, info.location, expression.0, expression.1, else_body),
             Node::SetVariable { name, expression } => {
                 handle_set_variable(program, function, info.location, name, expression)
             }

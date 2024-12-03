@@ -1,6 +1,6 @@
 use crate::compiler::{
-    analyzer::{IRValue, Operation},
-    parser::{Expression, ExpressionInfo, Value},
+    analyzer::{IRType, IRValue, Operation},
+    parser::{CompareOperator, Expression, ExpressionInfo, Value},
     types::{BaseType, Type},
 };
 
@@ -12,13 +12,13 @@ fn void() -> (IRValue, Type) {
 
 impl BaseType {
     fn is_integer(&self) -> bool {
-        matches!(
-            &self,
-            Self::UInt(_) | Self::Int(_)
-        )
+        matches!(&self, Self::UInt(_) | Self::Int(_))
     }
     fn is_bool(&self) -> bool {
         matches!(&self, Self::Boolean)
+    }
+    fn is_float(&self) -> bool {
+        matches!(&self, Self::Float32 | Self::Float64)
     }
 }
 
@@ -34,6 +34,7 @@ fn what_type(
                 if match value {
                     Value::Integer(_) => expected.base.is_integer(),
                     Value::Boolean(_) => expected.base.is_bool(),
+                    Value::Float(_) => expected.base.is_float(),
                     _ => todo!(),
                 } {
                     expected.clone()
@@ -64,7 +65,7 @@ fn what_type(
                 None => return Type::void(),
             };
             found.return_type.clone()
-        },
+        }
         Expression::BinaryOperation(a, _, b) => {
             let first = a.as_ref();
             let second = b.as_ref();
@@ -72,13 +73,39 @@ fn what_type(
             let data_type = what_type(program, function, expected_type, first);
             let data_type = what_type(program, function, Some(&data_type), second);
 
-
-
             data_type
+        }
+        Expression::CompareOperation(a, operator, b) => {
+            let first = a.as_ref();
+            let second = b.as_ref();
+
+            let integer_required = !matches!(
+                operator,
+                CompareOperator::Equals | CompareOperator::NotEquals
+            );
+
+            let data_type = what_type(program, function, expected_type, first);
+            if integer_required && !data_type.base.is_integer() {
+                program.debug.error(
+                    first.location.clone(),
+                    "Integer is required for this operator",
+                );
+            }
+
+            let data_type = what_type(program, function, Some(&data_type), second);
+            if integer_required && !data_type.base.is_integer() {
+                program.debug.error(
+                    first.location.clone(),
+                    "Integer is required for this operator",
+                );
+            }
+
+            Type::new(BaseType::Boolean)
         }
         _ => todo!("{:#?}", expression),
     };
     data_type.ref_state = expression.ref_state.clone();
+    
     return data_type;
 }
 
@@ -114,7 +141,26 @@ pub fn handle_expression(
         Expression::Value(value) => match value {
             Value::Integer(int) => IRValue::IntLiteral(int),
             Value::Boolean(bool) => IRValue::BoolLiteral(bool),
+            Value::Float(float) => IRValue::FloatLiteral(float),
             _ => todo!(),
+        },
+        Expression::CompareOperation(a, operator, b) => {
+            let result = function.variables.increment();
+
+            let first = *a;
+            let second = *b;
+
+            let (first_value, data_type) = handle_expression(program, function, &None, Some(first));
+            let (second_value, _) = handle_expression(program, function, &None, Some(second));
+
+            function.operations.push(Operation::CompareOperation {  
+                destination: result.clone(),
+                operator,
+                data_type: data_type.convert(),
+                first: first_value,
+                second: second_value,
+            });
+            IRValue::Variable(result)
         },
         Expression::BinaryOperation(a, operator, b) => {
             let result = function.variables.increment();
@@ -125,12 +171,19 @@ pub fn handle_expression(
             let ir = expected_type.convert();
             let et = Some(expected_type.clone());
 
-            let (first_value, _) = handle_expression(program, function, &et, Some(first));
-            let (second_value, _) = handle_expression(program, function, &et, Some(second));
+            let (first_value, data_type) = handle_expression(program, function, &et, Some(first));
+            let (second_value, _) = handle_expression(program, function, &Some(data_type), Some(second));
 
-            function.operations.push(Operation::BinaryOperation { float: false, destination: result.clone(), operator, data_type: ir, first: first_value, second: second_value });
+            function.operations.push(Operation::BinaryOperation {
+                float: false,
+                destination: result.clone(),
+                operator,
+                data_type: ir,
+                first: first_value,
+                second: second_value,
+            });
             IRValue::Variable(result)
-        },
+        }
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
             let result_key = function.variables.increment();
@@ -199,7 +252,7 @@ pub fn handle_expression(
                 return_type: found.return_type.convert(),
                 arguments: IRValue::Arguments(ir_arguments),
             });
-            
+
             IRValue::Variable(result_key)
         }
         _ => {
