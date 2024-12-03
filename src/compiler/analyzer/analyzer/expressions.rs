@@ -14,14 +14,7 @@ impl BaseType {
     fn is_integer(&self) -> bool {
         matches!(
             &self,
-            Self::Int8
-                | Self::Int16
-                | Self::Int32
-                | Self::Int64
-                | Self::UInt8
-                | Self::UInt16
-                | Self::UInt32
-                | Self::UInt64
+            Self::UInt(_) | Self::Int(_)
         )
     }
     fn is_bool(&self) -> bool {
@@ -134,8 +127,6 @@ pub fn handle_expression(
 
             let (first_value, _) = handle_expression(program, function, &et, Some(first));
             let (second_value, _) = handle_expression(program, function, &et, Some(second));
-
-            program.debug.result_print(format!("{:?}", operator));
 
             function.operations.push(Operation::BinaryOperation { float: false, destination: result.clone(), operator, data_type: ir, first: first_value, second: second_value });
             IRValue::Variable(result)

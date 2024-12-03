@@ -41,14 +41,14 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
     };
 
     let t = match name.as_str() {
-        "i64" => Type::new(BaseType::Int64),
-        "u64" => Type::new(BaseType::UInt64),
-        "i32" => Type::new(BaseType::Int32),
-        "u32" => Type::new(BaseType::UInt32),
-        "i16" => Type::new(BaseType::Int16),
-        "u16" => Type::new(BaseType::UInt16),
-        "i8" => Type::new(BaseType::Int8),
-        "u8" => Type::new(BaseType::UInt8),
+        "i64" => Type::new(BaseType::Int(64)),
+        "u64" => Type::new(BaseType::UInt(64)),
+        "i32" => Type::new(BaseType::Int(32)),
+        "u32" => Type::new(BaseType::UInt(32)),
+        "i16" => Type::new(BaseType::Int(16)),
+        "u16" => Type::new(BaseType::UInt(16)),
+        "i8" => Type::new(BaseType::Int(8)),
+        "u8" => Type::new(BaseType::UInt(8)),
         "f32" => Type::new(BaseType::Float32),
         "f64" => Type::new(BaseType::Float64),
         "bool" => Type::new(BaseType::Boolean),

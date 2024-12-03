@@ -88,7 +88,7 @@ pub fn parse_types(
         "print".to_string(),
         Function {
             key: "print".to_string(),
-            parameters: vec![(Some(Type::new(BaseType::Int32)))],
+            parameters: vec![(Some(Type::new(BaseType::Int(32))))],
             return_type: Type::void(),
         },
     );

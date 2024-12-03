@@ -135,14 +135,7 @@ impl Type {
             BaseType::Float64 => IRType::Double,
 
             BaseType::Boolean => IRType::Integer(1),
-            BaseType::Int8 => IRType::Integer(8),
-            BaseType::Int16 => IRType::Integer(16),
-            BaseType::Int32 => IRType::Integer(32),
-            BaseType::Int64 => IRType::Integer(64),
-            BaseType::UInt8 => IRType::UInteger(8),
-            BaseType::UInt16 => IRType::UInteger(16),
-            BaseType::UInt32 => IRType::UInteger(32),
-            BaseType::UInt64 => IRType::UInteger(64),
+            BaseType::Int(bits) | BaseType::UInt(bits) => IRType::Integer(bits.clone()),
 
             BaseType::StaticString(_size) => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
 

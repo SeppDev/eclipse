@@ -152,7 +152,7 @@ impl Value {
         match &self {
             Self::Boolean(_) => a.base = BaseType::Boolean,
             Self::Float(_) => a.base = BaseType::Float64,
-            Self::Integer(_) => a.base = BaseType::Int32,
+            Self::Integer(_) => a.base = BaseType::Int(32),
             Self::StaticString(_) => todo!()
         }
         return a;
