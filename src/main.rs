@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::exit};
+use std::{io::Write, path::PathBuf, process::exit};
 
 mod compiler;
 
