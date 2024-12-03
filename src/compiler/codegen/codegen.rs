@@ -111,7 +111,7 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
                 first,
                 second,
             } => {
-                format!("%{destination} = {operator} {data_type} {first}, {second}")
+                format!("%{destination} = {} {data_type} {first}, {second}", operator.convert(&data_type.signed()))
             }
             Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
             Operation::Branch { condition, yes, no } => {

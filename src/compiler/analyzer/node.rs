@@ -115,6 +115,13 @@ impl IRType {
     fn pointer(self) -> IRType {
         return IRType::Pointer(Box::new(self));
     }
+    pub fn signed(&self) -> bool {
+        match self {
+            Self::Integer(_) => true,
+            Self::UInteger(_) => false,
+            _ => panic!()
+        }
+    }
 }
 
 impl std::fmt::Display for IRType {

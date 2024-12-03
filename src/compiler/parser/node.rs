@@ -136,18 +136,30 @@ pub enum CompareOperator {
     LessThan,
     LessThanOrEquals,
 }
-impl Display for CompareOperator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "icmp {}", match &self {
+impl CompareOperator {
+    pub fn convert(&self, signed: &bool) -> String {
+        if signed == &true {
+            return format!("icmp {}", match &self {
+                Self::Equals => "eq",
+                Self::NotEquals => "ne",
+                Self::GreaterThan => "sgt",
+                Self::GreaterThanOrEquals => "sge",
+                Self::LessThan => "slt",
+                Self::LessThanOrEquals => "sle",
+            })
+        }
+
+        format!("icmp {}", match &self {
             Self::Equals => "eq",
             Self::NotEquals => "ne",
-            Self::GreaterThan => "sgt",
-            Self::GreaterThanOrEquals => "sge",
-            Self::LessThan => "slt",
-            Self::LessThanOrEquals => "sle",
+            Self::GreaterThan => "ugt",
+            Self::GreaterThanOrEquals => "uge",
+            Self::LessThan => "ult",
+            Self::LessThanOrEquals => "ule",
         })
     }
 }
+
 
 #[derive(Debug, Clone)]
 pub enum Value {

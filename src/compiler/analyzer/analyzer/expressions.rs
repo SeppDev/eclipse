@@ -71,7 +71,21 @@ fn what_type(
             let second = b.as_ref();
 
             let data_type = what_type(program, function, expected_type, first);
-            let data_type = what_type(program, function, Some(&data_type), second);
+            let data_type_second = what_type(program, function, Some(&data_type), second);
+
+            if !data_type.base.is_integer() || !data_type_second.base.is_integer() {
+                program.debug.error(
+                    second.location.clone(),
+                    "Integer is required for this operator",
+                );
+            }
+
+            if data_type != data_type_second {
+                program.debug.error(
+                    expression.location.clone(),
+                    format!("Compare types haves to be the same: {data_type} != {data_type_second}"),
+                );
+            }
 
             data_type
         }
@@ -92,11 +106,18 @@ fn what_type(
                 );
             }
 
-            let data_type = what_type(program, function, Some(&data_type), second);
+            let data_type_second = what_type(program, function, Some(&data_type), second);
             if integer_required && !data_type.base.is_integer() {
                 program.debug.error(
-                    first.location.clone(),
+                    second.location.clone(),
                     "Integer is required for this operator",
+                );
+            }
+
+            if data_type != data_type_second {
+                program.debug.error(
+                    expression.location.clone(),
+                    format!("Compare types haves to be the same: {data_type} != {data_type_second}"),
                 );
             }
 
@@ -105,7 +126,7 @@ fn what_type(
         _ => todo!("{:#?}", expression),
     };
     data_type.ref_state = expression.ref_state.clone();
-    
+
     return data_type;
 }
 
@@ -142,7 +163,7 @@ pub fn handle_expression(
             Value::Integer(int) => {
                 // Check integer overflow
                 IRValue::IntLiteral(int)
-            },
+            }
             Value::Boolean(bool) => IRValue::BoolLiteral(bool),
             Value::Float(float) => IRValue::FloatLiteral(float),
             _ => todo!(),
@@ -156,7 +177,7 @@ pub fn handle_expression(
             let (first_value, data_type) = handle_expression(program, function, &None, Some(first));
             let (second_value, _) = handle_expression(program, function, &None, Some(second));
 
-            function.operations.push(Operation::CompareOperation {  
+            function.operations.push(Operation::CompareOperation {
                 destination: result.clone(),
                 operator,
                 data_type: data_type.convert(),
@@ -164,7 +185,7 @@ pub fn handle_expression(
                 second: second_value,
             });
             IRValue::Variable(result)
-        },
+        }
         Expression::BinaryOperation(a, operator, b) => {
             let result = function.variables.increment();
 
@@ -175,7 +196,8 @@ pub fn handle_expression(
             let et = Some(expected_type.clone());
 
             let (first_value, data_type) = handle_expression(program, function, &et, Some(first));
-            let (second_value, _) = handle_expression(program, function, &Some(data_type), Some(second));
+            let (second_value, _) =
+                handle_expression(program, function, &Some(data_type), Some(second));
 
             function.operations.push(Operation::BinaryOperation {
                 float: false,

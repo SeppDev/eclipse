@@ -26,7 +26,7 @@ impl<'a> ProgramCtx<'a> {
     }
 }
 
-struct LoopInfo {
+pub struct LoopInfo {
     pub begin: String,
     pub end: String,
 }
