@@ -255,6 +255,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             Node::Return(expression) => handle_return(program, function, info.location, expression),
             Node::Break => handle_break(program, function, info.location),
             Node::Continue => handle_continue(program, function, info.location),
+            Node::Scope(body) => handle_body(program, function, body),
             _ => program
                 .debug
                 .result_print(format!("Todo: {:#?}", info.node)),

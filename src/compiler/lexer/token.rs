@@ -55,6 +55,11 @@ pub enum Token {
     GreaterThan,
     GreaterThanOrEquals,
 
+    PlusEquals,
+    SubtractEquals,
+    DivideEquals,
+    MultiplyEquals,
+
     Boolean(bool),
     String(String),
     Integer(String),
@@ -127,6 +132,10 @@ impl std::fmt::Display for Token {
                 GreaterThan => ">",
                 GreaterThanOrEquals => ">=",
                 NotEquals => "!=",
+                PlusEquals => "+=",
+                SubtractEquals => "-=",
+                DivideEquals => "/=",
+                MultiplyEquals => "*=",
                 Boolean(_) => "bool",
                 String(_) => "\"string\"",
                 Integer(i) => i,

@@ -138,6 +138,11 @@ fn match_token(word: &String) -> Option<Token> {
         ":" => Token::Colon,
         "::" => Token::DoubleColon,
 
+        "+=" => Token::PlusEquals,
+        "-=" => Token::SubtractEquals,
+        "/=" => Token::DivideEquals,
+        "*=" => Token::MultiplyEquals,
+
         "<" => Token::LessThan,
         ">" => Token::GreaterThan,
         "<=" => Token::LessThanOrEquals,

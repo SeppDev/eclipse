@@ -1,5 +1,3 @@
-use std::ops::Div;
-
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
@@ -148,7 +146,7 @@ pub fn parse_expression(
     let mut info = if is_arithmetic {
         let arithmetic_operator = match info.token {
             Token::Plus => ArithmeticOperator::Plus,
-            Token::Minus => ArithmeticOperator::Minus,
+            Token::Minus => ArithmeticOperator::Subtract,
             Token::ForwardSlash => ArithmeticOperator::Division,
             Token::Asterisk => ArithmeticOperator::Multiply,
             _ => panic!(),

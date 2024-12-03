@@ -21,6 +21,7 @@ pub fn parse_variable(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
         None
     };
 
+
     let expression = if tokens
         .peek_expect_tokens(vec![Token::Equals], true)
         .is_some()

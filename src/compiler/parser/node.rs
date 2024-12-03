@@ -110,7 +110,7 @@ impl ReferenceManager for ExpressionInfo {
 pub enum ArithmeticOperator {
     // Modulus
     Plus,
-    Minus,
+    Subtract,
     Division,
     Multiply,
 }
@@ -119,7 +119,7 @@ impl ArithmeticOperator {
         if data_type.is_float() {
             return format!("{}", match &self {
                 ArithmeticOperator::Plus => "fadd",
-                ArithmeticOperator::Minus => "fsub",
+                ArithmeticOperator::Subtract => "fsub",
                 ArithmeticOperator::Multiply => "fmul",
                 ArithmeticOperator::Division => "fdiv",
             })
@@ -128,15 +128,15 @@ impl ArithmeticOperator {
         if data_type.signed() {
             return format!("{}", match &self {
                 ArithmeticOperator::Plus => "add",
-                ArithmeticOperator::Minus => "sub",
+                ArithmeticOperator::Subtract => "sub",
                 ArithmeticOperator::Multiply => "mul",
-                ArithmeticOperator::Division => "div",
+                ArithmeticOperator::Division => "sdiv",
             })
         }
 
         format!("{}", match &self {
             ArithmeticOperator::Plus => "uadd",
-            ArithmeticOperator::Minus => "usub",
+            ArithmeticOperator::Subtract => "usub",
             ArithmeticOperator::Multiply => "umul",
             ArithmeticOperator::Division => "udiv",
         })
