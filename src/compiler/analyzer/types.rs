@@ -93,6 +93,16 @@ pub fn parse_types(
         },
     );
 
+    main.functions.insert(
+        "sleep".to_string(),
+        Function {
+            key: "sleep".to_string(),
+            parameters: vec![(Some(Type::new(BaseType::Int(32))))],
+            return_type: Type::new(BaseType::Int(32)),
+        },
+    );
+
+
 
     src.imports.insert(String::from("main"), main);
 

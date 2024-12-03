@@ -16,8 +16,9 @@ pub fn codegen(program: IRProgram) -> String {
 
     source.pushln(
         "declare i32 @printf(i8*, ...)
+declare i32 @sleep(i32)
+        
 @format = private constant [4 x i8] c\"%d\\0A\\00\"
-
 define void @print(i32 %x) {
 start:
     %fmt_ptr = getelementptr [5 x i8], ptr @format, i32 0, i32 0
