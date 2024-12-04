@@ -10,8 +10,23 @@ use crate::compiler::{
 };
 
 #[derive(Debug)]
+pub struct CustomEnum {
+    pub fields: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct CustomStruct {}
+
+#[derive(Debug)]
+pub enum CustomTypes {
+    Enum(CustomEnum),
+    Struct(CustomStruct),
+}
+
+#[derive(Debug)]
 pub struct FileTypes {
     functions: HashMap<String, Function>,
+    types: HashMap<String, CustomTypes>,
     imports: HashMap<String, FileTypes>,
     is_module: bool,
     // pub types: HashMap<String, Type>
@@ -80,10 +95,9 @@ pub fn parse_types(
         imports: HashMap::new(),
         functions: HashMap::new(),
         is_module: true,
-        // export: true
+        types: HashMap::new(), // export: true
     };
 
-    
     main.functions.insert(
         "print".to_string(),
         Function {
@@ -125,6 +139,7 @@ fn handle_file(
         imports: HashMap::new(),
         functions: HashMap::new(),
         is_module: file.is_module,
+        types: HashMap::new(),
     };
 
     for (name, import) in &file.imports {
@@ -136,6 +151,15 @@ fn handle_file(
 
     for info in &file.body {
         match &info.node {
+            Node::Enum { name, fields } => {
+                let custom_enum = CustomEnum {
+                    fields: fields.clone(),
+                };
+
+                types
+                    .types
+                    .insert(name.clone(), CustomTypes::Enum(custom_enum));
+            }
             Node::Function {
                 export: _,
                 name,
@@ -144,9 +168,9 @@ fn handle_file(
                 return_type,
                 body: _,
             } => {
-                let key = if file.relative_file_path == Path::from("src").join("main")
-                    && name.eq("main")
-                {
+                let is_main_function =
+                    file.relative_file_path == Path::from("src").join("main") && name.eq("main");
+                let key = if is_main_function {
                     String::from("main")
                 } else {
                     key.clone()

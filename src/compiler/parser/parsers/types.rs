@@ -28,6 +28,8 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
         vec![
             Token::Ampersand,
             Token::Asterisk,
+            Token::OpenBracket,
+            Token::CloseBracket,
             Token::Identifier(String::new()),
         ],
         false,
@@ -36,6 +38,18 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
     let name = match info.token {
         Token::Ampersand => return Ok(parse_type(tokens)?.to_reference()?),
         Token::Asterisk => return Ok(parse_type(tokens)?.to_pointer()?),
+        Token::OpenBracket => {
+            let data_type = parse_type(tokens)?;
+            let _ = tokens.expect_tokens(vec![Token::SemiColon], false);
+            let info = tokens.expect_tokens(vec![Token::Integer(String::new())], false);
+            let count = match info.token {
+                Token::Integer(count) => count.parse::<usize>().unwrap(),
+                _ => panic!()
+            };
+
+            let _ = tokens.expect_tokens(vec![Token::CloseBracket], false);
+            return Ok(Type::new(BaseType::Array(count, Box::new(data_type))))
+        },
         Token::Identifier(string) => string,
         _ => return Ok(Type::void()),
     };

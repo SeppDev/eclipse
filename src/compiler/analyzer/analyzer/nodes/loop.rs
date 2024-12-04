@@ -7,7 +7,7 @@ use crate::compiler::{
 pub fn handle_loop(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
-    location: Location,
+    _location: Location,
     condition: Option<ExpressionInfo>,
     body: Vec<NodeInfo>,
 ) {
@@ -57,7 +57,7 @@ pub fn handle_break(
     };
     function.operations.push(Operation::Goto {
         label: last.end.clone(),
-    });
+    }); 
 }
 
 pub fn handle_continue(

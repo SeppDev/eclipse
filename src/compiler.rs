@@ -51,15 +51,15 @@ fn compile(
     let _ = std::fs::remove_file(&build_file_path);
     let _ = std::fs::remove_file(&final_path);
 
-    let program = parse_program(debug, count, &project_dir)?;
+    let mut program = parse_program(debug, count, &project_dir)?;
     debug.throw(false);
 
-    let types = parse_types(debug, count, &program)?;
+    let types = parse_types(debug, count, &mut program)?;
     debug.throw(false);
-
 
     let analyzed = analyze(debug, count, types, program)?;
     debug.throw(true);
+
 
     debug.set_status("Building");
 

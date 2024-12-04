@@ -32,6 +32,45 @@ fn what_type(
     expression: &ExpressionInfo,
 ) -> Type {
     let mut data_type: Type = match &expression.expression {
+        Expression::Array(array) => {
+            match expected_type {
+                Some(t) => t.clone(),
+                None => todo!()
+            }
+            // let mut size = 0;
+            // let mut data_type = match expected_type {
+            //     Some(dt) => match &dt.base {
+            //         BaseType::Array(_, dt) => *dt.clone(),
+            //         _ => {
+            //             program.debug.error(
+            //                 expression.location.clone(),
+            //                 format!("Not an array type"),
+            //             );
+            //             return Type::void();
+            //         }
+            //     },
+            //     None => match array.first() {
+            //         Some(first) => {
+            //             what_type(program, function, None, first)
+            //         },
+            //         None => {
+            //             program.debug.error(
+            //                 expression.location.clone(),
+            //                 format!("Arrays cannot be empty, use a () instead"),
+            //             );
+            //             return Type::void();
+            //         }
+            //     }
+            // };
+            
+
+
+            // for expression in array {
+            //     data_type = what_type(program, function, expected_type, expression);
+            // }
+
+            // data_type
+        },
         Expression::Value(value) => match expected_type {
             Some(expected) => {
                 if match value {
@@ -172,6 +211,12 @@ pub fn handle_expression(
     };
 
     let value = match expression.expression {
+        Expression::Array(expressions) => {
+            let name = function.variables.increment();
+
+
+            IRValue::Variable(name)
+        }
         Expression::Value(value) => match value {
             Value::Integer(int) => {
                 // Check integer overflow

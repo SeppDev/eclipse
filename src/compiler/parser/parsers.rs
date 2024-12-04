@@ -2,18 +2,20 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 mod arguments;
 mod body;
+mod enums;
 mod expect_token;
 mod expression;
 mod function;
 mod identifier;
 mod ifstatement;
 mod import;
+mod r#loop;
 mod namespace;
 mod path;
 mod types;
 mod variable;
-mod r#loop;
 
+use enums::parse_enum;
 use function::parse_function;
 use import::handle_import;
 
@@ -51,7 +53,6 @@ pub fn start_parse(
 
     debug.set_path(&relative_file_path);
 
-
     let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;
     let mut imports = BTreeMap::new();
     let mut body = Vec::new();
@@ -64,7 +65,16 @@ pub fn start_parse(
             break;
         }
 
-        let info = tokens.expect_tokens(vec![Token::Import, Token::Function, Token::Use], true);
+        let info = tokens.expect_tokens(
+            vec![
+                Token::Import,
+                Token::Function,
+                Token::Use,
+                Token::Enum,
+                Token::Struct,
+            ],
+            true,
+        );
 
         match info.token {
             Token::Import => {
@@ -77,8 +87,8 @@ pub fn start_parse(
                     &mut tokens,
                 ) {
                     Ok(a) => a,
-                    Err(()) => continue
-                }; 
+                    Err(()) => continue,
+                };
                 match imports.insert(name.clone(), import) {
                     Some(_) => {}
                     None => continue,
@@ -89,7 +99,10 @@ pub fn start_parse(
                 let function = parse_function(&mut tokens, is_main, count, false)?;
                 body.push(function)
             }
-            Token::Enum => todo!(),
+            Token::Enum => {
+                let a = parse_enum(&mut tokens)?;
+                body.push(a);
+            }
             Token::Struct => todo!(),
             _ => continue,
         }
@@ -107,7 +120,7 @@ pub fn start_parse(
         is_module: file_name == "mod"
             || (relative_file_path == Path::from("src").join("main") && file_name == "main"),
         relative_file_path,
-        relative_path
+        relative_path,
     };
 
     return Ok(file);

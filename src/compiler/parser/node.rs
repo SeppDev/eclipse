@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use crate::compiler::{
     analyzer::IRType, errors::{CompileResult, Location}, path::Path, types::{BaseType, ReferenceManager, ReferenceState, Type}
 };
