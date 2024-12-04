@@ -14,6 +14,23 @@ pub fn handle_variable_declaration(
     data_type: Option<Type>,
     expression: Option<ExpressionInfo>,
 ) {
+    if expression.is_none() {
+        return match data_type {
+            Some(dt) => {
+                let key = function.variables.increment();
+                function.operations.push(Operation::Allocate {
+                    destination: key,
+                    data_type: dt.convert(),
+                });
+            }
+            None => {
+                program
+                    .debug
+                    .error(location, format!("Type annotations needed"));
+            }
+        }
+    }
+
     let (value, data_type) = handle_expression(program, function, &data_type, expression);
     let t1 = data_type.convert();
     let t2 = data_type.convert();
@@ -44,14 +61,13 @@ pub fn handle_set_variable(
     let variable = match function.variables.read(&name) {
         Some(var) => var.clone(),
         None => {
-            program.debug.error(
-                location,
-                format!("Could not find variable named: '{name}'"),
-            );
+            program
+                .debug
+                .error(location, format!("Could not find variable named: '{name}'"));
             return;
         }
     };
-    
+
     if !variable.mutable {
         program.debug.error(
             location,
@@ -60,7 +76,12 @@ pub fn handle_set_variable(
         return;
     }
 
-    let (value, data_type) = handle_expression(program, function, &Some(variable.data_type.clone()), expression);
+    let (value, data_type) = handle_expression(
+        program,
+        function,
+        &Some(variable.data_type.clone()),
+        expression,
+    );
 
     function.operations.push(Operation::Store {
         data_type: data_type.convert(),

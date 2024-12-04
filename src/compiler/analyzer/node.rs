@@ -123,6 +123,9 @@ impl IRType {
     pub fn is_float(&self) -> bool {
         matches!(self, Self::Float | Self::Double)
     }
+    pub fn is_void(&self) -> bool {
+        matches!(self, Self::Void)
+    }
 }
 
 impl std::fmt::Display for IRType {
