@@ -64,6 +64,9 @@ fn handle_function(source: &mut BetterString, function: IRFunction) {
         }
         body.pushln(match operation {
             Operation::Label(label) => format!("{}:", label),
+            Operation::GetElementPointer { destination, operation } => {
+                format!("%{destination} = getelementptr {operation}")
+            }
             Operation::Call {
                 function,
                 return_type,

@@ -1,6 +1,9 @@
 mod variable;
 pub use variable::*;
 
+mod allocate;
+pub use allocate::*;
+
 mod call;
 pub use call::*;
 

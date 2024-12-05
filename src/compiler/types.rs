@@ -78,6 +78,12 @@ impl Type {
         s.base = BaseType::Void;
         return s;
     }
+    pub fn array_info(self) -> (Type, usize) {
+        match self.base {
+            BaseType::Array(size, data_type) => return (*data_type, size),
+            base => panic!("{base} is not an array"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -116,8 +122,17 @@ impl Type {
         self.add_pointer()?;
         return Ok(self);
     }
-    pub fn is_reference(self) -> bool {
-        return matches!(self.ref_state, ReferenceState::Mutable | ReferenceState::Shared)
+    pub fn is_reference(&self) -> bool {
+        return matches!(
+            self.ref_state,
+            ReferenceState::Mutable | ReferenceState::Shared
+        );
+    }
+    pub fn is_pointer(&self) -> Option<usize> {
+        match &self.ref_state {
+            ReferenceState::Pointer(p) => Some(p.clone()),
+            _ => None,
+        }
     }
 }
 

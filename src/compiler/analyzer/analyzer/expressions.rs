@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{IRValue, Operation},
+    analyzer::{ElemmentPointerOperation, IRValue, Operation},
     parser::{CompareOperator, Expression, ExpressionInfo, Value},
     types::{BaseType, Type},
 };
@@ -23,9 +23,12 @@ impl BaseType {
     fn is_bool(&self) -> bool {
         matches!(&self, Self::Boolean)
     }
+    fn is_array(&self) -> bool {
+        matches!(&self, Self::Array(_, _))
+    }
 }
 
-fn what_type(
+pub fn what_type(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     expected_type: Option<&Type>,
@@ -35,7 +38,7 @@ fn what_type(
         Expression::Array(array) => {
             match expected_type {
                 Some(t) => t.clone(),
-                None => todo!()
+                None => todo!(),
             }
             // let mut size = 0;
             // let mut data_type = match expected_type {
@@ -62,15 +65,13 @@ fn what_type(
             //         }
             //     }
             // };
-            
-
 
             // for expression in array {
             //     data_type = what_type(program, function, expected_type, expression);
             // }
 
             // data_type
-        },
+        }
         Expression::Value(value) => match expected_type {
             Some(expected) => {
                 if match value {
@@ -214,6 +215,36 @@ pub fn handle_expression(
         Expression::Array(expressions) => {
             let name = function.variables.increment();
 
+            let (value_type, _size) = expected_type.clone().array_info();
+            let expected_value_type = Some(value_type.clone());
+
+            for (index, expression) in expressions.into_iter().enumerate() {
+                let (value, data_type) = handle_expression(
+                    program,
+                    function,
+                    &expected_value_type,
+                    Some(expression),
+                );
+                let key_ptr = function.variables.increment();
+
+                let operation = ElemmentPointerOperation::Inbounds {
+                    data_type: expected_type.convert(),
+                    value_type: value_type.convert(),
+                    from: name.clone(),
+                    index,
+                };
+
+                function.operations.push(Operation::GetElementPointer {
+                    destination: key_ptr.clone(),
+                    operation,
+                });
+
+                function.operations.push(Operation::Store {
+                    data_type: data_type.convert(),
+                    value,
+                    destination: key_ptr,
+                });
+            }
 
             IRValue::Variable(name)
         }
@@ -284,12 +315,18 @@ pub fn handle_expression(
             if variable.is_parameter {
                 IRValue::Variable(variable.key.clone())
             } else {
-                function.operations.push(Operation::Load {
-                    destination: result_key.clone(),
-                    destination_type: expected_type.convert(),
-                    value: IRValue::Variable(variable.key.clone()),
-                });
-                IRValue::Variable(result_key)
+                if variable.data_type.is_reference() {
+                    IRValue::Variable(variable.key.clone())
+                } else if variable.data_type.base.is_array() {
+                    IRValue::Variable(variable.key.clone())
+                } else {
+                    function.operations.push(Operation::Load {
+                        destination: result_key.clone(),
+                        destination_type: expected_type.convert(),
+                        value: IRValue::Variable(variable.key.clone()),
+                    });
+                    IRValue::Variable(result_key)   
+                }
             }
         }
         Expression::Call(path, mut arguments) => {

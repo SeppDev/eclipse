@@ -63,8 +63,34 @@ pub enum Operation {
     },
     Goto {
         label: String
+    },
+    GetElementPointer {
+        destination: String,
+        operation: ElemmentPointerOperation
     }
 }
+
+#[derive(Debug)]
+pub enum ElemmentPointerOperation {
+    Inbounds { 
+        data_type: IRType,
+        value_type: IRType,
+        from: String,
+        index: usize,
+    }
+}
+impl std::fmt::Display for ElemmentPointerOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Inbounds { data_type, value_type, from, index } => format!("inbounds {data_type}, ptr %{from}, {value_type} 0, {value_type} {index}")
+            }
+        )
+    }
+}
+
 
 #[derive(Debug)]
 pub enum IRValue {

@@ -1,9 +1,14 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_expression, FunctionCtx, Operation, ProgramCtx},
+    analyzer::{
+        analyzer::{handle_expression, what_type},
+        FunctionCtx, Operation, ProgramCtx,
+    },
     errors::Location,
     parser::ExpressionInfo,
     types::Type,
 };
+
+use super::handle_allocation;
 
 pub fn handle_variable_declaration(
     program: &mut ProgramCtx,
@@ -14,41 +19,38 @@ pub fn handle_variable_declaration(
     data_type: Option<Type>,
     expression: Option<ExpressionInfo>,
 ) {
-    if expression.is_none() {
-        return match data_type {
-            Some(dt) => {
-                let key = function.variables.increment();
-                function.operations.push(Operation::Allocate {
-                    destination: key,
-                    data_type: dt.convert(),
-                });
-            }
-            None => {
-                program
-                    .debug
-                    .error(location, format!("Type annotations needed"));
-            }
+    let info = match expression {
+        Some(e) => e,
+        None => {
+            return match data_type {
+                Some(dt) => {
+                    let key = function.variables.increment();
+                    function.operations.push(Operation::Allocate {
+                        destination: key,
+                        data_type: dt.convert(),
+                    });
+                }
+                None => {
+                    program
+                        .debug
+                        .error(location, format!("Type annotations needed"));
+                }
+            };
         }
-    }
+    };
 
-    let (value, data_type) = handle_expression(program, function, &data_type, expression);
-    let t1 = data_type.convert();
-    let t2 = data_type.convert();
+    let data_type = match data_type {
+        Some(dt) => dt,
+        None => what_type(program, function, None, &info),
+    };
 
-    let variable = function
+    let destination = function
         .variables
-        .insert(false, &name, mutable, data_type, location);
+        .insert(false, &name, mutable, data_type.clone(), location.clone())
+        .key
+        .clone();
 
-    function.operations.push(Operation::Allocate {
-        destination: variable.key.clone(),
-        data_type: t1,
-    });
-
-    function.operations.push(Operation::Store {
-        data_type: t2,
-        value,
-        destination: variable.key.clone(),
-    });
+    handle_allocation(program, function, &location, destination, data_type, info);
 }
 
 pub fn handle_set_variable(

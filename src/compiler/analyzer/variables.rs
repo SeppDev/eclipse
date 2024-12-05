@@ -81,11 +81,6 @@ impl VariablesMap {
     pub fn read(&self, name: &String) -> Option<&Variable> {
         return self.variables.get(name);
     }
-
-    pub fn set_key(&mut self, name: &String, key: String) {
-        let variable = self.variables.get_mut(name).unwrap();
-        variable.key = key
-    }
     // pub fn write(&mut self, key: &String) -> bool {
     //     match self.variables.get_mut(key) {
     //         Some(var) => {
