@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_expression, FunctionCtx, IRValue, Operation, ProgramCtx},
+    analyzer::{analyzer::handle_expression, FunctionCtx, IRValue, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     path::Path,
@@ -41,14 +41,11 @@ pub fn handle_call(
     let mut ir_arguments = Vec::new();
     for param_type in &found.parameters {
         let expression = arguments.pop();
-        handle_read(program, function, param_type, expression);
+        let param_type = param_type.as_ref().unwrap();
+        let value = handle_read(program, function, &location, param_type, expression.unwrap());
 
-        ir_arguments.push((data_type.convert(), value));
+        ir_arguments.push((param_type.convert(), value));
     }
 
-    function.operations.push(Operation::Call {
-        function: found.key.clone(),
-        return_type: found.return_type.convert(),
-        arguments: IRValue::Arguments(ir_arguments),
-    });
+    function.operations.call(&found.key, &found.return_type.convert(), IRValue::Arguments(ir_arguments));
 }

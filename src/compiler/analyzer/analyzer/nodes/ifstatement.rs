@@ -1,5 +1,8 @@
 use crate::compiler::{
-    analyzer::{analyzer::{handle_body, handle_expression}, FunctionCtx, IRValue, Operation, ProgramCtx},
+    analyzer::{
+        analyzer::{handle_body, handle_expression},
+        FunctionCtx, ProgramCtx,
+    },
     errors::Location,
     parser::{ExpressionInfo, NodeInfo},
     types::{BaseType, Type},
@@ -11,7 +14,7 @@ pub fn handle_ifstatement(
     location: Location,
     expression: ExpressionInfo,
     body: Vec<NodeInfo>,
-    else_body: Option<Vec<NodeInfo>>
+    else_body: Option<Vec<NodeInfo>>,
 ) {
     let (result, _) = handle_expression(
         program,
@@ -24,19 +27,17 @@ pub fn handle_ifstatement(
     let no = function.variables.increment();
     let exit = function.variables.increment();
 
-    function.operations.push(Operation::Branch { condition: result, yes: yes.clone(), no: no.clone() });
-    
-    function.operations.push(Operation::Label(yes.clone()));
-    handle_body(program, function, body);
-    function.operations.push(Operation::Goto { label: exit.clone() });
+    function.operations.branch(&result, &yes, &no);
+    function.operations.label(&yes);
+    function.operations.goto(&exit);
 
-    function.operations.push(Operation::Label(no));
+    function.operations.label(&no);
     match else_body {
         Some(body) => {
             handle_body(program, function, body);
-        },
+        }
         None => {}
     }
-    function.operations.push(Operation::Goto { label: exit.clone() });
-    function.operations.push(Operation::Label(exit));
+    function.operations.goto(&exit);
+    function.operations.label(&exit);
 }

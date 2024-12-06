@@ -1,164 +1,174 @@
 use crate::compiler::{
-    analyzer::{IRFunction, IRProgram, Operation},
+    analyzer::{IRType, IRValue},
+    parser::{ArithmeticOperator, CompareOperator},
     string::BetterString,
+    types::Type,
 };
 
-pub fn codegen(program: IRProgram) -> String {
-    let mut source = BetterString::new();
-    source.pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
+// pub fn codegen(program: IRProgram) -> String {
+//     let mut source = BetterString::new();
 
-    for (key, value) in program.static_strings {
-        source.pushln(format!(
-            "@{key} = private constant [ {} x i8 ] c\"{value}\\00\"",
-            value.len() + 1
-        ));
+//     for (key, value) in program.static_strings {
+//         source.pushln(format!(
+//             "@{key} = private constant [ {} x i8 ] c\"{value}\\00\"",
+//             value.len() + 1
+//         ));
+//     }
+
+//     return source.to_string();
+// }
+
+pub struct CodeGen {
+    body: BetterString,
+    functions: Vec<FunctionOperations>,
+}
+impl CodeGen {
+    pub fn new() -> Self {
+        Self {
+            body: BetterString::new(),
+            functions: Vec::new(),
+        }
     }
+    pub fn generate(mut self) -> String {
+        self.body
+            .pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
 
-    source.pushln(
-        "declare i32 @printf(i8*, ...)
+        self.body.pushln(
+            "declare i32 @printf(i8*, ...)
+            
 declare i32 @sleep(i32)
 declare i32 @usleep(i32)
-
 declare i32 @fflush(ptr)
 @stdout = external global ptr
-        
 @format = private constant [4 x i8] c\"%d\\0A\\00\"
+
 define void @print(i32 %x) {
 start:
     %fmt_ptr = getelementptr [5 x i8], ptr @format, i32 0, i32 0
     call i32 @printf(i8* %fmt_ptr, i32 %x)
-
+        
     %stdout_ptr = load ptr, ptr @stdout
     call i32 @fflush(ptr %stdout_ptr)
-
+        
     ret void
-}
-",
-    );
+}",
+        );
 
-    for function in program.functions {
-        handle_function(&mut source, function);
-    }
-
-    return source.to_string();
-}
-
-fn handle_function(source: &mut BetterString, function: IRFunction) {
-    let data_type = &function.return_type;
-    let name = &function.name;
-
-    let parameters = function
-        .parameters
-        .into_iter()
-        .map(|(key, data_type)| format!("{data_type} %{key}"))
-        .collect::<Vec<String>>()
-        .join(", ");
-    source.pushln(format!("define {data_type} @{name}({parameters}) {{"));
-    source.pushln("start:");
-
-    let mut body = BetterString::new();
-
-    for operation in function.operations {
-        if !matches!(operation, Operation::Label(_)) {
-            body.push("\t");
+        for function in self.functions {
+            self.body.push(function.to_string());
+            self.body.pushln("}");
         }
-        body.pushln(match operation {
-            Operation::Label(label) => format!("{}:", label),
-            Operation::GetElementPointer { destination, operation } => {
-                format!("%{destination} = getelementptr {operation}")
-            }
-            Operation::Call {
-                function,
-                return_type,
-                arguments,
-            } => {
-                format!("call {return_type} @{function}({arguments})")
-            }
-            Operation::StoreCall {
-                destination,
-                function,
-                return_type,
-                arguments,
-            } => {
-                format!("%{destination} = call {return_type} @{function}({arguments})")
-            }
-            Operation::Allocate {
-                destination,
-                data_type,
-            } => {
-                format!("%{destination} = alloca {data_type}")
-            }
-            Operation::Store {
-                data_type,
-                value,
-                destination,
-            } => {
-                format!("store {data_type} {value}, ptr %{destination}")
-            }
-            Operation::Load {
-                destination,
-                destination_type,
-                value,
-            } => {
-                format!("%{destination} = load {destination_type}, ptr {value}")
-            }
-            Operation::BinaryOperation {
-                destination,
-                operator,
-                data_type,
-                first,
-                second,
-            } => {
-                format!(
-                    "%{destination} = {} {data_type} {first}, {second}",
-                    operator.convert(&data_type)
-                )
-            }
-            Operation::CompareOperation {
-                destination,
-                operator,
-                data_type,
-                first,
-                second,
-            } => {
-                format!(
-                    "%{destination} = {} {data_type} {first}, {second}",
-                    operator.convert(&data_type)
-                )
-            }
-            Operation::Return { data_type, value } => format!("ret {} {}", data_type, value),
-            Operation::Branch { condition, yes, no } => {
-                format!("br i1 {condition}, label %{yes}, label %{no}")
-            }
-            Operation::Goto { label } => format!("br label %{label}"),
-            Operation::Unkown => panic!(),
-        });
+
+        self.body.to_string()
+    }
+    pub fn insert(&mut self, function: FunctionOperations) {
+        self.functions.push(function);
+    }
+}
+
+pub struct FunctionOperations {
+    body: BetterString,
+}
+impl FunctionOperations {
+    pub fn new(key: &String, return_type: &Type, parameters: &Vec<(String, IRType)>) -> Self {
+        let mut body = BetterString::new();
+        let return_type = return_type.convert();
+
+        let parameters = parameters
+            .into_iter()
+            .map(|(key, data_type)| format!("{} %{key}", data_type))
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        body.pushln(format!("define {return_type} @{key}({parameters}) {{"));
+        body.pushln("start:");
+
+        Self { body }
+    }
+    pub fn to_string(self) -> String {
+        self.body.to_string()
     }
 
-    source.push(body.to_string());
-    source.pushln("}\n");
+    pub fn allocate(&mut self, destination: &String, data_type: &IRType) {
+        self.body
+            .pushln(format!("\t%{destination} = alloca {data_type}"));
+    }
+    pub fn store(&mut self, data_type: &IRType, value: &IRValue, destination: &String) {
+        self.body
+            .pushln(format!("\tstore {data_type} {value}, ptr %{destination}"));
+    }
+    pub fn call(&mut self, function: &String, return_type: &IRType, arguments: IRValue) {
+        self.body
+            .pushln(format!("\tcall {return_type} @{function}({arguments})"));
+    }
+    pub fn store_call(
+        &mut self,
+        destination: &String,
+        function: &String,
+        return_type: &IRType,
+        arguments: IRValue,
+    ) {
+        self.body.pushln(format!(
+            "\t%{destination} = call {return_type} @{function}({arguments})"
+        ));
+    }
+    pub fn label(&mut self, label: &String) {
+        self.body.pushln(format!("{}:", label));
+    }
+    // pub fn getelementptr(&mut self, destination: &String, operation: ElemmentPointerOperation) {
+    //     self.body
+    //         .pushln(format!("%{destination} = getelementptr {operation}"));
+    // }
+    pub fn getelementptr_inbounds(
+        &mut self,
+        destination: &String,
+        data_type: &IRType,
+        value_type: &IRType,
+        from: &String,
+        index: &IRValue,
+    ) {
+        self.body
+            .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, {value_type} 0, {value_type} {index}"));
+    }
+    pub fn load(&mut self, destination: &String, destination_type: &IRType, value: &IRValue) {
+        self.body.pushln(format!(
+            "\t%{destination} = load {destination_type}, ptr {value}"
+        ));
+    }
+    pub fn binary_operation(
+        &mut self,
+        destination: &String,
+        operator: &ArithmeticOperator,
+        data_type: &IRType,
+        first: &IRValue,
+        second: &IRValue,
+    ) {
+        self.body.pushln(format!(
+            "\t%{destination} = {} {data_type} {first}, {second}",
+            operator.convert(&data_type)
+        ));
+    }
+    pub fn compare_operation(
+        &mut self,
+        destination: &String,
+        operator: &CompareOperator,
+        data_type: &IRType,
+        first: &IRValue,
+        second: &IRValue,
+    ) {
+        self.body.pushln(format!(
+            "\t%{destination} = {} {data_type} {first}, {second}",
+            operator.convert(&data_type)
+        ));
+    }
+    pub fn r#return(&mut self, data_type: &IRType, value: &IRValue) {
+        self.body.pushln(format!("\tret {} {}", data_type, value));
+    }
+    pub fn branch(&mut self, condition: &IRValue, yes: &String, no: &String) {
+        self.body
+            .pushln(format!("\tbr i1 {condition}, label %{yes}, label %{no}"));
+    }
+    pub fn goto(&mut self, label: &String) {
+        self.body.pushln(format!("\tbr label %{label}"));
+    }
 }
-// fn handle_node(node: IRNode, body: &mut BetterString) {
-//     match node {
-//         Operation::Return(info) => {
-//             let data_type = &info.data_type;
-//             let value = handle_expression(body, &info);
-
-//             body.pushln(format!("ret {data_type} {value}"));
-//         },
-//         _ => todo!()
-//     }
-// }
-
-// fn handle_expression(body: &mut BetterString, info: &IRExpressionInfo) -> String {
-//     let mut expression = BetterString::new();
-
-//     // let data_type = &info.data_type;
-//     match &info.expression {
-//         IRExpression::Void => {},
-//         IRExpression::Integer(int) => expression.push(int),
-//         _ => todo!("{:?}", info)
-//     }
-
-//     return expression.to_string();
-// }

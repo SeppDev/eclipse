@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::{handle_body, handle_expression, LoopInfo}, FunctionCtx, Operation, ProgramCtx},
+    analyzer::{analyzer::{handle_body, handle_expression, LoopInfo}, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::{ExpressionInfo, NodeInfo}, types::{BaseType, Type},
 };
@@ -15,8 +15,9 @@ pub fn handle_loop(
     let end = function.variables.increment();
     function.loop_info.push(LoopInfo::new(begin.clone(), end.clone()));
 
-    function.operations.push(Operation::Goto { label: begin.clone() });
-    function.operations.push(Operation::Label(begin.clone()));
+    function.operations.goto(&begin);
+    function.operations.label(&begin);
+
 
     match condition {
         Some(expression) => {
@@ -27,16 +28,16 @@ pub fn handle_loop(
                 Some(expression),
             );
             let after = function.variables.increment();
-            function.operations.push(Operation::Branch { condition: result, yes: after.clone(), no: end.clone() });
-            function.operations.push(Operation::Label(after))
+            function.operations.branch(&result, &after, &end);
+            function.operations.label(&after);
         },
         None => {}
     }
 
     handle_body(program, function, body);
 
-    function.operations.push(Operation::Goto { label: begin });
-    function.operations.push(Operation::Label(end));
+    function.operations.goto(&begin);
+    function.operations.label(&end);
 
     let _ = function.loop_info.pop();
 }
@@ -55,9 +56,7 @@ pub fn handle_break(
             return;
         }
     };
-    function.operations.push(Operation::Goto {
-        label: last.end.clone(),
-    }); 
+    function.operations.goto(&last.end);
 }
 
 pub fn handle_continue(
@@ -74,7 +73,5 @@ pub fn handle_continue(
             return;
         }
     };
-    function.operations.push(Operation::Goto {
-        label: last.begin.clone(),
-    });
+    function.operations.goto(&last.begin);
 }

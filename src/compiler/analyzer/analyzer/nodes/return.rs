@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_expression, FunctionCtx, Operation, ProgramCtx},
+    analyzer::{analyzer::handle_expression, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
 };
@@ -12,8 +12,5 @@ pub fn handle_return(
 ) {
     let (value, data_type) = handle_expression(program, function, function.return_type, expression);
 
-    function.operations.push(Operation::Return {
-        data_type: data_type.convert(),
-        value,
-    });
+    function.operations.r#return(&data_type.convert(), &value);
 }

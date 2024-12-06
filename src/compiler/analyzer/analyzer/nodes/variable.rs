@@ -1,7 +1,7 @@
 use crate::compiler::{
     analyzer::{
         analyzer::{handle_expression, what_type},
-        FunctionCtx, Operation, ProgramCtx,
+        FunctionCtx, ProgramCtx,
     },
     errors::Location,
     parser::ExpressionInfo,
@@ -25,10 +25,7 @@ pub fn handle_variable_declaration(
             return match data_type {
                 Some(dt) => {
                     let key = function.variables.increment();
-                    function.operations.push(Operation::Allocate {
-                        destination: key,
-                        data_type: dt.convert(),
-                    });
+                    function.operations.allocate(&key, &dt.convert());
                 }
                 None => {
                     program
@@ -50,7 +47,7 @@ pub fn handle_variable_declaration(
         .key
         .clone();
 
-    handle_allocation(program, function, &location, destination, data_type, info);
+    handle_allocation(program, function, &location, &destination, &data_type, info);
 }
 
 pub fn handle_set_variable(
@@ -85,9 +82,5 @@ pub fn handle_set_variable(
         expression,
     );
 
-    function.operations.push(Operation::Store {
-        data_type: data_type.convert(),
-        value,
-        destination: variable.key.clone(),
-    });
+    function.operations.store(&data_type.convert(), &value, &variable.key);
 }

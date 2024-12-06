@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{ElemmentPointerOperation, IRValue, Operation},
+    analyzer::IRValue,
     parser::{CompareOperator, Expression, ExpressionInfo, Value},
     types::{BaseType, Type},
 };
@@ -21,10 +21,10 @@ pub fn what_type(
             let name = path.first().unwrap();
             let array = match function.variables.read(name) {
                 Some(var) => var,
-                None => return Type::void()
+                None => return Type::void(),
             };
             let (data_type, _) = array.data_type.clone().array_info();
-            return data_type
+            return data_type;
         }
         Expression::Array(array) => {
             match expected_type {
@@ -218,25 +218,19 @@ pub fn handle_expression(
             for (index, expression) in expressions.into_iter().enumerate() {
                 let (value, data_type) =
                     handle_expression(program, function, &expected_value_type, Some(expression));
+
                 let key_ptr = function.variables.increment();
 
-                let operation = ElemmentPointerOperation::Inbounds {
-                    data_type: expected_type.convert(),
-                    value_type: value_type.convert(),
-                    from: name.clone(),
-                    index: IRValue::IntLiteral(format!("{index}")),
-                };
-
-                function.operations.push(Operation::GetElementPointer {
-                    destination: key_ptr.clone(),
-                    operation,
-                });
-
-                function.operations.push(Operation::Store {
-                    data_type: data_type.convert(),
-                    value,
-                    destination: key_ptr,
-                });
+                function.operations.getelementptr_inbounds(
+                    &key_ptr,
+                    &expected_type.convert(),
+                    &value_type.convert(),
+                    &name,
+                    &IRValue::IntLiteral(format!("{index}")),
+                );
+                function
+                    .operations
+                    .store(&data_type.convert(), &value, &key_ptr);
             }
 
             IRValue::Variable(name)
@@ -259,13 +253,13 @@ pub fn handle_expression(
             let (first_value, data_type) = handle_expression(program, function, &None, Some(first));
             let (second_value, _) = handle_expression(program, function, &None, Some(second));
 
-            function.operations.push(Operation::CompareOperation {
-                destination: result.clone(),
-                operator,
-                data_type: data_type.convert(),
-                first: first_value,
-                second: second_value,
-            });
+            function.operations.compare_operation(
+                &result,
+                &operator,
+                &data_type.convert(),
+                &first_value,
+                &second_value,
+            );
             IRValue::Variable(result)
         }
         Expression::BinaryOperation(a, operator, b) => {
@@ -281,13 +275,13 @@ pub fn handle_expression(
             let (second_value, _) =
                 handle_expression(program, function, &Some(data_type), Some(second));
 
-            function.operations.push(Operation::BinaryOperation {
-                destination: result.clone(),
-                operator,
-                data_type: ir,
-                first: first_value,
-                second: second_value,
-            });
+            function.operations.binary_operation(
+                &result,
+                &operator,
+                &ir,
+                &first_value,
+                &second_value,
+            );
             IRValue::Variable(result)
         }
         Expression::GetVariable(path) => {
@@ -313,11 +307,11 @@ pub fn handle_expression(
                 } else if variable.data_type.base.is_array() {
                     IRValue::Variable(variable.key.clone())
                 } else {
-                    function.operations.push(Operation::Load {
-                        destination: result_key.clone(),
-                        destination_type: expected_type.convert(),
-                        value: IRValue::Variable(variable.key.clone()),
-                    });
+                    function.operations.load(
+                        &result_key,
+                        &expected_type.convert(),
+                        &IRValue::Variable(variable.key.clone()),
+                    );
                     IRValue::Variable(result_key)
                 }
             }
@@ -357,14 +351,7 @@ pub fn handle_expression(
 
                 ir_arguments.push((data_type.convert(), value));
             }
-
-            function.operations.push(Operation::StoreCall {
-                destination: result_key.clone(),
-                function: found.key.clone(),
-                return_type: found.return_type.convert(),
-                arguments: IRValue::Arguments(ir_arguments),
-            });
-
+            function.operations.store_call(&result_key, &found.key, &found.return_type.convert(), IRValue::Arguments(ir_arguments));
             IRValue::Variable(result_key)
         }
         _ => {

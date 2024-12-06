@@ -1,5 +1,5 @@
-use analyzer::{analyze, parse_types};
-use codegen::codegen;
+use analyzer::{analyze, parse_types, ProgramCtx};
+use codegen::CodeGen;
 use counter::NameCounter;
 use errors::{CompileCtx, CompileResult};
 use parser::start_parse;
@@ -57,13 +57,22 @@ fn compile(
     let types = parse_types(debug, count, &mut program)?;
     debug.throw(false);
 
-    let analyzed = analyze(debug, count, types, program)?;
-    debug.throw(true);
+
+    let mut ctx = ProgramCtx {
+        debug,
+        count,
+        codegen: CodeGen::new(),
+        types: &types,
+        static_strings: &mut Vec::new(),
+    };
+
+    analyze(&mut ctx, program)?;
+    ctx.debug.throw(true);
 
 
-    debug.set_status("Building");
+    ctx.debug.set_status("Building");
 
-    let source = codegen(analyzed);
+    let source = ctx.codegen.generate();
 
     let build_command = format!(
         "clang -O3 {} -o {}",

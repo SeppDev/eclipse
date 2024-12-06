@@ -1,96 +1,11 @@
-use crate::compiler::{parser::ArithmeticOperator, parser::CompareOperator, types::{BaseType, ReferenceState, Type}};
+use crate::compiler::types::{BaseType, ReferenceState, Type};
 
 #[derive(Debug)]
 pub struct IRFunction {
     pub name: String,
     pub parameters: Vec<(String, IRType)>,
     pub return_type: IRType,
-    pub operations: Vec<Operation>,
 }
-
-#[derive(Debug, Default)]
-pub enum Operation {
-    #[default]
-    Unkown,
-    Label(String),
-    Allocate {
-        destination: String,
-        data_type: IRType,
-    },
-    Store {
-        data_type: IRType,
-        value: IRValue,
-        destination: String,
-    },
-    Load {
-        destination: String,
-        destination_type: IRType,
-        value: IRValue,
-    },
-    Call {
-        function: String,
-        return_type: IRType,
-        arguments: IRValue,
-    },
-    StoreCall {
-        destination: String,
-        function: String,
-        return_type: IRType,
-        arguments: IRValue,
-    },
-    Return {
-        data_type: IRType,
-        value: IRValue,
-    },
-    BinaryOperation {
-        destination: String,
-        operator: ArithmeticOperator,
-        data_type: IRType,
-        first: IRValue,
-        second: IRValue
-    },
-    CompareOperation {
-        destination: String,
-        operator: CompareOperator,
-        data_type: IRType,
-        first: IRValue,
-        second: IRValue 
-    },
-    Branch {
-        condition: IRValue,
-        yes: String,
-        no: String
-    },
-    Goto {
-        label: String
-    },
-    GetElementPointer {
-        destination: String,
-        operation: ElemmentPointerOperation
-    }
-}
-
-#[derive(Debug)]
-pub enum ElemmentPointerOperation {
-    Inbounds { 
-        data_type: IRType,
-        value_type: IRType,
-        from: String,
-        index: IRValue,
-    }
-}
-impl std::fmt::Display for ElemmentPointerOperation {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Inbounds { data_type, value_type, from, index } => format!("inbounds {data_type}, ptr %{from}, {value_type} 0, {value_type} {index}")
-            }
-        )
-    }
-}
-
 
 #[derive(Debug, Clone)]
 pub enum IRValue {
@@ -143,7 +58,7 @@ impl IRType {
         match self {
             Self::Integer(_) => true,
             Self::UInteger(_) => false,
-            _ => panic!("{}", self)
+            _ => panic!("{}", self),
         }
     }
     pub fn is_float(&self) -> bool {
@@ -163,7 +78,7 @@ impl std::fmt::Display for IRType {
                 Self::Void => "void".to_string(),
                 Self::Double => "double".to_string(),
                 Self::Float => "float".to_string(),
-                Self::Array(size, t) => format!("[ {size} x {t} ]"),
+                Self::Array(size, t) => format!("[{size} x {t}]"),
                 Self::Integer(bits) | IRType::UInteger(bits) => format!("i{bits}"),
                 Self::Pointer(t) => format!("{t}*"),
                 Self::Struct(name) => format!("%{name}",),
@@ -210,9 +125,9 @@ impl Type {
         let count = match self.ref_state {
             ReferenceState::Pointer(p) => p,
             ReferenceState::Mutable | ReferenceState::Shared => 1,
-            _ => 0
+            _ => 0,
         };
-        
+
         for _ in 0..count {
             ir = ir.pointer()
         }

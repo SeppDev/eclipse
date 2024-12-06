@@ -1,4 +1,5 @@
 use crate::compiler::{
+    codegen::{CodeGen, FunctionOperations},
     counter::NameCounter,
     errors::{CompileCtx, CompileResult, Location},
     parser::{Node, NodeInfo, ParsedFile},
@@ -7,16 +8,14 @@ use crate::compiler::{
     types::{ReferenceState, Type},
 };
 
-use super::{
-    variables::VariablesMap, FileTypes, IRFunction, IRProgram, IRType, IRValue, Operation,
-};
+use super::{variables::VariablesMap, FileTypes, IRValue};
 
 pub struct ProgramCtx<'a> {
     pub debug: &'a mut CompileCtx,
-    pub functions: &'a mut Vec<IRFunction>,
+    pub codegen: CodeGen,
     pub types: &'a FileTypes,
-    count: &'a mut NameCounter,
-    static_strings: &'a mut Vec<(String, String)>,
+    pub count: &'a mut NameCounter,
+    pub static_strings: &'a mut Vec<(String, String)>,
 }
 impl<'a> ProgramCtx<'a> {
     pub fn push_string(&mut self, string: String) -> String {
@@ -42,38 +41,19 @@ impl LoopInfo {
 pub struct FunctionCtx<'a> {
     pub variables: VariablesMap,
     pub return_type: &'a Option<Type>,
-    pub operations: Vec<Operation>,
+    pub operations: &'a mut FunctionOperations,
     pub relative_path: &'a Path,
 
     pub loop_info: Vec<LoopInfo>,
 }
 
-pub fn analyze(
-    debug: &mut CompileCtx,
-    count: &mut NameCounter,
-    types: FileTypes,
-    mut program: ParsedProgram,
-) -> CompileResult<IRProgram> {
-    let mut functions = Vec::new();
+pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileResult<()> {
     // let std_path = Path::from("std");
     // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
 
-    let mut static_strings = Vec::new();
+    handle_file(program, &mut parsed.main);
 
-    let mut ctx = ProgramCtx {
-        debug,
-        count,
-        functions: &mut functions,
-        types: &types,
-        static_strings: &mut static_strings,
-    };
-
-    handle_file(&mut ctx, &mut program.main);
-
-    return Ok(IRProgram {
-        functions,
-        static_strings,
-    });
+    return Ok(());
 }
 
 fn handle_file(program: &mut ProgramCtx, file: &mut ParsedFile) {
@@ -133,52 +113,42 @@ fn handle_function(
     let mut variables = VariablesMap::new();
     variables.push_scope();
 
-    let mut operations = Vec::new();
-
+    let mut mutables = Vec::new();
     let mut new_params = Vec::new();
     for (mutable, name, data_type) in parameters {
         if mutable {
-            if !matches!(
-                data_type.ref_state,
-                ReferenceState::None | ReferenceState::Pointer(_)
-            ) {
-                let mut location = location.clone();
-                location.lines = location.lines.start..location.lines.start;
-
-                program.debug.error(
-                    location,
-                    format!("Cannot mutate a value that has a reference: '{name}'"),
-                );
-            }
-
-            let temp_param_key = variables.increment();
-            new_params.push((temp_param_key.clone(), data_type.convert()));
-
-            let param_variable =
-                variables.insert(false, &name, true, data_type.clone(), location.clone());
-
-            operations.push(Operation::Allocate {
-                destination: param_variable.key.clone(),
-                data_type: data_type.convert(),
-            });
-            operations.push(Operation::Store {
-                data_type: data_type.convert(),
-                value: IRValue::Variable(temp_param_key),
-                destination: param_variable.key.clone(),
-            });
-        } else {
-            let ir = data_type.convert();
-            let variable = variables.insert(true, &name, false, data_type, location.clone());
-            new_params.push((variable.key.clone(), ir));
+            let key = variables.increment();
+            new_params.push((key.clone(), data_type.convert()));
+            mutables.push((name, key, data_type));
+            continue;
         }
+
+        let ir = data_type.convert();
+        let variable = variables.insert(true, &name, false, data_type, location.clone());
+        new_params.push((variable.key.clone(), ir));
     }
 
-    let ir_type = return_type.convert();
+    let mut operations = FunctionOperations::new(&key, &return_type, &new_params);
+
+    for (name, key, data_type) in mutables {
+        new_params.push((key.clone(), data_type.convert()));
+
+        let param_variable =
+            variables.insert(false, &name, true, data_type.clone(), location.clone());
+
+        operations.allocate(&param_variable.key, &data_type.convert());
+        operations.store(
+            &data_type.convert(),
+            &IRValue::Variable(key),
+            &param_variable.key,
+        );
+    }
+
     let mut function = FunctionCtx {
         variables,
         return_type: &Some(return_type),
         relative_path: &file.relative_path,
-        operations,
+        operations: &mut operations,
         loop_info: Vec::new(),
     };
 
@@ -186,25 +156,27 @@ fn handle_function(
 
     function.variables.pop_scope();
 
-    if !matches!(
-        function.operations.last().unwrap_or(&Operation::Unkown),
-        Operation::Return {
-            data_type: _,
-            value: _
-        }
-    ) {
-        function.operations.push(Operation::Return {
-            data_type: IRType::Void,
-            value: IRValue::Null,
-        })
-    }
+    program.codegen.insert(operations);
 
-    program.functions.push(IRFunction {
-        name: key,
-        operations: function.operations,
-        parameters: new_params,
-        return_type: ir_type,
-    });
+    // if !matches!(
+    //     function.operations.last().unwrap_or(&Operation::Unkown),
+    //     Operation::Return {
+    //         data_type: _,
+    //         value: _
+    //     }
+    // ) {
+    //     function.operations.push(Operation::Return {
+    //         data_type: IRType::Void,
+    //         value: IRValue::Null,
+    //     })
+    // }
+
+    // program.functions.push(IRFunction {
+    //     name: key,
+    //     operations: function.operations,
+    //     parameters: new_params,
+    //     return_type: ir_type,
+    // });
 }
 
 mod nodes;
