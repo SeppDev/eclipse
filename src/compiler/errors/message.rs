@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use crate::compiler::path::Path;
 
 use super::{CompileCtx, Location, Map};
@@ -46,8 +48,13 @@ impl Message {
             details: Vec::new()
         }
     }
-    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) {
+    pub fn set_notice<Notice: ToString>(&mut self, notice: Notice) {
+        let detail = self.details.first_mut().unwrap();
+        detail.set_notice(notice);
+    }
+    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) -> &mut Detail {
         self.details.push(Detail::new(notice.to_string(), location));
+        self.details.last_mut().unwrap()
     }
 }
 

@@ -1,14 +1,9 @@
 use crate::compiler::{
-    analyzer::IRValue,
-    parser::{CompareOperator, Expression, ExpressionInfo, Value},
+    parser::{Expression, ExpressionInfo, Value},
     types::{BaseType, Type},
 };
 
 use super::{FunctionCtx, ProgramCtx};
-
-fn void() -> (IRValue, Type) {
-    return (IRValue::Null, Type::default());
-}
 
 pub fn what_type(
     program: &mut ProgramCtx,
@@ -130,43 +125,24 @@ pub fn what_type(
                 program.debug.error(
                     expression.location.clone(),
                     format!(
-                        "Compare types haves to be the same: {data_type} != {data_type_second}"
+                        "Operation types haves to be the same: {data_type} != {data_type_second}"
                     ),
                 );
             }
 
             data_type
         }
-        Expression::CompareOperation(a, operator, b) => {
+        Expression::CompareOperation(a, _, b) => {
             let first = a.as_ref();
             let second = b.as_ref();
 
-            let number_required = !matches!(
-                operator,
-                CompareOperator::Equals | CompareOperator::NotEquals
-            );
-
             let data_type = what_type(program, function, expected_type, first);
-            if number_required && !data_type.base.is_number() {
-                program.debug.error(
-                    first.location.clone(),
-                    "Number is required for this operator",
-                );
-            }
-
             let data_type_second = what_type(program, function, Some(&data_type), second);
-            if number_required && !data_type_second.base.is_number() {
-                program.debug.error(
-                    second.location.clone(),
-                    "Number is required for this operator",
-                );
-            }
-
             if data_type != data_type_second {
                 program.debug.error(
                     expression.location.clone(),
                     format!(
-                        "Compare types haves to be the same: {data_type} != {data_type_second}"
+                        "Operation types haves to be the same: {data_type} != {data_type_second}"
                     ),
                 );
             }
@@ -178,189 +154,4 @@ pub fn what_type(
     data_type.ref_state = expression.ref_state.clone();
 
     return data_type;
-}
-
-pub fn handle_expression(
-    program: &mut ProgramCtx,
-    function: &mut FunctionCtx,
-    expected_type: &Option<Type>,
-    expression: Option<ExpressionInfo>,
-) -> (IRValue, Type) {
-    let expression = match expression {
-        Some(expression) => expression,
-        None => return void(),
-    };
-
-    let expected_type: Type = match expected_type {
-        Some(t) => {
-            let expected = t.clone();
-            let infered = what_type(program, function, Some(&expected), &expression);
-
-            if infered != expected {
-                program.debug.error(
-                    expression.location.clone(),
-                    format!("Wrong types, expected: '{expected}' but got: '{infered}'"),
-                );
-            }
-
-            expected
-        }
-        None => what_type(program, function, None, &expression),
-    };
-
-    let value = match expression.expression {
-        Expression::Array(expressions) => {
-            let name = function.variables.increment();
-
-            let (value_type, _size) = expected_type.clone().array_info();
-            let expected_value_type = Some(value_type.clone());
-
-            for (index, expression) in expressions.into_iter().enumerate() {
-                let (value, data_type) =
-                    handle_expression(program, function, &expected_value_type, Some(expression));
-
-                let key_ptr = function.variables.increment();
-
-                function.operations.getelementptr_inbounds(
-                    &key_ptr,
-                    &expected_type.convert(),
-                    &value_type.convert(),
-                    &name,
-                    &IRValue::IntLiteral(format!("{index}")),
-                );
-                function
-                    .operations
-                    .store(&data_type.convert(), &value, &key_ptr);
-            }
-
-            IRValue::Variable(name)
-        }
-        Expression::Value(value) => match value {
-            Value::Integer(int) => {
-                // Check integer overflow
-                IRValue::IntLiteral(int)
-            }
-            Value::Boolean(bool) => IRValue::BoolLiteral(bool),
-            Value::Float(float) => IRValue::FloatLiteral(float),
-            _ => todo!(),
-        },
-        Expression::CompareOperation(a, operator, b) => {
-            let result = function.variables.increment();
-
-            let first = *a;
-            let second = *b;
-
-            let (first_value, data_type) = handle_expression(program, function, &None, Some(first));
-            let (second_value, _) = handle_expression(program, function, &None, Some(second));
-
-            function.operations.compare_operation(
-                &result,
-                &operator,
-                &data_type.convert(),
-                &first_value,
-                &second_value,
-            );
-            IRValue::Variable(result)
-        }
-        Expression::BinaryOperation(a, operator, b) => {
-            let result = function.variables.increment();
-
-            let first = *a;
-            let second = *b;
-
-            let ir = expected_type.convert();
-            let et = Some(expected_type.clone());
-
-            let (first_value, data_type) = handle_expression(program, function, &et, Some(first));
-            let (second_value, _) =
-                handle_expression(program, function, &Some(data_type), Some(second));
-
-            function.operations.binary_operation(
-                &result,
-                &operator,
-                &ir,
-                &first_value,
-                &second_value,
-            );
-            IRValue::Variable(result)
-        }
-        Expression::GetVariable(path) => {
-            let name = path.first().unwrap();
-            let result_key = function.variables.increment();
-
-            let variable = match function.variables.read(name) {
-                Some(var) => var,
-                None => {
-                    program.debug.error(
-                        expression.location,
-                        format!("Could not find variable named: '{name}'"),
-                    );
-                    return void();
-                }
-            };
-
-            if variable.is_parameter {
-                IRValue::Variable(variable.key.clone())
-            } else {
-                if variable.data_type.is_reference() {
-                    IRValue::Variable(variable.key.clone())
-                } else if variable.data_type.base.is_array() {
-                    IRValue::Variable(variable.key.clone())
-                } else {
-                    function.operations.load(
-                        &result_key,
-                        &expected_type.convert(),
-                        &IRValue::Variable(variable.key.clone()),
-                    );
-                    IRValue::Variable(result_key)
-                }
-            }
-        }
-        Expression::Call(path, mut arguments) => {
-            let result_key = function.variables.increment();
-            let found = match program.types.get_function(function.relative_path, &path) {
-                Some(f) => f,
-                None => {
-                    program.debug.error(
-                        expression.location,
-                        format!("Could not find function: '{path}'"),
-                    );
-                    return void();
-                }
-            };
-
-            if arguments.len() != found.parameters.len() {
-                program.debug.error(
-                    expression.location,
-                    format!(
-                        "Expected {} arguments, but got {}",
-                        found.parameters.len(),
-                        arguments.len()
-                    ),
-                );
-                return void();
-            }
-
-            arguments.reverse();
-
-            let mut ir_arguments = Vec::new();
-            for param_type in &found.parameters {
-                let expression = arguments.pop();
-                let (value, data_type) =
-                    handle_expression(program, function, param_type, expression);
-
-                ir_arguments.push((data_type.convert(), value));
-            }
-            function.operations.store_call(&result_key, &found.key, &found.return_type.convert(), IRValue::Arguments(ir_arguments));
-            IRValue::Variable(result_key)
-        }
-        _ => {
-            program
-                .debug
-                .result_print(format!("{:#?}", expression.expression));
-            return void();
-        }
-    };
-
-    return (value, expected_type);
 }

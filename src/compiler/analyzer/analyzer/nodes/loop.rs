@@ -1,13 +1,15 @@
 use crate::compiler::{
-    analyzer::{analyzer::{handle_body, handle_expression, LoopInfo}, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::{handle_body, LoopInfo}, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::{ExpressionInfo, NodeInfo}, types::{BaseType, Type},
 };
 
+use super::handle_read;
+
 pub fn handle_loop(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
-    _location: Location,
+    location: Location,
     condition: Option<ExpressionInfo>,
     body: Vec<NodeInfo>,
 ) {
@@ -21,11 +23,12 @@ pub fn handle_loop(
 
     match condition {
         Some(expression) => {
-            let (result, _) = handle_expression(
+            let result = handle_read(
                 program,
                 function,
-                &Some(Type::new(BaseType::Boolean)),
-                Some(expression),
+                &location,
+                &Type::new(BaseType::Boolean),
+                expression,
             );
             let after = function.variables.increment();
             function.operations.branch(&result, &after, &end);

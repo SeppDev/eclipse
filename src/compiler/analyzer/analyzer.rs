@@ -1,11 +1,10 @@
 use crate::compiler::{
     codegen::{CodeGen, FunctionOperations},
-    counter::NameCounter,
     errors::{CompileCtx, CompileResult, Location},
-    parser::{Node, NodeInfo, ParsedFile},
+    parser::{Node, NodeInfo, Parameter, ParsedFile},
     path::Path,
     program::ParsedProgram,
-    types::{ReferenceState, Type},
+    types::Type,
 };
 
 use super::{variables::VariablesMap, FileTypes, IRValue};
@@ -14,16 +13,16 @@ pub struct ProgramCtx<'a> {
     pub debug: &'a mut CompileCtx,
     pub codegen: CodeGen,
     pub types: &'a FileTypes,
-    pub count: &'a mut NameCounter,
-    pub static_strings: &'a mut Vec<(String, String)>,
+    // pub count: &'a mut NameCounter,
+    // pub static_strings: &'a mut Vec<(String, String)>,
 }
-impl<'a> ProgramCtx<'a> {
-    pub fn push_string(&mut self, string: String) -> String {
-        let key = self.count.increment();
-        self.static_strings.push((key.clone(), string));
-        return key;
-    }
-}
+// impl<'a> ProgramCtx<'a> {
+//     pub fn push_string(&mut self, string: String) -> String {
+//         let key = self.count.increment();
+//         self.static_strings.push((key.clone(), string));
+//         return key;
+//     }
+// }
 
 pub struct LoopInfo {
     pub begin: String,
@@ -43,7 +42,6 @@ pub struct FunctionCtx<'a> {
     pub return_type: &'a Option<Type>,
     pub operations: &'a mut FunctionOperations,
     pub relative_path: &'a Path,
-
     pub loop_info: Vec<LoopInfo>,
 }
 
@@ -106,7 +104,7 @@ fn handle_function(
     location: Location,
 
     key: String,
-    parameters: Vec<(bool, String, Type)>,
+    parameters: Vec<Parameter>,
     return_type: Type,
     body: Vec<NodeInfo>,
 ) {
@@ -115,16 +113,27 @@ fn handle_function(
 
     let mut mutables = Vec::new();
     let mut new_params = Vec::new();
-    for (mutable, name, data_type) in parameters {
-        if mutable {
+    for parameter in parameters {
+        println!("{parameter:#?}");
+
+        if parameter.mutable {
+            if parameter.data_type.is_pointing() {
+                program.debug.error(
+                    location.clone(),
+                    format!(
+                        "A parameter cannot be mutable if it is a pointer or reference."
+                    ),
+                );
+            }
+
             let key = variables.increment();
-            new_params.push((key.clone(), data_type.convert()));
-            mutables.push((name, key, data_type));
+            new_params.push((key.clone(), parameter.data_type.convert()));
+            mutables.push((parameter.name, key, parameter.data_type));
             continue;
         }
 
-        let ir = data_type.convert();
-        let variable = variables.insert(true, &name, false, data_type, location.clone());
+        let ir = parameter.data_type.convert();
+        let variable = variables.insert(true, &parameter.name, false, parameter.data_type, location.clone());
         new_params.push((variable.key.clone(), ir));
     }
 
@@ -224,10 +233,19 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             Node::Call(path, arguments) => {
                 handle_call(program, function, info.location, path, arguments)
             }
-            Node::Return(expression) => handle_return(program, function, info.location, expression),
             Node::Break => handle_break(program, function, info.location),
             Node::Continue => handle_continue(program, function, info.location),
             Node::Scope(body) => handle_body(program, function, body),
+            Node::Return(expression) => {
+                handle_return(
+                    program,
+                    function,
+                    info.location,
+                    function.return_type,
+                    expression,
+                );
+                break;
+            }
             _ => program
                 .debug
                 .result_print(format!("Todo: {:#?}", info.node)),

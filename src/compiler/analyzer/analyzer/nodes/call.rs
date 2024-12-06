@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_expression, FunctionCtx, IRValue, ProgramCtx},
+    analyzer::{analyzer::what_type, FunctionCtx, IRValue, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     path::Path,
@@ -40,9 +40,10 @@ pub fn handle_call(
 
     let mut ir_arguments = Vec::new();
     for param_type in &found.parameters {
-        let expression = arguments.pop();
-        let param_type = param_type.as_ref().unwrap();
-        let value = handle_read(program, function, &location, param_type, expression.unwrap());
+        let info = arguments.pop().unwrap();
+
+        let data_type = what_type(program, function, Some(param_type), &info);
+        let value = handle_read(program, function, &location, &data_type, info);
 
         ir_arguments.push((param_type.convert(), value));
     }

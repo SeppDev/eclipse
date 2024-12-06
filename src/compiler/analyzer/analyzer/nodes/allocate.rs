@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{FunctionCtx, IRValue, ProgramCtx},
+    analyzer::{analyzer::what_type, FunctionCtx, IRValue, ProgramCtx},
     errors::Location,
     parser::{Expression, ExpressionInfo, Value},
     types::Type,
@@ -16,6 +16,8 @@ pub fn handle_allocation(
     function
         .operations
         .allocate(&destination, &data_type.convert());
+
+    let data_type = &what_type(program, function, Some(data_type), &info);
 
     handle_store(program, function, location, destination, data_type, info);
 }
@@ -50,6 +52,15 @@ pub fn handle_store(
         Expression::Array(items) => {
             let (item_type, size) = data_type.array_info();
 
+            let length = items.len();
+            if length != size {
+                program.debug.error(
+                    location.clone(),
+                    format!("Expected {size} items, but found {length} items"),
+                );
+                return;
+            }
+
             for (index, item) in items.into_iter().enumerate() {
                 let key_ptr = function.variables.increment();
 
@@ -63,13 +74,16 @@ pub fn handle_store(
                 handle_store(program, function, location, &key_ptr, &item_type, item);
             }
         }
-        Expression::Index(_, _) | Expression::Call(_, _) => {
+        Expression::Index(_, _)
+        | Expression::Call(_, _)
+        | Expression::BinaryOperation(_, _, _)
+        | Expression::CompareOperation(_, _, _) => {
             let value = handle_read(program, function, location, data_type, info);
             function
                 .operations
                 .store(&data_type.convert(), &value, &destination);
         }
-        _ => todo!(),
+        _ => todo!("{info:#?}"),
     };
 }
 
@@ -131,6 +145,9 @@ pub fn handle_read(
                     return IRValue::Null;
                 }
             };
+            if variable.is_parameter {
+                return IRValue::Variable(variable.key.clone());
+            }
 
             function.operations.load(
                 &load_destination,
@@ -176,13 +193,7 @@ pub fn handle_read(
             let mut ir_arguments = Vec::new();
             for param_type in &found.parameters {
                 let expression = arguments.pop().unwrap();
-                let value = handle_read(
-                    program,
-                    function,
-                    location,
-                    param_type.as_ref().unwrap(),
-                    expression,
-                );
+                let value = handle_read(program, function, location, param_type, expression);
 
                 ir_arguments.push((data_type.convert(), value));
             }
@@ -196,16 +207,44 @@ pub fn handle_read(
 
             IRValue::Variable(result_key)
         }
+        Expression::CompareOperation(a, operator, b) => {
+            let result = function.variables.increment();
 
-        // Expression::Value(value) if data_type.base.is_integer() => ,
-        // Expression::Value(_) => {
-        //     program.debug.error(
-        //         info.location.clone(),
-        //         format!("An integer is required to index in an array"),
-        //     );
-        //     IRValue::Null
-        // }
-        _ => todo!(),
+            let first = *a;
+            let second = *b;
+
+            let value_type = what_type(program, function, None, &first);
+            let first_value = handle_read(program, function, location, &value_type, first);
+            let second_value = handle_read(program, function, location, &value_type, second);
+
+            function.operations.compare_operation(
+                &result,
+                &operator,
+                &value_type.convert(),
+                &first_value,
+                &second_value,
+            );
+            IRValue::Variable(result)
+        }
+        Expression::BinaryOperation(a, operator, b) => {
+            let result = function.variables.increment();
+
+            let first = *a;
+            let second = *b;
+
+            let first_value = handle_read(program, function, location, &data_type, first);
+            let second_value = handle_read(program, function, location, &data_type, second);
+
+            function.operations.binary_operation(
+                &result,
+                &operator,
+                &data_type.convert(),
+                &first_value,
+                &second_value,
+            );
+            IRValue::Variable(result)
+        }
+        _ => todo!("{info:#?}"),
     };
     /*
         let name = path.components().pop().unwrap();

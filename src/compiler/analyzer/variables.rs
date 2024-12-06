@@ -9,7 +9,6 @@ pub struct Variable {
     pub key: String,
     pub location: Location,
     pub is_parameter: bool,
-    pub is_borrowed: bool,
 }
 
 #[derive(Debug)]
@@ -47,7 +46,6 @@ impl VariablesMap {
             data_type,
             location,
             is_parameter,
-            is_borrowed: false
         };
 
         let _ = self.variables.insert(name.clone(), variable);
@@ -64,19 +62,6 @@ impl VariablesMap {
         for key in state {
             self.variables.remove(&key);
         }
-    }
-    pub fn is_borrowed(&self, name: &String) -> Option<bool> {
-        match self.variables.get(name) {
-            Some(var) => return Some(var.is_borrowed),
-            None => return None,
-        };
-    }
-    pub fn borrow(&mut self, name: &String) -> Option<&Variable> {
-        match self.variables.get_mut(name) {
-            Some(var) => var.is_borrowed = true,
-            None => return None,
-        };
-        return self.variables.get(name);
     }
     pub fn read(&self, name: &String) -> Option<&Variable> {
         return self.variables.get(name);

@@ -1,14 +1,11 @@
 use crate::compiler::{
-    analyzer::{
-        analyzer::{handle_expression, what_type},
-        FunctionCtx, ProgramCtx,
-    },
+    analyzer::{analyzer::what_type, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     types::Type,
 };
 
-use super::handle_allocation;
+use super::{handle_allocation, handle_read};
 
 pub fn handle_variable_declaration(
     program: &mut ProgramCtx,
@@ -57,30 +54,48 @@ pub fn handle_set_variable(
     name: String,
     expression: Option<ExpressionInfo>,
 ) {
+    let expression = match expression {
+        Some(e) => e,
+        None => {
+            program
+            .debug
+            .error(location, format!("Cannot set a variable without any expression"));
+            return;
+        }
+    };
+
     let variable = match function.variables.read(&name) {
         Some(var) => var.clone(),
         None => {
             program
                 .debug
-                .error(location, format!("Could not find variable named: '{name}'"));
+                .error(location, format!("Cannot modify an immutable variable: '{name}'"));
             return;
         }
     };
 
     if !variable.mutable {
-        program.debug.error(
-            location,
+        let message = program.debug.error(
+            variable.location.clone(),
             format!("Cannot mutate unmutable variable: '{name}'"),
         );
+        message.set_notice(format!("help: mut {name}"));
+        message.push("", location);
         return;
     }
 
-    let (value, data_type) = handle_expression(
+    // let a = 5;
+    // a = 3;
+
+    let value = handle_read(
         program,
         function,
-        &Some(variable.data_type.clone()),
+        &location,
+        &variable.data_type.clone(),
         expression,
     );
 
-    function.operations.store(&data_type.convert(), &value, &variable.key);
+    function
+        .operations
+        .store(&variable.data_type.convert(), &value, &variable.key);
 }

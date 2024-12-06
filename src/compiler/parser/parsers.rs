@@ -112,8 +112,6 @@ pub fn start_parse(
 
     let file_name = relative_file_path.clone().pop().unwrap();
 
-    // debug.result_print(format!("\n{:#?}", body));
-
     let file = ParsedFile {
         imports,
         body,

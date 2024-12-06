@@ -1,12 +1,11 @@
 use crate::compiler::{
-    analyzer::{
-        analyzer::{handle_body, handle_expression},
-        FunctionCtx, ProgramCtx,
-    },
+    analyzer::{analyzer::handle_body, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::{ExpressionInfo, NodeInfo},
     types::{BaseType, Type},
 };
+
+use super::handle_read;
 
 pub fn handle_ifstatement(
     program: &mut ProgramCtx,
@@ -16,11 +15,12 @@ pub fn handle_ifstatement(
     body: Vec<NodeInfo>,
     else_body: Option<Vec<NodeInfo>>,
 ) {
-    let (result, _) = handle_expression(
+    let result = handle_read(
         program,
         function,
-        &Some(Type::new(BaseType::Boolean)),
-        Some(expression),
+        &location,
+        &Type::new(BaseType::Boolean),
+        expression,
     );
 
     let yes = function.variables.increment();
@@ -29,6 +29,8 @@ pub fn handle_ifstatement(
 
     function.operations.branch(&result, &yes, &no);
     function.operations.label(&yes);
+    handle_body(program, function, body);
+    
     function.operations.goto(&exit);
 
     function.operations.label(&no);

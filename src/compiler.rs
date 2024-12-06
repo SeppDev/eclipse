@@ -60,10 +60,10 @@ fn compile(
 
     let mut ctx = ProgramCtx {
         debug,
-        count,
         codegen: CodeGen::new(),
         types: &types,
-        static_strings: &mut Vec::new(),
+        // count,
+        // static_strings: &mut Vec::new(),
     };
 
     analyze(&mut ctx, program)?;

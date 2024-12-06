@@ -2,6 +2,14 @@ use crate::compiler::{
     analyzer::{IRType, IRValue}, errors::{CompileResult, Location}, path::Path, types::{BaseType, ReferenceManager, ReferenceState, Type}
 };
 
+#[derive(Debug)]
+pub struct Parameter {
+    pub location: Location,
+    pub mutable: bool,
+    pub name: String,
+    pub data_type: Type,
+}
+
 #[derive(Debug, Default)]
 pub enum Node {
     #[default]
@@ -20,7 +28,7 @@ pub enum Node {
         export: bool,
         name: String,
         key: String,
-        parameters: Vec<(bool, String, Type)>,
+        parameters: Vec<Parameter>,
         return_type: Type,
         body: Vec<NodeInfo>,
     },

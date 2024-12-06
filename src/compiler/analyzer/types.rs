@@ -80,7 +80,7 @@ impl FileTypes {
 #[derive(Debug)]
 pub struct Function {
     pub key: String,
-    pub parameters: Vec<Option<Type>>,
+    pub parameters: Vec<Type>,
     pub return_type: Type,
 }
 
@@ -102,7 +102,7 @@ pub fn parse_types(
         "print".to_string(),
         Function {
             key: "print".to_string(),
-            parameters: vec![(Some(Type::new(BaseType::Int(32))))],
+            parameters: vec![(Type::new(BaseType::Int(32)))],
             return_type: Type::void(),
         },
     );
@@ -111,7 +111,7 @@ pub fn parse_types(
         "sleep".to_string(),
         Function {
             key: "sleep".to_string(),
-            parameters: vec![(Some(Type::new(BaseType::Int(32))))],
+            parameters: vec![(Type::new(BaseType::Int(32)))],
             return_type: Type::new(BaseType::Int(32)),
         },
     );
@@ -120,7 +120,7 @@ pub fn parse_types(
         "usleep".to_string(),
         Function {
             key: "usleep".to_string(),
-            parameters: vec![(Some(Type::new(BaseType::Int(32))))],
+            parameters: vec![(Type::new(BaseType::Int(32)))],
             return_type: Type::new(BaseType::Int(32)),
         },
     );
@@ -180,13 +180,10 @@ fn handle_file(
                     name.clone(),
                     Function {
                         key,
-                        parameters: {
-                            let mut params = Vec::new();
-                            for (_, _, t) in parameters {
-                                params.push(Some(t.clone()));
-                            }
-                            params
-                        },
+                        parameters: parameters
+                            .iter()
+                            .map(|parameter| parameter.data_type.clone())
+                            .collect::<Vec<Type>>(),
                         return_type: return_type.clone(),
                     },
                 );

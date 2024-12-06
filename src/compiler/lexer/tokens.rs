@@ -10,6 +10,7 @@ use std::{iter::Peekable, vec::IntoIter};
 #[derive(Debug)]
 pub struct Tokens {
     pub relative_file_path: Path,
+    start_on_next: bool,
     messages: Vec<Message>,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
@@ -19,6 +20,7 @@ impl Tokens {
     pub fn new(tokens: Vec<TokenInfo>, relative_file_path: Path) -> Self {
         return Self {
             relative_file_path,
+            start_on_next: false,
             messages: Vec::new(),
             starts: Vec::new(),
             current: None,
@@ -85,33 +87,47 @@ impl Tokens {
             location,
         }
     }
-    pub fn start(&mut self) -> TokenInfo {
-        let token = self.advance();
+    pub fn start(&mut self) -> Option<TokenInfo> {
+        let token = match self.advance() {
+            Some(t) => t,
+            None => return None,
+        };
         self.starts.push(token.clone());
-        token
+        Some(token)
     }
-    pub fn advance(&mut self) -> TokenInfo {
-        match self.tokens.next() {
-            Some(info) => {
-                match info.token {
-                    Token::EndOfFile => {
-                        self.error(info.location.clone(), format!("Early {}", info.token));
-                    }
+    pub fn start_next(&mut self) {
+        self.start_on_next = true;
+    }
+    pub fn advance(&mut self) -> Option<TokenInfo> {
+        let info = if self.start_on_next {
+            self.start_on_next = false;
+            self.start()
+        } else {
+            self.tokens.next()
+        };
 
-                    _ => {}
-                }
-                self.current = Some(info.clone());
-                info
-            }
+
+        let info = match info {
+            Some(info) => info,
             None => {
-                let current = self.current.clone().unwrap();
+                let current = self.current.as_ref().unwrap();
                 self.error(
                     current.location.clone(),
                     format!("No token found {}", current.token),
                 );
-                current
+                return None;
             }
+        };
+
+        match info.token {
+            Token::EndOfFile => {
+                self.error(info.location.clone(), format!("Early {}", info.token));
+            }
+
+            _ => {}
         }
+        self.current = Some(info.clone());
+        return Some(info)
     }
     pub fn peek(&mut self) -> &TokenInfo {
         match self.tokens.peek() {

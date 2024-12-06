@@ -1,11 +1,5 @@
 use crate::compiler::types::{BaseType, ReferenceState, Type};
 
-#[derive(Debug)]
-pub struct IRFunction {
-    pub name: String,
-    pub parameters: Vec<(String, IRType)>,
-    pub return_type: IRType,
-}
 
 #[derive(Debug, Clone)]
 pub enum IRValue {
@@ -43,9 +37,7 @@ pub enum IRType {
     Tuple(Vec<IRType>),
     Pointer(Box<IRType>),
     Integer(usize),
-    UInteger(usize),
     Array(usize, Box<IRType>),
-    Struct(String),
     Float,
     Double,
     Void,
@@ -57,16 +49,16 @@ impl IRType {
     pub fn signed(&self) -> bool {
         match self {
             Self::Integer(_) => true,
-            Self::UInteger(_) => false,
+            // Self::UInteger(_) => false,
             _ => panic!("{}", self),
         }
     }
     pub fn is_float(&self) -> bool {
         matches!(self, Self::Float | Self::Double)
     }
-    pub fn is_void(&self) -> bool {
-        matches!(self, Self::Void)
-    }
+    // pub fn is_void(&self) -> bool {
+    //     matches!(self, Self::Void)
+    // }
 }
 
 impl std::fmt::Display for IRType {
@@ -79,9 +71,9 @@ impl std::fmt::Display for IRType {
                 Self::Double => "double".to_string(),
                 Self::Float => "float".to_string(),
                 Self::Array(size, t) => format!("[{size} x {t}]"),
-                Self::Integer(bits) | IRType::UInteger(bits) => format!("i{bits}"),
+                Self::Integer(bits) => format!("i{bits}"),
                 Self::Pointer(t) => format!("{t}*"),
-                Self::Struct(name) => format!("%{name}",),
+                // Self::Struct(name) => format!("%{name}",),
                 Self::Tuple(types) => format!("{{ {} }}", {
                     types
                         .iter()
@@ -124,8 +116,8 @@ impl Type {
         };
         let count = match self.ref_state {
             ReferenceState::Pointer(p) => p,
-            ReferenceState::Mutable | ReferenceState::Shared => 1,
-            _ => 0,
+            ReferenceState::Shared => 1,
+            ReferenceState::None => 0,
         };
 
         for _ in 0..count {

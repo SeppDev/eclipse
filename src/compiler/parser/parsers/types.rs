@@ -38,6 +38,7 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
     let name = match info.token {
         Token::Ampersand => return Ok(parse_type(tokens)?.to_reference()?),
         Token::Asterisk => return Ok(parse_type(tokens)?.to_pointer()?),
+        Token::Mutable => return Ok(parse_type(tokens)?.to_mutable()?),
         Token::OpenBracket => {
             let data_type = parse_type(tokens)?;
             let _ = tokens.expect_tokens(vec![Token::SemiColon], false);

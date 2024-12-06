@@ -2,7 +2,7 @@ use crate::compiler::{
     counter::NameCounter,
     errors::CompileResult,
     lexer::{Token, Tokens},
-    parser::{Node, NodeInfo},
+    parser::{Node, NodeInfo, Parameter},
     types::Type,
 };
 
@@ -17,28 +17,41 @@ pub fn parse_function(
     let name = tokens.parse_identifier()?;
     tokens.expect_tokens(vec![Token::OpenParen], false);
 
-    let mut parameters: Vec<(bool, String, Type)> = Vec::new();
-    loop {
-        if tokens
-            .peek_expect_tokens(vec![Token::CloseParen], true)
-            .is_some()
-        {
-            break;
-        }
+    let mut parameters: Vec<Parameter> = Vec::new();
+    if tokens
+        .peek_expect_tokens(vec![Token::CloseParen], true)
+        .is_some()
+    {
+        loop {
+            tokens.start_next();
+    
+            let mutable = tokens
+                .peek_expect_tokens(vec![Token::Mutable], true)
+                .is_some();
+    
+            let name = tokens.parse_identifier()?;
+            let data_type = parse_type(tokens)?;
+            let location = tokens.pop_start().location;
+            let parameter = Parameter {
+                location,
+                mutable,
+                name,
+                data_type,
+            };
 
-        let mutable = tokens.peek_expect_tokens(vec![Token::Mutable], true).is_some();
-
-        let name = tokens.parse_identifier()?;
-        let data_type = parse_type(tokens)?;
-        parameters.push((mutable, name, data_type));
-
-        let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
-        match result.token {
-            Token::CloseParen => break,
-            Token::Comma => continue,
-            _ => break,
+            println!("{parameter:#?}");
+    
+            parameters.push(parameter);
+    
+            let result = &tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
+            match result.token {
+                Token::CloseParen => break,
+                Token::Comma => continue,
+                _ => break,
+            }
         }
     }
+    tokens.advance();
 
     let return_type = if tokens
         .peek_expect_tokens(vec![Token::Colon], true)

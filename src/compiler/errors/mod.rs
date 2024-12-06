@@ -145,7 +145,7 @@ impl CompileCtx {
         }
         self.finish();
 
-        // self.display(&self.debuginfo.notes);
+        self.display(&self.debuginfo.notes);
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
 
@@ -167,18 +167,18 @@ impl CompileCtx {
         return self.debuginfo.errors.last_mut().unwrap().1.borrow_mut();
     }
     pub fn warning<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::error(message.to_string());
+        let mut message = Message::warning(message.to_string());
         message.push("", location);
         self.debuginfo
-            .errors
+            .warnings
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.warnings.last_mut().unwrap().1.borrow_mut();
     }
     pub fn note<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::error(message.to_string());
+        let mut message = Message::note(message.to_string());
         message.push("", location);
         self.debuginfo
-            .errors
+            .notes
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.notes.last_mut().unwrap().1.borrow_mut();
     }

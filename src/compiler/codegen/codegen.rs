@@ -164,6 +164,9 @@ impl FunctionOperations {
     pub fn r#return(&mut self, data_type: &IRType, value: &IRValue) {
         self.body.pushln(format!("\tret {} {}", data_type, value));
     }
+    pub fn void_return(&mut self) {
+        self.body.pushln(format!("\tret void"));
+    }
     pub fn branch(&mut self, condition: &IRValue, yes: &String, no: &String) {
         self.body
             .pushln(format!("\tbr i1 {condition}, label %{yes}, label %{no}"));

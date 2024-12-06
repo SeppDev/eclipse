@@ -46,6 +46,8 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
         _ => {}
     }
 
+
+
     tokens.advance();
     return Ok(match info.token {
         Token::OpenParen => {
@@ -83,6 +85,6 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
 
             return Ok(tokens.create_node(Node::SetVariable { name, expression: Some(binary_expression) }));
         }
-        _ => panic!(),
+        _ => panic!("{info:#?} {name}"),
     });
 }

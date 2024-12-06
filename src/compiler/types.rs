@@ -66,6 +66,7 @@ impl BaseType {
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Type {
     pub base: BaseType,
+    pub mutable: bool,
     pub ref_state: ReferenceState,
 }
 impl std::fmt::Display for Type {
@@ -78,6 +79,9 @@ impl Type {
         let mut s = Self::default();
         s.base = base;
         return s;
+    }
+    pub fn is_pointing(&self) -> bool {
+        return !matches!(&self.ref_state, ReferenceState::None)
     }
     pub fn reference(base: BaseType) -> Self {
         let mut s = Self::default();
@@ -109,7 +113,6 @@ pub enum ReferenceState {
     #[default]
     None,
     Shared,
-    Mutable,
     Pointer(usize),
 }
 impl std::fmt::Display for ReferenceState {
@@ -120,7 +123,6 @@ impl std::fmt::Display for ReferenceState {
             match self {
                 Self::None => "".to_string(),
                 Self::Shared => "&".to_string(),
-                Self::Mutable => "&mut ".to_string(),
                 Self::Pointer(size) => "*".repeat(*size),
             }
         )
@@ -132,6 +134,13 @@ pub trait ReferenceManager {
 }
 
 impl Type {
+    pub fn to_mutable(mut self) -> CompileResult<Type> {
+        if matches!(self.ref_state, ReferenceState::None) {
+            return Err(());
+        }
+        self.mutable = true;
+        return Ok(self)
+    }
     pub fn to_reference(mut self) -> CompileResult<Type> {
         self.add_reference()?;
         return Ok(self);
@@ -140,18 +149,18 @@ impl Type {
         self.add_pointer()?;
         return Ok(self);
     }
-    pub fn is_reference(&self) -> bool {
-        return matches!(
-            self.ref_state,
-            ReferenceState::Mutable | ReferenceState::Shared
-        );
-    }
-    pub fn is_pointer(&self) -> Option<usize> {
-        match &self.ref_state {
-            ReferenceState::Pointer(p) => Some(p.clone()),
-            _ => None,
-        }
-    }
+    // pub fn is_reference(&self) -> bool {
+    //     return matches!(
+    //         self.ref_state,
+    //         ReferenceState::Mutable | ReferenceState::Shared
+    //     );
+    // }
+    // pub fn is_pointer(&self) -> Option<usize> {
+    //     match &self.ref_state {
+    //         ReferenceState::Pointer(p) => Some(p.clone()),
+    //         _ => None,
+    //     }
+    // }
 }
 
 impl ReferenceManager for Type {
