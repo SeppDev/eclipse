@@ -142,7 +142,6 @@ pub fn parse_expression(
         Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk
     );
 
-
     let mut info = if is_arithmetic {
         let arithmetic_operator = match info.token {
             Token::Plus => ArithmeticOperator::Plus,
@@ -151,8 +150,7 @@ pub fn parse_expression(
             Token::Asterisk => ArithmeticOperator::Multiply,
             _ => panic!(),
         };
-    
-    
+
         tokens.create_expression(Expression::BinaryOperation(
             Box::new(first_expression_info),
             arithmetic_operator,
@@ -168,16 +166,13 @@ pub fn parse_expression(
             Token::GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
             _ => panic!(),
         };
-    
-    
+
         tokens.create_expression(Expression::CompareOperation(
             Box::new(first_expression_info),
             compare_operator,
             Box::new(second_expression),
         ))
     };
-
-
 
     info.location = first_location;
     return Ok(Some(info));
@@ -192,6 +187,13 @@ fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expressi
     } else {
         Path::from(&name)
     };
+
+    if tokens.peek_expect_tokens(vec![Token::OpenBracket], true).is_some() {
+        let info = parse_expression(tokens, true)?.unwrap();
+        let _ = tokens.expect_tokens(vec![Token::CloseBracket], false);
+        return Ok(Expression::Index(path, Box::new(info)))
+    } 
+
 
     let info = match tokens.peek_expect_tokens(vec![Token::OpenParen], true) {
         Some(info) => info,

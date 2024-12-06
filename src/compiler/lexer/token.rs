@@ -140,7 +140,7 @@ impl std::fmt::Display for Token {
                 String(_) => "\"string\"",
                 Integer(i) => i,
                 Float(f) => f,
-                Identifier(i) => i,
+                Identifier(i) => "Identifier",
             }
         )
     }

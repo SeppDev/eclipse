@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::IRType, errors::{CompileResult, Location}, path::Path, types::{BaseType, ReferenceManager, ReferenceState, Type}
+    analyzer::{IRType, IRValue}, errors::{CompileResult, Location}, path::Path, types::{BaseType, ReferenceManager, ReferenceState, Type}
 };
 
 #[derive(Debug, Default)]
@@ -68,6 +68,7 @@ impl NodeInfo {
 
 #[derive(Debug)]
 pub enum Expression {
+    Index(Path, Box<ExpressionInfo>),
     Value(Value),
     GetVariable(Path),
     Call(Path, Vec<ExpressionInfo>),
@@ -203,5 +204,10 @@ impl Value {
             Self::StaticString(_) => todo!()
         }
         return a;
+    }
+    pub fn read_integer(self) -> IRValue {
+        if let Value::Integer(int) = self {
+            return IRValue::IntLiteral(int);
+        } else {panic!()}
     }
 }

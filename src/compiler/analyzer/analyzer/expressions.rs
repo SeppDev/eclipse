@@ -10,24 +10,6 @@ fn void() -> (IRValue, Type) {
     return (IRValue::Null, Type::default());
 }
 
-impl BaseType {
-    fn is_number(&self) -> bool {
-        return self.is_integer() || self.is_float();
-    }
-    fn is_integer(&self) -> bool {
-        matches!(&self, Self::UInt(_) | Self::Int(_))
-    }
-    fn is_float(&self) -> bool {
-        matches!(&self, Self::Float32 | Self::Float64)
-    }
-    fn is_bool(&self) -> bool {
-        matches!(&self, Self::Boolean)
-    }
-    fn is_array(&self) -> bool {
-        matches!(&self, Self::Array(_, _))
-    }
-}
-
 pub fn what_type(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
@@ -35,10 +17,25 @@ pub fn what_type(
     expression: &ExpressionInfo,
 ) -> Type {
     let mut data_type: Type = match &expression.expression {
+        Expression::Index(path, _) => {
+            let name = path.first().unwrap();
+            let array = match function.variables.read(name) {
+                Some(var) => var,
+                None => return Type::void()
+            };
+            let (data_type, _) = array.data_type.clone().array_info();
+            return data_type
+        }
         Expression::Array(array) => {
             match expected_type {
                 Some(t) => t.clone(),
-                None => todo!(),
+                None => {
+                    let size = array.len();
+                    let first = array.first().unwrap();
+                    let inner_type = what_type(program, function, None, first);
+
+                    Type::new(BaseType::Array(size, Box::new(inner_type)))
+                }
             }
             // let mut size = 0;
             // let mut data_type = match expected_type {
@@ -219,19 +216,15 @@ pub fn handle_expression(
             let expected_value_type = Some(value_type.clone());
 
             for (index, expression) in expressions.into_iter().enumerate() {
-                let (value, data_type) = handle_expression(
-                    program,
-                    function,
-                    &expected_value_type,
-                    Some(expression),
-                );
+                let (value, data_type) =
+                    handle_expression(program, function, &expected_value_type, Some(expression));
                 let key_ptr = function.variables.increment();
 
                 let operation = ElemmentPointerOperation::Inbounds {
                     data_type: expected_type.convert(),
                     value_type: value_type.convert(),
                     from: name.clone(),
-                    index,
+                    index: IRValue::IntLiteral(format!("{index}")),
                 };
 
                 function.operations.push(Operation::GetElementPointer {
@@ -325,7 +318,7 @@ pub fn handle_expression(
                         destination_type: expected_type.convert(),
                         value: IRValue::Variable(variable.key.clone()),
                     });
-                    IRValue::Variable(result_key)   
+                    IRValue::Variable(result_key)
                 }
             }
         }

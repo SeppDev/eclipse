@@ -5,6 +5,8 @@ use crate::compiler::{
     path::Path,
 };
 
+use super::handle_read;
+
 pub fn handle_call(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
@@ -39,7 +41,7 @@ pub fn handle_call(
     let mut ir_arguments = Vec::new();
     for param_type in &found.parameters {
         let expression = arguments.pop();
-        let (value, data_type) = handle_expression(program, function, param_type, expression);
+        handle_read(program, function, param_type, expression);
 
         ir_arguments.push((data_type.convert(), value));
     }

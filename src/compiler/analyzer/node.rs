@@ -76,7 +76,7 @@ pub enum ElemmentPointerOperation {
         data_type: IRType,
         value_type: IRType,
         from: String,
-        index: usize,
+        index: IRValue,
     }
 }
 impl std::fmt::Display for ElemmentPointerOperation {
@@ -92,7 +92,7 @@ impl std::fmt::Display for ElemmentPointerOperation {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum IRValue {
     BoolLiteral(bool),
     IntLiteral(String),
@@ -123,7 +123,7 @@ impl std::fmt::Display for IRValue {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum IRType {
     Tuple(Vec<IRType>),
     Pointer(Box<IRType>),

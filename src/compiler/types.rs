@@ -45,6 +45,24 @@ impl std::fmt::Display for BaseType {
     }
 }
 
+impl BaseType {
+    pub fn is_number(&self) -> bool {
+        return self.is_integer() || self.is_float();
+    }
+    pub fn is_integer(&self) -> bool {
+        matches!(&self, Self::UInt(_) | Self::Int(_))
+    }
+    pub fn is_float(&self) -> bool {
+        matches!(&self, Self::Float32 | Self::Float64)
+    }
+    pub fn is_bool(&self) -> bool {
+        matches!(&self, Self::Boolean)
+    }
+    pub fn is_array(&self) -> bool {
+        matches!(&self, Self::Array(_, _))
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Type {
     pub base: BaseType,
