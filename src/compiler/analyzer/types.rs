@@ -44,7 +44,6 @@ impl ProgramTypes {
         } else {
             &self.src
         };
-    
 
         let mut find_path: Vec<String> = Vec::new();
         let name = components.pop().unwrap();
@@ -54,13 +53,20 @@ impl ProgramTypes {
 
         // println!("\n{find_path:?}->{name}");
 
+        // println!("{file:#?}");
+
         let length = find_path.len();
         for (index, component) in find_path.into_iter().enumerate() {
             file = match file.imports.get(&component) {
                 Some(f) => f,
                 None => return None
             };
-            
+            if file.is_module && true == false {
+                let function = file.functions.get(&name);
+                if function.is_some() {
+                    return function;
+                }
+            }
         }
 
         return file.functions.get(&name);
@@ -140,10 +146,12 @@ pub fn parse_types(
         imports: HashMap::new(),
         functions: HashMap::new(),
         is_module: true,
-        types: HashMap::new(), // export: true
+        types: HashMap::new(),
     };
 
-    standard.functions.insert(
+    let io = standard.imports.get_mut("io").unwrap();
+
+    io.functions.insert(
         "print".to_string(),
         Function {
             key: "print".to_string(),
@@ -152,7 +160,9 @@ pub fn parse_types(
         },
     );
 
-    standard.functions.insert(
+    let thread = standard.imports.get_mut("thread").unwrap();
+
+    thread.functions.insert(
         "sleep".to_string(),
         Function {
             key: "sleep".to_string(),
@@ -161,7 +171,7 @@ pub fn parse_types(
         },
     );
 
-    standard.functions.insert(
+    thread.functions.insert(
         "usleep".to_string(),
         Function {
             key: "usleep".to_string(),

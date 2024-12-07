@@ -46,10 +46,8 @@ pub struct FunctionCtx<'a> {
 }
 
 pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileResult<()> {
-    // let std_path = Path::from("std");
-    // analyze_file(parsed, &mut functions, errors, &parsed.standard, &std_path);
-
     handle_file(program, &mut parsed.main);
+    handle_file(program, &mut parsed.standard);
 
     return Ok(());
 }

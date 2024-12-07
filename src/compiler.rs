@@ -31,7 +31,6 @@ fn parse_program(
     let std_path = Path::from("std").join("mod");
     let standard = start_parse(debug, count, &PathBuf::new(), std_path.clone(), std_path)?;
 
-
     let main_path = Path::from("src").join("main");
     let main = start_parse(debug, count, project_dir, main_path.clone(), main_path)?;
 
