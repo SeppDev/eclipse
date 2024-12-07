@@ -3,9 +3,9 @@ use super::{start_parse, ParsedFile};
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
+    file_exists,
     lexer::Tokens,
     path::Path,
-    FILE_EXTENSION,
 };
 use std::path::PathBuf;
 
@@ -44,9 +44,7 @@ pub fn handle_import(
 
     let mut found_paths: Vec<Path> = Vec::with_capacity(2);
     for path in paths {
-        let mut pathbuf = project_dir.join(path.convert());
-        pathbuf.set_extension(FILE_EXTENSION);
-        if pathbuf.exists() {
+        if file_exists(project_dir, &path) {
             found_paths.push(path)
         }
     }

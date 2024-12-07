@@ -70,7 +70,6 @@ fn compile(
     analyze(&mut ctx, program)?;
     ctx.debug.throw(true);
 
-
     ctx.debug.set_status("Building");
 
     let source = ctx.codegen.generate();
@@ -137,7 +136,7 @@ pub fn execute(command: String) -> Output {
 
 fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> String {
     if relative_file_path.first().unwrap() == &"std".to_string() {
-        return get_std_file(relative_file_path)
+        return get_std_file(relative_file_path).unwrap()
     }
     
     let mut full_path = project_dir.join(relative_file_path.convert());
@@ -147,4 +146,14 @@ fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> String {
         Ok(source) => source,
         Err(error) => panic!("{:?}: {:?}", relative_file_path, error),
     }
+}
+
+fn file_exists(project_dir: &PathBuf, relative_file_path: &Path) -> bool {
+    if relative_file_path.first().unwrap() == &"std".to_string() {
+        return get_std_file(relative_file_path).is_some()
+    }
+    let mut full_path = project_dir.join(relative_file_path.convert());
+    full_path.set_extension(FILE_EXTENSION);
+
+    std::fs::exists(project_dir.join(full_path)).expect("Failed to read path")
 }

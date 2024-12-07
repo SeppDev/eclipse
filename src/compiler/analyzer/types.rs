@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, os::linux::raw::stat};
 
 use crate::compiler::{
     counter::NameCounter,
@@ -25,8 +25,46 @@ pub enum CustomTypes {
 
 #[derive(Debug)]
 pub struct ProgramTypes {
-    pub main: FileTypes,
+    pub src: FileTypes,
     pub std: FileTypes,
+}
+
+impl ProgramTypes {
+    pub fn get_function(&self, relative_path: &Path, static_path: &Path) -> Option<&Function> {
+        let mut components = static_path.components();
+        let mut relative_components = relative_path.components();
+
+        let first_relative = relative_components.remove(0);
+        let mut file = if first_relative == "std" {
+            &self.std
+        } else if components.first().unwrap() == "std" {
+            components.remove(0);
+            relative_components.clear();
+            &self.std
+        } else {
+            &self.src
+        };
+    
+
+        let mut find_path: Vec<String> = Vec::new();
+        let name = components.pop().unwrap();
+
+        find_path.extend_from_slice(&relative_components);
+        find_path.extend_from_slice(&components);
+
+        // println!("\n{find_path:?}->{name}");
+
+        let length = find_path.len();
+        for (index, component) in find_path.into_iter().enumerate() {
+            file = match file.imports.get(&component) {
+                Some(f) => f,
+                None => return None
+            };
+            
+        }
+
+        return file.functions.get(&name);
+    }
 }
 
 #[derive(Debug)]
@@ -39,48 +77,48 @@ pub struct FileTypes {
     // export: bool,
 }
 impl FileTypes {
-    pub fn get_function(&self, relative_path: &Path, static_path: &Path) -> Option<&Function> {
-        let mut components = static_path.components();
-        let name = components.pop().unwrap();
+    // pub fn get_function(&self, relative_path: &Path, static_path: &mut Path) -> Option<&Function> {
+    //     let mut components = static_path.components();
+    //     let name = components.pop().unwrap();
 
-        let mut new_path = relative_path.clone();
-        while components.len() > 0 {
-            let key = components.pop().unwrap();
-            match &key[..] {
-                "root" => new_path.clear(),
-                "super" => {
-                    new_path.pop();
-                }
-                _ => new_path.push(key),
-            }
-        }
+    //     let mut new_path = relative_path.clone();
+    //     while components.len() > 0 {
+    //         let key = components.pop().unwrap();
+    //         match &key[..] {
+    //             "root" => new_path.clear(),
+    //             "super" => {
+    //                 new_path.pop();
+    //             }
+    //             _ => new_path.push(key),
+    //         }
+    //     }
 
-        let file = {
-            let mut path_components = new_path.components();
-            path_components.reverse();
-            path_components.pop();
+    //     let file = {
+    //         let mut path_components = new_path.components();
+    //         path_components.reverse();
+    //         path_components.pop();
 
-            let mut file = self;
-            while path_components.len() > 0 {
-                let key = path_components.pop().unwrap();
-                let f = match file.imports.get(&key) {
-                    Some(f) => f,
-                    None => return None,
-                };
-                if f.is_module {
-                    file = match f.imports.get(&key) {
-                        Some(f) => f,
-                        None => f,
-                    }
-                } else {
-                    file = f;
-                }
-            }
-            file
-        };
+    //         let mut file = self;
+    //         while path_components.len() > 0 {
+    //             let key = path_components.pop().unwrap();
+    //             let f = match file.imports.get(&key) {
+    //                 Some(f) => f,
+    //                 None => return None,
+    //             };
+    //             if f.is_module {
+    //                 file = match f.imports.get(&key) {
+    //                     Some(f) => f,
+    //                     None => f,
+    //                 }
+    //             } else {
+    //                 file = f;
+    //             }
+    //         }
+    //         file
+    //     };
 
-        return file.functions.get(&name);
-    }
+    //     return file.functions.get(&name);
+    // }
 }
 
 #[derive(Debug)]
@@ -94,7 +132,7 @@ pub fn parse_types(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
     program: &ParsedProgram,
-) -> CompileResult<FileTypes> {
+) -> CompileResult<ProgramTypes> {
     let main = handle_file(debug, count, &program.main)?;
     let mut standard = handle_file(debug, count, &program.standard)?;
 
@@ -134,7 +172,7 @@ pub fn parse_types(
 
     src.imports.insert(String::from("main"), main);
 
-    return Ok(src);
+    return Ok(ProgramTypes { src, std: standard });
 }
 
 fn handle_file(

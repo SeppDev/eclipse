@@ -7,12 +7,12 @@ use crate::compiler::{
     types::Type,
 };
 
-use super::{variables::VariablesMap, FileTypes, IRValue};
+use super::{variables::VariablesMap, IRValue, ProgramTypes};
 
 pub struct ProgramCtx<'a> {
     pub debug: &'a mut CompileCtx,
     pub codegen: CodeGen,
-    pub types: &'a FileTypes,
+    pub types: &'a ProgramTypes,
     // pub count: &'a mut NameCounter,
     // pub static_strings: &'a mut Vec<(String, String)>,
 }

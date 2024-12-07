@@ -1,7 +1,8 @@
 use crate::compiler::{
     errors::{CompileCtx, CompileResult, Location, Message},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
-    path::Path, types::ReferenceState,
+    path::Path,
+    types::ReferenceState,
 };
 
 use super::{Token, TokenInfo};
@@ -28,11 +29,7 @@ impl Tokens {
         };
     }
 
-    pub fn error<T: ToString>(
-        &mut self,
-        location: Location,
-        message: T,
-    ) -> &mut Message {
+    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
         let mut message = Message::error(message.to_string());
         message.push("", location);
         self.messages.push(message);
@@ -88,11 +85,10 @@ impl Tokens {
     pub fn advance(&mut self) -> CompileResult<TokenInfo> {
         let info = if self.start_on_next {
             self.start_on_next = false;
-            return self.start()
+            return self.start();
         } else {
             self.tokens.next()
         };
-
 
         let info = match info {
             Some(info) => info,
@@ -114,7 +110,7 @@ impl Tokens {
             _ => {}
         }
         self.current = Some(info.clone());
-        return Ok(info)
+        return Ok(info);
     }
     pub fn peek(&mut self) -> &TokenInfo {
         match self.tokens.peek() {
@@ -124,6 +120,9 @@ impl Tokens {
         self.current.as_mut().unwrap()
     }
     pub fn is_eof(&mut self) -> bool {
-        return self.tokens.peek().unwrap().token == Token::EndOfFile;
+        match self.tokens.peek() {
+            Some(info) => info.token == Token::EndOfFile,
+            None => true,
+        }
     }
 }

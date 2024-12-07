@@ -1,3 +1,3 @@
-fn integer(): i32 {
+func integer(): i32 {
     return 1234
 }
