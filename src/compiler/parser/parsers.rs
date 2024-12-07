@@ -22,7 +22,7 @@ use import::handle_import;
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
-    lexer::tokenize,
+    lexer::{tokenize, Tokens},
     path::Path,
     read_file,
 };
@@ -38,23 +38,18 @@ pub struct ParsedFile {
     pub is_module: bool,
 }
 
-pub fn start_parse(
+fn handle_tokens(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
     project_dir: &PathBuf,
-    relative_file_path: Path,
-    relative_path: Path,
-) -> CompileResult<ParsedFile> {
-    debug.set_status(format!("Parsing: {}", relative_file_path));
-    let source = read_file(project_dir, &relative_file_path)?;
+    tokens: &mut Tokens,
+    imports: &mut BTreeMap<String, ParsedFile>,
+    body: &mut Vec<NodeInfo>,
 
-    debug.set_path(&relative_file_path);
-
-    let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;
-    let mut imports = BTreeMap::new();
-    let mut body = Vec::new();
-
-    let is_main = relative_file_path == Path::from("src").join("main");
+    relative_file_path: &Path,
+    relative_path: &Path,
+) -> CompileResult<()> {
+    let is_main = relative_file_path == &Path::from("src").join("main");
 
     use super::super::lexer::Token;
     loop {
@@ -81,7 +76,7 @@ pub fn start_parse(
                     project_dir,
                     relative_file_path.clone(),
                     &relative_path,
-                    &mut tokens,
+                    tokens,
                 ) {
                     Ok(a) => a,
                     Err(()) => continue,
@@ -90,23 +85,51 @@ pub fn start_parse(
                     Some(_) => {}
                     None => continue,
                 };
-                return Err(());
             }
             Token::Function => {
-                let function = match parse_function(&mut tokens, is_main, count, false) {
+                let function = match parse_function(tokens, is_main, count, false) {
                     Ok(f) => f,
-                    Err(()) => break,
+                    Err(()) => continue,
                 };
                 body.push(function)
             }
             Token::Enum => {
-                let a = parse_enum(&mut tokens)?;
+                let a = parse_enum(tokens)?;
                 body.push(a);
             }
             Token::Struct => todo!(),
             _ => continue,
         }
     }
+    return Ok(());
+}
+
+pub fn start_parse(
+    debug: &mut CompileCtx,
+    count: &mut NameCounter,
+    project_dir: &PathBuf,
+    relative_file_path: Path,
+    relative_path: Path,
+) -> CompileResult<ParsedFile> {
+    debug.set_status(format!("Parsing: {}", relative_file_path));
+
+    let source = read_file(project_dir, &relative_file_path);
+    let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;
+    let mut imports: BTreeMap<String, ParsedFile> = BTreeMap::new();
+    let mut body: Vec<NodeInfo> = Vec::new();
+
+    debug.set_path(&relative_file_path);
+
+    let _ = handle_tokens(
+        debug,
+        count,
+        project_dir,
+        &mut tokens,
+        &mut imports,
+        &mut body,
+        &relative_file_path,
+        &relative_path,
+    );
 
     tokens.finish(debug);
 

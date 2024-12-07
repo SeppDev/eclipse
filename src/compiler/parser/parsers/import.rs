@@ -20,7 +20,8 @@ pub fn handle_import(
     let from = relative_file_path.clone().pop().unwrap();
 
     let name = tokens.parse_identifier()?;
-    let is_mod_file = from == "mod" ||  (relative_file_path == Path::from("src").join("main") && from == "main");
+    let is_mod_file =
+        from == "mod" || (relative_file_path == Path::from("src").join("main") && from == "main");
 
     let paths: [Path; 2] = if is_mod_file {
         [
@@ -38,36 +39,28 @@ pub fn handle_import(
         ]
     };
 
+    let failed_to_find = format!("Failed to find import path {}, {}", paths[0], paths[1]);
+    let failed_multiple = format!("Cannot import multiple paths {}, {}", paths[0], paths[1]);
+
     let mut found_paths: Vec<Path> = Vec::with_capacity(2);
-    for path in &paths {
+    for path in paths {
         let mut pathbuf = project_dir.join(path.convert());
         pathbuf.set_extension(FILE_EXTENSION);
         if pathbuf.exists() {
-            found_paths.push(path.clone())
+            found_paths.push(path)
         }
     }
 
     let path = match found_paths.pop() {
         Some(p) => p,
         None => {
-            
-            return Err(())
-            // return Err(DebugInfo::new(
-            //     tokens.current().location.clone(),
-            //     tokens.relative_file_path.clone(),
-            //     format!("Failed to find import path {}, {}", paths[0], paths[1]),
-            //     "",
-            // ));
+            tokens.error(tokens.current().location.clone(), failed_to_find);
+            return Err(());
         }
     };
     if !found_paths.is_empty() {
-        // return Err(DebugInfo::new(
-        //     tokens.current().location.clone(),
-        //     tokens.relative_file_path.clone(),
-        //     format!("Cannot import multiple paths {}, {}", paths[0], paths[1]),
-        //     "",
-        // ));
-        return Err(())
+        tokens.error(tokens.current().location.clone(), failed_multiple);
+        return Err(());
     }
 
     let mut import = start_parse(debug, count, project_dir, path, relative_path.join(&name))?;

@@ -24,6 +24,12 @@ pub enum CustomTypes {
 }
 
 #[derive(Debug)]
+pub struct ProgramTypes {
+    pub main: FileTypes,
+    pub std: FileTypes,
+}
+
+#[derive(Debug)]
 pub struct FileTypes {
     functions: HashMap<String, Function>,
     types: HashMap<String, CustomTypes>,
@@ -89,7 +95,8 @@ pub fn parse_types(
     count: &mut NameCounter,
     program: &ParsedProgram,
 ) -> CompileResult<FileTypes> {
-    let mut main = handle_file(debug, count, &program.main)?;
+    let main = handle_file(debug, count, &program.main)?;
+    let mut standard = handle_file(debug, count, &program.standard)?;
 
     let mut src = FileTypes {
         imports: HashMap::new(),
@@ -98,7 +105,7 @@ pub fn parse_types(
         types: HashMap::new(), // export: true
     };
 
-    main.functions.insert(
+    standard.functions.insert(
         "print".to_string(),
         Function {
             key: "print".to_string(),
@@ -107,7 +114,7 @@ pub fn parse_types(
         },
     );
 
-    main.functions.insert(
+    standard.functions.insert(
         "sleep".to_string(),
         Function {
             key: "sleep".to_string(),
@@ -116,7 +123,7 @@ pub fn parse_types(
         },
     );
 
-    main.functions.insert(
+    standard.functions.insert(
         "usleep".to_string(),
         Function {
             key: "usleep".to_string(),

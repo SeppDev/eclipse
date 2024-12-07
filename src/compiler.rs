@@ -28,13 +28,12 @@ fn parse_program(
     count: &mut NameCounter,
     project_dir: &PathBuf,
 ) -> CompileResult<ParsedProgram> {
-    let main_path = Path::from("src").join("main");
-    let main = start_parse(debug, count, project_dir, main_path.clone(), main_path)?;
-
     let std_path = Path::from("std").join("mod");
     let standard = start_parse(debug, count, &PathBuf::new(), std_path.clone(), std_path)?;
 
-    println!("{standard:#?}");
+
+    let main_path = Path::from("src").join("main");
+    let main = start_parse(debug, count, project_dir, main_path.clone(), main_path)?;
 
     return Ok(ParsedProgram {
         standard,
@@ -97,7 +96,7 @@ fn compile(
 pub fn build(project_dir: PathBuf) -> PathBuf {
     let mut debug = CompileCtx::new();
     let mut count = NameCounter::new();
-
+    
     let start = std::time::Instant::now();
 
     let path = match compile(&mut debug, &mut count, &project_dir) {
@@ -136,16 +135,16 @@ pub fn execute(command: String) -> Output {
     return output;
 }
 
-fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> CompileResult<String> {
+fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> String {
     if relative_file_path.first().unwrap() == &"std".to_string() {
-        return Ok(get_std_file(relative_file_path))
+        return get_std_file(relative_file_path)
     }
     
     let mut full_path = project_dir.join(relative_file_path.convert());
     full_path.set_extension(FILE_EXTENSION);
 
     match std::fs::read_to_string(full_path) {
-        Ok(source) => Ok(source),
+        Ok(source) => source,
         Err(error) => panic!("{:?}: {:?}", relative_file_path, error),
     }
 }
