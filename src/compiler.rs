@@ -2,6 +2,7 @@ use analyzer::{analyze, parse_types, ProgramCtx};
 use codegen::CodeGen;
 use counter::NameCounter;
 use errors::{CompileCtx, CompileResult};
+use lib::get_std_file;
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
@@ -12,6 +13,7 @@ mod codegen;
 mod lexer;
 mod parser;
 
+mod lib;
 mod counter;
 mod errors;
 mod path;
@@ -20,7 +22,6 @@ mod string;
 mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
-// pub static POINTER_WIDTH: usize = 8;
 
 fn parse_program(
     debug: &mut CompileCtx,
@@ -30,11 +31,13 @@ fn parse_program(
     let main_path = Path::from("src").join("main");
     let main = start_parse(debug, count, project_dir, main_path.clone(), main_path)?;
 
-    // let main_path = Path::from("src").join("main");
-    // let standard = start_parse(debug, count, project_dir, relative_file_path);
+    let std_path = Path::from("std").join("mod");
+    let standard = start_parse(debug, count, &PathBuf::new(), std_path.clone(), std_path)?;
+
+    println!("{standard:#?}");
 
     return Ok(ParsedProgram {
-        // standard,
+        standard,
         main,
     });
 }
@@ -56,7 +59,6 @@ fn compile(
 
     let types = parse_types(debug, count, &mut program)?;
     debug.throw(false);
-
 
     let mut ctx = ProgramCtx {
         debug,
@@ -121,20 +123,29 @@ pub fn execute(command: String) -> Output {
             .args(["/C", &command])
             .output()
             .expect("failed to execute process")
-    } else {
+    } else if cfg!(target_os = "linux") {
         Command::new("sh")
             .arg("-c")
             .arg(&command)
             .output()
             .expect("failed to execute process")
+    } else {
+        panic!("Operating system is not supported")
     };
 
     return output;
 }
 
-fn read_file(path: &PathBuf) -> CompileResult<String> {
-    match std::fs::read_to_string(path) {
+fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> CompileResult<String> {
+    if relative_file_path.first().unwrap() == &"std".to_string() {
+        return Ok(get_std_file(relative_file_path))
+    }
+    
+    let mut full_path = project_dir.join(relative_file_path.convert());
+    full_path.set_extension(FILE_EXTENSION);
+
+    match std::fs::read_to_string(full_path) {
         Ok(source) => Ok(source),
-        Err(error) => panic!("{:?}: {:?}", path, error),
+        Err(error) => panic!("{:?}: {:?}", relative_file_path, error),
     }
 }

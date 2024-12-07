@@ -1,12 +1,17 @@
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
+#[derive(Debug, Eq, Hash, Clone, Default)]
 pub struct Path {
     components: Vec<String>,
 }
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.components.join("/"))
+    }
+}
+impl PartialEq for Path {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_string() == other.to_string()
     }
 }
 

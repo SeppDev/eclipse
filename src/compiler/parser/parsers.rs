@@ -24,7 +24,7 @@ use crate::compiler::{
     errors::{CompileCtx, CompileResult},
     lexer::tokenize,
     path::Path,
-    read_file, FILE_EXTENSION,
+    read_file,
 };
 
 use super::NodeInfo;
@@ -46,10 +46,7 @@ pub fn start_parse(
     relative_path: Path,
 ) -> CompileResult<ParsedFile> {
     debug.set_status(format!("Parsing: {}", relative_file_path));
-
-    let mut file_path = project_dir.join(relative_file_path.convert());
-    file_path.set_extension(FILE_EXTENSION);
-    let source = read_file(&file_path)?;
+    let source = read_file(project_dir, &relative_file_path)?;
 
     debug.set_path(&relative_file_path);
 
@@ -98,7 +95,7 @@ pub fn start_parse(
             Token::Function => {
                 let function = match parse_function(&mut tokens, is_main, count, false) {
                     Ok(f) => f,
-                    Err(()) => break 
+                    Err(()) => break,
                 };
                 body.push(function)
             }
