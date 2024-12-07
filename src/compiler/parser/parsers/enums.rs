@@ -20,7 +20,7 @@ pub fn parse_enum(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
         let name = tokens.parse_identifier()?;
         fields.push(name);
 
-        let result = tokens.expect_tokens(vec![Token::Comma, Token::EndScope], false);
+        let result = tokens.expect_tokens(vec![Token::Comma, Token::EndScope], false)?;
         match result.token {
             Token::Comma => continue,
             Token::EndScope => break,

@@ -13,7 +13,7 @@ pub fn parse_path(tokens: &mut Tokens, root: &String) -> CompileResult<Path> {
         {
             break;
         }
-        let info = tokens.expect_tokens(vec![Token::Identifier(String::new())], false);
+        let info = tokens.expect_tokens(vec![Token::Identifier(String::new())], false)?;
         match info.token {
             Token::Identifier(name) => path.push(name),
             _ => panic!(),

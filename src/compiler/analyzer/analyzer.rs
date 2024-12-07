@@ -114,8 +114,6 @@ fn handle_function(
     let mut mutables = Vec::new();
     let mut new_params = Vec::new();
     for parameter in parameters {
-        println!("{parameter:#?}");
-
         if parameter.mutable {
             if parameter.data_type.is_pointing() {
                 program.debug.error(

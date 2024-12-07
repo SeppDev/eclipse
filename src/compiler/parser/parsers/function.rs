@@ -15,12 +15,12 @@ pub fn parse_function(
     export: bool,
 ) -> CompileResult<NodeInfo> {
     let name = tokens.parse_identifier()?;
-    tokens.expect_tokens(vec![Token::OpenParen], false);
+    tokens.expect_tokens(vec![Token::OpenParen], false)?;
 
     let mut parameters: Vec<Parameter> = Vec::new();
     if tokens
         .peek_expect_tokens(vec![Token::CloseParen], true)
-        .is_some()
+        .is_none()
     {
         loop {
             tokens.start_next();
@@ -39,11 +39,9 @@ pub fn parse_function(
                 data_type,
             };
 
-            println!("{parameter:#?}");
-    
             parameters.push(parameter);
     
-            let result = &tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
+            let result = &tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
             match result.token {
                 Token::CloseParen => break,
                 Token::Comma => continue,
@@ -51,7 +49,6 @@ pub fn parse_function(
             }
         }
     }
-    tokens.advance();
 
     let return_type = if tokens
         .peek_expect_tokens(vec![Token::Colon], true)
@@ -62,7 +59,8 @@ pub fn parse_function(
         Type::void()
     };
 
-    tokens.expect_tokens(vec![Token::StartScope], false);
+    
+    tokens.expect_tokens(vec![Token::StartScope], false)?;
     let body = parse_body(tokens)?;
 
     return Ok(tokens.create_node(Node::Function {

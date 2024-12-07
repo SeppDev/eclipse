@@ -14,7 +14,7 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
             let new_type = parse_type(tokens)?;
             tuple.push(new_type);
 
-            let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false);
+            let result = tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?;
             match result.token {
                 Token::CloseParen => break,
                 Token::Comma => continue,
@@ -33,7 +33,7 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
             Token::Identifier(String::new()),
         ],
         false,
-    );
+    )?;
 
     let name = match info.token {
         Token::Ampersand => return Ok(parse_type(tokens)?.to_reference()?),
@@ -41,8 +41,9 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
         Token::Mutable => return Ok(parse_type(tokens)?.to_mutable()?),
         Token::OpenBracket => {
             let data_type = parse_type(tokens)?;
-            let _ = tokens.expect_tokens(vec![Token::SemiColon], false);
-            let info = tokens.expect_tokens(vec![Token::Integer(String::new())], false);
+            tokens.expect_tokens(vec![Token::SemiColon], false)?;
+            
+            let info = tokens.expect_tokens(vec![Token::Integer(String::new())], false)?;
             let count = match info.token {
                 Token::Integer(count) => count.parse::<usize>().unwrap(),
                 _ => panic!()

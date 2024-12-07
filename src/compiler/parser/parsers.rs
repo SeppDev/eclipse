@@ -74,7 +74,7 @@ pub fn start_parse(
                 Token::Struct,
             ],
             true,
-        );
+        )?;
 
         match info.token {
             Token::Import => {
@@ -96,7 +96,10 @@ pub fn start_parse(
                 return Err(());
             }
             Token::Function => {
-                let function = parse_function(&mut tokens, is_main, count, false)?;
+                let function = match parse_function(&mut tokens, is_main, count, false) {
+                    Ok(f) => f,
+                    Err(()) => break 
+                };
                 body.push(function)
             }
             Token::Enum => {

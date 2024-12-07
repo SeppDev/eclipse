@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileCtx, Location, Message},
+    errors::{CompileCtx, CompileResult, Location, Message},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
     path::Path, types::ReferenceState,
 };
@@ -34,16 +34,6 @@ impl Tokens {
         message: T,
     ) -> &mut Message {
         let mut message = Message::error(message.to_string());
-        message.push("", location);
-        self.messages.push(message);
-        return self.messages.last_mut().unwrap();
-    }
-    pub fn warning<T: ToString>(
-        &mut self,
-        location: Location,
-        message: T,
-    ) -> &mut Message {
-        let mut message = Message::warning(message.to_string());
         message.push("", location);
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
@@ -87,21 +77,18 @@ impl Tokens {
             location,
         }
     }
-    pub fn start(&mut self) -> Option<TokenInfo> {
-        let token = match self.advance() {
-            Some(t) => t,
-            None => return None,
-        };
+    pub fn start(&mut self) -> CompileResult<TokenInfo> {
+        let token = self.advance()?;
         self.starts.push(token.clone());
-        Some(token)
+        Ok(token)
     }
     pub fn start_next(&mut self) {
         self.start_on_next = true;
     }
-    pub fn advance(&mut self) -> Option<TokenInfo> {
+    pub fn advance(&mut self) -> CompileResult<TokenInfo> {
         let info = if self.start_on_next {
             self.start_on_next = false;
-            self.start()
+            return self.start()
         } else {
             self.tokens.next()
         };
@@ -115,7 +102,7 @@ impl Tokens {
                     current.location.clone(),
                     format!("No token found {}", current.token),
                 );
-                return None;
+                return Err(());
             }
         };
 
@@ -127,7 +114,7 @@ impl Tokens {
             _ => {}
         }
         self.current = Some(info.clone());
-        return Some(info)
+        return Ok(info)
     }
     pub fn peek(&mut self) -> &TokenInfo {
         match self.tokens.peek() {

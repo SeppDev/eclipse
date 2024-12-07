@@ -6,12 +6,16 @@ use crate::compiler::{
 };
 
 use super::{
-    super::super::lexer::{Token, Tokens}, arguments::parse_arguments, expression::parse_expression, path::parse_path, variable::parse_set_variable
+    super::super::lexer::{Token, Tokens},
+    arguments::parse_arguments,
+    expression::parse_expression,
+    path::parse_path,
+    variable::parse_set_variable,
 };
 impl Tokens {
     pub fn parse_identifier(&mut self) -> CompileResult<String> {
         let current = self.current().clone();
-        let info = self.advance();
+        let info = self.advance()?;
 
         if let Token::Identifier(name) = info.token {
             return Ok(name);
@@ -34,7 +38,7 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
         Token::DivideEquals,
         Token::MultiplyEquals,
         Token::DoubleColon,
-    ]);
+    ])?;
 
     match info.token {
         Token::DoubleColon => {
@@ -46,9 +50,7 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
         _ => {}
     }
 
-
-
-    tokens.advance();
+    tokens.advance()?;
     return Ok(match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
@@ -64,27 +66,31 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
             let expression = parse_expression(tokens, true)?.unwrap();
 
             let operator = match info.token {
-                Token::PlusEquals  => ArithmeticOperator::Plus,
-                Token::SubtractEquals=> ArithmeticOperator::Subtract,
-                Token::MultiplyEquals=> ArithmeticOperator::Multiply,
+                Token::PlusEquals => ArithmeticOperator::Plus,
+                Token::SubtractEquals => ArithmeticOperator::Subtract,
+                Token::MultiplyEquals => ArithmeticOperator::Multiply,
                 Token::DivideEquals => ArithmeticOperator::Division,
-                _ => panic!()
+                _ => panic!(),
             };
 
-            let binary_expression = Expression::BinaryOperation(
-                Box::new(variable),
-                operator,
-                Box::new(expression),
-            );
-            
+            let binary_expression =
+                Expression::BinaryOperation(Box::new(variable), operator, Box::new(expression));
+
             let binary_expression = ExpressionInfo {
                 location: info.location.clone(),
                 ref_state: ReferenceState::None,
                 expression: binary_expression,
             };
 
-            return Ok(tokens.create_node(Node::SetVariable { name, expression: Some(binary_expression) }));
+            return Ok(tokens.create_node(Node::SetVariable {
+                name,
+                expression: Some(binary_expression),
+            }));
         }
-        _ => panic!("{info:#?} {name}"),
+        _ => {
+            let message = format!("{info:#?} {name}");
+            tokens.error(info.location, message);
+            return Err(());
+        }
     });
 }

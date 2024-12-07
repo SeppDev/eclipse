@@ -22,7 +22,7 @@ pub fn parse_arguments(tokens: &mut Tokens) -> CompileResult<Vec<ExpressionInfo>
         };
 
         arguments.push(expression);
-        let result = tokens.expect_tokens(vec![Token::Comma, Token::CloseParen], false);
+        let result = tokens.expect_tokens(vec![Token::Comma, Token::CloseParen], false)?;
         match result.token {
             Token::Comma => continue,
             Token::CloseParen => break,

@@ -30,7 +30,7 @@ pub fn parse_expression(
         Some(info) => info,
         None => {
             if required {
-                let info = tokens.advance();
+                let info = tokens.advance()?;
                 tokens.error(
                     info.location,
                     format!("Expected expression, got '{}'", info.token),
@@ -39,7 +39,7 @@ pub fn parse_expression(
             return Ok(None);
         }
     };
-    tokens.start();
+    tokens.start()?;
 
     let expression = match info.token {
         Token::Integer(integer) => Expression::Value(Value::Integer(integer)),
@@ -79,18 +79,18 @@ pub fn parse_expression(
                     Some(expression) => expression,
                     None => {
                         if is_tuple {
-                            tokens.expect_tokens(vec![Token::CloseParen], false);
+                            tokens.expect_tokens(vec![Token::CloseParen], false)?;
                         } else {
-                            tokens.expect_tokens(vec![Token::CloseBracket], false);
+                            tokens.expect_tokens(vec![Token::CloseBracket], false)?;
                         }
                         break;
                     }
                 };
                 expressions.push(new_expression);
                 let result = if is_tuple {
-                    tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)
+                    tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?
                 } else {
-                    tokens.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)
+                    tokens.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)?
                 };
 
                 match result.token {
@@ -129,7 +129,7 @@ pub fn parse_expression(
         ],
         false,
     ) {
-        Some(_) => tokens.start(),
+        Some(_) => tokens.start()?,
         None => return Ok(Some(first_expression_info)),
     };
 
