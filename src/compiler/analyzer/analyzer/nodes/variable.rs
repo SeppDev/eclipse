@@ -69,7 +69,7 @@ pub fn handle_set_variable(
         None => {
             program
                 .debug
-                .error(location, format!("Cannot modify an immutable variable: '{name}'"));
+                .error(location, format!("Cannot modify a variable that has not been declared: '{name}'"));
             return;
         }
     };

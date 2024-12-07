@@ -117,10 +117,8 @@ fn handle_function(
         if parameter.mutable {
             if parameter.data_type.is_pointing() {
                 program.debug.error(
-                    location.clone(),
-                    format!(
-                        "A parameter cannot be mutable if it is a pointer or reference."
-                    ),
+                    parameter.location.clone(),
+                    format!("A parameter cannot be mutable if it is a pointer or reference."),
                 );
             }
 
@@ -131,7 +129,13 @@ fn handle_function(
         }
 
         let ir = parameter.data_type.convert();
-        let variable = variables.insert(true, &parameter.name, false, parameter.data_type, location.clone());
+        let variable = variables.insert(
+            true,
+            &parameter.name,
+            false,
+            parameter.data_type,
+            parameter.location,
+        );
         new_params.push((variable.key.clone(), ir));
     }
 

@@ -31,7 +31,12 @@ pub fn parse_function(
     
             let name = tokens.parse_identifier()?;
             let data_type = parse_type(tokens)?;
-            let location = tokens.pop_start().location;
+            
+            let mut location = tokens.pop_start().location;
+            let current = tokens.current();
+            location.lines.end = current.location.lines.end;
+            location.columns.end = current.location.columns.end;
+
             let parameter = Parameter {
                 location,
                 mutable,
