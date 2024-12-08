@@ -51,22 +51,11 @@ impl ProgramTypes {
         find_path.extend_from_slice(&relative_components);
         find_path.extend_from_slice(&components);
 
-        // println!("\n{find_path:?}->{name}");
-
-        // println!("{file:#?}");
-
-        let length = find_path.len();
-        for (index, component) in find_path.into_iter().enumerate() {
+        for component in find_path {
             file = match file.imports.get(&component) {
                 Some(f) => f,
-                None => return None
+                None => return None,
             };
-            if file.is_module && true == false {
-                let function = file.functions.get(&name);
-                if function.is_some() {
-                    return function;
-                }
-            }
         }
 
         return file.functions.get(&name);
@@ -78,7 +67,6 @@ pub struct FileTypes {
     functions: HashMap<String, Function>,
     types: HashMap<String, CustomTypes>,
     imports: HashMap<String, FileTypes>,
-    is_module: bool,
     // pub types: HashMap<String, Type>
     // export: bool,
 }
@@ -145,7 +133,6 @@ pub fn parse_types(
     let mut src = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        is_module: true,
         types: HashMap::new(),
     };
 
@@ -193,7 +180,6 @@ fn handle_file(
     let mut types = FileTypes {
         imports: HashMap::new(),
         functions: HashMap::new(),
-        is_module: file.is_module,
         types: HashMap::new(),
     };
 
