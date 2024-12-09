@@ -52,7 +52,7 @@ pub fn execute(command: String) -> Result<String, String> {
         return Err(result);
     }
 
-    return Ok(String::from_utf8(cmd.stdout).unwrap());
+    // return Ok(String::from_utf8(cmd.stdout).unwrap());
 }
 
 // #[derive(Debug)]
