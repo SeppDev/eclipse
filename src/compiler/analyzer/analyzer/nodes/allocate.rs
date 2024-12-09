@@ -145,7 +145,7 @@ pub fn handle_read(
                     return IRValue::Null;
                 }
             };
-            if variable.is_parameter {
+            if !variable.is_pointer_value {
                 return IRValue::Variable(variable.key.clone());
             }
 

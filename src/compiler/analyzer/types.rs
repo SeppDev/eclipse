@@ -1,4 +1,4 @@
-use std::{collections::HashMap, os::linux::raw::stat};
+use std::collections::HashMap;
 
 use crate::compiler::{
     counter::NameCounter,
@@ -10,12 +10,48 @@ use crate::compiler::{
 };
 
 #[derive(Debug)]
-pub struct CustomEnum {
-    pub fields: Vec<String>,
+struct FieldMap<Key: Eq + PartialEq, Value> {
+    fields: Vec<(Key, Value)>,
+}
+impl<Key: Eq + PartialEq, Value> FieldMap<Key, Value> {
+    pub fn new() -> Self {
+        Self { fields: Vec::new() }
+    }
+    pub fn find(&self, key: &Key) -> Option<usize> {
+        for (index, (k, _)) in self.fields.iter().enumerate() {
+            if key != k {
+                continue;
+            }
+            return Some(index);
+        }
+        return None;
+    }
+    pub fn insert(&mut self, key: Key, value: Value) -> Result<(), Value> {
+        let removed = match self.find(&key) {
+            Some(index) => Some(self.fields.swap_remove(index)),
+            None => None,
+        };
+
+        self.fields.push((key, value));
+
+        return match removed {
+            Some((_, value)) => Err(value),
+            None => Ok(()),
+        };
+    }
 }
 
 #[derive(Debug)]
-pub struct CustomStruct {}
+pub struct CustomEnum {
+    offsets: HashMap<String, usize>,
+}
+
+#[derive(Debug)]
+pub struct CustomStruct {
+    pub size: usize,
+    fields: FieldMap<String, Type>,
+    offsets: HashMap<String, usize>,
+}
 
 #[derive(Debug)]
 pub enum CustomTypes {
@@ -125,10 +161,10 @@ pub struct Function {
 pub fn parse_types(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
-    program: &ParsedProgram,
+    program: &mut ParsedProgram,
 ) -> CompileResult<ProgramTypes> {
-    let main = handle_file(debug, count, &program.main)?;
-    let mut standard = handle_file(debug, count, &program.standard)?;
+    let main = handle_file(debug, count, &mut program.main)?;
+    let mut standard = handle_file(debug, count, &mut program.standard)?;
 
     let mut src = FileTypes {
         imports: HashMap::new(),
@@ -175,7 +211,7 @@ pub fn parse_types(
 fn handle_file(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
-    file: &ParsedFile,
+    file: &mut ParsedFile,
 ) -> CompileResult<FileTypes> {
     let mut types = FileTypes {
         imports: HashMap::new(),
@@ -183,26 +219,65 @@ fn handle_file(
         types: HashMap::new(),
     };
 
-    for (name, import) in &file.imports {
+    for (name, import) in &mut file.imports {
         let file = handle_file(debug, count, import)?;
         if types.imports.insert(name.clone(), file).is_some() {
             debug.error(Location::void(), format!("'{}' is already imported", name));
         };
     }
 
-    for info in &file.body {
-        match &info.node {
-            Node::Enum { name, fields } => {
-                let custom_enum = CustomEnum {
-                    fields: fields.clone(),
+    use std::mem::take;
+
+    for info in &mut file.body {
+        match &mut info.node {
+            // Node::Enum { name, fields } => {
+            //     let name = take(name);
+            //     let fields = take(fields);
+
+            //     let custom_enum = CustomEnum {
+            //         fields,
+            //     };
+
+            //     types
+            //         .types
+            //         .insert(name.clone(), CustomTypes::Enum(custom_enum));
+            // },
+            Node::Struct { name, fields } => {
+                let name = take(name);
+                let vec_fields = take(fields);
+
+                let mut fields = FieldMap::new();
+                let mut offsets = HashMap::new();
+
+                let mut offset = 0;
+                for (key, data_type) in vec_fields {
+                    let size = data_type.bytes();
+                    let result = fields.insert(key.clone(), data_type);
+
+                    if result.is_err() {
+                        debug.error(info.location.clone(), format!("Duplicate key: {key}"));
+                        break;
+                    }
+
+                    offsets.insert(key, offset);
+                    offset += size;
+                }
+
+                let custom_struct = CustomStruct {
+                    fields,
+                    offsets,
+                    size: offset,
                 };
 
-                types
-                    .types
-                    .insert(name.clone(), CustomTypes::Enum(custom_enum));
+                types.types.insert(name, CustomTypes::Struct(custom_struct));
             }
+            _ => continue,
+        }
+    }
+
+    for info in &file.body {
+        match &info.node {
             Node::Function {
-                export: _,
                 name,
                 key,
                 parameters,
@@ -210,7 +285,7 @@ fn handle_file(
                 body: _,
             } => {
                 let is_main_function =
-                    file.relative_file_path == Path::from("src").join("main") && name.eq("main");
+                    file.relative_file_path == Path::from("src").join("main") && name == "main";
                 let key = if is_main_function {
                     String::from("main")
                 } else {
@@ -222,7 +297,7 @@ fn handle_file(
                     Function {
                         key,
                         parameters: parameters
-                            .iter()
+                            .into_iter()
                             .map(|parameter| parameter.data_type.clone())
                             .collect::<Vec<Type>>(),
                         return_type: return_type.clone(),

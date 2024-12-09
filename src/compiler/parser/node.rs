@@ -25,7 +25,6 @@ pub enum Node {
         fields: Vec<(String, Type)>,
     },
     Function {
-        export: bool,
         name: String,
         key: String,
         parameters: Vec<Parameter>,

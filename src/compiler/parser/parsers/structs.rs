@@ -4,7 +4,9 @@ use crate::compiler::{
     parser::{Node, NodeInfo},
 };
 
-pub fn parse_enum(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
+use super::types::parse_type;
+
+pub fn parse_struct(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
     let name = tokens.parse_identifier()?;
     let _ = tokens.expect_tokens(vec![Token::StartScope], false);
     let mut fields = Vec::new();
@@ -13,13 +15,13 @@ pub fn parse_enum(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
         .peek_expect_tokens(vec![Token::EndScope], true)
         .is_some()
     {
-        return Ok(tokens.create_node(Node::Enum { name, fields }))   
+        return Ok(tokens.create_node(Node::Struct { name, fields }))   
     };
 
     loop {
-
         let name = tokens.parse_identifier()?;
-        fields.push(name);
+        let data_type = parse_type(tokens)?;
+        fields.push((name, data_type));
 
         let result = tokens.expect_tokens(vec![Token::Comma, Token::EndScope], false)?;
         match result.token {
@@ -29,5 +31,5 @@ pub fn parse_enum(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
         }
     }
 
-    return Ok(tokens.create_node(Node::Enum { name, fields }));
+    return Ok(tokens.create_node(Node::Struct { name, fields }));
 }

@@ -12,7 +12,7 @@ pub fn parse_function(
     tokens: &mut Tokens,
     is_main: bool,
     name_counter: &mut NameCounter,
-    export: bool,
+    _export: bool,
 ) -> CompileResult<NodeInfo> {
     let name = tokens.parse_identifier()?;
     tokens.expect_tokens(vec![Token::OpenParen], false)?;
@@ -69,7 +69,6 @@ pub fn parse_function(
     let body = parse_body(tokens)?;
 
     return Ok(tokens.create_node(Node::Function {
-        export,
         key: if is_main && name == "main" {
             "main".to_string()
         } else {

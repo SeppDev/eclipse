@@ -21,49 +21,16 @@ pub fn what_type(
             let (data_type, _) = array.data_type.clone().array_info();
             return data_type;
         }
-        Expression::Array(array) => {
-            match expected_type {
-                Some(t) => t.clone(),
-                None => {
-                    let size = array.len();
-                    let first = array.first().unwrap();
-                    let inner_type = what_type(program, function, None, first);
+        Expression::Array(array) => match expected_type {
+            Some(t) => t.clone(),
+            None => {
+                let size = array.len();
+                let first = array.first().unwrap();
+                let inner_type = what_type(program, function, None, first);
 
-                    Type::new(BaseType::Array(size, Box::new(inner_type)))
-                }
+                Type::new(BaseType::Array(size, Box::new(inner_type)))
             }
-            // let mut size = 0;
-            // let mut data_type = match expected_type {
-            //     Some(dt) => match &dt.base {
-            //         BaseType::Array(_, dt) => *dt.clone(),
-            //         _ => {
-            //             program.debug.error(
-            //                 expression.location.clone(),
-            //                 format!("Not an array type"),
-            //             );
-            //             return Type::void();
-            //         }
-            //     },
-            //     None => match array.first() {
-            //         Some(first) => {
-            //             what_type(program, function, None, first)
-            //         },
-            //         None => {
-            //             program.debug.error(
-            //                 expression.location.clone(),
-            //                 format!("Arrays cannot be empty, use a () instead"),
-            //             );
-            //             return Type::void();
-            //         }
-            //     }
-            // };
-
-            // for expression in array {
-            //     data_type = what_type(program, function, expected_type, expression);
-            // }
-
-            // data_type
-        }
+        },
         Expression::Value(value) => match expected_type {
             Some(expected) => {
                 if match value {
@@ -152,6 +119,6 @@ pub fn what_type(
         _ => todo!("{:#?}", expression),
     };
     data_type.ref_state = expression.ref_state.clone();
-
+    
     return data_type;
 }

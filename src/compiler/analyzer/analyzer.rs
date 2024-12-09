@@ -5,6 +5,7 @@ use crate::compiler::{
     path::Path,
     program::ParsedProgram,
     types::Type,
+    FILE_EXTENSION,
 };
 
 use super::{variables::VariablesMap, IRValue, ProgramTypes};
@@ -53,9 +54,10 @@ pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileRe
 }
 
 fn handle_file(program: &mut ProgramCtx, file: &mut ParsedFile) {
-    program
-        .debug
-        .set_status(format!("Analyzing: {}", file.relative_file_path));
+    program.debug.set_status(format!(
+        "Analyzing: {}.{FILE_EXTENSION}",
+        file.relative_file_path.convert().to_string_lossy()
+    ));
 
     program.debug.set_path(&file.relative_file_path);
 
@@ -66,7 +68,6 @@ fn handle_file(program: &mut ProgramCtx, file: &mut ParsedFile) {
         };
 
         if let Node::Function {
-            export: _,
             name: _,
             key,
             parameters,
@@ -128,7 +129,7 @@ fn handle_function(
 
         let ir = parameter.data_type.convert();
         let variable = variables.insert(
-            true,
+            false,
             &parameter.name,
             false,
             parameter.data_type,
@@ -143,7 +144,7 @@ fn handle_function(
         new_params.push((key.clone(), data_type.convert()));
 
         let param_variable =
-            variables.insert(false, &name, true, data_type.clone(), location.clone());
+            variables.insert(true, &name, true, data_type.clone(), location.clone());
 
         operations.allocate(&param_variable.key, &data_type.convert());
         operations.store(

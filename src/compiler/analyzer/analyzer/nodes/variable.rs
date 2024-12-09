@@ -40,7 +40,7 @@ pub fn handle_variable_declaration(
 
     let destination = function
         .variables
-        .insert(false, &name, mutable, data_type.clone(), location.clone())
+        .insert(true, &name, mutable, data_type.clone(), location.clone())
         .key
         .clone();
 

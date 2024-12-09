@@ -52,6 +52,7 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
             let _ = tokens.expect_tokens(vec![Token::CloseBracket], false);
             return Ok(Type::new(BaseType::Array(count, Box::new(data_type))))
         },
+        Token::OpenParen => todo!(),
         Token::Identifier(string) => string,
         _ => return Ok(Type::void()),
     };

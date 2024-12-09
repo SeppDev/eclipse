@@ -8,7 +8,7 @@ pub struct Variable {
     pub data_type: Type,
     pub key: String,
     pub location: Location,
-    pub is_parameter: bool,
+    pub is_pointer_value: bool,
 }
 
 #[derive(Debug)]
@@ -31,7 +31,7 @@ impl VariablesMap {
 
     pub fn insert(
         &mut self,
-        is_parameter: bool,
+        is_pointer_value: bool,
         name: &String,
         mutable: bool,
         data_type: Type,
@@ -45,7 +45,7 @@ impl VariablesMap {
             mutable,
             data_type,
             location,
-            is_parameter,
+            is_pointer_value,
         };
 
         let _ = self.variables.insert(name.clone(), variable);

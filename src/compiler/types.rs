@@ -1,4 +1,4 @@
-use super::errors::CompileResult;
+use super::{errors::CompileResult, POINTER_WITH};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum BaseType {
@@ -79,6 +79,20 @@ impl Type {
         let mut s = Self::default();
         s.base = base;
         return s;
+    }
+    pub fn bytes(&self) -> usize {
+        if self.is_pointing() {
+            return POINTER_WITH
+        }
+        match &self.base {
+            BaseType::Int(bits) | BaseType::UInt(bits) => bits.div_ceil(8),
+            BaseType::Float32 => 4,
+            BaseType::Float64 => 8,
+            BaseType::Never | BaseType::Void => 0,
+            BaseType::Boolean => 1,
+            BaseType::Array(size, data_type) => data_type.bytes() * size,
+            _ => todo!()
+        }
     }
     pub fn is_pointing(&self) -> bool {
         return !matches!(&self.ref_state, ReferenceState::None)

@@ -38,6 +38,7 @@ pub enum IRType {
     Pointer(Box<IRType>),
     Integer(usize),
     Array(usize, Box<IRType>),
+    // Bytes(usize),
     Float,
     Double,
     Void,
@@ -71,6 +72,7 @@ impl std::fmt::Display for IRType {
                 Self::Double => "double".to_string(),
                 Self::Float => "float".to_string(),
                 Self::Array(size, t) => format!("[{size} x {t}]"),
+                // Self::Bytes(bytes) => format!("[{bytes} x i8]"),
                 Self::Integer(bits) => format!("i{bits}"),
                 Self::Pointer(t) => format!("{t}*"),
                 // Self::Struct(name) => format!("%{name}",),
@@ -99,7 +101,7 @@ impl Type {
 
             BaseType::StaticString(_size) => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
 
-            BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
+            BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())), //IRType::Bytes(*size * t.bytes()),
             BaseType::Tuple(dts) => {
                 if dts.len() == 0 {
                     return IRType::Void;

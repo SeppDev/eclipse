@@ -1,6 +1,4 @@
-use std::ops::Not;
-
-use crate::compiler::path::Path;
+use crate::compiler::{path::Path, FILE_EXTENSION};
 
 use super::{CompileCtx, Location, Map};
 
@@ -86,8 +84,8 @@ fn display(relative_path: &Path, message: &Message, lines: &Vec<String>) {
 
     let first = message.details.first().unwrap();
     println!(
-        "  --> {}:{}:{}",
-        relative_path, first.location.lines.start, first.location.columns.start
+        "  --> {}.{}:{}:{}",
+        relative_path.convert().to_string_lossy(), FILE_EXTENSION, first.location.lines.start, first.location.columns.start
     );
 
     let mut spacing = String::new();

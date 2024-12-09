@@ -22,6 +22,7 @@ mod string;
 mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
+pub static POINTER_WITH: usize = 8;
 
 fn parse_program(
     debug: &mut CompileCtx,
@@ -57,6 +58,8 @@ fn compile(
 
     let types = parse_types(debug, count, &mut program)?;
     debug.throw(false);
+
+    // debug.result_print(format!("{:#?}", types));
 
     let mut ctx = ProgramCtx {
         debug,

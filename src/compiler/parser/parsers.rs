@@ -12,19 +12,21 @@ mod import;
 mod r#loop;
 mod namespace;
 mod path;
+mod structs;
 mod types;
 mod variable;
 
 use enums::parse_enum;
 use function::parse_function;
 use import::handle_import;
+use structs::parse_struct;
 
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
     lexer::{tokenize, Tokens},
     path::Path,
-    read_file,
+    read_file, FILE_EXTENSION,
 };
 
 use super::NodeInfo;
@@ -93,11 +95,8 @@ fn handle_tokens(
                 };
                 body.push(function)
             }
-            Token::Enum => {
-                let a = parse_enum(tokens)?;
-                body.push(a);
-            }
-            Token::Struct => todo!(),
+            Token::Enum => body.push(parse_enum(tokens)?),
+            Token::Struct => body.push(parse_struct(tokens)?),
             _ => continue,
         }
     }
@@ -111,7 +110,7 @@ pub fn start_parse(
     relative_file_path: Path,
     relative_path: Path,
 ) -> CompileResult<ParsedFile> {
-    debug.set_status(format!("Parsing: {}", relative_file_path));
+    debug.set_status(format!("Parsing: {}.{FILE_EXTENSION}", relative_file_path.convert().to_string_lossy()));
 
     let source = read_file(project_dir, &relative_file_path);
     let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;

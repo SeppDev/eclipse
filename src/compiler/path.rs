@@ -6,7 +6,7 @@ pub struct Path {
 }
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.components.join("/"))
+        write!(f, "{}", self.components.join("::"))
     }
 }
 impl PartialEq for Path {
@@ -52,13 +52,7 @@ impl Path {
     pub fn first(&self) -> Option<&String> {
         return self.components.first();
     }
-    pub fn len(&self) -> usize {
-        self.components.len()
-    }
     pub fn components(&self) -> Vec<String> {
         return self.components.clone()
-    }
-    pub fn clear(&mut self) {
-        self.components.clear();
     }
 }
