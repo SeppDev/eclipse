@@ -2,7 +2,7 @@ use crate::compiler::{
     analyzer::{analyzer::what_type, FunctionCtx, IRValue, ProgramCtx},
     errors::Location,
     parser::{Expression, ExpressionInfo, Value},
-    types::Type,
+    types::{ReferenceState, Type},
 };
 
 pub fn handle_allocation(
@@ -102,7 +102,7 @@ pub fn handle_read(
             let array_value_ptr = function.variables.increment();
             let result_ptr = function.variables.increment();
 
-            let array = match function.variables.read(&name) {
+            let array = match function.variables.read(&name, &ReferenceState::None) {
                 Some(var) => var.clone(),
                 None => {
                     program.debug.error(
@@ -135,7 +135,7 @@ pub fn handle_read(
             let name = path.first().unwrap();
             let load_destination = function.variables.increment();
 
-            let variable = match function.variables.read(name) {
+            let variable = match function.variables.read(name, &ReferenceState::None) {
                 Some(var) => var,
                 None => {
                     program.debug.error(

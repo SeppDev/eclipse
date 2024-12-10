@@ -1,6 +1,6 @@
 use crate::compiler::{
     parser::{Expression, ExpressionInfo, Value},
-    types::{BaseType, Type},
+    types::{BaseType, ReferenceState, Type},
 };
 
 use super::{FunctionCtx, ProgramCtx};
@@ -14,7 +14,7 @@ pub fn what_type(
     let mut data_type: Type = match &expression.expression {
         Expression::Index(path, _) => {
             let name = path.first().unwrap();
-            let array = match function.variables.read(name) {
+            let array = match function.variables.read(name, &ReferenceState::Mutable) {
                 Some(var) => var,
                 None => return Type::void(),
             };
@@ -49,7 +49,7 @@ pub fn what_type(
         },
         Expression::GetVariable(path) => {
             let name = path.first().unwrap();
-            let variable = match function.variables.read(name) {
+            let variable = match function.variables.read(name, &ReferenceState::None) {
                 Some(var) => var,
                 None => {
                     program.debug.error(

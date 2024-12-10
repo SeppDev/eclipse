@@ -7,7 +7,7 @@ enum Action {
     Build,
 }
 
-fn main() {    
+fn main() {
     let mut project_dir = std::env::current_dir().unwrap();
     let mut args = std::env::args();
     args.next();
@@ -72,8 +72,6 @@ fn run(executable_path: PathBuf) {
             Err(a) => println!("{:?}", a),
         }
     }
-
-    
 
     let output = thread.wait().unwrap();
     if !output.success() {

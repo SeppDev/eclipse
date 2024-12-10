@@ -118,7 +118,7 @@ impl Type {
         };
         let count = match self.ref_state {
             ReferenceState::Pointer(p) => p,
-            ReferenceState::Shared => 1,
+            ReferenceState::Shared | ReferenceState::Mutable => 1,
             ReferenceState::None => 0,
         };
 

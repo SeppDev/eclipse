@@ -49,6 +49,9 @@ impl BaseType {
     pub fn is_number(&self) -> bool {
         return self.is_integer() || self.is_float();
     }
+    pub fn is_void(&self) -> bool {
+        matches!(&self, Self::Void)
+    }
     pub fn is_integer(&self) -> bool {
         matches!(&self, Self::UInt(_) | Self::Int(_))
     }
@@ -61,13 +64,31 @@ impl BaseType {
     pub fn is_array(&self) -> bool {
         matches!(&self, Self::Array(_, _))
     }
+    pub fn bytes(&self) -> usize {
+        match &self {
+            Self::Int(bits) | BaseType::UInt(bits) => bits.div_ceil(8),
+            Self::Float32 => 4,
+            Self::Float64 => 8,
+            Self::Never | BaseType::Void => 0,
+            Self::Boolean => 1,
+            Self::Array(size, data_type) => data_type.bytes() * size,
+            Self::Tuple(types) => {
+                let mut size = 0;
+                for data_type in types {
+                    size += data_type.bytes()
+                }
+                size
+            },
+            Self::StaticString(_) => todo!()
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Type {
     pub base: BaseType,
     pub mutable: bool,
-    pub ref_state: ReferenceState,
+    pub ref_state: ReferenceState
 }
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -84,15 +105,7 @@ impl Type {
         if self.is_pointing() {
             return POINTER_WITH
         }
-        match &self.base {
-            BaseType::Int(bits) | BaseType::UInt(bits) => bits.div_ceil(8),
-            BaseType::Float32 => 4,
-            BaseType::Float64 => 8,
-            BaseType::Never | BaseType::Void => 0,
-            BaseType::Boolean => 1,
-            BaseType::Array(size, data_type) => data_type.bytes() * size,
-            _ => todo!()
-        }
+        self.base.bytes()
     }
     pub fn is_pointing(&self) -> bool {
         return !matches!(&self.ref_state, ReferenceState::None)
@@ -117,7 +130,7 @@ impl Type {
     pub fn array_info(&self) -> (Type, usize) {
         match &self.base {
             BaseType::Array(size, data_type) => return (*data_type.clone(), size.clone()),
-            base => panic!("{base} is not an array"),
+            base => panic!("{base} is not an array")
         }
     }
 }
@@ -127,7 +140,8 @@ pub enum ReferenceState {
     #[default]
     None,
     Shared,
-    Pointer(usize),
+    Mutable,
+    Pointer(usize)
 }
 impl std::fmt::Display for ReferenceState {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -137,6 +151,7 @@ impl std::fmt::Display for ReferenceState {
             match self {
                 Self::None => "".to_string(),
                 Self::Shared => "&".to_string(),
+                Self::Mutable => "&mut ".to_string(),
                 Self::Pointer(size) => "*".repeat(*size),
             }
         )

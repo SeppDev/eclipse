@@ -13,9 +13,9 @@ mod codegen;
 mod lexer;
 mod parser;
 
-mod lib;
 mod counter;
 mod errors;
+mod lib;
 mod path;
 mod program;
 mod string;
@@ -35,10 +35,7 @@ fn parse_program(
     let main_path = Path::from("src").join("main");
     let main = start_parse(debug, count, project_dir, main_path.clone(), main_path)?;
 
-    return Ok(ParsedProgram {
-        standard,
-        main,
-    });
+    return Ok(ParsedProgram { standard, main });
 }
 
 fn compile(
@@ -97,7 +94,7 @@ fn compile(
 pub fn build(project_dir: PathBuf) -> PathBuf {
     let mut debug = CompileCtx::new();
     let mut count = NameCounter::new();
-    
+
     let start = std::time::Instant::now();
 
     let path = match compile(&mut debug, &mut count, &project_dir) {
@@ -138,9 +135,9 @@ pub fn execute(command: String) -> Output {
 
 fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> String {
     if relative_file_path.first().unwrap() == &"std".to_string() {
-        return get_std_file(relative_file_path).unwrap()
+        return get_std_file(relative_file_path).unwrap();
     }
-    
+
     let mut full_path = project_dir.join(relative_file_path.convert());
     full_path.set_extension(FILE_EXTENSION);
 
@@ -152,7 +149,7 @@ fn read_file(project_dir: &PathBuf, relative_file_path: &Path) -> String {
 
 fn file_exists(project_dir: &PathBuf, relative_file_path: &Path) -> bool {
     if relative_file_path.first().unwrap() == &"std".to_string() {
-        return get_std_file(relative_file_path).is_some()
+        return get_std_file(relative_file_path).is_some();
     }
     let mut full_path = project_dir.join(relative_file_path.convert());
     full_path.set_extension(FILE_EXTENSION);

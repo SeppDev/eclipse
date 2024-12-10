@@ -23,7 +23,7 @@ pub struct ProgramCtx<'a> {
 //         self.static_strings.push((key.clone(), string));
 //         return key;
 //     }
-// }
+// }    
 
 pub struct LoopInfo {
     pub begin: String,
@@ -39,7 +39,7 @@ impl LoopInfo {
 }
 
 pub struct FunctionCtx<'a> {
-    pub variables: VariablesMap,
+    pub variables: &'a mut VariablesMap,
     pub return_type: &'a Option<Type>,
     pub operations: &'a mut FunctionOperations,
     pub relative_path: &'a Path,
@@ -130,7 +130,7 @@ fn handle_function(
         let ir = parameter.data_type.convert();
         let variable = variables.insert(
             false,
-            &parameter.name,
+            parameter.name,
             false,
             parameter.data_type,
             parameter.location,
@@ -144,7 +144,7 @@ fn handle_function(
         new_params.push((key.clone(), data_type.convert()));
 
         let param_variable =
-            variables.insert(true, &name, true, data_type.clone(), location.clone());
+            variables.insert(true, name, true, data_type.clone(), location.clone());
 
         operations.allocate(&param_variable.key, &data_type.convert());
         operations.store(
@@ -154,39 +154,26 @@ fn handle_function(
         );
     }
 
+    let returns_void = return_type.base.is_void();
+
     let mut function = FunctionCtx {
-        variables,
+        variables: &mut variables,
         return_type: &Some(return_type),
         relative_path: &file.relative_path,
         operations: &mut operations,
         loop_info: Vec::new(),
     };
 
-    handle_body(program, &mut function, body);
+    let returned = handle_body(program, &mut function, body);
 
     function.variables.pop_scope();
 
+    if !returned && returns_void {
+        operations.void_return();
+    }
+    
     program.codegen.insert(operations);
 
-    // if !matches!(
-    //     function.operations.last().unwrap_or(&Operation::Unkown),
-    //     Operation::Return {
-    //         data_type: _,
-    //         value: _
-    //     }
-    // ) {
-    //     function.operations.push(Operation::Return {
-    //         data_type: IRType::Void,
-    //         value: IRValue::Null,
-    //     })
-    // }
-
-    // program.functions.push(IRFunction {
-    //     name: key,
-    //     operations: function.operations,
-    //     parameters: new_params,
-    //     return_type: ir_type,
-    // });
 }
 
 mod nodes;
@@ -194,8 +181,10 @@ use nodes::*;
 mod expressions;
 use expressions::*;
 
-fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) {
+fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) -> bool {
     function.variables.push_scope();
+
+    let mut returned = false;
 
     for info in nodes {
         match info.node {
@@ -236,7 +225,9 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             }
             Node::Break => handle_break(program, function, info.location),
             Node::Continue => handle_continue(program, function, info.location),
-            Node::Scope(body) => handle_body(program, function, body),
+            Node::Scope(body) => {
+                handle_body(program, function, body);
+            }
             Node::Return(expression) => {
                 handle_return(
                     program,
@@ -245,6 +236,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                     function.return_type,
                     expression,
                 );
+                returned = true;
                 break;
             }
             _ => program
@@ -254,4 +246,6 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
     }
 
     function.variables.pop_scope();
+
+    return returned;
 }

@@ -2,7 +2,7 @@ use crate::compiler::{
     analyzer::{analyzer::what_type, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
-    types::Type,
+    types::{ReferenceState, Type},
 };
 
 use super::{handle_allocation, handle_read};
@@ -40,7 +40,7 @@ pub fn handle_variable_declaration(
 
     let destination = function
         .variables
-        .insert(true, &name, mutable, data_type.clone(), location.clone())
+        .insert(true, name, mutable, data_type.clone(), location.clone())
         .key
         .clone();
 
@@ -64,7 +64,7 @@ pub fn handle_set_variable(
         }
     };
 
-    let variable = match function.variables.read(&name) {
+    let variable = match function.variables.read(&name, &ReferenceState::None) {
         Some(var) => var.clone(),
         None => {
             program

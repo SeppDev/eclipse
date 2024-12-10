@@ -1,6 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::compiler::{counter::NameCounter, errors::Location, types::Type};
+use crate::compiler::{
+    counter::NameCounter,
+    errors::Location,
+    types::{ReferenceState, Type},
+};
 
 #[derive(Debug, Clone)]
 pub struct Variable {
@@ -10,6 +14,8 @@ pub struct Variable {
     pub location: Location,
     pub is_pointer_value: bool,
 }
+
+struct VariablesMapState {}
 
 #[derive(Debug)]
 pub struct VariablesMap {
@@ -32,14 +38,14 @@ impl VariablesMap {
     pub fn insert(
         &mut self,
         is_pointer_value: bool,
-        name: &String,
+        name: String,
         mutable: bool,
         data_type: Type,
         location: Location,
     ) -> &Variable {
         let key = self.increment();
         let current_state = self.states.last_mut().unwrap();
-        
+
         let variable = Variable {
             key,
             mutable,
@@ -48,11 +54,10 @@ impl VariablesMap {
             is_pointer_value,
         };
 
+        current_state.insert(name.clone());
         let _ = self.variables.insert(name.clone(), variable);
 
-        current_state.insert(name.clone());
-
-        return self.read(&name).unwrap();
+        return self.variables.get(&name).unwrap();
     }
     pub fn push_scope(&mut self) {
         self.states.push(HashSet::new());
@@ -63,7 +68,7 @@ impl VariablesMap {
             self.variables.remove(&key);
         }
     }
-    pub fn read(&self, name: &String) -> Option<&Variable> {
+    pub fn read(&self, name: &String, ref_state: &ReferenceState) -> Option<&Variable> {
         return self.variables.get(name);
     }
     // pub fn write(&mut self, key: &String) -> bool {
