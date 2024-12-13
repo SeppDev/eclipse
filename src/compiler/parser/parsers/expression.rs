@@ -180,31 +180,31 @@ pub fn parse_expression(
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expression> {
-    let path = if tokens
-        .peek_expect_tokens(vec![Token::DoubleColon], false)
-        .is_some()
-    {
-        parse_path(tokens, &name)?
-    } else {
-        Path::from(&name)
-    };
+    // let path = if tokens
+    //     .peek_expect_tokens(vec![Token::DoubleColon], false)
+    //     .is_some()
+    // {
+    //     parse_path(tokens, &name)?
+    // } else {
+    //     Path::from(&name)
+    // };
 
     if tokens.peek_expect_tokens(vec![Token::OpenBracket], true).is_some() {
         let info = parse_expression(tokens, true)?.unwrap();
         let _ = tokens.expect_tokens(vec![Token::CloseBracket], false);
-        return Ok(Expression::Index(path, Box::new(info)))
+        return Ok(Expression::Index(name, Box::new(info)))
     } 
 
 
     let info = match tokens.peek_expect_tokens(vec![Token::OpenParen], true) {
         Some(info) => info,
-        None => return Ok(Expression::GetVariable(path)),
+        None => return Ok(Expression::GetVariable(name)),
     };
 
     match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
-            Ok(Expression::Call(path, arguments))
+            Ok(Expression::Call(Path::from(name), arguments))
         }
         _ => panic!(),
     }

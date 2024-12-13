@@ -9,7 +9,7 @@ mod function;
 mod identifier;
 mod ifstatement;
 mod import;
-mod r#loop;
+mod loops;
 mod namespace;
 mod path;
 mod structs;

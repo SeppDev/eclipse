@@ -5,7 +5,7 @@ use crate::compiler::{
 };
 
 use super::{
-    expression::parse_expression, identifier::parse_after_identifier, ifstatement::parse_ifstatement, r#loop::{parse_loop, parse_while}, namespace::parse_namespace, variable::parse_variable
+    expression::parse_expression, identifier::parse_after_identifier, ifstatement::parse_ifstatement, loops::{parse_loop, parse_while}, namespace::parse_namespace, variable::parse_variable
 };
 
 pub fn parse_body(tokens: &mut Tokens) -> CompileResult<Vec<NodeInfo>> {

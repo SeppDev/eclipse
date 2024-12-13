@@ -75,9 +75,9 @@ impl NodeInfo {
 
 #[derive(Debug)]
 pub enum Expression {
-    Index(Path, Box<ExpressionInfo>),
+    Index(String, Box<ExpressionInfo>),
     Value(Value),
-    GetVariable(Path),
+    GetVariable(String),
     Call(Path, Vec<ExpressionInfo>),
     BinaryOperation(Box<ExpressionInfo>, ArithmeticOperator, Box<ExpressionInfo>),
     CompareOperation(Box<ExpressionInfo>, CompareOperator, Box<ExpressionInfo>),

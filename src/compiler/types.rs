@@ -135,9 +135,9 @@ impl Type {
         s.base = BaseType::Void;
         return s;
     }
-    pub fn array_info(&self) -> (Type, usize) {
+    pub fn array_info(&self) -> (&Type, usize) {
         match &self.base {
-            BaseType::Array(size, data_type) => return (*data_type.clone(), size.clone()),
+            BaseType::Array(size, data_type) => return (data_type, *size),
             base => panic!("{base} is not an array")
         }
     }

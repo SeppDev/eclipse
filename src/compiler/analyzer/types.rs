@@ -106,50 +106,6 @@ pub struct FileTypes {
     // pub types: HashMap<String, Type>
     // export: bool,
 }
-impl FileTypes {
-    // pub fn get_function(&self, relative_path: &Path, static_path: &mut Path) -> Option<&Function> {
-    //     let mut components = static_path.components();
-    //     let name = components.pop().unwrap();
-
-    //     let mut new_path = relative_path.clone();
-    //     while components.len() > 0 {
-    //         let key = components.pop().unwrap();
-    //         match &key[..] {
-    //             "root" => new_path.clear(),
-    //             "super" => {
-    //                 new_path.pop();
-    //             }
-    //             _ => new_path.push(key),
-    //         }
-    //     }
-
-    //     let file = {
-    //         let mut path_components = new_path.components();
-    //         path_components.reverse();
-    //         path_components.pop();
-
-    //         let mut file = self;
-    //         while path_components.len() > 0 {
-    //             let key = path_components.pop().unwrap();
-    //             let f = match file.imports.get(&key) {
-    //                 Some(f) => f,
-    //                 None => return None,
-    //             };
-    //             if f.is_module {
-    //                 file = match f.imports.get(&key) {
-    //                     Some(f) => f,
-    //                     None => f,
-    //                 }
-    //             } else {
-    //                 file = f;
-    //             }
-    //         }
-    //         file
-    //     };
-
-    //     return file.functions.get(&name);
-    // }
-}
 
 #[derive(Debug)]
 pub struct Function {

@@ -13,13 +13,20 @@ pub fn what_type(
 ) -> Type {
     let mut data_type: Type = match &expression.expression {
         Expression::Index(path, _) => {
-            let name = path.first().unwrap();
+            let name = path;
             let array = match function.variables.read(name, &ReferenceState::Mutable) {
                 Some(var) => var,
                 None => return Type::void(),
             };
-            let (data_type, _) = array.data_type.clone().array_info();
-            return data_type;
+            if !array.data_type.base.is_array() {
+                program.debug.error(
+                    expression.location.clone(),
+                    "Cannot index into a value type",
+                );
+            }
+
+            let (data_type, _) = array.data_type.array_info();
+            return data_type.clone();
         }
         Expression::Array(array) => match expected_type {
             Some(t) => t.clone(),
@@ -47,8 +54,7 @@ pub fn what_type(
 
             None => value.default_type(),
         },
-        Expression::GetVariable(path) => {
-            let name = path.first().unwrap();
+        Expression::GetVariable(name) => {
             let variable = match function.variables.read(name, &ReferenceState::None) {
                 Some(var) => var,
                 None => {
@@ -119,6 +125,6 @@ pub fn what_type(
         _ => todo!("{:#?}", expression),
     };
     data_type.ref_state = expression.ref_state.clone();
-    
+
     return data_type;
 }

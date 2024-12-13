@@ -5,7 +5,7 @@ use crate::compiler::{
     path::Path,
 };
 
-use super::handle_read;
+use super::allocate::handle_read;
 
 pub fn handle_call(
     program: &mut ProgramCtx,

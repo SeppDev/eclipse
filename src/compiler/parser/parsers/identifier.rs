@@ -56,12 +56,12 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
             let arguments = parse_arguments(tokens)?;
             tokens.create_node(Node::Call(Path::from(&name), arguments))
         }
-        Token::Equals => parse_set_variable(tokens, name)?,
+        Token::Equals => parse_set_variable(tokens, name.clone())?,
         Token::PlusEquals | Token::SubtractEquals | Token::MultiplyEquals | Token::DivideEquals => {
             let variable = ExpressionInfo {
                 location: info.location.clone(),
                 ref_state: ReferenceState::None,
-                expression: Expression::GetVariable(Path::from(&name)),
+                expression: Expression::GetVariable(name.clone()),
             };
             let expression = parse_expression(tokens, true)?.unwrap();
 
