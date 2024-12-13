@@ -5,6 +5,7 @@ pub enum BaseType {
     #[default]
     Never,
     Void,
+    Any,
 
     UInt(usize),
     Int(usize),
@@ -24,6 +25,7 @@ impl std::fmt::Display for BaseType {
             f,
             "{}",
             match self {
+                Self::Any => "any".to_string(),
                 Self::Boolean => "bool".to_string(),
                 Self::Void => "void".to_string(),
                 Self::Float32 => "f32".to_string(),
@@ -69,7 +71,7 @@ impl BaseType {
             Self::Int(bits) | BaseType::UInt(bits) => bits.div_ceil(8),
             Self::Float32 => 4,
             Self::Float64 => 8,
-            Self::Never | BaseType::Void => 0,
+            Self::Never | BaseType::Void | BaseType::Any => 0,
             Self::Boolean => 1,
             Self::Array(size, data_type) => data_type.bytes() * size,
             Self::Tuple(types) => {
@@ -84,7 +86,7 @@ impl BaseType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, Eq, Clone, Default)]
 pub struct Type {
     pub base: BaseType,
     pub mutable: bool,
@@ -95,6 +97,12 @@ impl std::fmt::Display for Type {
         write!(f, "{}{}", self.ref_state, self.base)
     }
 }
+impl PartialEq for Type {
+    fn eq(&self, other: &Self) -> bool {
+        return self == other;
+    }
+}
+
 impl Type {
     pub fn new(base: BaseType) -> Self {
         let mut s = Self::default();

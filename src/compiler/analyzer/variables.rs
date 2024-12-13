@@ -1,10 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::compiler::{
-    counter::NameCounter,
-    errors::Location,
-    types::{ReferenceState, Type},
-};
+use crate::compiler::{counter::NameCounter, errors::Location, types::{ReferenceState, Type}};
 
 #[derive(Debug, Clone)]
 pub struct Variable {

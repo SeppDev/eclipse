@@ -18,7 +18,7 @@ pub fn handle_allocation(
         .allocate(&destination, &data_type.convert());
 
     let data_type = &what_type(program, function, Some(data_type), &info);
-
+    
     handle_store(program, function, location, destination, data_type, info);
 }
 
@@ -31,18 +31,6 @@ pub fn handle_store(
     info: ExpressionInfo,
 ) {
     return match info.expression {
-        Expression::Value(value) => {
-            let value = match value {
-                Value::Integer(int) => IRValue::IntLiteral(int),
-                Value::Boolean(bool) => IRValue::BoolLiteral(bool),
-                Value::Float(float) => IRValue::FloatLiteral(float),
-                _ => todo!(),
-            };
-
-            function
-                .operations
-                .store(&data_type.convert(), &value, &destination);
-        }
         Expression::GetVariable(_) => {
             let value = handle_read(program, function, location, &data_type, info);
             function
@@ -67,14 +55,15 @@ pub fn handle_store(
                 function.operations.getelementptr_inbounds(
                     &key_ptr,
                     &data_type.convert(),
-                    &item_type.convert(),
                     destination,
                     &IRValue::IntLiteral(format!("{index}")),
                 );
+                
                 handle_store(program, function, location, &key_ptr, &item_type, item);
             }
         }
         Expression::Index(_, _)
+        | Expression::Value(_)
         | Expression::Call(_, _)
         | Expression::BinaryOperation(_, _, _)
         | Expression::CompareOperation(_, _, _) => {
@@ -118,11 +107,11 @@ pub fn handle_read(
 
             function.operations.getelementptr_inbounds(
                 &array_value_ptr.clone(),
-                &array.data_type.convert(),
                 &inner_type.convert(),
                 &array.key,
                 &value,
             );
+            
             function.operations.load(
                 &result_ptr,
                 &inner_type.convert(),
@@ -149,6 +138,8 @@ pub fn handle_read(
                 return IRValue::Variable(variable.key.clone());
             }
 
+               program.debug.result_print(format!("Loading {data_type} for {name}")); 
+            
             function.operations.load(
                 &load_destination,
                 &data_type.convert(),

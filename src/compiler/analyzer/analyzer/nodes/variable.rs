@@ -43,6 +43,7 @@ pub fn handle_variable_declaration(
         .insert(true, name, mutable, data_type.clone(), location.clone())
         .key
         .clone();
+    
 
     handle_allocation(program, function, &location, &destination, &data_type, info);
 }

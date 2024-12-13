@@ -90,8 +90,8 @@ impl std::fmt::Display for IRType {
 impl Type {
     pub fn convert(&self) -> IRType {
         let mut ir = match &self.base {
-            BaseType::Void => IRType::Void,
-            BaseType::Never => IRType::Void,
+            BaseType::Void | BaseType::Never => IRType::Void,
+            BaseType::Any => panic!("Invalid type"),
 
             BaseType::Float32 => IRType::Float,
             BaseType::Float64 => IRType::Double,
@@ -101,7 +101,8 @@ impl Type {
 
             BaseType::StaticString(_size) => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
 
-            BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())), //IRType::Bytes(*size * t.bytes()),
+            // BaseType::Array(size, t) => IRType::Bytes(*size * t.bytes()),
+            BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
             BaseType::Tuple(dts) => {
                 if dts.len() == 0 {
                     return IRType::Void;

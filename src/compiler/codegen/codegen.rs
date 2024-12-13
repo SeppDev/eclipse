@@ -123,12 +123,11 @@ impl FunctionOperations {
         &mut self,
         destination: &String,
         data_type: &IRType,
-        value_type: &IRType,
         from: &String,
         index: &IRValue,
     ) {
         self.body
-            .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, {value_type} 0, {value_type} {index}"));
+            .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, i32 0, i32 {index}"));
     }
     pub fn load(&mut self, destination: &String, destination_type: &IRType, value: &IRValue) {
         self.body.pushln(format!(
