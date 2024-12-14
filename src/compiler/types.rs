@@ -86,7 +86,7 @@ impl BaseType {
     }
 }
 
-#[derive(Debug, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Type {
     pub base: BaseType,
     pub mutable: bool,
@@ -97,11 +97,11 @@ impl std::fmt::Display for Type {
         write!(f, "{}{}", self.ref_state, self.base)
     }
 }
-impl PartialEq for Type {
-    fn eq(&self, other: &Self) -> bool {
-        return self == other;
-    }
-}
+// impl PartialEq for Type {
+//     fn eq(&self, other: &Self) -> bool {
+//         return self == other;
+//     }
+// }
 
 impl Type {
     pub fn new(base: BaseType) -> Self {
@@ -138,7 +138,7 @@ impl Type {
     pub fn array_info(&self) -> (&Type, usize) {
         match &self.base {
             BaseType::Array(size, data_type) => return (data_type, *size),
-            base => panic!("{base} is not an array")
+            _ => return (self, 0)
         }
     }
 }

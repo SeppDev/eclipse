@@ -23,8 +23,8 @@ pub fn handle_allocation(
         .operations
         .allocate(&destination, &data_type.convert());
 
-    let data_type = &what_type(program, function, Some(data_type), &info);
-
+    // let infered_type = &what_type(program, function, Some(data_type), &info);
+    
     handle_store(program, function, location, destination, data_type, info);
 }
 

@@ -34,8 +34,8 @@ pub fn handle_variable_declaration(
     };
 
     let data_type = match data_type {
-        Some(dt) => dt,
-        None => what_type(program, function, None, &info),
+        Some(dt) => what_type(program, function, &info.location, Some(&dt), &info),
+        None => what_type(program, function, &location, None, &info),
     };
 
     let destination = function
@@ -43,7 +43,6 @@ pub fn handle_variable_declaration(
         .insert(true, name, mutable, data_type.clone(), location.clone())
         .key
         .clone();
-    
 
     handle_allocation(program, function, &location, &destination, &data_type, info);
 }
@@ -58,9 +57,10 @@ pub fn handle_set_variable(
     let expression = match expression {
         Some(e) => e,
         None => {
-            program
-            .debug
-            .error(location, format!("Cannot set a variable without any expression"));
+            program.debug.error(
+                location,
+                format!("Cannot set a variable without any expression"),
+            );
             return;
         }
     };
@@ -68,9 +68,10 @@ pub fn handle_set_variable(
     let variable = match function.variables.read(&name, &ReferenceState::None) {
         Some(var) => var.clone(),
         None => {
-            program
-                .debug
-                .error(location, format!("Cannot modify a variable that has not been declared: '{name}'"));
+            program.debug.error(
+                location,
+                format!("Cannot modify a variable that has not been declared: '{name}'"),
+            );
             return;
         }
     };

@@ -1,5 +1,8 @@
 use crate::compiler::{
-    analyzer::{IRType, IRValue}, errors::{CompileResult, Location}, path::Path, types::{BaseType, ReferenceManager, ReferenceState, Type}
+    analyzer::{IRType, IRValue},
+    errors::{CompileResult, Location},
+    path::Path,
+    types::{BaseType, ReferenceManager, ReferenceState, Type},
 };
 
 #[derive(Debug)]
@@ -43,13 +46,14 @@ pub enum Node {
         expression: Option<ExpressionInfo>,
     },
     IfStatement {
-        expression: (ExpressionInfo, Vec<NodeInfo>),
+        expression: ExpressionInfo,
+        body: Vec<NodeInfo>,
         elseif: Vec<(ExpressionInfo, Vec<NodeInfo>)>,
         else_body: Option<Vec<NodeInfo>>,
     },
     Loop {
         condition: Option<ExpressionInfo>,
-        body: Vec<NodeInfo>
+        body: Vec<NodeInfo>,
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),
@@ -68,16 +72,17 @@ impl NodeInfo {
     pub fn void() -> Self {
         Self {
             location: Location::void(),
-            node: Node::Uknown
+            node: Node::Uknown,
         }
     }
 }
 
 #[derive(Debug)]
 pub enum Expression {
+    GetVariable(String),
+    Field(Box<ExpressionInfo>, String),
     Index(String, Box<ExpressionInfo>),
     Value(Value),
-    GetVariable(String),
     Call(Path, Vec<ExpressionInfo>),
     BinaryOperation(Box<ExpressionInfo>, ArithmeticOperator, Box<ExpressionInfo>),
     CompareOperation(Box<ExpressionInfo>, CompareOperator, Box<ExpressionInfo>),
@@ -85,7 +90,6 @@ pub enum Expression {
     Tuple(Vec<ExpressionInfo>),
     Minus(Box<ExpressionInfo>),
     Not(Box<ExpressionInfo>),
-    // Field(Box<ExpressionInfo>, Box<ExpressionInfo>)
 }
 
 #[derive(Debug)]
@@ -99,22 +103,24 @@ impl ReferenceManager for ExpressionInfo {
         match self.ref_state {
             ReferenceState::None => self.ref_state = ReferenceState::Pointer(1),
             ReferenceState::Pointer(p) => self.ref_state = ReferenceState::Pointer(p + 1),
-            _ => return Err(())
+            _ => return Err(()),
         }
-        return Ok(())
+        return Ok(());
     }
     fn add_reference(&mut self) -> CompileResult<()> {
         match self.ref_state {
-            ReferenceState::None | ReferenceState::Shared => self.ref_state = ReferenceState::Shared,
-            _ => return Err(())
+            ReferenceState::None | ReferenceState::Shared => {
+                self.ref_state = ReferenceState::Shared
+            }
+            _ => return Err(()),
         }
-        return Ok(())
+        return Ok(());
     }
-} 
+}
 
 #[derive(Debug)]
 pub enum ArithmeticOperator {
-    // Modulus
+    Modulus,
     Plus,
     Subtract,
     Division,
@@ -123,29 +129,41 @@ pub enum ArithmeticOperator {
 impl ArithmeticOperator {
     pub fn convert(&self, data_type: &IRType) -> String {
         if data_type.is_float() {
-            return format!("{}", match &self {
-                ArithmeticOperator::Plus => "fadd",
-                ArithmeticOperator::Subtract => "fsub",
-                ArithmeticOperator::Multiply => "fmul",
-                ArithmeticOperator::Division => "fdiv",
-            })
+            return format!(
+                "{}",
+                match &self {
+                    ArithmeticOperator::Plus => "fadd",
+                    ArithmeticOperator::Subtract => "fsub",
+                    ArithmeticOperator::Multiply => "fmul",
+                    ArithmeticOperator::Division => "fdiv",
+                    ArithmeticOperator::Modulus => "frem",
+                }
+            );
         }
 
         if data_type.signed() {
-            return format!("{}", match &self {
-                ArithmeticOperator::Plus => "add",
-                ArithmeticOperator::Subtract => "sub",
-                ArithmeticOperator::Multiply => "mul",
-                ArithmeticOperator::Division => "sdiv",
-            })
+            return format!(
+                "{}",
+                match &self {
+                    ArithmeticOperator::Plus => "add",
+                    ArithmeticOperator::Subtract => "sub",
+                    ArithmeticOperator::Multiply => "mul",
+                    ArithmeticOperator::Division => "sdiv",
+                    ArithmeticOperator::Modulus => "srem",
+                }
+            );
         }
 
-        format!("{}", match &self {
-            ArithmeticOperator::Plus => "uadd",
-            ArithmeticOperator::Subtract => "usub",
-            ArithmeticOperator::Multiply => "umul",
-            ArithmeticOperator::Division => "udiv",
-        })
+        format!(
+            "{}",
+            match &self {
+                ArithmeticOperator::Plus => "uadd",
+                ArithmeticOperator::Subtract => "usub",
+                ArithmeticOperator::Multiply => "umul",
+                ArithmeticOperator::Division => "udiv",
+                ArithmeticOperator::Modulus => "urem",
+            }
+        )
     }
 }
 
@@ -161,38 +179,46 @@ pub enum CompareOperator {
 impl CompareOperator {
     pub fn convert(&self, data_type: &IRType) -> String {
         if data_type.is_float() {
-            return format!("fcmp {}", match &self {
-                Self::Equals => "oeq",
-                Self::NotEquals => "one",
-                Self::GreaterThan => "ogt",
-                Self::GreaterThanOrEquals => "oge",
-                Self::LessThan => "olt",
-                Self::LessThanOrEquals => "ole",
-            })
+            return format!(
+                "fcmp {}",
+                match &self {
+                    Self::Equals => "oeq",
+                    Self::NotEquals => "one",
+                    Self::GreaterThan => "ogt",
+                    Self::GreaterThanOrEquals => "oge",
+                    Self::LessThan => "olt",
+                    Self::LessThanOrEquals => "ole",
+                }
+            );
         }
 
         if data_type.signed() {
-            return format!("icmp {}", match &self {
-                Self::Equals => "eq",
-                Self::NotEquals => "ne",
-                Self::GreaterThan => "sgt",
-                Self::GreaterThanOrEquals => "sge",
-                Self::LessThan => "slt",
-                Self::LessThanOrEquals => "sle",
-            })
+            return format!(
+                "icmp {}",
+                match &self {
+                    Self::Equals => "eq",
+                    Self::NotEquals => "ne",
+                    Self::GreaterThan => "sgt",
+                    Self::GreaterThanOrEquals => "sge",
+                    Self::LessThan => "slt",
+                    Self::LessThanOrEquals => "sle",
+                }
+            );
         }
 
-        format!("icmp {}", match &self {
-            Self::Equals => "eq",
-            Self::NotEquals => "ne",
-            Self::GreaterThan => "ugt",
-            Self::GreaterThanOrEquals => "uge",
-            Self::LessThan => "ult",
-            Self::LessThanOrEquals => "ule",
-        })
+        format!(
+            "icmp {}",
+            match &self {
+                Self::Equals => "eq",
+                Self::NotEquals => "ne",
+                Self::GreaterThan => "ugt",
+                Self::GreaterThanOrEquals => "uge",
+                Self::LessThan => "ult",
+                Self::LessThanOrEquals => "ule",
+            }
+        )
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -208,13 +234,15 @@ impl Value {
             Self::Boolean(_) => a.base = BaseType::Boolean,
             Self::Float(_) => a.base = BaseType::Float64,
             Self::Integer(_) => a.base = BaseType::Int(32),
-            Self::StaticString(_) => todo!()
+            Self::StaticString(_) => todo!(),
         }
         return a;
     }
     pub fn read_integer(self) -> IRValue {
         if let Value::Integer(int) = self {
             return IRValue::IntLiteral(int);
-        } else {panic!()}
+        } else {
+            panic!()
+        }
     }
 }

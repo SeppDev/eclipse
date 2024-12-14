@@ -37,6 +37,7 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
         Token::SubtractEquals,
         Token::DivideEquals,
         Token::MultiplyEquals,
+        Token::PercentEquals,
         Token::DoubleColon,
     ])?;
 
@@ -57,7 +58,7 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
             tokens.create_node(Node::Call(Path::from(&name), arguments))
         }
         Token::Equals => parse_set_variable(tokens, name.clone())?,
-        Token::PlusEquals | Token::SubtractEquals | Token::MultiplyEquals | Token::DivideEquals => {
+        Token::PlusEquals | Token::SubtractEquals | Token::MultiplyEquals | Token::DivideEquals | Token::PercentEquals => {
             let variable = ExpressionInfo {
                 location: info.location.clone(),
                 ref_state: ReferenceState::None,
@@ -70,6 +71,7 @@ pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResul
                 Token::SubtractEquals => ArithmeticOperator::Subtract,
                 Token::MultiplyEquals => ArithmeticOperator::Multiply,
                 Token::DivideEquals => ArithmeticOperator::Division,
+                Token::PercentEquals => ArithmeticOperator::Modulus,
                 _ => panic!(),
             };
 

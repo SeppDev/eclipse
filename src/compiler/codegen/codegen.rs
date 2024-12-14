@@ -35,7 +35,8 @@ impl CodeGen {
 
         self.body.pushln(
             "declare i32 @printf(i8*, ...)
-            
+
+declare i32 @rand()            
 declare i32 @sleep(i32)
 declare i32 @usleep(i32)
 declare i32 @fflush(ptr)
@@ -97,6 +98,10 @@ impl FunctionOperations {
         self.body
             .pushln(format!("\tstore {data_type} {value}, ptr %{destination}"));
     }
+    pub fn xor_boolean(&mut self, destination: &String, value: &IRValue) {
+        self.body
+            .pushln(format!("\t%{destination} = xor i1 {value}, true"));
+    } 
     pub fn call(&mut self, function: &String, return_type: &IRType, arguments: IRValue) {
         self.body
             .pushln(format!("\tcall {return_type} @{function}({arguments})"));

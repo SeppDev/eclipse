@@ -1,4 +1,5 @@
 use crate::compiler::{
+    errors::Location,
     parser::{Expression, ExpressionInfo, Value},
     types::{BaseType, ReferenceState, Type},
 };
@@ -8,10 +9,11 @@ use super::{FunctionCtx, ProgramCtx};
 pub fn what_type(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
+    location: &Location,
     expected_type: Option<&Type>,
     expression: &ExpressionInfo,
 ) -> Type {
-    let mut data_type: Type = match &expression.expression {
+    let mut infered_type: Type = match &expression.expression {
         Expression::Index(path, _) => {
             let name = path;
             let array = match function.variables.read(name, &ReferenceState::Mutable) {
@@ -28,16 +30,28 @@ pub fn what_type(
             let (data_type, _) = array.data_type.array_info();
             return data_type.clone();
         }
-        Expression::Array(array) => match expected_type {
-            Some(t) => t.clone(),
-            None => {
-                let size = array.len();
-                let first = array.first().unwrap();
-                let inner_type = what_type(program, function, None, first);
+        Expression::Array(array) => {
+            let size = array.len();
+            let first = array.first().unwrap();
 
-                Type::new(BaseType::Array(size, Box::new(inner_type)))
-            }
-        },
+            let inner_type = if let Some(expected) = expected_type {
+                if !expected.base.is_array() {
+                    program.debug.error(
+                        location.clone(),
+                        format!("Expected array but got {expected}"),
+                    );
+                    return expected.clone();
+                }
+                let (value_type, _) = expected.array_info();
+                what_type(program, function, location, Some(value_type), first)
+            } else {
+                what_type(program, function, location, None, first)
+            };
+
+            let infered = Type::new(BaseType::Array(size, Box::new(inner_type)));
+
+            infered
+        }
         Expression::Value(value) => match expected_type {
             Some(expected) => {
                 if match value {
@@ -78,7 +92,7 @@ pub fn what_type(
             let first = a.as_ref();
             let second = b.as_ref();
 
-            let data_type = what_type(program, function, expected_type, first);
+            let data_type = what_type(program, function, location, expected_type, first);
             if !data_type.base.is_number() {
                 program.debug.error(
                     first.location.clone(),
@@ -86,7 +100,7 @@ pub fn what_type(
                 );
             }
 
-            let data_type_second = what_type(program, function, Some(&data_type), second);
+            let data_type_second = what_type(program, function, location, Some(&data_type), second);
             if !data_type_second.base.is_number() {
                 program.debug.error(
                     second.location.clone(),
@@ -109,8 +123,8 @@ pub fn what_type(
             let first = a.as_ref();
             let second = b.as_ref();
 
-            let data_type = what_type(program, function, expected_type, first);
-            let data_type_second = what_type(program, function, Some(&data_type), second);
+            let data_type = what_type(program, function, location, expected_type, first);
+            let data_type_second = what_type(program, function, location, Some(&data_type), second);
             if data_type != data_type_second {
                 program.debug.error(
                     expression.location.clone(),
@@ -122,9 +136,44 @@ pub fn what_type(
 
             Type::new(BaseType::Boolean)
         }
+        Expression::Minus(info) => {
+            let data_type = what_type(program, function, location, expected_type, info);
+            if !data_type.base.is_number() {
+                program.debug.error(
+                    info.location.clone(),
+                    "Number is required for this operation",
+                );
+            }
+            data_type
+        }
+        Expression::Not(info) => {
+            let data_type = what_type(
+                program,
+                function,
+                location,
+                Some(&Type::new(BaseType::Boolean)),
+                info,
+            );
+            if !data_type.base.is_bool() {
+                program.debug.error(
+                    info.location.clone(),
+                    "Boolean is required for this operation",
+                );
+            }
+            data_type
+        }
         _ => todo!("{:#?}", expression),
     };
-    data_type.ref_state = expression.ref_state.clone();
+    infered_type.ref_state = expression.ref_state.clone();
 
-    return data_type;
+    if let Some(expected) = expected_type {
+        if expected != &infered_type {
+            program.debug.error(
+                location.clone(),
+                format!("Expected {expected} but got {infered_type}"),
+            );
+        }
+    }
+
+    return infered_type;
 }

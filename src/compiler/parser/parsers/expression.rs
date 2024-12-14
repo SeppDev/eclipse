@@ -19,6 +19,7 @@ pub fn parse_expression(
             Token::Float(String::new()),
             Token::Boolean(true),
             Token::Identifier(String::new()),
+            Token::ExclamationMark,
             Token::OpenBracket,
             Token::Asterisk,
             Token::Ampersand,
@@ -118,8 +119,10 @@ pub fn parse_expression(
         vec![
             Token::Plus,
             Token::Minus,
-            Token::ForwardSlash,
             Token::Asterisk,
+            Token::ForwardSlash,
+            Token::Percent,
+            
             Token::Compare,
             Token::NotEquals,
             Token::LessThan,
@@ -140,7 +143,7 @@ pub fn parse_expression(
 
     let is_arithmetic = matches!(
         info.token,
-        Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk
+        Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent
     );
 
     let mut info = if is_arithmetic {
@@ -149,6 +152,7 @@ pub fn parse_expression(
             Token::Minus => ArithmeticOperator::Subtract,
             Token::ForwardSlash => ArithmeticOperator::Division,
             Token::Asterisk => ArithmeticOperator::Multiply,
+            Token::Percent => ArithmeticOperator::Modulus,
             _ => panic!(),
         };
 
@@ -180,14 +184,14 @@ pub fn parse_expression(
 }
 
 fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expression> {
-    // let path = if tokens
-    //     .peek_expect_tokens(vec![Token::DoubleColon], false)
-    //     .is_some()
-    // {
-    //     parse_path(tokens, &name)?
-    // } else {
-    //     Path::from(&name)
-    // };
+    let path = if tokens
+        .peek_expect_tokens(vec![Token::DoubleColon], false)
+        .is_some()
+    {
+        parse_path(tokens, &name)?
+    } else {
+        Path::from(&name)
+    };
 
     if tokens.peek_expect_tokens(vec![Token::OpenBracket], true).is_some() {
         let info = parse_expression(tokens, true)?.unwrap();
@@ -204,7 +208,7 @@ fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expressi
     match info.token {
         Token::OpenParen => {
             let arguments = parse_arguments(tokens)?;
-            Ok(Expression::Call(Path::from(name), arguments))
+            Ok(Expression::Call(path, arguments))
         }
         _ => panic!(),
     }

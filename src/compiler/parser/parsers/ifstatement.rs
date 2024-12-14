@@ -20,7 +20,8 @@ pub fn parse_ifstatement(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
     };
 
     return Ok(tokens.create_node(Node::IfStatement {
-        expression: (expression, body),
+        expression,
+        body,
         elseif: Vec::new(),
         else_body,
     }));

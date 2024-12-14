@@ -131,6 +131,7 @@ fn match_token(word: &String) -> Option<Token> {
         "-" => Token::Minus,
         "*" => Token::Asterisk,
         "/" => Token::ForwardSlash,
+        "%" => Token::Percent,
 
         "." => Token::Dot,
         "," => Token::Comma,
@@ -142,6 +143,7 @@ fn match_token(word: &String) -> Option<Token> {
         "-=" => Token::SubtractEquals,
         "/=" => Token::DivideEquals,
         "*=" => Token::MultiplyEquals,
+        "%=" => Token::PercentEquals,
 
         "<" => Token::LessThan,
         ">" => Token::GreaterThan,

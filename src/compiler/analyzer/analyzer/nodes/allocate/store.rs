@@ -25,7 +25,13 @@ pub fn handle_store(
             data_type,
             0,
         ),
-        Expression::Value(_) | Expression::Index(_, _) => {
+        Expression::Value(_)
+        | Expression::Minus(_)
+        | Expression::Not(_)
+        | Expression::Index(_, _)
+        | Expression::BinaryOperation(_, _, _)
+        | Expression::CompareOperation(_, _, _)
+        | Expression::Call(_, _) => {
             let value = handle_read(program, function, location, data_type, info);
             function
                 .operations

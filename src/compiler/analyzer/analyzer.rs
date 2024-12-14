@@ -23,7 +23,7 @@ pub struct ProgramCtx<'a> {
 //         self.static_strings.push((key.clone(), string));
 //         return key;
 //     }
-// }    
+// }
 
 pub struct LoopInfo {
     pub begin: String,
@@ -155,6 +155,7 @@ fn handle_function(
     }
 
     let returns_void = return_type.base.is_void();
+    let return_expected = format!("Return expected with type {return_type}");
 
     let mut function = FunctionCtx {
         variables: &mut variables,
@@ -168,18 +169,23 @@ fn handle_function(
 
     function.variables.pop_scope();
 
-    if !returned && returns_void {
-        operations.void_return();
+    if returns_void {
+        if !returned {
+            operations.void_return();
+        }
+    } else {
+        if !returned {
+            program.debug.error(location, return_expected);
+        }
     }
-    
-    program.codegen.insert(operations);
 
+    program.codegen.insert(operations);
 }
 
 mod nodes;
 use nodes::*;
-mod expressions;
-use expressions::*;
+mod types;
+use types::*;
 
 fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) -> bool {
     function.variables.push_scope();
@@ -207,14 +213,15 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             }
             Node::IfStatement {
                 expression,
+                body,
                 elseif: _,
                 else_body,
             } => handle_ifstatement(
                 program,
                 function,
                 info.location,
-                expression.0,
-                expression.1,
+                expression,
+                body,
                 else_body,
             ),
             Node::SetVariable { name, expression } => {
@@ -225,9 +232,8 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             }
             Node::Break => handle_break(program, function, info.location),
             Node::Continue => handle_continue(program, function, info.location),
-            Node::Scope(body) => {
-                handle_body(program, function, body);
-            }
+            Node::Scope(body) => returned = handle_body(program, function, body),
+
             Node::Return(expression) => {
                 handle_return(
                     program,

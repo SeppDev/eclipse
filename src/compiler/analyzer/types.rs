@@ -158,7 +158,17 @@ pub fn parse_types(
             return_type: Type::new(BaseType::Int(32)),
         },
     );
-
+    
+    let math = standard.imports.get_mut("math").unwrap();
+    math.functions.insert(
+        "random".to_string(),
+        Function {
+            key: "rand".to_string(),
+            parameters: vec![],
+            return_type: Type::new(BaseType::Int(32)),
+        },
+    );
+    
     src.imports.insert(String::from("main"), main);
 
     return Ok(ProgramTypes { src, std: standard });

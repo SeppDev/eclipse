@@ -42,9 +42,9 @@ pub fn handle_call(
     for param_type in &found.parameters {
         let info = arguments.pop().unwrap();
 
-        let data_type = what_type(program, function, Some(param_type), &info);
+        let data_type = what_type(program, function, &info.location, Some(param_type), &info);
         let value = handle_read(program, function, &location, &data_type, info);
-
+        
         ir_arguments.push((param_type.convert(), value));
     }
 
