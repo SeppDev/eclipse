@@ -2,7 +2,7 @@ use crate::compiler::{
     analyzer::{analyzer::what_type, FunctionCtx, IRType, IRValue, ProgramCtx},
     errors::Location,
     parser::{Expression, ExpressionInfo, Value},
-    types::{ReferenceState, Type},
+    types::{BaseType, ReferenceState, Type},
 };
 
 pub fn handle_read(
@@ -35,19 +35,20 @@ pub fn handle_read(
             };
 
             let (inner_type, size) = array.data_type.array_info();
-
-            let value = handle_read(program, function, location, data_type, *index);
+            
+            let index_type = Type::new(BaseType::Int(32));
+            let value = handle_read(program, function, location, &index_type, *index);
 
             function.operations.getelementptr_inbounds(
                 &result_ptr,
-                &IRType::Array(size, Box::new(inner_type.clone().convert())),
+                &IRType::Array(size, Box::new(inner_type.convert())),
                 &array.key,
                 &value,
             );
 
             function.operations.load(
                 &result,
-                &inner_type.convert(),
+                &data_type.convert(),
                 &IRValue::Variable(result_ptr),
             );
 

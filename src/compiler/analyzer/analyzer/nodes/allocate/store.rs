@@ -31,7 +31,7 @@ pub fn handle_store(
                 .operations
                 .store(&data_type.convert(), &value, &destination);
         }
-        _ => return,
+        _ => todo!(),
     }
 }
 
