@@ -1,11 +1,11 @@
-pub use store::handle_store;
 pub use read::handle_read;
+pub use store::handle_store;
 
 use crate::compiler::{
-    analyzer::{analyzer::what_type, FunctionCtx, IRValue, ProgramCtx},
+    analyzer::{FunctionCtx, ProgramCtx},
     errors::Location,
-    parser::{Expression, ExpressionInfo, Value},
-    types::{ReferenceState, Type},
+    parser::ExpressionInfo,
+    types::Type,
 };
 
 mod read;
@@ -24,11 +24,9 @@ pub fn handle_allocation(
         .allocate(&destination, &data_type.convert());
 
     // let infered_type = &what_type(program, function, Some(data_type), &info);
-    
+
     handle_store(program, function, location, destination, data_type, info);
 }
-
-
 
 // pub fn handle_store(
 //     program: &mut ProgramCtx,

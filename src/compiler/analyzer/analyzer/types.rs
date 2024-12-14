@@ -82,7 +82,7 @@ pub fn what_type(
             variable.data_type.clone()
         }
         Expression::Call(path, _) => {
-            let found = match program.types.get_function(function.relative_path, path) {
+            let found = match program.types.get_function(function.relative_path, path, &program.namespaces) {
                 Some(f) => f,
                 None => return Type::void(),
             };

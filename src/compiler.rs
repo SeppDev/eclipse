@@ -62,6 +62,7 @@ fn compile(
         debug,
         codegen: CodeGen::new(),
         types: &types,
+        namespaces: &mut Vec::new()
         // count,
         // static_strings: &mut Vec::new(),
     };

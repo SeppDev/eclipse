@@ -1,8 +1,8 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, FunctionCtx, IRValue, ProgramCtx},
+    analyzer::{FunctionCtx, IRValue, ProgramCtx},
     errors::Location,
-    parser::{Expression, ExpressionInfo, Value},
-    types::{ReferenceState, Type},
+    parser::{Expression, ExpressionInfo},
+    types::Type,
 };
 
 use super::read::handle_read;

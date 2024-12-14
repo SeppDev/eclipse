@@ -80,8 +80,8 @@ impl BaseType {
                     size += data_type.bytes()
                 }
                 size
-            },
-            Self::StaticString(_) => todo!()
+            }
+            Self::StaticString(_) => todo!(),
         }
     }
 }
@@ -90,7 +90,7 @@ impl BaseType {
 pub struct Type {
     pub base: BaseType,
     pub mutable: bool,
-    pub ref_state: ReferenceState
+    pub ref_state: ReferenceState,
 }
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -111,12 +111,12 @@ impl Type {
     }
     pub fn bytes(&self) -> usize {
         if self.is_pointing() {
-            return POINTER_WITH
+            return POINTER_WITH;
         }
         self.base.bytes()
     }
     pub fn is_pointing(&self) -> bool {
-        return !matches!(&self.ref_state, ReferenceState::None)
+        return !matches!(&self.ref_state, ReferenceState::None);
     }
     pub fn reference(base: BaseType) -> Self {
         let mut s = Self::default();
@@ -138,7 +138,7 @@ impl Type {
     pub fn array_info(&self) -> (&Type, usize) {
         match &self.base {
             BaseType::Array(size, data_type) => return (data_type, *size),
-            _ => return (self, 0)
+            _ => return (self, 0),
         }
     }
 }
@@ -149,7 +149,7 @@ pub enum ReferenceState {
     None,
     Shared,
     Mutable,
-    Pointer(usize)
+    Pointer(usize),
 }
 impl std::fmt::Display for ReferenceState {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -176,7 +176,7 @@ impl Type {
             return Err(());
         }
         self.mutable = true;
-        return Ok(self)
+        return Ok(self);
     }
     pub fn to_reference(mut self) -> CompileResult<Type> {
         self.add_reference()?;

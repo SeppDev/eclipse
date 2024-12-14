@@ -19,12 +19,14 @@ mod variable;
 use enums::parse_enum;
 use function::parse_function;
 use import::handle_import;
+use path::parse_path;
 use structs::parse_struct;
 
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
     lexer::{tokenize, Tokens},
+    parser::Node,
     path::Path,
     read_file, FILE_EXTENSION,
 };
@@ -71,6 +73,14 @@ fn handle_tokens(
         )?;
 
         match info.token {
+            Token::Use => {
+                let root = tokens.parse_identifier()?;
+                let path = parse_path(tokens, &root)?;
+                tokens.create_node(Node::NameSpace {
+                    public: false,
+                    static_path: path,
+                });
+            }
             Token::Import => {
                 let (name, import) = match handle_import(
                     debug,
@@ -110,7 +120,10 @@ pub fn start_parse(
     relative_file_path: Path,
     relative_path: Path,
 ) -> CompileResult<ParsedFile> {
-    debug.set_status(format!("Parsing: {}.{FILE_EXTENSION}", relative_file_path.convert().to_string_lossy()));
+    debug.set_status(format!(
+        "Parsing: {}.{FILE_EXTENSION}",
+        relative_file_path.convert().to_string_lossy()
+    ));
 
     let source = read_file(project_dir, &relative_file_path);
     let mut tokens = tokenize(debug, relative_file_path.clone(), source)?;

@@ -1,5 +1,3 @@
-
-
 #[derive(Debug)]
 pub struct BetterString {
     body: String,
@@ -7,7 +5,7 @@ pub struct BetterString {
 impl BetterString {
     pub fn new() -> Self {
         Self {
-            body: String::new()
+            body: String::new(),
         }
     }
     pub fn to_string(self) -> String {
@@ -15,7 +13,7 @@ impl BetterString {
     }
     pub fn from<T: ToString>(value: T) -> Self {
         Self {
-            body: value.to_string()
+            body: value.to_string(),
         }
     }
     pub fn next_line(&mut self) {

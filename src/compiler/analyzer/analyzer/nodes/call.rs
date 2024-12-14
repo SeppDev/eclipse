@@ -14,7 +14,7 @@ pub fn handle_call(
     path: Path,
     mut arguments: Vec<ExpressionInfo>,
 ) {
-    let found = match program.types.get_function(function.relative_path, &path) {
+    let found = match program.types.get_function(function.relative_path, &path, program.namespaces) {
         Some(f) => f,
         None => {
             program

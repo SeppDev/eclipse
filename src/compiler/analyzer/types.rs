@@ -66,7 +66,14 @@ pub struct ProgramTypes {
 }
 
 impl ProgramTypes {
-    pub fn get_function(&self, relative_path: &Path, static_path: &Path) -> Option<&Function> {
+    pub fn get_function(
+        &self,
+        relative_path: &Path,
+        static_path: &Path,
+        namespaces: &Vec<Path>,
+    ) -> Option<&Function> {
+        // println!("{namespaces:#?}");
+
         let mut components = static_path.components();
         let mut relative_components = relative_path.components();
 
@@ -94,7 +101,20 @@ impl ProgramTypes {
             };
         }
 
-        return file.functions.get(&name);
+        if let Some(function) = file.functions.get(&name) {
+            return Some(function);
+        };
+
+        for namespace in namespaces {
+            let components = namespace.components();
+            let last = components.last().unwrap();
+            if last == &name {
+                if let Some(function) = self.get_function(relative_path, &namespace, &Vec::new()) {
+                    return Some(function);
+                }
+            }
+        }
+        return None;
     }
 }
 
@@ -103,7 +123,6 @@ pub struct FileTypes {
     functions: HashMap<String, Function>,
     types: HashMap<String, CustomTypes>,
     imports: HashMap<String, FileTypes>,
-    // pub types: HashMap<String, Type>
     // export: bool,
 }
 
@@ -158,7 +177,7 @@ pub fn parse_types(
             return_type: Type::new(BaseType::Int(32)),
         },
     );
-    
+
     let math = standard.imports.get_mut("math").unwrap();
     math.functions.insert(
         "random".to_string(),
@@ -168,7 +187,7 @@ pub fn parse_types(
             return_type: Type::new(BaseType::Int(32)),
         },
     );
-    
+
     src.imports.insert(String::from("main"), main);
 
     return Ok(ProgramTypes { src, std: standard });

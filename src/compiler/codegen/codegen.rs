@@ -18,6 +18,7 @@ use crate::compiler::{
 //     return source.to_string();
 // }
 
+#[derive(Debug)]
 pub struct CodeGen {
     body: BetterString,
     functions: Vec<FunctionOperations>,
@@ -67,6 +68,7 @@ start:
     }
 }
 
+#[derive(Debug)]
 pub struct FunctionOperations {
     body: BetterString,
 }

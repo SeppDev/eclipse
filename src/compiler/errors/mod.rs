@@ -115,7 +115,7 @@ impl CompileCtx {
     pub fn push(&mut self, relative_file_path: Path, message: Message) {
         match &message.variant {
             MessageVariant::Note => self.debuginfo.notes.push((relative_file_path, message)),
-            MessageVariant ::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
+            MessageVariant::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
             MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
     }

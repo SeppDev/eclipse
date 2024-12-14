@@ -29,21 +29,21 @@ impl Message {
         Self {
             variant: MessageVariant::Error,
             message,
-            details: Vec::new()
+            details: Vec::new(),
         }
     }
     pub fn warning(message: String) -> Self {
         Self {
             variant: MessageVariant::Warning,
             message,
-            details: Vec::new()
+            details: Vec::new(),
         }
     }
     pub fn note(message: String) -> Self {
         Self {
             variant: MessageVariant::Note,
             message,
-            details: Vec::new()
+            details: Vec::new(),
         }
     }
     pub fn set_notice<Notice: ToString>(&mut self, notice: Notice) {
@@ -85,7 +85,10 @@ fn display(relative_path: &Path, message: &Message, lines: &Vec<String>) {
     let first = message.details.first().unwrap();
     println!(
         "  --> {}.{}:{}:{}",
-        relative_path.convert().to_string_lossy(), FILE_EXTENSION, first.location.lines.start, first.location.columns.start
+        relative_path.convert().to_string_lossy(),
+        FILE_EXTENSION,
+        first.location.lines.start,
+        first.location.columns.start
     );
 
     let mut spacing = String::new();

@@ -10,12 +10,13 @@ use crate::compiler::{
 
 use super::{variables::VariablesMap, IRValue, ProgramTypes};
 
+#[derive(Debug)]
 pub struct ProgramCtx<'a> {
     pub debug: &'a mut CompileCtx,
     pub codegen: CodeGen,
     pub types: &'a ProgramTypes,
-    // pub count: &'a mut NameCounter,
-    // pub static_strings: &'a mut Vec<(String, String)>,
+    pub namespaces: &'a mut Vec<Path>, // pub count: &'a mut NameCounter,
+                                       // pub static_strings: &'a mut Vec<(String, String)>,
 }
 // impl<'a> ProgramCtx<'a> {
 //     pub fn push_string(&mut self, string: String) -> String {
@@ -50,6 +51,8 @@ pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileRe
     handle_file(program, &mut parsed.main);
     handle_file(program, &mut parsed.standard);
 
+    // println!("{program:#?}");
+
     return Ok(());
 }
 
@@ -59,7 +62,22 @@ fn handle_file(program: &mut ProgramCtx, file: &mut ParsedFile) {
         file.relative_file_path.convert().to_string_lossy()
     ));
 
+    program.namespaces.clear();
+    program
+        .namespaces
+        .push(Path::from("std").join("io").join("print"));
+
     program.debug.set_path(&file.relative_file_path);
+
+    for info in &file.body {
+        match &info.node {
+            Node::NameSpace {
+                public: _,
+                static_path,
+            } => program.namespaces.push(static_path.clone()),
+            _ => continue,
+        }
+    }
 
     loop {
         let info = match file.body.pop() {
@@ -83,8 +101,7 @@ fn handle_file(program: &mut ProgramCtx, file: &mut ParsedFile) {
                 parameters,
                 return_type,
                 body,
-            );
-            continue;
+            )
         }
     }
 
@@ -190,6 +207,18 @@ use types::*;
 fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) -> bool {
     function.variables.push_scope();
 
+    let mut namespaces = 0;
+    for info in &nodes {
+        match &info.node {
+            Node::NameSpace {
+                public: _,
+                static_path,
+            } => program.namespaces.push(static_path.clone()),
+            _ => continue,
+        }
+        namespaces += 1;
+    }
+
     let mut returned = false;
 
     for info in nodes {
@@ -227,6 +256,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             Node::SetVariable { name, expression } => {
                 handle_set_variable(program, function, info.location, name, expression)
             }
+
             Node::Call(path, arguments) => {
                 handle_call(program, function, info.location, path, arguments)
             }
@@ -245,6 +275,10 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 returned = true;
                 break;
             }
+            Node::NameSpace {
+                public: _,
+                static_path: _,
+            } => continue,
             _ => program
                 .debug
                 .result_print(format!("Todo: {:#?}", info.node)),
@@ -252,6 +286,10 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
     }
 
     function.variables.pop_scope();
+
+    for _ in 0..namespaces {
+        program.namespaces.pop();
+    }
 
     return returned;
 }
