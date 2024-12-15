@@ -48,6 +48,9 @@ impl std::fmt::Display for BaseType {
 }
 
 impl BaseType {
+    pub fn is_basic(&self) -> bool {
+        return self.is_number() || self.is_bool() || self.is_void()
+    }
     pub fn is_number(&self) -> bool {
         return self.is_integer() || self.is_float();
     }

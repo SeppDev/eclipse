@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{FunctionCtx, IRValue, ProgramCtx},
+    analyzer::{analyzer::handle_call, FunctionCtx, IRValue, ProgramCtx},
     errors::Location,
     parser::{Expression, ExpressionInfo},
     types::Type,
@@ -25,13 +25,21 @@ pub fn handle_store(
             data_type,
             0,
         ),
-        Expression::Value(_)
+        Expression::Call(path, arguments) => {
+            handle_call(program, function, Some((&destination, data_type)), location, path, arguments);
+        }
+        Expression::Value(_) => {
+            function.operations.allocate(destination, &data_type.convert());
+            let value = handle_read(program, function, location, data_type, info);
+            function
+                .operations
+                .store(&data_type.convert(), &value, &destination);
+        },
         | Expression::Minus(_)
         | Expression::Not(_)
         | Expression::Index(_, _)
         | Expression::BinaryOperation(_, _, _)
-        | Expression::CompareOperation(_, _, _)
-        | Expression::Call(_, _) => {
+        | Expression::CompareOperation(_, _, _) => {
             let value = handle_read(program, function, location, data_type, info);
             function
                 .operations
@@ -41,7 +49,7 @@ pub fn handle_store(
     }
 }
 
-fn handle_array_store(
+pub fn handle_array_store(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     location: &Location,
@@ -83,6 +91,11 @@ fn handle_array_store(
             &IRValue::IntLiteral(format!("{}", index * item_size + offset)),
         );
 
-        handle_store(program, function, location, &key_ptr, &item_type, item);
+         // handle_store(program, function, location, &key_ptr, &item_type, item);
+         
+        let value = handle_read(program, function, location, item_type, item);
+        function
+            .operations
+            .store(&item_type.convert(), &value, &key_ptr);
     }
 }

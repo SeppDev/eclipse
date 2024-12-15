@@ -86,9 +86,6 @@ pub fn handle_set_variable(
         return;
     }
 
-    // let a = 5;
-    // a = 3;
-
     let value = handle_read(
         program,
         function,

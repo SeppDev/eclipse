@@ -37,7 +37,7 @@ impl CodeGen {
         self.body.pushln(
             "declare i32 @printf(i8*, ...)
 
-declare i32 @rand()            
+declare i32 @rand()
 declare i32 @sleep(i32)
 declare i32 @usleep(i32)
 declare i32 @fflush(ptr)
@@ -48,10 +48,10 @@ define void @print(i32 %x) {
 start:
     %fmt_ptr = getelementptr [5 x i8], ptr @format, i32 0, i32 0
     call i32 @printf(i8* %fmt_ptr, i32 %x)
-        
+
     %stdout_ptr = load ptr, ptr @stdout
     call i32 @fflush(ptr %stdout_ptr)
-        
+
     ret void
 }",
         );
@@ -75,15 +75,27 @@ pub struct FunctionOperations {
 impl FunctionOperations {
     pub fn new(key: &String, return_type: &Type, parameters: &Vec<(String, IRType)>) -> Self {
         let mut body = BetterString::new();
-        let return_type = return_type.convert();
+        let mut params: Vec<String> = Vec::new();
 
-        let parameters = parameters
-            .into_iter()
-            .map(|(key, data_type)| format!("{} %{key}", data_type))
-            .collect::<Vec<String>>()
-            .join(", ");
+        let return_type = if return_type.base.is_basic() {
+            return_type.convert()
+        } else {
+            let return_type = return_type.convert();
+            params.push(format!("ptr sret({return_type}) %0"));
+            IRType::Void
+        };
 
-        body.pushln(format!("define {return_type} @{key}({parameters}) {{"));
+        params.extend(
+            parameters
+                .into_iter()
+                .map(|(key, data_type)| format!("{} %{key}", data_type))
+                .collect::<Vec<String>>(),
+        );
+
+        body.pushln(format!(
+            "define {return_type} @{key}({}) {{",
+            params.join(", ")
+        ));
         body.pushln("start:");
 
         Self { body }
@@ -103,7 +115,7 @@ impl FunctionOperations {
     pub fn xor_boolean(&mut self, destination: &String, value: &IRValue) {
         self.body
             .pushln(format!("\t%{destination} = xor i1 {value}, true"));
-    } 
+    }
     pub fn call(&mut self, function: &String, return_type: &IRType, arguments: IRValue) {
         self.body
             .pushln(format!("\tcall {return_type} @{function}({arguments})"));

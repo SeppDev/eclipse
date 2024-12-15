@@ -1,9 +1,11 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, FunctionCtx, IRType, IRValue, ProgramCtx},
+    analyzer::{analyzer::{handle_call, what_type}, FunctionCtx, IRType, IRValue, ProgramCtx},
     errors::Location,
     parser::{ArithmeticOperator, Expression, ExpressionInfo, Value},
     types::{BaseType, ReferenceState, Type},
 };
+
+use super::store::handle_array_store;
 
 pub fn handle_read(
     program: &mut ProgramCtx,
@@ -123,7 +125,7 @@ pub fn handle_read(
                     return IRValue::Null;
                 }
             };
-            if !variable.is_pointer_value {
+            if !variable.is_pointer_value || !variable.data_type.base.is_basic() {
                 return IRValue::Variable(variable.key.clone());
             }
 
@@ -135,49 +137,10 @@ pub fn handle_read(
 
             IRValue::Variable(load_destination)
         }
-        Expression::Call(path, mut arguments) => {
-            let result_key = function.variables.increment();
-            let found = match program.types.get_function(function.relative_path, &path, program.namespaces) {
-                Some(f) => f,
-                None => {
-                    program.debug.error(
-                        location.clone(),
-                        format!("Could not find function: '{path}'"),
-                    );
-                    return IRValue::Null;
-                }
-            };
-
-            if arguments.len() != found.parameters.len() {
-                program.debug.error(
-                    location.clone(),
-                    format!(
-                        "Expected {} arguments, but got {}",
-                        found.parameters.len(),
-                        arguments.len()
-                    ),
-                );
-                return IRValue::Null;
-            }
-
-            arguments.reverse();
-
-            let mut ir_arguments = Vec::new();
-            for param_type in &found.parameters {
-                let expression = arguments.pop().unwrap();
-                let value = handle_read(program, function, location, param_type, expression);
-
-                ir_arguments.push((data_type.convert(), value));
-            }
-
-            function.operations.store_call(
-                &result_key,
-                &found.key,
-                &found.return_type.convert(),
-                IRValue::Arguments(ir_arguments),
-            );
-
-            IRValue::Variable(result_key)
+        Expression::Array(items) => {
+            let result = function.variables.increment();
+            handle_array_store(program, function, location, items, &result, data_type, 0);
+            IRValue::Variable(result)
         }
         _ => todo!("{info:#?}"),
     };

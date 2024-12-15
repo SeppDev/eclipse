@@ -1,15 +1,37 @@
 use crate::compiler::types::{BaseType, ReferenceState, Type};
 
-
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum IRValue {
     BoolLiteral(bool),
     IntLiteral(String),
     FloatLiteral(String),
     Variable(String),
-    Arguments(Vec<(IRType, IRValue)>),
+    Arguments {
+        return_pointers: Vec<(IRType, String)>,
+        arguments: Vec<(IRType, IRValue)>,
+    },
     Null,
 }
+
+fn display_arguments(
+    return_pointers: &Vec<(IRType, String)>,
+    arguments: &Vec<(IRType, IRValue)>,
+) -> String {
+    let mut args = return_pointers
+        .iter()
+        .map(|(data_type, destination)| format!("ptr sret({data_type}) %{destination}"))
+        .collect::<Vec<String>>();
+
+    args.extend(
+        arguments
+            .iter()
+            .map(|(data_type, value)| format!("{data_type} {value}"))
+            .collect::<Vec<String>>(),
+    );
+
+    return args.join(", ");
+}
+
 impl std::fmt::Display for IRValue {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
@@ -21,11 +43,10 @@ impl std::fmt::Display for IRValue {
                 Self::FloatLiteral(float) => format!("{float}"),
                 Self::Variable(key) => format!("%{key}"),
                 // Self::StringLiteral(str) => format!("\"{str}\\00\""),
-                Self::Arguments(arguments) => arguments
-                    .iter()
-                    .map(|(data_type, value)| format!("{data_type} {value}"))
-                    .collect::<Vec<String>>()
-                    .join(", "),
+                Self::Arguments {
+                    return_pointers,
+                    arguments,
+                } => format!("{}", display_arguments(return_pointers, arguments)),
                 Self::Null => String::new(),
             }
         )
@@ -35,17 +56,18 @@ impl std::fmt::Display for IRValue {
 #[derive(Debug, Clone)]
 pub enum IRType {
     Tuple(Vec<IRType>),
-    Pointer(Box<IRType>),
+    PointerType(Box<IRType>),
     Integer(usize),
     Array(usize, Box<IRType>),
     Bytes(usize),
+    Pointer,
     Float,
     Double,
     Void,
 }
 impl IRType {
     fn pointer(self) -> IRType {
-        return IRType::Pointer(Box::new(self));
+        return IRType::PointerType(Box::new(self));
     }
     pub fn signed(&self) -> bool {
         match self {
@@ -74,7 +96,8 @@ impl std::fmt::Display for IRType {
                 Self::Array(size, t) => format!("[{size} x {t}]"),
                 Self::Bytes(bytes) => format!("[{bytes} x i8]"),
                 Self::Integer(bits) => format!("i{bits}"),
-                Self::Pointer(t) => format!("{t}*"),
+                Self::PointerType(t) => format!("{t}*"),
+                Self::Pointer => format!("ptr"),
                 // Self::Struct(name) => format!("%{name}",),
                 Self::Tuple(types) => format!("{{ {} }}", {
                     types

@@ -8,7 +8,7 @@ use crate::compiler::{
     FILE_EXTENSION,
 };
 
-use super::{variables::VariablesMap, IRValue, ProgramTypes};
+use super::{variables::VariablesMap, IRType, IRValue, ProgramTypes};
 
 #[derive(Debug)]
 pub struct ProgramCtx<'a> {
@@ -51,7 +51,7 @@ pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileRe
     handle_file(program, &mut parsed.main);
     handle_file(program, &mut parsed.standard);
 
-    // println!("{program:#?}");
+    // program.debug.result_print(format!("{program:#?}"));
 
     return Ok(());
 }
@@ -129,8 +129,16 @@ fn handle_function(
 
     let mut mutables = Vec::new();
     let mut new_params = Vec::new();
+    
     for parameter in parameters {
-        if parameter.mutable {
+        let is_basic = parameter.data_type.base.is_basic();
+        let ir_type = if is_basic {
+            parameter.data_type.convert()
+        } else {
+            IRType::Pointer
+        };
+
+        if parameter.mutable && is_basic {
             if parameter.data_type.is_pointing() {
                 program.debug.error(
                     parameter.location.clone(),
@@ -139,12 +147,10 @@ fn handle_function(
             }
 
             let key = variables.increment();
-            new_params.push((key.clone(), parameter.data_type.convert()));
+            new_params.push((key.clone(), ir_type));
             mutables.push((parameter.name, key, parameter.data_type));
             continue;
         }
-
-        let ir = parameter.data_type.convert();
         let variable = variables.insert(
             false,
             parameter.name,
@@ -152,7 +158,7 @@ fn handle_function(
             parameter.data_type,
             parameter.location,
         );
-        new_params.push((variable.key.clone(), ir));
+        new_params.push((variable.key.clone(), ir_type));
     }
 
     let mut operations = FunctionOperations::new(&key, &return_type, &new_params);
@@ -258,7 +264,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             }
 
             Node::Call(path, arguments) => {
-                handle_call(program, function, info.location, path, arguments)
+                handle_call(program, function, None, &info.location, path, arguments)
             }
             Node::Break => handle_break(program, function, info.location),
             Node::Continue => handle_continue(program, function, info.location),

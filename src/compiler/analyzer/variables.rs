@@ -42,7 +42,7 @@ impl VariablesMap {
         mutable: bool,
         data_type: Type,
         location: Location,
-    ) -> &Variable {
+    ) -> &mut Variable {
         let key = self.increment();
         let current_state = self.states.last_mut().unwrap();
 
@@ -57,7 +57,7 @@ impl VariablesMap {
         current_state.insert(name.clone());
         let _ = self.variables.insert(name.clone(), variable);
 
-        return self.variables.get(&name).unwrap();
+        return self.variables.get_mut(&name).unwrap();
     }
     pub fn push_scope(&mut self) {
         self.states.push(HashSet::new());

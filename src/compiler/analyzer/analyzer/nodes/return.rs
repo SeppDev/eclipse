@@ -1,10 +1,11 @@
 use crate::compiler::{
-    analyzer::{FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::what_type, FunctionCtx, ProgramCtx},
     errors::Location,
-    parser::ExpressionInfo, types::Type,
+    parser::ExpressionInfo,
+    types::Type,
 };
 
-use super::handle_read;
+use super::{handle_read, handle_store};
 
 pub fn handle_return(
     program: &mut ProgramCtx,
@@ -21,10 +22,15 @@ pub fn handle_return(
         }
     };
     let data_type = match return_type {
-        Some(d) => d,
-        None => &Type::void()
+        Some(d) => what_type(program, function, &expression.location, Some(&d), &expression),
+        None => Type::void(),
     };
 
-    let value = handle_read(program, function, &location, data_type, expression);
-    function.operations.r#return(&data_type.convert(), &value);
+    if data_type.base.is_basic() {
+        let value = handle_read(program, function, &location, &data_type, expression);
+        function.operations.r#return(&data_type.convert(), &value);
+    } else {
+        handle_store(program, function, &location,& "0".to_string(), &data_type, expression);
+        function.operations.void_return();
+    }
 }
