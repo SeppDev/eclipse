@@ -16,7 +16,7 @@ pub struct Parameter {
 #[derive(Debug, Default)]
 pub enum Node {
     #[default]
-    Uknown,
+    Unknown,
     Continue,
     Break,
     Enum {
@@ -72,7 +72,7 @@ impl NodeInfo {
     pub fn void() -> Self {
         Self {
             location: Location::void(),
-            node: Node::Uknown,
+            node: Node::Unknown,
         }
     }
 }
