@@ -19,11 +19,9 @@ pub fn handle_allocation(
     data_type: &Type,
     info: ExpressionInfo,
 ) {
-    // if data_type.base.is_basic() {
-    //     function
-    //         .operations
-    //         .allocate(&destination, &data_type.convert());
-    // }
-    
+    function
+        .operations
+        .allocate(&destination, &data_type.convert());
+
     handle_store(program, function, location, destination, data_type, info);
 }

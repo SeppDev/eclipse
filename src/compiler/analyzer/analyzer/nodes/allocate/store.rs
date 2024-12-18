@@ -28,13 +28,7 @@ pub fn handle_store(
         Expression::Call(path, arguments) => {
             handle_call(program, function, Some((&destination, data_type)), location, path, arguments);
         }
-        Expression::Value(_) => {
-            function.operations.allocate(destination, &data_type.convert());
-            let value = handle_read(program, function, location, data_type, info);
-            function
-                .operations
-                .store(&data_type.convert(), &value, &destination);
-        },
+        Expression::Value(_)
         | Expression::Minus(_)
         | Expression::Not(_)
         | Expression::Index(_, _)
