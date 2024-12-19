@@ -1,12 +1,10 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, FunctionCtx, IRType, IRValue, ProgramCtx},
+    analyzer::{analyzer::what_type, handle_read, FunctionCtx, IRType, IRValue, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     path::Path,
     types::Type,
 };
-
-use super::allocate::handle_read;
 
 pub fn handle_call(
     program: &mut ProgramCtx,
@@ -91,8 +89,8 @@ pub fn handle_call(
             
             return;
         }
-        function.operations.allocate(&destination, &data_type.convert());
         
+        function.operations.allocate(&destination, &data_type.convert());
         return_pointers.push((data_type.convert(), destination.clone()))
     }
 

@@ -1,11 +1,9 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::what_type, handle_expression, handle_read, handle_store, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     types::{ReferenceState, Type},
 };
-
-use super::{handle_allocation, handle_read};
 
 pub fn handle_variable_declaration(
     program: &mut ProgramCtx,
@@ -44,7 +42,7 @@ pub fn handle_variable_declaration(
         .key
         .clone();
 
-    handle_allocation(program, function, &location, &destination, &data_type, info);
+    handle_expression(program, function, &location, &destination, true, &data_type, info);
 }
 
 pub fn handle_set_variable(

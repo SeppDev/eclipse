@@ -1,11 +1,10 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_body, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::handle_body, handle_read, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::{ExpressionInfo, NodeInfo},
     types::{BaseType, Type},
 };
 
-use super::handle_read;
 
 pub fn handle_ifstatement(
     program: &mut ProgramCtx,

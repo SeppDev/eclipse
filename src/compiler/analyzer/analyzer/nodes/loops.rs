@@ -1,10 +1,9 @@
 use crate::compiler::{
-    analyzer::{analyzer::{handle_body, LoopInfo}, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::{handle_body, LoopInfo}, handle_read, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::{ExpressionInfo, NodeInfo}, types::{BaseType, Type},
 };
 
-use super::handle_read;
 
 pub fn handle_loop(
     program: &mut ProgramCtx,

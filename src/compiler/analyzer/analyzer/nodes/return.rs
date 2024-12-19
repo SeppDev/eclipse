@@ -1,11 +1,9 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::what_type, handle_read, handle_store, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     types::Type,
 };
-
-use super::{handle_read, handle_store};
 
 pub fn handle_return(
     program: &mut ProgramCtx,

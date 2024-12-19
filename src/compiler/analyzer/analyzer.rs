@@ -12,11 +12,12 @@ use super::{variables::VariablesMap, IRType, IRValue, ProgramTypes};
 
 #[derive(Debug)]
 pub struct ProgramCtx<'a> {
+    pub pointer_width: usize,
     pub debug: &'a mut CompileCtx,
     pub codegen: CodeGen,
     pub types: &'a ProgramTypes,
-    pub namespaces: &'a mut Vec<Path>, // pub count: &'a mut NameCounter,
-                                       // pub static_strings: &'a mut Vec<(String, String)>,
+    pub namespaces: &'a mut Vec<Path>,
+    // pub static_strings: &'a mut Vec<(String, String)>,
 }
 // impl<'a> ProgramCtx<'a> {
 //     pub fn push_string(&mut self, string: String) -> String {
@@ -129,7 +130,7 @@ fn handle_function(
 
     let mut mutables = Vec::new();
     let mut new_params = Vec::new();
-    
+
     for parameter in parameters {
         let is_basic = parameter.data_type.base.is_basic();
         let ir_type = if is_basic {
@@ -161,7 +162,9 @@ fn handle_function(
         new_params.push((variable.key.clone(), ir_type));
     }
 
-    let mut operations = FunctionOperations::new(&key, &return_type, &new_params);
+    let mut operations = program
+        .codegen
+        .new_function(&key, &return_type, &new_params);
 
     for (name, key, data_type) in mutables {
         new_params.push((key.clone(), data_type.convert()));
@@ -207,6 +210,10 @@ fn handle_function(
 
 mod nodes;
 use nodes::*;
+
+mod expression;
+pub use expression::*;
+
 mod types;
 use types::*;
 

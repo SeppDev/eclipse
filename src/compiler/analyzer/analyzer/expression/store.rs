@@ -1,11 +1,11 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_call, FunctionCtx, IRValue, ProgramCtx},
+    analyzer::{FunctionCtx, IRType, IRValue, ProgramCtx},
     errors::Location,
     parser::{Expression, ExpressionInfo},
     types::Type,
 };
 
-use super::read::handle_read;
+use super::handle_expression;
 
 pub fn handle_store(
     program: &mut ProgramCtx,
@@ -15,31 +15,19 @@ pub fn handle_store(
     data_type: &Type,
     info: ExpressionInfo,
 ) {
-    match info.expression {
-        Expression::Array(items) => handle_array_store(
-            program,
-            function,
-            location,
-            items,
-            destination,
-            data_type,
-            0,
-        ),
-        Expression::Call(path, arguments) => {
-            handle_call(program, function, Some((&destination, data_type)), location, path, arguments);
-        }
-        Expression::Value(_)
-        | Expression::Minus(_)
-        | Expression::Not(_)
-        | Expression::Index(_, _)
-        | Expression::BinaryOperation(_, _, _)
-        | Expression::CompareOperation(_, _, _) => {
-            let value = handle_read(program, function, location, data_type, info);
-            function
-                .operations
-                .store(&data_type.convert(), &value, &destination);
-        }
-        _ => todo!(),
+    let value = handle_expression(
+        program,
+        function,
+        location,
+        destination,
+        false,
+        data_type,
+        info,
+    );
+    if data_type.base.is_basic() {
+        function
+            .operations
+            .store(&data_type.convert(), &value, &destination);
     }
 }
 
@@ -82,14 +70,10 @@ pub fn handle_array_store(
             &key_ptr,
             &data_type.convert(),
             destination,
+            &IRType::Integer(program.pointer_width),
             &IRValue::IntLiteral(format!("{}", index * item_size + offset)),
         );
 
-         // handle_store(program, function, location, &key_ptr, &item_type, item);
-         
-        let value = handle_read(program, function, location, item_type, item);
-        function
-            .operations
-            .store(&item_type.convert(), &value, &key_ptr);
+        handle_store(program, function, location, &key_ptr, item_type, item);
     }
 }

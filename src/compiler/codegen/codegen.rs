@@ -22,12 +22,14 @@ use crate::compiler::{
 pub struct CodeGen {
     body: BetterString,
     functions: Vec<FunctionOperations>,
+    pointer_width: usize,
 }
 impl CodeGen {
-    pub fn new() -> Self {
+    pub fn new(pointer_width: usize) -> Self {
         Self {
             body: BetterString::new(),
             functions: Vec::new(),
+            pointer_width,
         }
     }
     pub fn generate(mut self) -> String {
@@ -66,14 +68,12 @@ start:
     pub fn insert(&mut self, function: FunctionOperations) {
         self.functions.push(function);
     }
-}
-
-#[derive(Debug)]
-pub struct FunctionOperations {
-    body: BetterString,
-}
-impl FunctionOperations {
-    pub fn new(key: &String, return_type: &Type, parameters: &Vec<(String, IRType)>) -> Self {
+    pub fn new_function(
+        &self,
+        key: &String,
+        return_type: &Type,
+        parameters: &Vec<(String, IRType)>,
+    ) -> FunctionOperations {
         let mut body = BetterString::new();
         let mut params: Vec<String> = Vec::new();
 
@@ -98,12 +98,22 @@ impl FunctionOperations {
         ));
         body.pushln("start:");
 
-        Self { body }
+        FunctionOperations {
+            body,
+            pointer_width: self.pointer_width,
+        }
     }
+}
+
+#[derive(Debug)]
+pub struct FunctionOperations {
+    body: BetterString,
+    pointer_width: usize,
+}
+impl FunctionOperations {
     pub fn to_string(self) -> String {
         self.body.to_string()
     }
-
     pub fn allocate(&mut self, destination: &String, data_type: &IRType) {
         self.body
             .pushln(format!("\t%{destination} = alloca {data_type}"));
@@ -143,10 +153,15 @@ impl FunctionOperations {
         destination: &String,
         data_type: &IRType,
         from: &String,
+        index_type: &IRType,
         index: &IRValue,
     ) {
         self.body
-            .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, i32 0, i32 {index}"));
+            .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, i32 0, {index_type} {index}"));
+    }
+    pub fn memcpy(&mut self, destination: &String, from: &String, size: &usize, volatile: bool) {
+        let pointer_width = &self.pointer_width;
+        self.body.pushln(format!("\tcall void @llvm.memcpy.p0.p0.i{pointer_width}(ptr %{destination}, ptr %{from}), i{pointer_width} {size}, i1 {volatile}"))
     }
     pub fn load(&mut self, destination: &String, destination_type: &IRType, value: &IRValue) {
         self.body.pushln(format!(

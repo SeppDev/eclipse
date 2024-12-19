@@ -149,10 +149,6 @@ impl CompileCtx {
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
 
-        for msg in &self.messages {
-            println!("{}", msg);
-        }
-
         if has_errors {
             exit(1)
         }

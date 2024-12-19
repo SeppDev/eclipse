@@ -6,7 +6,7 @@ use lib::get_std_file;
 use parser::start_parse;
 use path::Path;
 use program::ParsedProgram;
-use std::{path::PathBuf, process::Output, time::Duration};
+use std::{path::PathBuf, process::Output, time::Duration, usize};
 
 mod analyzer;
 mod codegen;
@@ -22,7 +22,7 @@ mod string;
 mod types;
 
 pub static FILE_EXTENSION: &str = "ecl";
-pub static POINTER_WITH: usize = 8;
+pub static POINTER_WITH: usize = usize::MAX.leading_ones() as usize;
 
 fn parse_program(
     debug: &mut CompileCtx,
@@ -42,6 +42,7 @@ fn compile(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
     project_dir: &PathBuf,
+    pointer_width: usize,
 ) -> CompileResult<PathBuf> {
     let build_path = project_dir.join("build");
     let build_file_path = build_path.join("build.ll");
@@ -59,8 +60,9 @@ fn compile(
     // debug.result_print(format!("{:#?}", types));
 
     let mut ctx = ProgramCtx {
+        pointer_width,
         debug,
-        codegen: CodeGen::new(),
+        codegen: CodeGen::new(pointer_width),
         types: &types,
         namespaces: &mut Vec::new()
         // count,
@@ -98,7 +100,7 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
 
     let start = std::time::Instant::now();
 
-    let path = match compile(&mut debug, &mut count, &project_dir) {
+    let path = match compile(&mut debug, &mut count, &project_dir, POINTER_WITH) {
         Ok(p) => p,
         Err(()) => debug.quit(),
     };
