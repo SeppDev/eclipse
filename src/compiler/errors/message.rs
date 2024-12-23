@@ -4,14 +4,12 @@ use super::{CompileCtx, Location, Map};
 
 #[derive(Debug, PartialEq)]
 pub enum MessageVariant {
-    Note,
     Warning,
     Error,
 }
 impl std::fmt::Display for MessageVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::Note => write!(f, "note"),
             Self::Warning => write!(f, "warning"),
             Self::Error => write!(f, "error"),
         }
@@ -35,13 +33,6 @@ impl Message {
     pub fn warning(message: String) -> Self {
         Self {
             variant: MessageVariant::Warning,
-            message,
-            details: Vec::new(),
-        }
-    }
-    pub fn note(message: String) -> Self {
-        Self {
-            variant: MessageVariant::Note,
             message,
             details: Vec::new(),
         }

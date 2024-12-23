@@ -114,7 +114,6 @@ impl CompileCtx {
     }
     pub fn push(&mut self, relative_file_path: Path, message: Message) {
         match &message.variant {
-            MessageVariant::Note => self.debuginfo.notes.push((relative_file_path, message)),
             MessageVariant::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
             MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
@@ -169,13 +168,5 @@ impl CompileCtx {
             .warnings
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.warnings.last_mut().unwrap().1.borrow_mut();
-    }
-    pub fn note<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::note(message.to_string());
-        message.push("", location);
-        self.debuginfo
-            .notes
-            .push((self.current_file_path.clone(), message));
-        return self.debuginfo.notes.last_mut().unwrap().1.borrow_mut();
     }
 }

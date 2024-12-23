@@ -229,20 +229,14 @@ pub enum Value {
 }
 impl Value {
     pub fn default_type(&self) -> Type {
-        let mut a = Type::default();
-        match &self {
-            Self::Boolean(_) => a.base = BaseType::Boolean,
-            Self::Float(_) => a.base = BaseType::Float64,
-            Self::Integer(_) => a.base = BaseType::Int(32),
-            Self::StaticString(_) => todo!(),
-        }
-        return a;
-    }
-    pub fn read_integer(self) -> IRValue {
-        if let Value::Integer(int) = self {
-            return IRValue::IntLiteral(int);
-        } else {
-            panic!()
-        }
+        return Type::new(match &self {
+            Self::Boolean(_) => BaseType::Boolean,
+            Self::Float(_) => BaseType::Float64,
+            Self::Integer(_) => BaseType::Int(32),
+            Self::StaticString(_) => BaseType::Tuple(vec![
+                Type::new(BaseType::Int(32)),
+                Type::new(BaseType::Int(32)),
+            ]),
+        });
     }
 }

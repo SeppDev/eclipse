@@ -1,4 +1,4 @@
-use crate::compiler::types::{BaseType, ReferenceState, Type};
+use crate::compiler::{types::{BaseType, ReferenceState, Type}, POINTER_WITH};
 
 #[derive(Debug)]
 pub enum IRValue {
@@ -39,15 +39,14 @@ impl std::fmt::Display for IRValue {
             "{}",
             match self {
                 Self::BoolLiteral(bool) => format!("{}", if bool == &true { 1 } else { 0 }),
-                Self::IntLiteral(int) => format!("{int}"),
-                Self::FloatLiteral(float) => format!("{float}"),
+                Self::IntLiteral(value) | Self::FloatLiteral(value) => format!("{value}"),
                 Self::Variable(key) => format!("%{key}"),
                 // Self::StringLiteral(str) => format!("\"{str}\\00\""),
                 Self::Arguments {
                     return_pointers,
                     arguments,
                 } => format!("{}", display_arguments(return_pointers, arguments)),
-                Self::Null => String::new(),
+                Self::Null => panic!("Whoops, null found!"),
             }
         )
     }
@@ -114,15 +113,15 @@ impl Type {
     pub fn convert(&self) -> IRType {
         let mut ir = match &self.base {
             BaseType::Void | BaseType::Never => IRType::Void,
-            BaseType::Any => panic!("Invalid type"),
-
+            BaseType::Usize | BaseType::ISize => IRType::Integer(POINTER_WITH),
+            
             BaseType::Float32 => IRType::Float,
             BaseType::Float64 => IRType::Double,
 
             BaseType::Boolean => IRType::Integer(1),
             BaseType::Int(bits) | BaseType::UInt(bits) => IRType::Integer(bits.clone()),
 
-            BaseType::StaticString(_size) => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
+            BaseType::StaticString => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
 
             BaseType::Array(size, t) => IRType::Bytes(*size * t.bytes()),
             // BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),

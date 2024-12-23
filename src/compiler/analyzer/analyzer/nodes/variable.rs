@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, handle_expression, handle_read, handle_store, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::what_type, handle_expression, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
     types::{ReferenceState, Type},
@@ -41,8 +41,17 @@ pub fn handle_variable_declaration(
         .insert(true, name, mutable, data_type.clone(), location.clone())
         .key
         .clone();
-
-    handle_expression(program, function, &location, &destination, true, &data_type, info);
+    
+    function.operations.allocate(&destination, &data_type.convert());
+    
+    handle_expression(
+        program,
+        function,
+        &location,
+        Some(destination),
+        &data_type,
+        info,
+    );
 }
 
 pub fn handle_set_variable(
@@ -83,16 +92,13 @@ pub fn handle_set_variable(
         message.push("", location);
         return;
     }
-
-    let value = handle_read(
+    
+    handle_expression(
         program,
         function,
         &location,
-        &variable.data_type.clone(),
+        Some(variable.key),
+        &variable.data_type,
         expression,
     );
-
-    function
-        .operations
-        .store(&variable.data_type.convert(), &value, &variable.key);
 }

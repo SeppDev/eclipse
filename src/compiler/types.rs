@@ -5,8 +5,9 @@ pub enum BaseType {
     #[default]
     Never,
     Void,
-    Any,
-
+    
+    Usize,
+    ISize,
     UInt(usize),
     Int(usize),
 
@@ -14,7 +15,7 @@ pub enum BaseType {
     Float64,
 
     Boolean,
-    StaticString(usize),
+    StaticString,
 
     Tuple(Vec<Type>),
     Array(usize, Box<Type>),
@@ -25,15 +26,16 @@ impl std::fmt::Display for BaseType {
             f,
             "{}",
             match self {
-                Self::Any => "any".to_string(),
                 Self::Boolean => "bool".to_string(),
                 Self::Void => "void".to_string(),
                 Self::Float32 => "f32".to_string(),
                 Self::Float64 => "f64".to_string(),
                 Self::UInt(bits) => format!("u{bits}"),
                 Self::Int(bits) => format!("i{bits}"),
+                Self::Usize => format!("usize"),
+                Self::ISize => format!("isize"),
                 Self::Never => "!".to_string(),
-                Self::StaticString(_) => "str".to_string(),
+                Self::StaticString => "str".to_string(),
                 Self::Array(size, t) => format!("[{t}; {size}]"),
                 Self::Tuple(ts) => format!(
                     "({})",
@@ -58,7 +60,7 @@ impl BaseType {
         matches!(&self, Self::Void)
     }
     pub fn is_integer(&self) -> bool {
-        matches!(&self, Self::UInt(_) | Self::Int(_))
+        matches!(&self, Self::UInt(_) | Self::Int(_) | Self::ISize | Self::Usize)
     }
     pub fn is_float(&self) -> bool {
         matches!(&self, Self::Float32 | Self::Float64)
@@ -71,10 +73,11 @@ impl BaseType {
     }
     pub fn bytes(&self) -> usize {
         match &self {
+            Self::ISize | Self::Usize => POINTER_WITH,
             Self::Int(bits) | BaseType::UInt(bits) => bits.div_ceil(8),
             Self::Float32 => 4,
             Self::Float64 => 8,
-            Self::Never | BaseType::Void | BaseType::Any => 0,
+            Self::Never | BaseType::Void => 0,
             Self::Boolean => 1,
             Self::Array(size, data_type) => data_type.bytes() * size,
             Self::Tuple(types) => {
@@ -84,7 +87,7 @@ impl BaseType {
                 }
                 size
             }
-            Self::StaticString(_) => todo!(),
+            Self::StaticString => todo!(),
         }
     }
 }

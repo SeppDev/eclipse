@@ -42,7 +42,6 @@ fn compile(
     debug: &mut CompileCtx,
     count: &mut NameCounter,
     project_dir: &PathBuf,
-    pointer_width: usize,
 ) -> CompileResult<PathBuf> {
     let build_path = project_dir.join("build");
     let build_file_path = build_path.join("build.ll");
@@ -60,9 +59,8 @@ fn compile(
     // debug.result_print(format!("{:#?}", types));
 
     let mut ctx = ProgramCtx {
-        pointer_width,
         debug,
-        codegen: CodeGen::new(pointer_width),
+        codegen: CodeGen::new(),
         types: &types,
         namespaces: &mut Vec::new()
         // count,
@@ -100,7 +98,7 @@ pub fn build(project_dir: PathBuf) -> PathBuf {
 
     let start = std::time::Instant::now();
 
-    let path = match compile(&mut debug, &mut count, &project_dir, POINTER_WITH) {
+    let path = match compile(&mut debug, &mut count, &project_dir) {
         Ok(p) => p,
         Err(()) => debug.quit(),
     };

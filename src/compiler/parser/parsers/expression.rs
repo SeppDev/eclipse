@@ -101,13 +101,9 @@ pub fn parse_expression(
                 };
             }
             if is_tuple {
-                return Ok(Some(
-                    tokens.create_expression(Expression::Tuple(expressions)),
-                ));
+                Expression::Tuple(expressions)
             } else {
-                return Ok(Some(
-                    tokens.create_expression(Expression::Array(expressions)),
-                ));
+                Expression::Array(expressions)
             }
         }
         Token::Identifier(name) => parse_identifier(tokens, name)?,
@@ -122,7 +118,6 @@ pub fn parse_expression(
             Token::Asterisk,
             Token::ForwardSlash,
             Token::Percent,
-            
             Token::Compare,
             Token::NotEquals,
             Token::LessThan,
@@ -135,7 +130,6 @@ pub fn parse_expression(
         Some(_) => tokens.start()?,
         None => return Ok(Some(first_expression_info)),
     };
- 
 
     let second_expression = parse_expression(tokens, true)?.unwrap();
     let mut first_location = first_expression_info.location.clone();
@@ -193,12 +187,14 @@ fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expressi
         Path::from(&name)
     };
 
-    if tokens.peek_expect_tokens(vec![Token::OpenBracket], true).is_some() {
+    if tokens
+        .peek_expect_tokens(vec![Token::OpenBracket], true)
+        .is_some()
+    {
         let info = parse_expression(tokens, true)?.unwrap();
         let _ = tokens.expect_tokens(vec![Token::CloseBracket], false);
-        return Ok(Expression::Index(name, Box::new(info)))
-    } 
-
+        return Ok(Expression::Index(name, Box::new(info)));
+    }
 
     let info = match tokens.peek_expect_tokens(vec![Token::OpenParen], true) {
         Some(info) => info,

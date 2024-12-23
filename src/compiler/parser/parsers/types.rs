@@ -58,6 +58,8 @@ pub fn parse_type(tokens: &mut Tokens) -> CompileResult<Type> {
     };
 
     let t = match name.as_str() {
+        "usize" => Type::new(BaseType::Usize),
+        "isize" => Type::new(BaseType::ISize),
         "i64" => Type::new(BaseType::Int(64)),
         "u64" => Type::new(BaseType::UInt(64)),
         "i32" => Type::new(BaseType::Int(32)),

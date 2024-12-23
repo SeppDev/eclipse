@@ -2,7 +2,7 @@ use crate::compiler::{
     analyzer::{IRType, IRValue},
     parser::{ArithmeticOperator, CompareOperator},
     string::BetterString,
-    types::Type,
+    types::Type, POINTER_WITH,
 };
 
 // pub fn codegen(program: IRProgram) -> String {
@@ -22,14 +22,12 @@ use crate::compiler::{
 pub struct CodeGen {
     body: BetterString,
     functions: Vec<FunctionOperations>,
-    pointer_width: usize,
 }
 impl CodeGen {
-    pub fn new(pointer_width: usize) -> Self {
+    pub fn new() -> Self {
         Self {
             body: BetterString::new(),
-            functions: Vec::new(),
-            pointer_width,
+            functions: Vec::new()
         }
     }
     pub fn generate(mut self) -> String {
@@ -100,7 +98,6 @@ start:
 
         FunctionOperations {
             body,
-            pointer_width: self.pointer_width,
         }
     }
 }
@@ -108,7 +105,6 @@ start:
 #[derive(Debug)]
 pub struct FunctionOperations {
     body: BetterString,
-    pointer_width: usize,
 }
 impl FunctionOperations {
     pub fn to_string(self) -> String {
@@ -121,6 +117,10 @@ impl FunctionOperations {
     pub fn store(&mut self, data_type: &IRType, value: &IRValue, destination: &String) {
         self.body
             .pushln(format!("\tstore {data_type} {value}, ptr %{destination}"));
+    }
+    pub fn store_from_pointer(&mut self, data_type: &IRType, pointer: &String, destination: &String) {
+        self.body
+            .pushln(format!("\tstore {data_type} %{pointer}, ptr %{destination}"));
     }
     pub fn xor_boolean(&mut self, destination: &String, value: &IRValue) {
         self.body
@@ -160,12 +160,16 @@ impl FunctionOperations {
             .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, i32 0, {index_type} {index}"));
     }
     pub fn memcpy(&mut self, destination: &String, from: &String, size: &usize, volatile: bool) {
-        let pointer_width = &self.pointer_width;
-        self.body.pushln(format!("\tcall void @llvm.memcpy.p0.p0.i{pointer_width}(ptr %{destination}, ptr %{from}), i{pointer_width} {size}, i1 {volatile}"))
+        self.body.pushln(format!("\tcall void @llvm.memcpy.p0.p0.i{POINTER_WITH}(ptr %{destination}, ptr %{from}), i{POINTER_WITH} {size}, i1 {volatile}"))
     }
     pub fn load(&mut self, destination: &String, destination_type: &IRType, value: &IRValue) {
         self.body.pushln(format!(
             "\t%{destination} = load {destination_type}, ptr {value}"
+        ));
+    }
+    pub fn load_from_pointer(&mut self, destination: &String, destination_type: &IRType, pointer: &String) {
+        self.body.pushln(format!(
+            "\t%{destination} = load {destination_type}, ptr %{pointer}"
         ));
     }
     pub fn binary_operation(

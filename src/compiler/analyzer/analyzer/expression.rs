@@ -1,6 +1,5 @@
-pub use read::handle_read;
-use store::handle_array_store;
-pub use store::handle_store;
+// pub use array::handle_store;
+// pub use read::handle_read;
 
 use crate::compiler::{
     analyzer::{analyzer::what_type, FunctionCtx, IRType, IRValue, ProgramCtx},
@@ -9,59 +8,52 @@ use crate::compiler::{
     types::{BaseType, ReferenceState, Type},
 };
 
-mod read;
-mod store;
-
-pub use read::*;
-pub use store::*;
+mod array;
+pub use array::handle_array_store;
 
 use super::handle_call;
+
+// pub fn handle_read(
+//     program: &mut ProgramCtx,
+//     function: &mut FunctionCtx,
+//     location: &Location,
+//     data_type: &Type,
+//     info: ExpressionInfo,
+// ) -> IRValue {
+//     let destination = function.variables.increment();
+//     return handle_expression(program, function, location, Some(&destination), data_type, info);
+// }
 
 pub fn handle_expression(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     location: &Location,
-    destination: &String,
-    allocate: bool,
+    destination: Option<String>,
     data_type: &Type,
     info: ExpressionInfo,
 ) -> IRValue {
-    if allocate {
-        let should_allocate = !matches!(info.expression, Expression::Value(_));
-        if should_allocate {
-            function
-                .operations
-                .allocate(&destination, &data_type.convert())
-        }
-    }
-
-    return match info.expression {
+    let value = match info.expression {
         Expression::Value(value) => match value {
             Value::Integer(int) => IRValue::IntLiteral(int),
             Value::Boolean(bool) => IRValue::BoolLiteral(bool),
             Value::Float(float) => IRValue::FloatLiteral(float),
             _ => todo!(),
         },
-        Expression::Minus(expression) => {
-            let value = handle_read(program, function, location, &data_type, *expression);
+        // Expression::Minus(expression) => {
+        //     let value = handle_read(program, function, location, &data_type, *expression);
 
-            function.operations.binary_operation(
-                &destination,
-                &ArithmeticOperator::Subtract,
-                &data_type.convert(),
-                &IRValue::IntLiteral(String::from("0")),
-                &value,
-            );
-
-            IRValue::Variable(destination.clone())
-        }
-        Expression::Not(expression) => {
-            let value = handle_read(program, function, location, &data_type, *expression);
-
-            function.operations.xor_boolean(&destination, &value);
-
-            IRValue::Variable(destination.clone())
-        }
+        //     function.operations.binary_operation(
+        //         &destination,
+        //         &ArithmeticOperator::Subtract,
+        //         &data_type.convert(),
+        //         &IRValue::IntLiteral(String::from("0")),
+        //         &value,
+        //     );
+        // }
+        // Expression::Not(expression) => {
+        //     let value = handle_read(program, function, location, &data_type, *expression);
+        //     function.operations.xor_boolean(&destination, &value);
+        // }
         Expression::Index(name, index) => {
             let result_ptr = function.variables.increment();
 
@@ -78,8 +70,9 @@ pub fn handle_expression(
 
             let (inner_type, size) = array.data_type.array_info();
 
-            let index_type = Type::new(BaseType::Int(32));
-            let value = handle_read(program, function, location, &index_type, *index);
+            let index_type = Type::new(BaseType::Usize);
+            let _ = what_type(program, function, &index.location, Some(&index_type), &*index);
+            let value = handle_expression(program, function, location, None, &index_type, *index);
 
             function.operations.getelementptr_inbounds(
                 &result_ptr,
@@ -89,43 +82,49 @@ pub fn handle_expression(
                 &value,
             );
 
-            function.operations.load(
-                &destination,
-                &data_type.convert(),
-                &IRValue::Variable(result_ptr),
-            );
+            if let Some(destination) = destination {
+                let result = function.variables.increment();
+                function.operations.load_from_pointer(
+                    &result,
+                    &data_type.convert(),
+                    &result_ptr,
+                );
+                
+                function.operations.store_from_pointer(&data_type.convert(), &result, &destination);
 
-            IRValue::Variable(destination.clone())
+                return IRValue::Variable(result_ptr);
+            } else {
+                todo!()
+            }
         }
-        Expression::BinaryOperation(first, operator, second) => {
-            let first_value = handle_read(program, function, location, &data_type, *first);
-            let second_value = handle_read(program, function, location, &data_type, *second);
+        // Expression::BinaryOperation(first, operator, second) => {
+        //     let first_value = handle_read(program, function, location, &data_type, *first);
+        //     let second_value = handle_read(program, function, location, &data_type, *second);
 
-            function.operations.binary_operation(
-                &destination,
-                &operator,
-                &data_type.convert(),
-                &first_value,
-                &second_value,
-            );
+        //     function.operations.binary_operation(
+        //         &destination,
+        //         &operator,
+        //         &data_type.convert(),
+        //         &first_value,
+        //         &second_value,
+        //     );
+        // }
+        // Expression::CompareOperation(a, operator, b) => {
+        //     let value_type = what_type(program, function, location, None, &*a);
+        //     let first_value = handle_read(program, function, location, &value_type, *a);
+        //     let second_value = handle_read(program, function, location, &value_type, *b);
 
-            IRValue::Variable(destination.clone())
-        }
-        Expression::CompareOperation(a, operator, b) => {
-            let value_type = what_type(program, function, location, None, &*a);
-            let first_value = handle_read(program, function, location, &value_type, *a);
-            let second_value = handle_read(program, function, location, &value_type, *b);
-
-            function.operations.compare_operation(
-                &destination,
-                &operator,
-                &value_type.convert(),
-                &first_value,
-                &second_value,
-            );
-            IRValue::Variable(destination.clone())
-        }
+        //     function.operations.compare_operation(
+        //         &destination,
+        //         &operator,
+        //         &value_type.convert(),
+        //         &first_value,
+        //         &second_value,
+        //     );
+        // }
         Expression::GetVariable(name) => {
+            let result = function.variables.increment();
+
             let variable = match function.variables.read(&name, &ReferenceState::None) {
                 Some(var) => var,
                 None => {
@@ -136,50 +135,71 @@ pub fn handle_expression(
                     return IRValue::Null;
                 }
             };
-            if !variable.is_pointer_value || !variable.data_type.base.is_basic() {
-                return IRValue::Variable(variable.key.clone());
-            }
 
-            if variable.data_type.base.is_basic() {
-                function.operations.load(
-                    &destination,
-                    &data_type.convert(),
-                    &IRValue::Variable(variable.key.clone()),
-                );
+            if variable.is_pointer_value {
+                function
+                    .operations
+                    .load_from_pointer(&result, &data_type.convert(), &variable.key);
+                IRValue::Variable(result)
             } else {
-                function.operations.memcpy(
-                    &destination,
-                    &variable.key,
-                    &variable.data_type.base.bytes(),
-                    false,
-                )
+                IRValue::Variable(variable.key.clone())
             }
-
-            IRValue::Variable(destination.clone())
         }
         Expression::Array(items) => {
-            handle_array_store(
-                program,
-                function,
-                location,
-                items,
-                &destination,
-                data_type,
-                0,
-            );
-            IRValue::Variable(destination.clone())
+            if let Some(destination) = destination {
+                handle_array_store(
+                    program,
+                    function,
+                    location,
+                    items,
+                    &destination,
+                    data_type,
+                    0,
+                );
+                return IRValue::Variable(destination);
+            } else {
+                todo!()
+            }
         }
         Expression::Call(path, arguments) => {
+            let result = function.variables.increment();
+
             handle_call(
                 program,
                 function,
-                Some((&destination, data_type)),
+                Some((&result, data_type)),
                 location,
                 path,
                 arguments,
             );
-            IRValue::Variable(destination.clone())
+
+            IRValue::Variable(result)
         }
         _ => todo!("{info:#?}"),
     };
+
+    // if let Some(destination) = destination {
+    //     if data_type.base.is_basic() {
+    //         function.operations.load(
+    //             &destination,
+    //             &data_type.convert(),
+    //             &IRValue::Variable(destination.clone()),
+    //         );
+    //     } else {
+    //         function.operations.memcpy(
+    //             &destination,
+    //             &destination,
+    //             &data_type.base.bytes(),
+    //             false,
+    //         )
+    //     }
+    // }
+    //
+    if let Some(destination) = destination {
+        function
+            .operations
+            .store(&data_type.convert(), &value, &destination);
+    };
+
+    return value;
 }

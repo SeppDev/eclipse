@@ -2,34 +2,33 @@ use crate::compiler::{
     analyzer::{FunctionCtx, IRType, IRValue, ProgramCtx},
     errors::Location,
     parser::{Expression, ExpressionInfo},
-    types::Type,
+    types::Type, POINTER_WITH,
 };
 
 use super::handle_expression;
 
-pub fn handle_store(
-    program: &mut ProgramCtx,
-    function: &mut FunctionCtx,
-    location: &Location,
-    destination: &String,
-    data_type: &Type,
-    info: ExpressionInfo,
-) {
-    let value = handle_expression(
-        program,
-        function,
-        location,
-        destination,
-        false,
-        data_type,
-        info,
-    );
-    if data_type.base.is_basic() {
-        function
-            .operations
-            .store(&data_type.convert(), &value, &destination);
-    }
-}
+// pub fn handle_store(
+//     program: &mut ProgramCtx,
+//     function: &mut FunctionCtx,
+//     location: &Location,
+//     destination: &String,
+//     data_type: &Type,
+//     info: ExpressionInfo,
+// ) {
+//     let value = handle_expression(
+//         program,
+//         function,
+//         location,
+//         destination,
+//         data_type,
+//         info,
+//     );
+//     if data_type.base.is_basic() {
+//         function
+//             .operations
+//             .store(&data_type.convert(), &value, &destination);
+//     }
+// }
 
 pub fn handle_array_store(
     program: &mut ProgramCtx,
@@ -70,10 +69,10 @@ pub fn handle_array_store(
             &key_ptr,
             &data_type.convert(),
             destination,
-            &IRType::Integer(program.pointer_width),
+            &IRType::Integer(POINTER_WITH),
             &IRValue::IntLiteral(format!("{}", index * item_size + offset)),
         );
 
-        handle_store(program, function, location, &key_ptr, item_type, item);
+        handle_expression(program, function, location, Some(key_ptr), item_type, item);
     }
 }
