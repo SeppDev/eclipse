@@ -48,7 +48,6 @@ type Map = Vec<(Path, Message)>;
 
 #[derive(Debug, Default)]
 struct MsgMap {
-    notes: Map,
     warnings: Map,
     errors: Map,
 }
@@ -144,7 +143,6 @@ impl CompileCtx {
         }
         self.finish();
 
-        self.display(&self.debuginfo.notes);
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
 

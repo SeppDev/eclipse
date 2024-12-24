@@ -110,6 +110,9 @@ impl FunctionOperations {
     pub fn to_string(self) -> String {
         self.body.to_string()
     }
+    pub fn new_line(&mut self) {
+        self.body.pushln("")
+    }
     pub fn allocate(&mut self, destination: &String, data_type: &IRType) {
         self.body
             .pushln(format!("\t%{destination} = alloca {data_type}"));
@@ -159,8 +162,8 @@ impl FunctionOperations {
         self.body
             .pushln(format!("\t%{destination} = getelementptr inbounds {data_type}, ptr %{from}, i32 0, {index_type} {index}"));
     }
-    pub fn memcpy(&mut self, destination: &String, from: &String, size: &usize, volatile: bool) {
-        self.body.pushln(format!("\tcall void @llvm.memcpy.p0.p0.i{POINTER_WITH}(ptr %{destination}, ptr %{from}), i{POINTER_WITH} {size}, i1 {volatile}"))
+    pub fn memcpy(&mut self, from: &String, destination: &String, size: &usize, volatile: bool) {
+        self.body.pushln(format!("\tcall void @llvm.memcpy.p0.p0.i{POINTER_WITH}(ptr %{destination}, ptr %{from}, i{POINTER_WITH} {size}, i1 {volatile})"))
     }
     pub fn load(&mut self, destination: &String, destination_type: &IRType, value: &IRValue) {
         self.body.pushln(format!(

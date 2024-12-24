@@ -36,22 +36,27 @@ pub fn handle_variable_declaration(
         None => what_type(program, function, &location, None, &info),
     };
 
-    let destination = function
-        .variables
-        .insert(true, name, mutable, data_type.clone(), location.clone())
-        .key
-        .clone();
-    
-    function.operations.allocate(&destination, &data_type.convert());
-    
+    let destination = function.variables.increment();
+    function
+        .operations
+        .allocate(&destination, &data_type.convert());
+
     handle_expression(
         program,
         function,
         &location,
-        Some(destination),
+        Some(&destination),
+        false,
         &data_type,
         info,
     );
+
+    let variable =
+        function
+            .variables
+            .insert(true, name, mutable, data_type.clone(), location.clone());
+    
+    variable.key = destination
 }
 
 pub fn handle_set_variable(
@@ -72,7 +77,7 @@ pub fn handle_set_variable(
         }
     };
 
-    let variable = match function.variables.read(&name, &ReferenceState::None) {
+    let variable = match function.variables.read(&name) {
         Some(var) => var.clone(),
         None => {
             program.debug.error(
@@ -92,12 +97,13 @@ pub fn handle_set_variable(
         message.push("", location);
         return;
     }
-    
+
     handle_expression(
         program,
         function,
         &location,
-        Some(variable.key),
+        Some(&variable.key),
+        false,
         &variable.data_type,
         expression,
     );

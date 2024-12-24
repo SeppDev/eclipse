@@ -1,7 +1,7 @@
 use crate::compiler::{
     errors::Location,
     parser::{Expression, ExpressionInfo, Value},
-    types::{BaseType, ReferenceState, Type},
+    types::{BaseType, Type},
 };
 
 use super::{FunctionCtx, ProgramCtx};
@@ -16,7 +16,7 @@ pub fn what_type(
     let mut infered_type: Type = match &expression.expression {
         Expression::Index(path, _) => {
             let name = path;
-            let array = match function.variables.read(name, &ReferenceState::Mutable) {
+            let array = match function.variables.read(name) {
                 Some(var) => var,
                 None => return Type::void(),
             };
@@ -27,8 +27,8 @@ pub fn what_type(
                 );
             }
 
-            let (data_type, _) = array.data_type.array_info();
-            return data_type.clone();
+            let (inner_type, _) = array.data_type.array_info();
+            inner_type.clone()
         }
         Expression::Array(array) => {
             let size = array.len();
@@ -69,7 +69,7 @@ pub fn what_type(
             None => value.default_type(),
         },
         Expression::GetVariable(name) => {
-            let variable = match function.variables.read(name, &ReferenceState::None) {
+            let variable = match function.variables.read(name, ) {
                 Some(var) => var,
                 None => {
                     program.debug.error(
@@ -164,16 +164,16 @@ pub fn what_type(
         }
         _ => todo!("{:#?}", expression),
     };
-    infered_type.ref_state = expression.ref_state.clone();
 
     if let Some(expected) = expected_type {
-        if expected != &infered_type {
+        if expected.base != infered_type.base {
             program.debug.error(
                 location.clone(),
                 format!("Expected {expected} but got {infered_type}"),
             );
         }
     }
+    infered_type.ref_state = expression.ref_state.clone();
 
     return infered_type;
 }

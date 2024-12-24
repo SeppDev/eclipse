@@ -46,7 +46,7 @@ impl std::fmt::Display for IRValue {
                     return_pointers,
                     arguments,
                 } => format!("{}", display_arguments(return_pointers, arguments)),
-                Self::Null => panic!("Whoops, null found!"),
+                Self::Null => format!("NULL"),
             }
         )
     }
@@ -123,8 +123,8 @@ impl Type {
 
             BaseType::StaticString => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
 
-            BaseType::Array(size, t) => IRType::Bytes(*size * t.bytes()),
-            // BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
+            // BaseType::Array(size, t) => IRType::Bytes(*size * t.bytes()),
+            BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
             BaseType::Tuple(dts) => {
                 if dts.len() == 0 {
                     return IRType::Void;

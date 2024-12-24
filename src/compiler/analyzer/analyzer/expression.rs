@@ -28,7 +28,8 @@ pub fn handle_expression(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
     location: &Location,
-    destination: Option<String>,
+    destination: Option<&String>,
+    should_allocate: bool,
     data_type: &Type,
     info: ExpressionInfo,
 ) -> IRValue {
@@ -57,7 +58,7 @@ pub fn handle_expression(
         Expression::Index(name, index) => {
             let result_ptr = function.variables.increment();
 
-            let array = match function.variables.read(&name, &ReferenceState::None) {
+            let array = match function.variables.read(&name) {
                 Some(var) => var.clone(),
                 None => {
                     program.debug.error(
@@ -68,29 +69,65 @@ pub fn handle_expression(
                 }
             };
 
-            let (inner_type, size) = array.data_type.array_info();
+            let (inner_type, _) = array.data_type.array_info();
 
             let index_type = Type::new(BaseType::Usize);
-            let _ = what_type(program, function, &index.location, Some(&index_type), &*index);
-            let value = handle_expression(program, function, location, None, &index_type, *index);
+            let _ = what_type(
+                program,
+                function,
+                &index.location,
+                Some(&index_type),
+                &*index,
+            );
+
+            let value = handle_expression(
+                program,
+                function,
+                location,
+                None,
+                false,
+                &index_type,
+                *index,
+            );
 
             function.operations.getelementptr_inbounds(
                 &result_ptr,
-                &IRType::Array(size, Box::new(inner_type.convert())),
+                &array.data_type.convert(),
                 &array.key,
                 &index_type.convert(),
                 &value,
             );
 
             if let Some(destination) = destination {
-                let result = function.variables.increment();
-                function.operations.load_from_pointer(
-                    &result,
-                    &data_type.convert(),
-                    &result_ptr,
-                );
-                
-                function.operations.store_from_pointer(&data_type.convert(), &result, &destination);
+                if data_type.base.is_basic() {
+                    if should_allocate {
+                        function.operations.load_from_pointer(
+                            &destination,
+                            &inner_type.convert(),
+                            &result_ptr,
+                        );
+                    } else {
+                        let result = function.variables.increment();
+                        function.operations.load_from_pointer(
+                            &result,
+                            &inner_type.convert(),
+                            &result_ptr,
+                        );
+
+                        function.operations.store_from_pointer(
+                            &inner_type.convert(),
+                            &result,
+                            &destination,
+                        );
+                    }
+                } else {
+                    function.operations.memcpy(
+                        &result_ptr,
+                        &destination,
+                        &data_type.bytes(),
+                        false,
+                    );
+                }
 
                 return IRValue::Variable(result_ptr);
             } else {
@@ -125,7 +162,7 @@ pub fn handle_expression(
         Expression::GetVariable(name) => {
             let result = function.variables.increment();
 
-            let variable = match function.variables.read(&name, &ReferenceState::None) {
+            let variable = match function.variables.read(&name) {
                 Some(var) => var,
                 None => {
                     program.debug.error(
@@ -137,6 +174,17 @@ pub fn handle_expression(
             };
 
             if variable.is_pointer_value {
+                if let Some(destination) = destination {
+                    if !variable.data_type.base.is_basic() {
+                        function.operations.memcpy(
+                            &variable.key,
+                            destination,
+                            &variable.data_type.bytes(),
+                            false,
+                        );
+                        return IRValue::Null;
+                    }
+                }
                 function
                     .operations
                     .load_from_pointer(&result, &data_type.convert(), &variable.key);
@@ -147,6 +195,11 @@ pub fn handle_expression(
         }
         Expression::Array(items) => {
             if let Some(destination) = destination {
+                if should_allocate {
+                    function
+                        .operations
+                        .allocate(&destination, &data_type.convert())
+                }
                 handle_array_store(
                     program,
                     function,
@@ -156,24 +209,51 @@ pub fn handle_expression(
                     data_type,
                     0,
                 );
-                return IRValue::Variable(destination);
+                return IRValue::Null;
             } else {
                 todo!()
             }
         }
         Expression::Call(path, arguments) => {
-            let result = function.variables.increment();
-
-            handle_call(
-                program,
-                function,
-                Some((&result, data_type)),
-                location,
-                path,
-                arguments,
-            );
-
-            IRValue::Variable(result)
+            if let Some(destination) = destination {
+                if data_type.base.is_basic() {
+                    let result = function.variables.increment();
+                    handle_call(
+                        program,
+                        function,
+                        Some((&result, data_type)),
+                        location,
+                        path,
+                        arguments,
+                    );
+                    function.operations.store_from_pointer(
+                        &data_type.convert(),
+                        &result,
+                        destination,
+                    )
+                } else {
+                    handle_call(
+                        program,
+                        function,
+                        Some((destination, data_type)),
+                        location,
+                        path,
+                        arguments,
+                    );
+                }
+            } else {
+                let result = function.variables.increment();
+                handle_call(
+                    program,
+                    function,
+                    Some((&result, &data_type)),
+                    location,
+                    path,
+                    arguments,
+                );
+                return IRValue::Variable(result);
+            }
+            return IRValue::Null;
         }
         _ => todo!("{info:#?}"),
     };
@@ -194,8 +274,14 @@ pub fn handle_expression(
     //         )
     //     }
     // }
-    //
+
     if let Some(destination) = destination {
+        if should_allocate {
+            function
+                .operations
+                .allocate(&destination, &data_type.convert())
+        }
+
         function
             .operations
             .store(&data_type.convert(), &value, &destination);

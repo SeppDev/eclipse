@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{IRType, IRValue},
+    analyzer::IRType,
     errors::{CompileResult, Location},
     path::Path,
     types::{BaseType, ReferenceManager, ReferenceState, Type},

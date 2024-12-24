@@ -68,7 +68,7 @@ impl VariablesMap {
             self.variables.remove(&key);
         }
     }
-    pub fn read(&self, name: &String, ref_state: &ReferenceState) -> Option<&Variable> {
+    pub fn read(&self, name: &String) -> Option<&Variable> {
         return self.variables.get(name);
     }
     // pub fn write(&mut self, key: &String) -> bool {

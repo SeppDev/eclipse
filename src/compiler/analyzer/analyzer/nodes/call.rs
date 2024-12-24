@@ -42,8 +42,7 @@ pub fn handle_call(
 
     arguments.reverse();
 
-    let is_basic = found.return_type.base.is_basic();
-    let return_type = if is_basic {
+    let return_type = if found.return_type.base.is_basic() {
         &found.return_type
     } else {
         &Type::void()
@@ -56,7 +55,7 @@ pub fn handle_call(
         let info = arguments.pop().unwrap();
 
         let data_type = what_type(program, function, &info.location, Some(param_type), &info);
-        let value = handle_expression(program, function, &location, None, &data_type, info);
+        let value = handle_expression(program, function, &location, None, false, &data_type, info);
 
         let ir_type = if param_type.base.is_basic() {
             param_type.convert()
@@ -76,7 +75,7 @@ pub fn handle_call(
             return;
         }
 
-        if is_basic {
+        if found.return_type.base.is_basic() {
             function.operations.store_call(
                 &destination,
                 &found.key,

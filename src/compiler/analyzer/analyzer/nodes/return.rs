@@ -31,14 +31,15 @@ pub fn handle_return(
     };
 
     if data_type.base.is_basic() {
-        let value = handle_expression(program, function, &location, None, &data_type, expression);
+        let value = handle_expression(program, function, &location, None, false, &data_type, expression);
         function.operations.r#return(&data_type.convert(), &value);
     } else {
         handle_expression(
             program,
             function,
             &location,
-            Some("0".to_string()),
+            Some(&"0".to_string()),
+            false,
             &data_type,
             expression,
         );

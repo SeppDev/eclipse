@@ -16,6 +16,7 @@ pub struct ProgramCtx<'a> {
     pub codegen: CodeGen,
     pub types: &'a ProgramTypes,
     pub namespaces: &'a mut Vec<Path>,
+    
     // pub static_strings: &'a mut Vec<(String, String)>,
 }
 // impl<'a> ProgramCtx<'a> {
@@ -50,8 +51,6 @@ pub struct FunctionCtx<'a> {
 pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileResult<()> {
     handle_file(program, &mut parsed.main);
     handle_file(program, &mut parsed.standard);
-
-    // program.debug.result_print(format!("{program:#?}"));
 
     return Ok(());
 }
@@ -234,6 +233,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
     let mut returned = false;
 
     for info in nodes {
+        function.operations.new_line();
         match info.node {
             Node::DeclareVariable {
                 name,

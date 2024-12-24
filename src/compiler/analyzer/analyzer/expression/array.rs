@@ -67,12 +67,12 @@ pub fn handle_array_store(
 
         function.operations.getelementptr_inbounds(
             &key_ptr,
-            &data_type.convert(),
+            &IRType::Bytes(data_type.bytes()),
             destination,
             &IRType::Integer(POINTER_WITH),
             &IRValue::IntLiteral(format!("{}", index * item_size + offset)),
         );
 
-        handle_expression(program, function, location, Some(key_ptr), item_type, item);
+        handle_expression(program, function, location, Some(&key_ptr), false, item_type, item);
     }
 }
