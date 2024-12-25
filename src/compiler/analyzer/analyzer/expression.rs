@@ -51,11 +51,17 @@ pub fn handle_expression(
         //         &value,
         //     );
         // }
-        // Expression::Not(expression) => {
-        //     let value = handle_read(program, function, location, &data_type, *expression);
-        //     function.operations.xor_boolean(&destination, &value);
-        // }
-        Expression::Index(name, index) => {
+        Expression::Not(expression) => {
+            let result = function.variables.increment();
+            let value = handle_expression(program, function, location, None, false, &data_type, *expression);
+            function.operations.xor_boolean(&result, &value);
+            IRValue::Variable(result)
+        }
+        Expression::Index(name, index) => { 
+            
+            let value = 1234;
+            let ptr = &value;
+            
             let result_ptr = function.variables.increment();
 
             let array = match function.variables.read(&name) {
@@ -134,31 +140,55 @@ pub fn handle_expression(
                 todo!()
             }
         }
-        // Expression::BinaryOperation(first, operator, second) => {
-        //     let first_value = handle_read(program, function, location, &data_type, *first);
-        //     let second_value = handle_read(program, function, location, &data_type, *second);
+        Expression::BinaryOperation(first, operator, second) => {
+            let first_value =
+                handle_expression(program, function, location, None, false, &data_type, *first);
+            let second_value = handle_expression(
+                program, function, location, None, false, &data_type, *second,
+            );
 
-        //     function.operations.binary_operation(
-        //         &destination,
-        //         &operator,
-        //         &data_type.convert(),
-        //         &first_value,
-        //         &second_value,
-        //     );
-        // }
-        // Expression::CompareOperation(a, operator, b) => {
-        //     let value_type = what_type(program, function, location, None, &*a);
-        //     let first_value = handle_read(program, function, location, &value_type, *a);
-        //     let second_value = handle_read(program, function, location, &value_type, *b);
+            let result = function.variables.increment();
+            function.operations.binary_operation(
+                &result,
+                &operator,
+                &data_type.convert(),
+                &first_value,
+                &second_value,
+            );
+            IRValue::Variable(result)
+        }
+        Expression::CompareOperation(first, operator, second) => {
+            let value_type = what_type(program, function, location, None, &*first);
 
-        //     function.operations.compare_operation(
-        //         &destination,
-        //         &operator,
-        //         &value_type.convert(),
-        //         &first_value,
-        //         &second_value,
-        //     );
-        // }
+            let first_value = handle_expression(
+                program,
+                function,
+                location,
+                None,
+                false,
+                &value_type,
+                *first,
+            );
+            let second_value = handle_expression(
+                program,
+                function,
+                location,
+                None,
+                false,
+                &value_type,
+                *second,
+            );
+
+            let result = function.variables.increment();
+            function.operations.compare_operation(
+                &result,
+                &operator,
+                &value_type.convert(),
+                &first_value,
+                &second_value,
+            );
+            IRValue::Variable(result)
+        }
         Expression::GetVariable(name) => {
             let result = function.variables.increment();
 
@@ -257,23 +287,6 @@ pub fn handle_expression(
         }
         _ => todo!("{info:#?}"),
     };
-
-    // if let Some(destination) = destination {
-    //     if data_type.base.is_basic() {
-    //         function.operations.load(
-    //             &destination,
-    //             &data_type.convert(),
-    //             &IRValue::Variable(destination.clone()),
-    //         );
-    //     } else {
-    //         function.operations.memcpy(
-    //             &destination,
-    //             &destination,
-    //             &data_type.base.bytes(),
-    //             false,
-    //         )
-    //     }
-    // }
 
     if let Some(destination) = destination {
         if should_allocate {

@@ -1,9 +1,12 @@
 use crate::compiler::{
-    analyzer::{analyzer::{handle_body, LoopInfo}, FunctionCtx, ProgramCtx},
+    analyzer::{
+        analyzer::{handle_body, LoopInfo},
+        handle_expression, FunctionCtx, ProgramCtx,
+    },
     errors::Location,
-    parser::{ExpressionInfo, NodeInfo}, types::{BaseType, Type},
+    parser::{ExpressionInfo, NodeInfo},
+    types::Type,
 };
-
 
 pub fn handle_loop(
     program: &mut ProgramCtx,
@@ -14,25 +17,29 @@ pub fn handle_loop(
 ) {
     let begin = function.variables.increment();
     let end = function.variables.increment();
-    function.loop_info.push(LoopInfo::new(begin.clone(), end.clone()));
+    function
+        .loop_info
+        .push(LoopInfo::new(begin.clone(), end.clone()));
 
     function.operations.goto(&begin);
     function.operations.label(&begin);
 
-
     match condition {
         Some(expression) => {
-            let result = handle_read(
+            let result = handle_expression(
                 program,
                 function,
                 &location,
-                &Type::new(BaseType::Boolean),
+                None,
+                false,
+                &Type::boolean(),
                 expression,
             );
+
             let after = function.variables.increment();
             function.operations.branch(&result, &after, &end);
             function.operations.label(&after);
-        },
+        }
         None => {}
     }
 
@@ -44,11 +51,7 @@ pub fn handle_loop(
     let _ = function.loop_info.pop();
 }
 
-pub fn handle_break(
-    program: &mut ProgramCtx,
-    function: &mut FunctionCtx,
-    location: Location
-) {
+pub fn handle_break(program: &mut ProgramCtx, function: &mut FunctionCtx, location: Location) {
     let last = match function.loop_info.last() {
         Some(li) => li,
         None => {
@@ -61,11 +64,7 @@ pub fn handle_break(
     function.operations.goto(&last.end);
 }
 
-pub fn handle_continue(
-    program: &mut ProgramCtx,
-    function: &mut FunctionCtx,
-    location: Location
-) {
+pub fn handle_continue(program: &mut ProgramCtx, function: &mut FunctionCtx, location: Location) {
     let last = match function.loop_info.last() {
         Some(li) => li,
         None => {

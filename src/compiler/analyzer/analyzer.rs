@@ -249,31 +249,31 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 data_type,
                 expression,
             ),
-            // Node::Loop { condition, body } => {
-            //     handle_loop(program, function, info.location, condition, body)
-            // }
-            // Node::IfStatement {
-            //     expression,
-            //     body,
-            //     elseif: _,
-            //     else_body,
-            // } => handle_ifstatement(
-            //     program,
-            //     function,
-            //     info.location,
-            //     expression,
-            //     body,
-            //     else_body,
-            // ),
-            // Node::SetVariable { name, expression } => {
-            //     handle_set_variable(program, function, info.location, name, expression)
-            // }
+            Node::Loop { condition, body } => {
+                handle_loop(program, function, info.location, condition, body)
+            }
+            Node::IfStatement {
+                expression,
+                body,
+                elseif: _,
+                else_body,
+            } => handle_ifstatement(
+                program,
+                function,
+                info.location,
+                expression,
+                body,
+                else_body,
+            ),
+            Node::SetVariable { name, expression } => {
+                handle_set_variable(program, function, info.location, name, expression)
+            }
 
             Node::Call(path, arguments) => {
                 handle_call(program, function, None, &info.location, path, arguments)
             }
-            // Node::Break => handle_break(program, function, info.location),
-            // Node::Continue => handle_continue(program, function, info.location),
+            Node::Break => handle_break(program, function, info.location),
+            Node::Continue => handle_continue(program, function, info.location),
             Node::Scope(body) => returned = handle_body(program, function, body),
 
             Node::Return(expression) => {

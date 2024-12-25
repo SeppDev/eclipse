@@ -115,6 +115,9 @@ impl Type {
         s.base = base;
         return s;
     }
+    pub fn boolean() -> Self {
+        return Self::new(BaseType::Boolean)
+    }
     pub fn bytes(&self) -> usize {
         if self.is_pointing() {
             return POINTER_WITH;
