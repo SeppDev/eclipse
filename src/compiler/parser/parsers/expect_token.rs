@@ -18,15 +18,7 @@ impl Tokens {
 
         self.error(
             info.location.clone(),
-            format!(
-                "Expected one of {}, found '{}'",
-                expected
-                    .into_iter()
-                    .map(|x| format!("'{}'", x))
-                    .collect::<Vec<String>>()
-                    .join(" or "),
-                info.token
-            ),
+            format_expected(&expected, &info.token),
         );
 
         return Err(());
@@ -42,15 +34,7 @@ impl Tokens {
 
         self.error(
             info.location.clone(),
-            format!(
-                "Expected one of {}, found '{}'",
-                expected
-                    .into_iter()
-                    .map(|x| format!("'{}'", x))
-                    .collect::<Vec<String>>()
-                    .join(" or "),
-                info.token
-            ),
+            format_expected(&expected, &info.token),
         );
 
         return Ok(info);
@@ -73,4 +57,24 @@ impl Tokens {
 
         return None;
     }
+}
+
+fn format_expected(expected: &Vec<Token>, got: &Token) -> String {
+    let len = expected.len();
+    let expected = if len <= 1 {
+        format!("{}", expected.first().unwrap())
+    } else {
+        let last = format!(" or {}", expected.last().unwrap());
+        let mut body = expected
+            .into_iter()
+            .map(|x| format!("'{}'", x))
+            .collect::<Vec<String>>()
+            .join(", ");
+        
+        body.push_str(last.as_str());
+        
+        format!("one of {body}")
+    };
+
+    format!("Expected {expected}, found '{got}'")
 }

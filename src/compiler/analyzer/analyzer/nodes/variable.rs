@@ -2,7 +2,7 @@ use crate::compiler::{
     analyzer::{analyzer::what_type, handle_expression, FunctionCtx, ProgramCtx},
     errors::Location,
     parser::ExpressionInfo,
-    types::{ReferenceState, Type},
+    types::Type,
 };
 
 pub fn handle_variable_declaration(
@@ -19,7 +19,7 @@ pub fn handle_variable_declaration(
         None => {
             return match data_type {
                 Some(dt) => {
-                    let key = function.variables.increment();
+                    let key = function.increment_key();
                     function.operations.allocate(&key, &dt.convert());
                 }
                 None => {
@@ -36,27 +36,22 @@ pub fn handle_variable_declaration(
         None => what_type(program, function, &location, None, &info),
     };
 
-    let destination = function.variables.increment();
+    let destination = function.increment_key();
     function
         .operations
         .allocate(&destination, &data_type.convert());
+
 
     handle_expression(
         program,
         function,
         &location,
         Some(&destination),
-        false,
         &data_type,
         info,
     );
 
-    let variable =
-        function
-            .variables
-            .insert(true, name, mutable, data_type.clone(), location.clone());
-    
-    variable.key = destination
+    function.insert_variable(name, Some(destination), mutable, data_type.clone(), location.clone());
 }
 
 pub fn handle_set_variable(
@@ -77,16 +72,7 @@ pub fn handle_set_variable(
         }
     };
 
-    let variable = match function.variables.read(&name) {
-        Some(var) => var.clone(),
-        None => {
-            program.debug.error(
-                location,
-                format!("Cannot modify a variable that has not been declared: '{name}'"),
-            );
-            return;
-        }
-    };
+    let variable = function.read_variable(&name).unwrap().clone();
 
     if !variable.mutable {
         let message = program.debug.error(
@@ -103,7 +89,6 @@ pub fn handle_set_variable(
         function,
         &location,
         Some(&variable.key),
-        false,
         &variable.data_type,
         expression,
     );

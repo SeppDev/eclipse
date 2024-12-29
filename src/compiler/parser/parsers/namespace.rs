@@ -4,13 +4,13 @@ use crate::compiler::{
     parser::{Node, NodeInfo},
 };
 
-use super::path::parse_path;
-
-pub fn parse_namespace(tokens: &mut Tokens, public: bool) -> CompileResult<NodeInfo> {
-    let root = tokens.parse_identifier()?;
-    let path = parse_path(tokens, &root)?;
-    return Ok(tokens.create_node(Node::NameSpace {
-        public,
-        static_path: path,
-    }));
+impl Tokens {
+    pub fn parse_namespace(&mut self, public: bool) -> CompileResult<NodeInfo> {
+        let root = self.parse_identifier()?;
+        let path = self.parse_path(&root)?;
+        return Ok(self.create_node(Node::NameSpace {
+            public,
+            static_path: path,
+        }));
+    }
 }

@@ -11,12 +11,13 @@ use crate::compiler::{
 pub fn handle_loop(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
+    return_type: &Option<Type>,
     location: Location,
     condition: Option<ExpressionInfo>,
     body: Vec<NodeInfo>,
 ) {
-    let begin = function.variables.increment();
-    let end = function.variables.increment();
+    let begin = function.increment_key();
+    let end = function.increment_key();
     function
         .loop_info
         .push(LoopInfo::new(begin.clone(), end.clone()));
@@ -31,19 +32,18 @@ pub fn handle_loop(
                 function,
                 &location,
                 None,
-                false,
                 &Type::boolean(),
                 expression,
             );
 
-            let after = function.variables.increment();
+            let after = function.increment_key();
             function.operations.branch(&result, &after, &end);
             function.operations.label(&after);
         }
         None => {}
     }
 
-    handle_body(program, function, body);
+    handle_body(program, function, return_type, body);
 
     function.operations.goto(&begin);
     function.operations.label(&end);

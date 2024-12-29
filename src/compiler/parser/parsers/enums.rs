@@ -4,30 +4,31 @@ use crate::compiler::{
     parser::{Node, NodeInfo},
 };
 
-pub fn parse_enum(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
-    let name = tokens.parse_identifier()?;
-    let _ = tokens.expect_tokens(vec![Token::StartScope], false);
-    let mut fields = Vec::new();
+impl Tokens {
+    pub fn parse_enum(&mut self) -> CompileResult<NodeInfo> {
+        let name = self.parse_identifier()?;
+        let _ = self.expect_tokens(vec![Token::StartScope], false);
+        let mut fields = Vec::new();
 
-    if tokens
-        .peek_expect_tokens(vec![Token::EndScope], true)
-        .is_some()
-    {
-        return Ok(tokens.create_node(Node::Enum { name, fields }))   
-    };
+        if self
+            .peek_expect_tokens(vec![Token::EndScope], true)
+            .is_some()
+        {
+            return Ok(self.create_node(Node::Enum { name, fields }));
+        };
 
-    loop {
+        loop {
+            let name = self.parse_identifier()?;
+            fields.push(name);
 
-        let name = tokens.parse_identifier()?;
-        fields.push(name);
-
-        let result = tokens.expect_tokens(vec![Token::Comma, Token::EndScope], false)?;
-        match result.token {
-            Token::Comma => continue,
-            Token::EndScope => break,
-            _ => panic!(),
+            let result = self.expect_tokens(vec![Token::Comma, Token::EndScope], false)?;
+            match result.token {
+                Token::Comma => continue,
+                Token::EndScope => break,
+                _ => panic!(),
+            }
         }
-    }
 
-    return Ok(tokens.create_node(Node::Enum { name, fields }));
+        return Ok(self.create_node(Node::Enum { name, fields }));
+    }
 }

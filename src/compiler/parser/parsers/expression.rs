@@ -3,209 +3,199 @@ use crate::compiler::{
     lexer::{Token, Tokens},
     parser::{ArithmeticOperator, CompareOperator, Expression, ExpressionInfo, Value},
     path::Path,
-    types::ReferenceManager,
 };
 
-use super::{arguments::parse_arguments, path::parse_path};
-
-pub fn parse_expression(
-    tokens: &mut Tokens,
-    required: bool,
-) -> CompileResult<Option<ExpressionInfo>> {
-    let info = match tokens.peek_expect_tokens(
-        vec![
-            Token::String(String::new()),
-            Token::Integer(String::new()),
-            Token::Float(String::new()),
-            Token::Boolean(true),
-            Token::Identifier(String::new()),
-            Token::ExclamationMark,
-            Token::OpenBracket,
-            Token::Asterisk,
-            Token::Ampersand,
-            Token::Minus,
-            Token::OpenParen,
-        ],
-        false,
-    ) {
-        Some(info) => info,
-        None => {
-            if required {
-                let info = tokens.advance()?;
-                tokens.error(
-                    info.location,
-                    format!("Expected expression, got '{}'", info.token),
-                );
+impl Tokens {
+    pub fn parse_expression(&mut self, required: bool) -> CompileResult<Option<ExpressionInfo>> {
+        let info = match self.peek_expect_tokens(
+            vec![
+                Token::String(String::new()),
+                Token::Integer(String::new()),
+                Token::Float(String::new()),
+                Token::Boolean(true),
+                Token::Identifier(String::new()),
+                Token::ExclamationMark,
+                Token::OpenBracket,
+                Token::Asterisk,
+                Token::Ampersand,
+                Token::Minus,
+            ],
+            false,
+        ) {
+            Some(info) => info,
+            None => {
+                if required {
+                    let info = self.advance()?;
+                    self.error(
+                        info.location,
+                        format!("Expected expression, got '{}'", info.token),
+                    );
+                }
+                return Ok(None);
             }
-            return Ok(None);
-        }
-    };
-    tokens.start()?;
+        };
+        self.start()?;
 
-    let expression = match info.token {
-        Token::Integer(integer) => Expression::Value(Value::Integer(integer)),
-        Token::Float(float) => Expression::Value(Value::Float(float)),
-        Token::String(string) => Expression::Value(Value::StaticString(string)),
-        Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
-        Token::Ampersand | Token::Asterisk => {
-            let mut new_expression = parse_expression(tokens, true)?.unwrap();
-            let info = tokens.pop_start();
-
-            if matches!(info.token, Token::Ampersand) {
-                new_expression.add_reference().unwrap();
-            } else {
-                new_expression.add_pointer().unwrap();
+        let base_expression = match info.token {
+            Token::Integer(integer) => Expression::Value(Value::Integer(integer)),
+            Token::Float(float) => Expression::Value(Value::Float(float)),
+            Token::String(string) => Expression::Value(Value::StaticString(string)),
+            Token::Boolean(boolean) => Expression::Value(Value::Boolean(boolean)),
+            Token::Ampersand => {
+                let new_expression = self.parse_expression(true)?.unwrap();
+                Expression::Reference(Box::new(new_expression))
             }
-            new_expression.location.columns.start = info.location.columns.start;
-
-            return Ok(Some(new_expression));
-        }
-        Token::Minus => {
-            let new_expression = parse_expression(tokens, true)?.unwrap();
-            return Ok(Some(
-                tokens.create_expression(Expression::Minus(Box::new(new_expression))),
-            ));
-        }
-        Token::ExclamationMark => {
-            let new_expression = parse_expression(tokens, true)?.unwrap();
-            return Ok(Some(
-                tokens.create_expression(Expression::Not(Box::new(new_expression))),
-            ));
-        }
-        Token::OpenParen | Token::OpenBracket => {
-            let is_tuple = matches!(info.token, Token::OpenParen);
-            let mut expressions = Vec::new();
-            loop {
-                let new_expression = match parse_expression(tokens, false)? {
-                    Some(expression) => expression,
-                    None => {
-                        if is_tuple {
-                            tokens.expect_tokens(vec![Token::CloseParen], false)?;
-                        } else {
-                            tokens.expect_tokens(vec![Token::CloseBracket], false)?;
+            Token::Asterisk => {
+                let new_expression = self.parse_expression(true)?.unwrap();
+                Expression::DeReference(Box::new(new_expression))
+            }
+            Token::Minus => {
+                let new_expression = self.parse_expression(true)?.unwrap();
+                Expression::Minus(Box::new(new_expression))
+            }
+            Token::ExclamationMark => {
+                let new_expression = self.parse_expression(true)?.unwrap();
+                Expression::Not(Box::new(new_expression))
+            }
+            Token::OpenParen | Token::OpenBracket => {
+                let is_tuple = matches!(info.token, Token::OpenParen);
+                let mut expressions = Vec::new();
+                loop {
+                    let new_expression = match self.parse_expression(false)? {
+                        Some(expression) => expression,
+                        None => {
+                            if is_tuple {
+                                self.expect_tokens(vec![Token::CloseParen], false)?;
+                            } else {
+                                self.expect_tokens(vec![Token::CloseBracket], false)?;
+                            }
+                            break;
                         }
-                        break;
-                    }
-                };
-                expressions.push(new_expression);
-                let result = if is_tuple {
-                    tokens.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?
+                    };
+                    expressions.push(new_expression);
+                    let result = if is_tuple {
+                        self.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?
+                    } else {
+                        self.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)?
+                    };
+
+                    match result.token {
+                        Token::CloseParen | Token::CloseBracket => break,
+                        Token::Comma => continue,
+                        _ => panic!(),
+                    };
+                }
+                if is_tuple {
+                    Expression::Tuple(expressions)
                 } else {
-                    tokens.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)?
-                };
-
-                match result.token {
-                    Token::CloseParen | Token::CloseBracket => break,
-                    Token::Comma => continue,
-                    _ => panic!(),
-                };
+                    Expression::Array(expressions)
+                }
             }
-            if is_tuple {
-                Expression::Tuple(expressions)
-            } else {
-                Expression::Array(expressions)
+            Token::Identifier(name) => {
+                if self
+                    .peek_expect_tokens(vec![Token::DoubleColon], false)
+                    .is_some()
+                {
+                    let path = self.parse_path(&name)?;
+                    Expression::GetPath(path)
+                } else {
+                    Expression::GetVariable(Path::from(name))
+                }
             }
-        }
-        Token::Identifier(name) => parse_identifier(tokens, name)?,
-        _ => panic!(),
-    };
-    let first_expression_info = tokens.create_expression(expression);
-
-    let info = match tokens.peek_expect_tokens(
-        vec![
-            Token::Plus,
-            Token::Minus,
-            Token::Asterisk,
-            Token::ForwardSlash,
-            Token::Percent,
-            Token::Compare,
-            Token::NotEquals,
-            Token::LessThan,
-            Token::LessThanOrEquals,
-            Token::GreaterThan,
-            Token::GreaterThanOrEquals,
-        ],
-        false,
-    ) {
-        Some(_) => tokens.start()?,
-        None => return Ok(Some(first_expression_info)),
-    };
-
-    let second_expression = parse_expression(tokens, true)?.unwrap();
-    let mut first_location = first_expression_info.location.clone();
-    first_location.columns.end = second_expression.location.columns.end;
-
-    let is_arithmetic = matches!(
-        info.token,
-        Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent
-    );
-
-    let mut info = if is_arithmetic {
-        let arithmetic_operator = match info.token {
-            Token::Plus => ArithmeticOperator::Plus,
-            Token::Minus => ArithmeticOperator::Subtract,
-            Token::ForwardSlash => ArithmeticOperator::Division,
-            Token::Asterisk => ArithmeticOperator::Multiply,
-            Token::Percent => ArithmeticOperator::Modulus,
             _ => panic!(),
         };
 
-        tokens.create_expression(Expression::BinaryOperation(
-            Box::new(first_expression_info),
-            arithmetic_operator,
-            Box::new(second_expression),
-        ))
-    } else {
-        let compare_operator = match info.token {
-            Token::Compare => CompareOperator::Equals,
-            Token::NotEquals => CompareOperator::NotEquals,
-            Token::LessThan => CompareOperator::LessThan,
-            Token::LessThanOrEquals => CompareOperator::LessThanOrEquals,
-            Token::GreaterThan => CompareOperator::GreaterThan,
-            Token::GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
-            _ => panic!(),
+        let mut first: ExpressionInfo = self.create_expression(base_expression);
+        loop {
+            let info = match self.peek_expect_tokens(
+                vec![Token::Dot, Token::OpenParen, Token::OpenBracket],
+                false,
+            ) {
+                Some(_) => self.start()?,
+                None => break,
+            };
+            match info.token {
+                Token::Dot => {
+                    let identifier = self.parse_identifier()?;
+                    first = self.create_expression(Expression::Field(Box::new(first), identifier))
+                }
+                Token::OpenParen => {
+                    let arguments = self.parse_arguments()?;
+                    first = self.create_expression(Expression::Call(Box::new(first), arguments))
+                }
+                Token::OpenBracket => {
+                    let index = self.parse_expression(true)?.unwrap();
+                    self.expect_tokens(vec![Token::CloseBracket], false)?;
+                    first =
+                        self.create_expression(Expression::Index(Box::new(first), Box::new(index)));
+                }
+                _ => todo!(),
+            }
+        }
+
+        let info = match self.peek_expect_tokens(
+            vec![
+                Token::Plus,
+                Token::Minus,
+                Token::Asterisk,
+                Token::ForwardSlash,
+                Token::Percent,
+                Token::Compare,
+                Token::NotEquals,
+                Token::LessThan,
+                Token::LessThanOrEquals,
+                Token::GreaterThan,
+                Token::GreaterThanOrEquals,
+            ],
+            false,
+        ) {
+            Some(_) => self.start()?,
+            None => return Ok(Some(first)),
         };
 
-        tokens.create_expression(Expression::CompareOperation(
-            Box::new(first_expression_info),
-            compare_operator,
-            Box::new(second_expression),
-        ))
-    };
+        let second_expression = self.parse_expression(true)?.unwrap();
+        let mut first_location = first.location.clone();
+        first_location.columns.end = second_expression.location.columns.end;
 
-    info.location = first_location;
-    return Ok(Some(info));
-}
+        let is_arithmetic = matches!(
+            info.token,
+            Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent
+        );
 
-fn parse_identifier(tokens: &mut Tokens, name: String) -> CompileResult<Expression> {
-    let path = if tokens
-        .peek_expect_tokens(vec![Token::DoubleColon], false)
-        .is_some()
-    {
-        parse_path(tokens, &name)?
-    } else {
-        Path::from(&name)
-    };
+        let mut info = if is_arithmetic {
+            let arithmetic_operator = match info.token {
+                Token::Plus => ArithmeticOperator::Plus,
+                Token::Minus => ArithmeticOperator::Subtract,
+                Token::ForwardSlash => ArithmeticOperator::Division,
+                Token::Asterisk => ArithmeticOperator::Multiply,
+                Token::Percent => ArithmeticOperator::Modulus,
+                _ => panic!(),
+            };
 
-    if tokens
-        .peek_expect_tokens(vec![Token::OpenBracket], true)
-        .is_some()
-    {
-        let info = parse_expression(tokens, true)?.unwrap();
-        let _ = tokens.expect_tokens(vec![Token::CloseBracket], false);
-        return Ok(Expression::Index(name, Box::new(info)));
-    }
+            self.create_expression(Expression::BinaryOperation(
+                Box::new(first),
+                arithmetic_operator,
+                Box::new(second_expression),
+            ))
+        } else {
+            let compare_operator = match info.token {
+                Token::Compare => CompareOperator::Equals,
+                Token::NotEquals => CompareOperator::NotEquals,
+                Token::LessThan => CompareOperator::LessThan,
+                Token::LessThanOrEquals => CompareOperator::LessThanOrEquals,
+                Token::GreaterThan => CompareOperator::GreaterThan,
+                Token::GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
+                _ => panic!(),
+            };
 
-    let info = match tokens.peek_expect_tokens(vec![Token::OpenParen], true) {
-        Some(info) => info,
-        None => return Ok(Expression::GetVariable(name)),
-    };
+            self.create_expression(Expression::CompareOperation(
+                Box::new(first),
+                compare_operator,
+                Box::new(second_expression),
+            ))
+        };
 
-    match info.token {
-        Token::OpenParen => {
-            let arguments = parse_arguments(tokens)?;
-            Ok(Expression::Call(path, arguments))
-        }
-        _ => panic!(),
+        info.location = first_location;
+        return Ok(Some(info));
     }
 }

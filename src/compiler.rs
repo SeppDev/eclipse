@@ -1,5 +1,4 @@
 use analyzer::{analyze, parse_types, ProgramCtx};
-use codegen::CodeGen;
 use counter::NameCounter;
 use errors::{CompileCtx, CompileResult};
 use lib::get_std_file;
@@ -51,22 +50,13 @@ fn compile(
     let _ = std::fs::remove_file(&final_path);
 
     let mut program = parse_program(debug, count, &project_dir)?;
+    debug.result_print(format!("{:#?}", program.main.body));
     debug.throw(false);
 
     let types = parse_types(debug, count, &mut program)?;
     debug.throw(false);
 
-    // debug.result_print(format!("{:#?}", types));
-
-    let mut ctx = ProgramCtx {
-        debug,
-        codegen: CodeGen::new(),
-        types: &types,
-        namespaces: &mut Vec::new()
-        // count,
-        // static_strings: &mut Vec::new(),
-    };
-
+    let mut ctx = ProgramCtx::new(debug, &types);
     analyze(&mut ctx, program)?;
     ctx.debug.throw(true);
 

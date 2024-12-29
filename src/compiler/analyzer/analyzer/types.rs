@@ -13,23 +13,43 @@ pub fn what_type(
     expected_type: Option<&Type>,
     expression: &ExpressionInfo,
 ) -> Type {
-    let mut infered_type: Type = match &expression.expression {
-        Expression::Index(path, _) => {
-            let name = path;
-            let array = match function.variables.read(name) {
-                Some(var) => var,
-                None => return Type::void(),
-            };
-            if !array.data_type.base.is_array() {
-                program.debug.error(
-                    expression.location.clone(),
-                    "Cannot index into a value type",
-                );
-            }
-
-            let (inner_type, _) = array.data_type.array_info();
-            inner_type.clone()
+    let infered_type = infere_type(program, function, location, expected_type, expression);
+    if let Some(expected) = expected_type {
+        if expected != &infered_type {
+            program.debug.error(
+                location.clone(),
+                format!("Expected {expected} but got {infered_type}"),
+            );
         }
+    }
+
+    return infered_type;
+}
+
+fn infere_type(
+    program: &mut ProgramCtx,
+    function: &mut FunctionCtx,
+    location: &Location,
+    expected_type: Option<&Type>,
+    expression: &ExpressionInfo,
+) -> Type {
+    return match &expression.expression {
+        // Expression::Index(path, _) => {
+        //     let name = path;
+        //     let array = match function.variables.read(name) {
+        //         Some(var) => var,
+        //         None => return Type::void(),
+        //     };
+        //     if !array.data_type.base.is_array() {
+        //         program.debug.error(
+        //             expression.location.clone(),
+        //             "Cannot index into a value type",
+        //         );
+        //     }
+
+        //     let (inner_type, _) = array.data_type.array_info();
+        //     inner_type.clone()
+        // }
         Expression::Array(array) => {
             let size = array.len();
             let first = array.first().unwrap();
@@ -48,9 +68,7 @@ pub fn what_type(
                 what_type(program, function, location, None, first)
             };
 
-            let infered = Type::new(BaseType::Array(size, Box::new(inner_type)));
-
-            infered
+            Type::new(BaseType::Array(size, Box::new(inner_type)))
         }
         Expression::Value(value) => match expected_type {
             Some(expected) => {
@@ -66,28 +84,18 @@ pub fn what_type(
                 }
             }
 
-            None => value.default_type(),
+                        None => value.default_type(),
         },
-        Expression::GetVariable(name) => {
-            let variable = match function.variables.read(name, ) {
-                Some(var) => var,
-                None => {
-                    program.debug.error(
-                        expression.location.clone(),
-                        format!("Could not find variable named: '{name}'"),
-                    );
-                    return Type::void();
-                }
-            };
-            variable.data_type.clone()
-        }
-        Expression::Call(path, _) => {
-            let found = match program.types.get_function(function.relative_path, path, &program.namespaces) {
-                Some(f) => f,
-                None => return Type::void(),
-            };
-            found.return_type.clone()
-        }
+
+            //     match program
+            //         .types
+            //         .get_function(function.relative_path, path, &program.namespaces)
+            //     {
+            //         Some(f) => f,
+            //         None => return Type::void(),
+            //     };
+            // found.return_type.clone()
+        // }
         Expression::BinaryOperation(a, _, b) => {
             let first = a.as_ref();
             let second = b.as_ref();
@@ -119,6 +127,17 @@ pub fn what_type(
 
             data_type
         }
+        Expression::Reference(expression) => {
+            infere_type(program, function, location, expected_type, expression)
+                .to_reference()
+                .unwrap()
+        }
+        Expression::DeReference(expression) => {
+            infere_type(program, function, location, expected_type, expression)
+                .dereference()
+                .unwrap()
+        }
+
         Expression::CompareOperation(a, _, b) => {
             let first = a.as_ref();
             let second = b.as_ref();
@@ -164,16 +183,4 @@ pub fn what_type(
         }
         _ => todo!("{:#?}", expression),
     };
-
-    if let Some(expected) = expected_type {
-        if expected.base != infered_type.base {
-            program.debug.error(
-                location.clone(),
-                format!("Expected {expected} but got {infered_type}"),
-            );
-        }
-    }
-    infered_type.ref_state = expression.ref_state.clone();
-
-    return infered_type;
 }

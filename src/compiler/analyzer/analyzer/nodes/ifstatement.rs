@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::handle_body, handle_expression, FunctionCtx, ProgramCtx},
+    analyzer::{analyzer::{handle_body, program::ProgramCtx}, handle_expression, FunctionCtx},
     errors::Location,
     parser::{ExpressionInfo, NodeInfo},
     types::Type,
@@ -8,6 +8,7 @@ use crate::compiler::{
 pub fn handle_ifstatement(
     program: &mut ProgramCtx,
     function: &mut FunctionCtx,
+    return_type: &Option<Type>,
     location: Location,
     expression: ExpressionInfo,
     body: Vec<NodeInfo>,
@@ -18,25 +19,24 @@ pub fn handle_ifstatement(
         function,
         &location,
         None,
-        false,
         &Type::boolean(),
         expression,
     );
 
-    let yes = function.variables.increment();
-    let no = function.variables.increment();
-    let exit = function.variables.increment();
+    let yes = function.increment_key();
+    let no = function.increment_key();
+    let exit = function.increment_key();
 
     function.operations.branch(&result, &yes, &no);
     function.operations.label(&yes);
-    handle_body(program, function, body);
+    handle_body(program, function, return_type, body);
 
     function.operations.goto(&exit);
 
     function.operations.label(&no);
     match else_body {
         Some(body) => {
-            handle_body(program, function, body);
+            handle_body(program, function, return_type, body);
         }
         None => {}
     }

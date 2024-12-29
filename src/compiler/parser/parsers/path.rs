@@ -4,21 +4,21 @@ use crate::compiler::{
     path::Path,
 };
 
-pub fn parse_path(tokens: &mut Tokens, root: &String) -> CompileResult<Path> {
-    let mut path = Path::from(root);
-    loop {
-        if !tokens
-            .peek_expect_tokens(vec![Token::DoubleColon], true)
-            .is_some()
-        {
-            break;
+impl Tokens {
+    pub fn parse_path(&mut self, root: &String) -> CompileResult<Path> {
+        let mut path = Path::from(root);
+        loop {
+            if !self
+                .peek_expect_tokens(vec![Token::DoubleColon], true)
+                .is_some()
+            {
+                break;
+            }
+            
+            let identifier = self.parse_identifier()?;
+            path.push(identifier)
         }
-        let info = tokens.expect_tokens(vec![Token::Identifier(String::new())], false)?;
-        match info.token {
-            Token::Identifier(name) => path.push(name),
-            _ => panic!(),
-        }
-    }
 
-    return Ok(path);
+        return Ok(path);
+    }
 }

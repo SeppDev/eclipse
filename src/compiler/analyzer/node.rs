@@ -111,7 +111,7 @@ impl std::fmt::Display for IRType {
 }
 impl Type {
     pub fn convert(&self) -> IRType {
-        let mut ir = match &self.base {
+        let ir = match &self.base {
             BaseType::Void | BaseType::Never => IRType::Void,
             BaseType::Usize | BaseType::ISize => IRType::Integer(POINTER_WITH),
             
@@ -122,7 +122,7 @@ impl Type {
             BaseType::Int(bits) | BaseType::UInt(bits) => IRType::Integer(bits.clone()),
 
             BaseType::StaticString => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
-
+            
             // BaseType::Array(size, t) => IRType::Bytes(*size * t.bytes()),
             BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
             BaseType::Tuple(dts) => {
@@ -139,16 +139,12 @@ impl Type {
                 );
             }
         };
-        let count = match self.ref_state {
-            ReferenceState::Pointer(p) => p,
-            ReferenceState::Shared | ReferenceState::Mutable => 1,
-            ReferenceState::None => 0,
+        match self.ref_state {
+            ReferenceState::Pointer(p) if p > 0 => return IRType::Pointer,
+            ReferenceState::Shared | ReferenceState::Mutable => return IRType::Pointer,
+            ReferenceState::None | ReferenceState::Pointer(_) => 0,
         };
-
-        for _ in 0..count {
-            ir = ir.pointer()
-        }
-
+        
         return ir;
     }
 }

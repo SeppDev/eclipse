@@ -1,8 +1,8 @@
 use crate::compiler::{
     analyzer::IRType,
-    errors::{CompileResult, Location},
+    errors::Location,
     path::Path,
-    types::{BaseType, ReferenceManager, ReferenceState, Type},
+    types::{BaseType, Type},
 };
 
 #[derive(Debug)]
@@ -79,44 +79,47 @@ impl NodeInfo {
 
 #[derive(Debug)]
 pub enum Expression {
-    GetVariable(String),
-    Field(Box<ExpressionInfo>, String),
-    Index(String, Box<ExpressionInfo>),
     Value(Value),
-    Call(Path, Vec<ExpressionInfo>),
+    GetVariable(Path),
+    GetPath(Path),
+    Field(Box<ExpressionInfo>, String),
+    Index(Box<ExpressionInfo>, Box<ExpressionInfo>),
+    Call(Box<ExpressionInfo>, Vec<ExpressionInfo>),
     BinaryOperation(Box<ExpressionInfo>, ArithmeticOperator, Box<ExpressionInfo>),
     CompareOperation(Box<ExpressionInfo>, CompareOperator, Box<ExpressionInfo>),
+    Grouped(Box<Expression>),
     Array(Vec<ExpressionInfo>),
     Tuple(Vec<ExpressionInfo>),
     Minus(Box<ExpressionInfo>),
     Not(Box<ExpressionInfo>),
+    Reference(Box<ExpressionInfo>),
+    DeReference(Box<ExpressionInfo>),
 }
 
 #[derive(Debug)]
 pub struct ExpressionInfo {
     pub location: Location,
-    pub ref_state: ReferenceState,
     pub expression: Expression,
 }
-impl ReferenceManager for ExpressionInfo {
-    fn add_pointer(&mut self) -> CompileResult<()> {
-        match self.ref_state {
-            ReferenceState::None => self.ref_state = ReferenceState::Pointer(1),
-            ReferenceState::Pointer(p) => self.ref_state = ReferenceState::Pointer(p + 1),
-            _ => return Err(()),
-        }
-        return Ok(());
-    }
-    fn add_reference(&mut self) -> CompileResult<()> {
-        match self.ref_state {
-            ReferenceState::None | ReferenceState::Shared => {
-                self.ref_state = ReferenceState::Shared
-            }
-            _ => return Err(()),
-        }
-        return Ok(());
-    }
-}
+// impl ReferenceManager for ExpressionInfo {
+//     fn add_pointer(&mut self) -> CompileResult<()> {
+//         match self.ref_state {
+//             ReferenceState::None => self.ref_state = ReferenceState::Pointer(1),
+//             ReferenceState::Pointer(p) => self.ref_state = ReferenceState::Pointer(p + 1),
+//             _ => return Err(()),
+//         }
+//         return Ok(());
+//     }
+//     fn add_reference(&mut self) -> CompileResult<()> {
+//         match self.ref_state {
+//             ReferenceState::None | ReferenceState::Shared => {
+//                 self.ref_state = ReferenceState::Shared
+//             }
+//             _ => return Err(()),
+//         }
+//         return Ok(());
+//     }
+// }
 
 #[derive(Debug)]
 pub enum ArithmeticOperator {

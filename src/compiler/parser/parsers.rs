@@ -16,12 +16,6 @@ mod structs;
 mod types;
 mod variable;
 
-use enums::parse_enum;
-use function::parse_function;
-use import::handle_import;
-use path::parse_path;
-use structs::parse_struct;
-
 use crate::compiler::{
     counter::NameCounter,
     errors::{CompileCtx, CompileResult},
@@ -75,20 +69,19 @@ fn handle_tokens(
         match info.token {
             Token::Use => {
                 let root = tokens.parse_identifier()?;
-                let path = parse_path(tokens, &root)?;
+                let path = tokens.parse_path(&root)?;
                 tokens.create_node(Node::NameSpace {
                     public: false,
                     static_path: path,
                 });
             }
             Token::Import => {
-                let (name, import) = match handle_import(
+                let (name, import) = match tokens.handle_import(
                     debug,
                     count,
                     project_dir,
                     relative_file_path.clone(),
                     &relative_path,
-                    tokens,
                 ) {
                     Ok(a) => a,
                     Err(()) => continue,
@@ -99,14 +92,14 @@ fn handle_tokens(
                 };
             }
             Token::Function => {
-                let function = match parse_function(tokens, is_main, count, false) {
+                let function = match tokens.parse_function(is_main, count, false) {
                     Ok(f) => f,
                     Err(()) => continue,
                 };
                 body.push(function)
             }
-            Token::Enum => body.push(parse_enum(tokens)?),
-            Token::Struct => body.push(parse_struct(tokens)?),
+            Token::Enum => body.push(tokens.parse_enum()?),
+            Token::Struct => body.push(tokens.parse_struct()?),
             _ => continue,
         }
     }

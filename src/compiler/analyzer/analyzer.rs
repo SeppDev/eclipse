@@ -1,6 +1,5 @@
 use crate::compiler::{
-    codegen::{CodeGen, FunctionOperations},
-    errors::{CompileCtx, CompileResult, Location},
+    errors::{CompileResult, Location},
     parser::{Node, NodeInfo, Parameter, ParsedFile},
     path::Path,
     program::ParsedProgram,
@@ -8,45 +7,13 @@ use crate::compiler::{
     FILE_EXTENSION,
 };
 
-use super::{variables::VariablesMap, IRType, IRValue, ProgramTypes};
+mod program;
+pub use program::ProgramCtx;
 
-#[derive(Debug)]
-pub struct ProgramCtx<'a> {
-    pub debug: &'a mut CompileCtx,
-    pub codegen: CodeGen,
-    pub types: &'a ProgramTypes,
-    pub namespaces: &'a mut Vec<Path>,
-    
-    // pub static_strings: &'a mut Vec<(String, String)>,
-}
-// impl<'a> ProgramCtx<'a> {
-//     pub fn push_string(&mut self, string: String) -> String {
-//         let key = self.count.increment();
-//         self.static_strings.push((key.clone(), string));
-//         return key;
-//     }
-// }
+mod function;
+pub use function::{FunctionCtx, LoopInfo};
 
-pub struct LoopInfo {
-    pub begin: String,
-    pub end: String,
-}
-impl LoopInfo {
-    pub fn new<T: ToString, E: ToString>(begin: T, end: E) -> Self {
-        Self {
-            begin: begin.to_string(),
-            end: end.to_string(),
-        }
-    }
-}
-
-pub struct FunctionCtx<'a> {
-    pub variables: &'a mut VariablesMap,
-    pub return_type: &'a Option<Type>,
-    pub operations: &'a mut FunctionOperations,
-    pub relative_path: &'a Path,
-    pub loop_info: Vec<LoopInfo>,
-}
+use super::{IRType, IRValue};
 
 pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileResult<()> {
     handle_file(program, &mut parsed.main);
@@ -123,11 +90,18 @@ fn handle_function(
     return_type: Type,
     body: Vec<NodeInfo>,
 ) {
-    let mut variables = VariablesMap::new();
-    variables.push_scope();
-
-    let mut mutables = Vec::new();
     let mut new_params = Vec::new();
+    let mut mutables = Vec::new();
+    let mut operations = program
+        .codegen
+        .new_function(&key, &return_type, &new_params);
+
+    let mut function = FunctionCtx::new(
+        Some(return_type.clone()),
+        &mut operations,
+        &file.relative_path,
+    );
+    function.push_vars_scope();
 
     for parameter in parameters {
         let is_basic = parameter.data_type.base.is_basic();
@@ -138,60 +112,53 @@ fn handle_function(
         };
 
         if parameter.mutable && is_basic {
-            if parameter.data_type.is_pointing() {
+            if parameter.data_type.pointers() > 0 {
                 program.debug.error(
                     parameter.location.clone(),
                     format!("A parameter cannot be mutable if it is a pointer or reference."),
                 );
             }
 
-            let key = variables.increment();
+            let key = function.increment_key();
             new_params.push((key.clone(), ir_type));
             mutables.push((parameter.name, key, parameter.data_type));
             continue;
         }
-        let variable = variables.insert(
-            false,
+
+        let key = function.increment_key();
+        function.insert_variable(
             parameter.name,
+            Some(key.clone()),
             false,
             parameter.data_type,
             parameter.location,
         );
-        new_params.push((variable.key.clone(), ir_type));
+        new_params.push((key, ir_type));
     }
-
-    let mut operations = program
-        .codegen
-        .new_function(&key, &return_type, &new_params);
 
     for (name, key, data_type) in mutables {
         new_params.push((key.clone(), data_type.convert()));
 
-        let param_variable =
-            variables.insert(true, name, true, data_type.clone(), location.clone());
-
-        operations.allocate(&param_variable.key, &data_type.convert());
-        operations.store(
-            &data_type.convert(),
-            &IRValue::Variable(key),
-            &param_variable.key,
+        let param_key = function.increment_key();
+        function.insert_variable(
+            name,
+            Some(param_key.clone()),
+            true,
+            data_type.clone(),
+            location.clone(),
         );
+
+        function
+            .operations
+            .store(&data_type.convert(), &IRValue::Variable(key), &param_key);
     }
 
     let returns_void = return_type.base.is_void();
     let return_expected = format!("Return expected with type {return_type}");
 
-    let mut function = FunctionCtx {
-        variables: &mut variables,
-        return_type: &Some(return_type),
-        relative_path: &file.relative_path,
-        operations: &mut operations,
-        loop_info: Vec::new(),
-    };
+    let returned = handle_body(program, &mut function, &Some(return_type), body);
 
-    let returned = handle_body(program, &mut function, body);
-
-    function.variables.pop_scope();
+    function.pop_vars_scope();
 
     if returns_void {
         if !returned {
@@ -215,8 +182,13 @@ pub use expression::*;
 mod types;
 use types::*;
 
-fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<NodeInfo>) -> bool {
-    function.variables.push_scope();
+fn handle_body(
+    program: &mut ProgramCtx,
+    function: &mut FunctionCtx,
+    return_type: &Option<Type>,
+    nodes: Vec<NodeInfo>,
+) -> bool {
+    function.push_vars_scope();
 
     let mut namespaces = 0;
     for info in &nodes {
@@ -249,9 +221,14 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
                 data_type,
                 expression,
             ),
-            Node::Loop { condition, body } => {
-                handle_loop(program, function, info.location, condition, body)
-            }
+            Node::Loop { condition, body } => handle_loop(
+                program,
+                function,
+                return_type,
+                info.location,
+                condition,
+                body,
+            ),
             Node::IfStatement {
                 expression,
                 body,
@@ -260,6 +237,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             } => handle_ifstatement(
                 program,
                 function,
+                return_type,
                 info.location,
                 expression,
                 body,
@@ -268,22 +246,14 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
             Node::SetVariable { name, expression } => {
                 handle_set_variable(program, function, info.location, name, expression)
             }
-
             Node::Call(path, arguments) => {
                 handle_call(program, function, None, &info.location, path, arguments)
             }
             Node::Break => handle_break(program, function, info.location),
             Node::Continue => handle_continue(program, function, info.location),
-            Node::Scope(body) => returned = handle_body(program, function, body),
-
+            Node::Scope(body) => returned = handle_body(program, function, return_type, body),
             Node::Return(expression) => {
-                handle_return(
-                    program,
-                    function,
-                    info.location,
-                    function.return_type,
-                    expression,
-                );
+                handle_return(program, function, info.location, &function.return_type.clone(), expression);
                 returned = true;
                 break;
             }
@@ -297,7 +267,7 @@ fn handle_body(program: &mut ProgramCtx, function: &mut FunctionCtx, nodes: Vec<
         }
     }
 
-    function.variables.pop_scope();
+    function.pop_vars_scope();
 
     for _ in 0..namespaces {
         program.namespaces.pop();

@@ -4,25 +4,26 @@ use crate::compiler::{
     parser::{Node, NodeInfo},
 };
 
-use super::{body::parse_body, expression::parse_expression};
-pub fn parse_ifstatement(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
-    let expression = parse_expression(tokens, true)?.unwrap();
-    tokens.expect_tokens(vec![Token::StartScope], false)?;
+impl Tokens {
+    pub fn parse_ifstatement(&mut self) -> CompileResult<NodeInfo> {
+        let expression = self.parse_expression(true)?.unwrap();
+        self.expect_tokens(vec![Token::StartScope], false)?;
 
-    let body = parse_body(tokens)?;
+        let body = self.parse_body()?;
 
-    let else_body = if tokens.peek_expect_tokens(vec![Token::Else], true).is_some() {
-        tokens.expect_tokens(vec![Token::StartScope], false)?;
-        let body = parse_body(tokens)?;
-        Some(body)
-    } else {
-        None
-    };
+        let else_body = if self.peek_expect_tokens(vec![Token::Else], true).is_some() {
+            self.expect_tokens(vec![Token::StartScope], false)?;
+            let body = self.parse_body()?;
+            Some(body)
+        } else {
+            None
+        };
 
-    return Ok(tokens.create_node(Node::IfStatement {
-        expression,
-        body,
-        elseif: Vec::new(),
-        else_body,
-    }));
+        return Ok(self.create_node(Node::IfStatement {
+            expression,
+            body,
+            elseif: Vec::new(),
+            else_body,
+        }));
+    }
 }

@@ -4,28 +4,27 @@ use crate::compiler::{
     parser::{Node, NodeInfo},
 };
 
-use super::{body::parse_body, expression::parse_expression};
+impl Tokens {
+    pub fn parse_loop(&mut self) -> CompileResult<NodeInfo> {
+        let _ = self.expect_tokens(vec![Token::StartScope], false);
 
-pub fn parse_loop(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
-    let _ = tokens.expect_tokens(vec![Token::StartScope], false);
+        let body = self.parse_body()?;
 
-    let body = parse_body(tokens)?;
+        return Ok(self.create_node(Node::Loop {
+            condition: None,
+            body,
+        }));
+    }
 
-    return Ok(tokens.create_node(Node::Loop {
-        condition: None,
-        body,
-    }));
-}
+    pub fn parse_while(&mut self) -> CompileResult<NodeInfo> {
+        let expression = self.parse_expression(true)?.unwrap();
+        let _ = self.expect_tokens(vec![Token::StartScope], false);
 
+        let body = self.parse_body()?;
 
-pub fn parse_while(tokens: &mut Tokens) -> CompileResult<NodeInfo> {
-    let expression = parse_expression(tokens, true)?.unwrap();
-    let _ = tokens.expect_tokens(vec![Token::StartScope], false);
-
-    let body = parse_body(tokens)?;
-
-    return Ok(tokens.create_node(Node::Loop {
-        condition: Some(expression),
-        body,
-    }));
+        return Ok(self.create_node(Node::Loop {
+            condition: Some(expression),
+            body,
+        }));
+    }
 }

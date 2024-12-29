@@ -1,6 +1,5 @@
 mod analyzer;
 mod node;
-mod variables;
 mod types;
 
 pub use types::*;

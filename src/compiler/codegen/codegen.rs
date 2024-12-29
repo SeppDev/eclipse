@@ -102,7 +102,7 @@ start:
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FunctionOperations {
     body: BetterString,
 }

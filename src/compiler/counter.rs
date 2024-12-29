@@ -5,7 +5,7 @@ const CHARS: [char; 26] = [
 
 const CHARS_LEN: usize = CHARS.len();
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct NameCounter {
     count: usize,
 }

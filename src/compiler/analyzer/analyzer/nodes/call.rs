@@ -1,5 +1,5 @@
 use crate::compiler::{
-    analyzer::{analyzer::what_type, handle_expression, FunctionCtx, IRType, IRValue, ProgramCtx},
+    analyzer::{analyzer::{program::ProgramCtx, what_type}, handle_expression, FunctionCtx, IRType, IRValue},
     errors::Location,
     parser::ExpressionInfo,
     path::Path,
@@ -16,7 +16,7 @@ pub fn handle_call(
 ) {
     let found = match program
         .types
-        .get_function(function.relative_path, &path, program.namespaces)
+        .get_function(function.relative_path, &path, &program.namespaces)
     {
         Some(f) => f,
         None => {
@@ -55,7 +55,7 @@ pub fn handle_call(
         let info = arguments.pop().unwrap();
 
         let data_type = what_type(program, function, &info.location, Some(param_type), &info);
-        let value = handle_expression(program, function, &location, None, false, &data_type, info);
+        let value = handle_expression(program, function, &location, None, &data_type, info);
 
         let ir_type = if param_type.base.is_basic() {
             param_type.convert()
@@ -85,10 +85,10 @@ pub fn handle_call(
                     arguments: ir_arguments,
                 },
             );
-            
+
             return;
         }
-        
+
         // function.operations.allocate(&destination, &data_type.convert());
         return_pointers.push((data_type.convert(), destination.clone()))
     }

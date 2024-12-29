@@ -1,8 +1,7 @@
 use crate::compiler::{
     errors::{CompileCtx, CompileResult, Location, Message},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
-    path::Path,
-    types::ReferenceState,
+    path::Path
 };
 
 use super::{Token, TokenInfo};
@@ -11,8 +10,10 @@ use std::{iter::Peekable, vec::IntoIter};
 #[derive(Debug)]
 pub struct Tokens {
     pub relative_file_path: Path,
+    
     start_on_next: bool,
     messages: Vec<Message>,
+    result_messages: Vec<String>,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
     tokens: Peekable<IntoIter<TokenInfo>>,
@@ -22,6 +23,7 @@ impl Tokens {
         return Self {
             relative_file_path,
             start_on_next: false,
+            result_messages: Vec::new(),
             messages: Vec::new(),
             starts: Vec::new(),
             current: None,
@@ -35,10 +37,19 @@ impl Tokens {
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
+    pub fn result_print(&mut self, message: String) {
+        self.result_messages.push(message);
+    }
 
     pub fn finish(self, debug: &mut CompileCtx) {
         for message in self.messages {
             debug.push(self.relative_file_path.clone(), message);
+        }
+        for message in self.result_messages {
+            debug.result_print(message)
+        }
+        if self.starts.len() > 0 {
+            debug.result_print("Failed to use all the start nodes!");
         }
     }
     pub fn current(&self) -> &TokenInfo {
@@ -70,12 +81,11 @@ impl Tokens {
 
         ExpressionInfo {
             expression,
-            ref_state: ReferenceState::None,
             location,
         }
     }
     pub fn start(&mut self) -> CompileResult<TokenInfo> {
-        let token = self.advance()?;
+        let token = self.advance()?; 
         self.starts.push(token.clone());
         Ok(token)
     }

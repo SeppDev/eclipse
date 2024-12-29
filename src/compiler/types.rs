@@ -95,7 +95,6 @@ impl BaseType {
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Type {
     pub base: BaseType,
-    pub mutable: bool,
     pub ref_state: ReferenceState,
 }
 impl std::fmt::Display for Type {
@@ -119,25 +118,29 @@ impl Type {
         return Self::new(BaseType::Boolean)
     }
     pub fn bytes(&self) -> usize {
-        if self.is_pointing() {
+        if self.pointers() > 0 {
             return POINTER_WITH;
         }
         self.base.bytes()
     }
-    pub fn is_pointing(&self) -> bool {
-        return !matches!(&self.ref_state, ReferenceState::None);
+    pub fn pointers(&self) -> usize {
+        return match self.ref_state {
+            ReferenceState::Pointer(p) => p,
+            ReferenceState::Shared | ReferenceState::Mutable => 1,
+            ReferenceState::None => 0,
+        }
     }
     pub fn reference(base: BaseType) -> Self {
-        let mut s = Self::default();
-        s.base = base;
-        let _ = s.add_reference();
-        return s;
+        Self {
+            ref_state: ReferenceState::Shared,
+            base
+        }
     }
     pub fn pointer(base: BaseType) -> Self {
-        let mut s = Self::default();
-        s.base = base;
-        let _ = s.add_pointer();
-        return s;
+        Self {
+            ref_state: ReferenceState::Pointer(1),
+            base
+        }
     }
     pub fn void() -> Self {
         let mut s = Self::default();
@@ -174,57 +177,46 @@ impl std::fmt::Display for ReferenceState {
         )
     }
 }
-pub trait ReferenceManager {
-    fn add_pointer(&mut self) -> CompileResult<()>;
-    fn add_reference(&mut self) -> CompileResult<()>;
-}
 
 impl Type {
     pub fn to_mutable(mut self) -> CompileResult<Type> {
         if matches!(self.ref_state, ReferenceState::None) {
             return Err(());
         }
-        self.mutable = true;
+        self.ref_state = ReferenceState::Mutable;
         return Ok(self);
     }
     pub fn to_reference(mut self) -> CompileResult<Type> {
-        self.add_reference()?;
-        return Ok(self);
-    }
-    pub fn to_pointer(mut self) -> CompileResult<Type> {
-        self.add_pointer()?;
-        return Ok(self);
-    }
-    // pub fn is_reference(&self) -> bool {
-    //     return matches!(
-    //         self.ref_state,
-    //         ReferenceState::Mutable | ReferenceState::Shared
-    //     );
-    // }
-    // pub fn is_pointer(&self) -> Option<usize> {
-    //     match &self.ref_state {
-    //         ReferenceState::Pointer(p) => Some(p.clone()),
-    //         _ => None,
-    //     }
-    // }
-}
-
-impl ReferenceManager for Type {
-    fn add_reference(&mut self) -> CompileResult<()> {
         match self.ref_state {
             ReferenceState::None | ReferenceState::Shared => {
                 self.ref_state = ReferenceState::Shared
             }
             _ => return Err(()),
         }
-        return Ok(());
+        return Ok(self);
     }
-    fn add_pointer(&mut self) -> CompileResult<()> {
+    pub fn add_pointer(mut self) -> CompileResult<Type> {
         match self.ref_state {
             ReferenceState::None => self.ref_state = ReferenceState::Pointer(1),
             ReferenceState::Pointer(p) => self.ref_state = ReferenceState::Pointer(p + 1),
             _ => return Err(()),
         }
-        return Ok(());
+        return Ok(self);
+    }
+    pub fn remove_pointer(mut self) -> CompileResult<Type> {
+        match self.ref_state {
+            ReferenceState::Pointer(p) if p > 1 => self.ref_state = ReferenceState::Pointer(p - 1),
+            ReferenceState::Pointer(_) => self.ref_state = ReferenceState::None,
+            _ => return Err(()),
+        }
+        return Ok(self);
+    }
+    pub fn dereference(mut self) -> CompileResult<Type> {
+        match self.ref_state {
+            ReferenceState::Mutable | ReferenceState::Shared => self.ref_state = ReferenceState::None,
+            _ => return Err(()),
+        }
+        return Ok(self);
     }
 }
+

@@ -1,8 +1,9 @@
 use crate::compiler::{
-    analyzer::{FunctionCtx, IRType, IRValue, ProgramCtx},
+    analyzer::{analyzer::program::ProgramCtx, FunctionCtx, IRType, IRValue},
     errors::Location,
     parser::{Expression, ExpressionInfo},
-    types::Type, POINTER_WITH,
+    types::Type,
+    POINTER_WITH,
 };
 
 use super::handle_expression;
@@ -63,7 +64,7 @@ pub fn handle_array_store(
     }
 
     for (index, item) in items.into_iter().enumerate() {
-        let key_ptr = function.variables.increment();
+        let key_ptr = function.increment_key();
 
         function.operations.getelementptr_inbounds(
             &key_ptr,
@@ -73,6 +74,13 @@ pub fn handle_array_store(
             &IRValue::IntLiteral(format!("{}", index * item_size + offset)),
         );
 
-        handle_expression(program, function, location, Some(&key_ptr), false, item_type, item);
+        handle_expression(
+            program,
+            function,
+            location,
+            Some(&key_ptr),
+            item_type,
+            item,
+        );
     }
 }

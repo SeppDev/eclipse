@@ -2,16 +2,9 @@ use crate::compiler::{
     errors::CompileResult,
     parser::{ArithmeticOperator, Expression, ExpressionInfo, Node, NodeInfo},
     path::Path,
-    types::ReferenceState,
 };
 
-use super::{
-    super::super::lexer::{Token, Tokens},
-    arguments::parse_arguments,
-    expression::parse_expression,
-    path::parse_path,
-    variable::parse_set_variable,
-};
+use super::super::super::lexer::{Token, Tokens};
 impl Tokens {
     pub fn parse_identifier(&mut self) -> CompileResult<String> {
         let current = self.current().clone();
@@ -27,72 +20,73 @@ impl Tokens {
         }
         return Ok("x".to_string());
     }
-}
+    pub fn parse_after_identifier(&mut self, name: String) -> CompileResult<NodeInfo> {
+        let info = self.peek_require_tokens(vec![
+            Token::OpenParen,
+            Token::Equals,
+            Token::PlusEquals,
+            Token::SubtractEquals,
+            Token::DivideEquals,
+            Token::MultiplyEquals,
+            Token::PercentEquals,
+            Token::DoubleColon,
+        ])?;
 
-pub fn parse_after_identifier(tokens: &mut Tokens, name: String) -> CompileResult<NodeInfo> {
-    let info = tokens.peek_require_tokens(vec![
-        Token::OpenParen,
-        Token::Equals,
-        Token::PlusEquals,
-        Token::SubtractEquals,
-        Token::DivideEquals,
-        Token::MultiplyEquals,
-        Token::PercentEquals,
-        Token::DoubleColon,
-    ])?;
-
-    match info.token {
-        Token::DoubleColon => {
-            let path = parse_path(tokens, &name)?;
-            let _ = tokens.expect_tokens(vec![Token::OpenParen], false);
-            let arguments = parse_arguments(tokens)?;
-            return Ok(tokens.create_node(Node::Call(path, arguments)));
+        match info.token {
+            Token::DoubleColon => {
+                let path = self.parse_path(&name)?;
+                let _ = self.expect_tokens(vec![Token::OpenParen], false);
+                let arguments = self.parse_arguments()?;
+                return Ok(self.create_node(Node::Call(path, arguments)));
+            }
+            _ => {}
         }
-        _ => {}
+
+        self.advance()?;
+        return Ok(match info.token {
+            Token::OpenParen => {
+                let arguments = self.parse_arguments()?;
+                self.create_node(Node::Call(Path::from(&name), arguments))
+            }
+            Token::Equals => self.parse_set_variable(name.clone())?,
+            Token::PlusEquals
+            | Token::SubtractEquals
+            | Token::MultiplyEquals
+            | Token::DivideEquals
+            | Token::PercentEquals => {
+                let variable = ExpressionInfo {
+                    location: info.location.clone(),
+                    expression: Expression::GetVariable(Path::from(&name)),
+                };
+                let expression = self.parse_expression(true)?.unwrap();
+
+                let operator = match info.token {
+                    Token::PlusEquals => ArithmeticOperator::Plus,
+                    Token::SubtractEquals => ArithmeticOperator::Subtract,
+                    Token::MultiplyEquals => ArithmeticOperator::Multiply,
+                    Token::DivideEquals => ArithmeticOperator::Division,
+                    Token::PercentEquals => ArithmeticOperator::Modulus,
+                    _ => panic!(),
+                };
+
+                let binary_expression =
+                    Expression::BinaryOperation(Box::new(variable), operator, Box::new(expression));
+
+                let binary_expression = ExpressionInfo {
+                    location: info.location.clone(),
+                    expression: binary_expression,
+                };
+
+                return Ok(self.create_node(Node::SetVariable {
+                    name,
+                    expression: Some(binary_expression),
+                }));
+            }
+            _ => {
+                let message = format!("{info:#?} {name}");
+                self.error(info.location, message);
+                return Err(());
+            }
+        });
     }
-
-    tokens.advance()?;
-    return Ok(match info.token {
-        Token::OpenParen => {
-            let arguments = parse_arguments(tokens)?;
-            tokens.create_node(Node::Call(Path::from(&name), arguments))
-        }
-        Token::Equals => parse_set_variable(tokens, name.clone())?,
-        Token::PlusEquals | Token::SubtractEquals | Token::MultiplyEquals | Token::DivideEquals | Token::PercentEquals => {
-            let variable = ExpressionInfo {
-                location: info.location.clone(),
-                ref_state: ReferenceState::None,
-                expression: Expression::GetVariable(name.clone()),
-            };
-            let expression = parse_expression(tokens, true)?.unwrap();
-
-            let operator = match info.token {
-                Token::PlusEquals => ArithmeticOperator::Plus,
-                Token::SubtractEquals => ArithmeticOperator::Subtract,
-                Token::MultiplyEquals => ArithmeticOperator::Multiply,
-                Token::DivideEquals => ArithmeticOperator::Division,
-                Token::PercentEquals => ArithmeticOperator::Modulus,
-                _ => panic!(),
-            };
-
-            let binary_expression =
-                Expression::BinaryOperation(Box::new(variable), operator, Box::new(expression));
-
-            let binary_expression = ExpressionInfo {
-                location: info.location.clone(),
-                ref_state: ReferenceState::None,
-                expression: binary_expression,
-            };
-
-            return Ok(tokens.create_node(Node::SetVariable {
-                name,
-                expression: Some(binary_expression),
-            }));
-        }
-        _ => {
-            let message = format!("{info:#?} {name}");
-            tokens.error(info.location, message);
-            return Err(());
-        }
-    });
 }
