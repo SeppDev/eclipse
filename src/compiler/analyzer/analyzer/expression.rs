@@ -5,13 +5,14 @@ use crate::compiler::{
     analyzer::{FunctionCtx, IRType, IRValue},
     errors::Location,
     parser::{Expression, ExpressionInfo, Value},
-    types::Type,
+    types::{BaseType, Type},
+    POINTER_WITH,
 };
 
 mod array;
 pub use array::handle_array_store;
 
-use super::program::ProgramCtx;
+use super::{program::ProgramCtx, what_type};
 
 // pub fn handle_read(
 //     program: &mut ProgramCtx,
@@ -85,23 +86,64 @@ pub fn handle_expression(
                 .load_from_pointer(&result, &data_type.convert(), &pointer);
             IRValue::Variable(result)
         }
-        // Expression::GetVariable(name) if data_type.pointers() > 0 => {
-        //     let variable = function.read_variable(&name).unwrap();
-        //     IRValue::Variable(variable.key.clone())
-        // }
-        // Expression::GetVariable(name) => {
-        //     let result = function.increment_key();
-        //     let variable = function.read_variable(&name).unwrap().clone();
+        Expression::GetVariable(name) if data_type.pointers() > 0 => {
+            let variable = function.read_variable(&name).unwrap();
+            IRValue::Variable(variable.key.clone())
+        }
+        Expression::GetVariable(name) => {
+            let result = function.increment_key();
+            let variable = function.read_variable(&name).unwrap().clone();
 
-        //     function
-        //         .operations
-        //         .load_from_pointer(&result, &data_type.convert(), &variable.key);
-        //     IRValue::Variable(result)
-        // }
+            function
+                .operations
+                .load_from_pointer(&result, &data_type.convert(), &variable.key);
+            IRValue::Variable(result)
+        }
+        Expression::Field(value, field) => {
+            let pointer = function.increment_key();
+            let object = handle_expression(program, function, location, Some(&pointer), data_type, *value);
+            return IRValue::Null;
+        }
+        Expression::Struct(_, fields) => {
+            let structure = if let BaseType::Struct(structure) = &data_type.base {
+                structure
+            } else {
+                todo!()
+            };
+            let destination = if let Some(destination) = destination {
+                destination
+            } else {
+                todo!()
+            };
+
+            for (key, value) in fields {
+                let (field_type, offset) = structure.get_info(&key).unwrap();
+                let pointer = function.increment_key();
+                function.operations.getelementptr_inbounds(
+                    &pointer,
+                    &data_type.convert(),
+                    destination,
+                    &IRType::Integer(POINTER_WITH),
+                    &IRValue::IntLiteral(offset.to_string()),
+                );
+
+                let field_type = what_type(program, function, location, Some(field_type), &value);
+                handle_expression(
+                    program,
+                    function,
+                    location,
+                    Some(&pointer),
+                    &field_type,
+                    value,
+                );
+            }
+
+            return IRValue::Null;
+        }
         expression => {
             program
                 .debug
-                .error(location.clone(), format!("TODO: {expression:?}"));
+                .error(location.clone(), format!("TODO: {expression:#?}"));
             return IRValue::Null;
         }
     };

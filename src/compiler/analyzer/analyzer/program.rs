@@ -1,4 +1,8 @@
-use crate::compiler::{analyzer::ProgramTypes, codegen::CodeGen, errors::CompileCtx, path::Path};
+use crate::compiler::{
+    analyzer::ProgramTypes, codegen::CodeGen, errors::CompileCtx, path::Path, types::Type,
+};
+
+use super::FunctionCtx;
 
 #[derive(Debug)]
 pub struct ProgramCtx<'a> {
@@ -15,5 +19,9 @@ impl<'a> ProgramCtx<'a> {
             codegen: CodeGen::new(),
             namespaces: Vec::new(),
         }
+    }
+    pub fn get_type(&self, function: &FunctionCtx, path: &Path) -> Option<&Type> {
+        self.types
+            .get_type(function.relative_file_path, &path, &self.namespaces)
     }
 }

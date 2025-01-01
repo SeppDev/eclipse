@@ -56,7 +56,7 @@ impl Tokens {
             | Token::PercentEquals => {
                 let variable = ExpressionInfo {
                     location: info.location.clone(),
-                    expression: Expression::GetVariable(Path::from(&name)),
+                    expression: Expression::GetVariable(name.clone()),
                 };
                 let expression = self.parse_expression(true)?.unwrap();
 

@@ -58,7 +58,7 @@ fn compile(
 
     let mut ctx = ProgramCtx::new(debug, &types);
     analyze(&mut ctx, program)?;
-    ctx.debug.throw(true);
+    ctx.debug.throw(false);
 
     ctx.debug.set_status("Building");
 

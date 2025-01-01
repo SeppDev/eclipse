@@ -16,7 +16,7 @@ pub fn handle_call(
 ) {
     let found = match program
         .types
-        .get_function(function.relative_path, &path, &program.namespaces)
+        .get_function(function.relative_file_path, &path, &program.namespaces)
     {
         Some(f) => f,
         None => {

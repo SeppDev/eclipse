@@ -2,7 +2,8 @@ use crate::compiler::{
     analyzer::{IRType, IRValue},
     parser::{ArithmeticOperator, CompareOperator},
     string::BetterString,
-    types::Type, POINTER_WITH,
+    types::Type,
+    POINTER_WITH,
 };
 
 // pub fn codegen(program: IRProgram) -> String {
@@ -21,20 +22,16 @@ use crate::compiler::{
 #[derive(Debug)]
 pub struct CodeGen {
     body: BetterString,
-    functions: Vec<FunctionOperations>,
 }
 impl CodeGen {
     pub fn new() -> Self {
-        Self {
+        let mut gen = Self {
             body: BetterString::new(),
-            functions: Vec::new()
-        }
-    }
-    pub fn generate(mut self) -> String {
-        self.body
+        };
+        gen.body
             .pushln("target triple = \"x86_64-pc-windows-unkown\"\n");
 
-        self.body.pushln(
+        gen.body.pushln(
             "declare i32 @printf(i8*, ...)
 
 declare i32 @rand()
@@ -55,24 +52,18 @@ start:
     ret void
 }",
         );
-
-        for function in self.functions {
-            self.body.push(function.to_string());
-            self.body.pushln("}");
-        }
-
+        return gen;
+    }
+    pub fn generate(self) -> String {
         self.body.to_string()
     }
-    pub fn insert(&mut self, function: FunctionOperations) {
-        self.functions.push(function);
-    }
-    pub fn new_function(
-        &self,
+    pub fn insert(
+        &mut self,
         key: &String,
-        return_type: &Type,
-        parameters: &Vec<(String, IRType)>,
-    ) -> FunctionOperations {
-        let mut body = BetterString::new();
+        return_type: Type,
+        parameters: Vec<(String, IRType)>,
+        operations: Operations,
+    ) {
         let mut params: Vec<String> = Vec::new();
 
         let return_type = if return_type.base.is_basic() {
@@ -90,23 +81,25 @@ start:
                 .collect::<Vec<String>>(),
         );
 
-        body.pushln(format!(
+        self.body.pushln(format!(
             "define {return_type} @{key}({}) {{",
             params.join(", ")
         ));
-        body.pushln("start:");
+        self.body.pushln("start:");
 
-        FunctionOperations {
-            body,
-        }
+        self.body.push(operations.to_string());
+        self.body.push("}\n");
     }
 }
 
 #[derive(Debug, Default)]
-pub struct FunctionOperations {
+pub struct Operations {
     body: BetterString,
 }
-impl FunctionOperations {
+impl Operations {
+    pub fn new() -> Self {
+        Self::default()
+    }
     pub fn to_string(self) -> String {
         self.body.to_string()
     }
@@ -121,9 +114,15 @@ impl FunctionOperations {
         self.body
             .pushln(format!("\tstore {data_type} {value}, ptr %{destination}"));
     }
-    pub fn store_from_pointer(&mut self, data_type: &IRType, pointer: &String, destination: &String) {
-        self.body
-            .pushln(format!("\tstore {data_type} %{pointer}, ptr %{destination}"));
+    pub fn store_from_pointer(
+        &mut self,
+        data_type: &IRType,
+        pointer: &String,
+        destination: &String,
+    ) {
+        self.body.pushln(format!(
+            "\tstore {data_type} %{pointer}, ptr %{destination}"
+        ));
     }
     pub fn xor_boolean(&mut self, destination: &String, value: &IRValue) {
         self.body
@@ -170,7 +169,12 @@ impl FunctionOperations {
             "\t%{destination} = load {destination_type}, ptr {value}"
         ));
     }
-    pub fn load_from_pointer(&mut self, destination: &String, destination_type: &IRType, pointer: &String) {
+    pub fn load_from_pointer(
+        &mut self,
+        destination: &String,
+        destination_type: &IRType,
+        pointer: &String,
+    ) {
         self.body.pushln(format!(
             "\t%{destination} = load {destination_type}, ptr %{pointer}"
         ));

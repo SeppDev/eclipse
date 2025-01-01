@@ -17,17 +17,13 @@ impl Tokens {
             return Ok(self.create_node(Node::Struct { name, fields }));
         };
 
-        loop {
+        while self
+            .peek_expect_tokens(vec![Token::EndScope], true)
+            .is_none()
+        {
             let name = self.parse_identifier()?;
             let data_type = self.parse_type()?;
             fields.push((name, data_type));
-
-            let result = self.expect_tokens(vec![Token::Comma, Token::EndScope], false)?;
-            match result.token {
-                Token::Comma => continue,
-                Token::EndScope => break,
-                _ => panic!(),
-            }
         }
 
         return Ok(self.create_node(Node::Struct { name, fields }));

@@ -57,6 +57,7 @@ pub enum Node {
     },
     Call(Path, Vec<ExpressionInfo>),
     Return(Option<ExpressionInfo>),
+    Result(Option<ExpressionInfo>),
     NameSpace {
         public: bool,
         static_path: Path,
@@ -80,7 +81,7 @@ impl NodeInfo {
 #[derive(Debug)]
 pub enum Expression {
     Value(Value),
-    GetVariable(Path),
+    GetVariable(String),
     GetPath(Path),
     Field(Box<ExpressionInfo>, String),
     Index(Box<ExpressionInfo>, Box<ExpressionInfo>),
@@ -94,6 +95,7 @@ pub enum Expression {
     Not(Box<ExpressionInfo>),
     Reference(Box<ExpressionInfo>),
     DeReference(Box<ExpressionInfo>),
+    Struct(Path, Vec<(String, ExpressionInfo)>)
 }
 
 #[derive(Debug)]
@@ -101,25 +103,6 @@ pub struct ExpressionInfo {
     pub location: Location,
     pub expression: Expression,
 }
-// impl ReferenceManager for ExpressionInfo {
-//     fn add_pointer(&mut self) -> CompileResult<()> {
-//         match self.ref_state {
-//             ReferenceState::None => self.ref_state = ReferenceState::Pointer(1),
-//             ReferenceState::Pointer(p) => self.ref_state = ReferenceState::Pointer(p + 1),
-//             _ => return Err(()),
-//         }
-//         return Ok(());
-//     }
-//     fn add_reference(&mut self) -> CompileResult<()> {
-//         match self.ref_state {
-//             ReferenceState::None | ReferenceState::Shared => {
-//                 self.ref_state = ReferenceState::Shared
-//             }
-//             _ => return Err(()),
-//         }
-//         return Ok(());
-//     }
-// }
 
 #[derive(Debug)]
 pub enum ArithmeticOperator {

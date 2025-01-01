@@ -3,6 +3,7 @@ use crate::compiler::{
     lexer::{Token, Tokens},
     parser::{ArithmeticOperator, CompareOperator, Expression, ExpressionInfo, Value},
     path::Path,
+    types::Type,
 };
 
 impl Tokens {
@@ -97,9 +98,25 @@ impl Tokens {
                     .is_some()
                 {
                     let path = self.parse_path(&name)?;
-                    Expression::GetPath(path)
+                    match self.peek().token {
+                        Token::StartScope => {
+                            self.advance()?;
+                            Expression::Struct(path, self.parse_struct_expression_fields()?)
+                        }
+                        _ => Expression::GetPath(path),
+                    }
                 } else {
-                    Expression::GetVariable(Path::from(name))
+                    match self.peek().token {
+                        Token::OpenParen => Expression::GetPath(Path::from(name)),
+                        Token::StartScope => {
+                            self.advance()?;
+                            Expression::Struct(
+                                Path::from(name),
+                                self.parse_struct_expression_fields()?,
+                            )
+                        }
+                        _ => Expression::GetVariable(name),
+                    }
                 }
             }
             _ => panic!(),
@@ -197,5 +214,19 @@ impl Tokens {
 
         info.location = first_location;
         return Ok(Some(info));
+    }
+    fn parse_struct_expression_fields(&mut self) -> CompileResult<Vec<(String, ExpressionInfo)>> {
+        let mut fields = Vec::new();
+        while self
+            .peek_expect_tokens(vec![Token::EndScope], true)
+            .is_none()
+        {
+            let name = self.parse_identifier()?;
+            self.expect_tokens(vec![Token::Colon], false)?;
+            let expression = self.parse_expression(true)?.unwrap();
+            self.peek_expect_tokens(vec![Token::Comma], true);
+            fields.push((name, expression))
+        }
+        return Ok(fields);
     }
 }

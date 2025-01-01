@@ -73,10 +73,7 @@ impl Tokens {
             "f64" => Type::new(BaseType::Float64),
             "bool" => Type::new(BaseType::Boolean),
             "!" => Type::new(BaseType::Never),
-            str => {
-                self.error(info.location.clone(), format!("Expected type, got {}", str));
-                Type::void()
-            }
+            str => Type::new(BaseType::GetType(self.parse_path(&str.to_string())?)),
         };
         return Ok(t);
     }

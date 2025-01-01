@@ -1,5 +1,5 @@
 use crate::compiler::{
-    errors::{CompileCtx, CompileResult, Location, Message},
+    errors::{CompileCtx, CompileResult, Location, CompileMessage},
     parser::{Expression, ExpressionInfo, Node, NodeInfo},
     path::Path
 };
@@ -12,7 +12,7 @@ pub struct Tokens {
     pub relative_file_path: Path,
     
     start_on_next: bool,
-    messages: Vec<Message>,
+    messages: Vec<CompileMessage>,
     result_messages: Vec<String>,
     current: Option<TokenInfo>,
     starts: Vec<TokenInfo>,
@@ -31,8 +31,8 @@ impl Tokens {
         };
     }
 
-    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::error(message.to_string());
+    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut CompileMessage {
+        let mut message = CompileMessage::error(message.to_string());
         message.push("", location);
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
@@ -49,7 +49,7 @@ impl Tokens {
             debug.result_print(message)
         }
         if self.starts.len() > 0 {
-            debug.result_print("Failed to use all the start nodes!");
+            debug.result_print(format!("Failed to use all the start nodes! {:#?}", self.starts));
         }
     }
     pub fn current(&self) -> &TokenInfo {

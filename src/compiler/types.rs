@@ -1,11 +1,11 @@
-use super::{errors::CompileResult, POINTER_WITH};
+use super::{analyzer::CustomStruct, errors::CompileResult, path::Path, POINTER_WITH};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum BaseType {
     #[default]
-    Never,
     Void,
-    
+    Never,
+
     Usize,
     ISize,
     UInt(usize),
@@ -19,6 +19,9 @@ pub enum BaseType {
 
     Tuple(Vec<Type>),
     Array(usize, Box<Type>),
+    
+    Struct(CustomStruct),
+    GetType(Path),
 }
 impl std::fmt::Display for BaseType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -37,6 +40,8 @@ impl std::fmt::Display for BaseType {
                 Self::Never => "!".to_string(),
                 Self::StaticString => "str".to_string(),
                 Self::Array(size, t) => format!("[{t}; {size}]"),
+                Self::Struct(structure) => format!("{}", structure.name),
+                Self::GetType(path) => format!("{path}"),
                 Self::Tuple(ts) => format!(
                     "({})",
                     ts.into_iter()
@@ -51,7 +56,7 @@ impl std::fmt::Display for BaseType {
 
 impl BaseType {
     pub fn is_basic(&self) -> bool {
-        return self.is_number() || self.is_bool() || self.is_void()
+        return self.is_number() || self.is_bool() || self.is_void();
     }
     pub fn is_number(&self) -> bool {
         return self.is_integer() || self.is_float();
@@ -60,7 +65,10 @@ impl BaseType {
         matches!(&self, Self::Void)
     }
     pub fn is_integer(&self) -> bool {
-        matches!(&self, Self::UInt(_) | Self::Int(_) | Self::ISize | Self::Usize)
+        matches!(
+            &self,
+            Self::UInt(_) | Self::Int(_) | Self::ISize | Self::Usize
+        )
     }
     pub fn is_float(&self) -> bool {
         matches!(&self, Self::Float32 | Self::Float64)
@@ -79,6 +87,8 @@ impl BaseType {
             Self::Float64 => 8,
             Self::Never | BaseType::Void => 0,
             Self::Boolean => 1,
+            Self::GetType(_) => todo!(),
+            Self::Struct(structure) => structure.size,
             Self::Array(size, data_type) => data_type.bytes() * size,
             Self::Tuple(types) => {
                 let mut size = 0;
@@ -115,7 +125,7 @@ impl Type {
         return s;
     }
     pub fn boolean() -> Self {
-        return Self::new(BaseType::Boolean)
+        return Self::new(BaseType::Boolean);
     }
     pub fn bytes(&self) -> usize {
         if self.pointers() > 0 {
@@ -128,18 +138,18 @@ impl Type {
             ReferenceState::Pointer(p) => p,
             ReferenceState::Shared | ReferenceState::Mutable => 1,
             ReferenceState::None => 0,
-        }
+        };
     }
     pub fn reference(base: BaseType) -> Self {
         Self {
             ref_state: ReferenceState::Shared,
-            base
+            base,
         }
     }
     pub fn pointer(base: BaseType) -> Self {
         Self {
             ref_state: ReferenceState::Pointer(1),
-            base
+            base,
         }
     }
     pub fn void() -> Self {
@@ -213,10 +223,11 @@ impl Type {
     }
     pub fn dereference(mut self) -> CompileResult<Type> {
         match self.ref_state {
-            ReferenceState::Mutable | ReferenceState::Shared => self.ref_state = ReferenceState::None,
+            ReferenceState::Mutable | ReferenceState::Shared => {
+                self.ref_state = ReferenceState::None
+            }
             _ => return Err(()),
         }
         return Ok(self);
     }
 }
-

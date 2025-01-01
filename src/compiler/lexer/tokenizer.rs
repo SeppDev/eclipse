@@ -96,21 +96,28 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
 fn match_token(word: &String) -> Option<Token> {
     let token = match &word[..] {
         "func" => Token::Function,
-        "mut" => Token::Mutable,
         "if" => Token::If,
         "else" => Token::Else,
         "elseif" => Token::ElseIf,
-        "return" => Token::Return,
+        
+        "mut" => Token::Mutable,
         "var" => Token::Variable,
+        
         "true" => Token::Boolean(true),
         "false" => Token::Boolean(false),
+        
         "pub" => Token::Pub,
         "import" => Token::Import,
         "use" => Token::Use,
+        
         "unsafe" => Token::Unsafe,
+        
         "enum" => Token::Enum,
         "struct" => Token::Struct,
-        "give" => Token::Give,
+        
+        "return" => Token::Return,
+        "result" => Token::Result,
+        
         "loop" => Token::Loop,
         "while" => Token::While,
         "break" => Token::Break,

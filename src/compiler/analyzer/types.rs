@@ -9,54 +9,23 @@ use crate::compiler::{
     types::{BaseType, Type},
 };
 
-#[derive(Debug)]
-struct FieldMap<Key: Eq + PartialEq, Value> {
-    fields: Vec<(Key, Value)>,
-}
-impl<Key: Eq + PartialEq, Value> FieldMap<Key, Value> {
-    pub fn new() -> Self {
-        Self { fields: Vec::new() }
-    }
-    pub fn find(&self, key: &Key) -> Option<usize> {
-        for (index, (k, _)) in self.fields.iter().enumerate() {
-            if key != k {
-                continue;
-            }
-            return Some(index);
-        }
-        return None;
-    }
-    pub fn insert(&mut self, key: Key, value: Value) -> Result<(), Value> {
-        let removed = match self.find(&key) {
-            Some(index) => Some(self.fields.swap_remove(index)),
-            None => None,
-        };
-
-        self.fields.push((key, value));
-
-        return match removed {
-            Some((_, value)) => Err(value),
-            None => Ok(()),
-        };
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CustomEnum {
     offsets: HashMap<String, usize>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CustomStruct {
     pub size: usize,
-    fields: FieldMap<String, Type>,
-    offsets: HashMap<String, usize>,
+    pub name: String,
+    pub key: String,
+    fields: HashMap<String, (Type, usize)>,
+    // offsets: HashMap<String, usize>,
 }
-
-#[derive(Debug)]
-pub enum CustomTypes {
-    Enum(CustomEnum),
-    Struct(CustomStruct),
+impl CustomStruct {
+    pub fn get_info(&self, key: &String) -> Option<&(Type, usize)> {
+        return self.fields.get(key);
+    }
 }
 
 #[derive(Debug)]
@@ -72,8 +41,6 @@ impl ProgramTypes {
         static_path: &Path,
         namespaces: &Vec<Path>,
     ) -> Option<&Function> {
-        // println!("{namespaces:#?}");
-
         let mut components = static_path.components();
         let mut relative_components = relative_path.components();
 
@@ -116,12 +83,60 @@ impl ProgramTypes {
         }
         return None;
     }
+    pub fn get_type(
+        &self,
+        relative_path: &Path,
+        static_path: &Path,
+        namespaces: &Vec<Path>,
+    ) -> Option<&Type> {
+        let mut components = static_path.components();
+        let mut relative_components = relative_path.components();
+
+        let first_relative = relative_components.remove(0);
+        let mut file = if first_relative == "std" {
+            &self.std
+        } else if components.first().unwrap() == "std" {
+            components.remove(0);
+            relative_components.clear();
+            &self.std
+        } else {
+            &self.src
+        };
+
+        let mut find_path: Vec<String> = Vec::new();
+        let name = components.pop().unwrap();
+
+        find_path.extend_from_slice(&relative_components);
+        find_path.extend_from_slice(&components);
+
+        for component in find_path {
+            file = match file.imports.get(&component) {
+                Some(f) => f,
+                None => return None,
+            };
+        }
+
+        if let Some(data_type) = file.types.get(&name) {
+            return Some(data_type);
+        };
+
+        for namespace in namespaces {
+            let components = namespace.components();
+            let last = components.last().unwrap();
+            if last == &name {
+                if let Some(data_type) = self.get_type(relative_path, &namespace, &Vec::new()) {
+                    return Some(data_type);
+                }
+            }
+        }
+        return None;
+    }
 }
 
 #[derive(Debug)]
 pub struct FileTypes {
     functions: HashMap<String, Function>,
-    types: HashMap<String, CustomTypes>,
+    types: HashMap<String, Type>,
     imports: HashMap<String, FileTypes>,
     // export: bool,
 }
@@ -231,30 +246,29 @@ fn handle_file(
                 let name = take(name);
                 let vec_fields = take(fields);
 
-                let mut fields = FieldMap::new();
-                let mut offsets = HashMap::new();
+                let mut fields = HashMap::new();
 
                 let mut offset = 0;
                 for (key, data_type) in vec_fields {
                     let size = data_type.bytes();
-                    let result = fields.insert(key.clone(), data_type);
+                    let result = fields.insert(key.clone(), (data_type, offset));
 
-                    if result.is_err() {
+                    if result.is_some() {
                         debug.error(info.location.clone(), format!("Duplicate key: {key}"));
                         break;
                     }
 
-                    offsets.insert(key, offset);
                     offset += size;
                 }
 
                 let custom_struct = CustomStruct {
                     fields,
-                    offsets,
+                    name: name.clone(),
+                    key: count.increment(),
                     size: offset,
                 };
 
-                types.types.insert(name, CustomTypes::Struct(custom_struct));
+                types.types.insert(name, Type::new(BaseType::Struct(custom_struct)));
             }
             _ => continue,
         }

@@ -13,6 +13,19 @@ pub fn what_type(
     expected_type: Option<&Type>,
     expression: &ExpressionInfo,
 ) -> Type {
+    let expected_type = match expected_type {
+        Some(dt) => {
+            if let BaseType::GetType(path) = &dt.base {
+                program
+                    .types
+                    .get_type(function.relative_file_path, path, &program.namespaces)
+            } else {
+                Some(dt)
+            }
+        }
+        None => None,
+    };
+
     let infered_type = infere_type(program, function, location, expected_type, expression);
     if let Some(expected) = expected_type {
         if expected != &infered_type {
@@ -84,18 +97,15 @@ fn infere_type(
                 }
             }
 
-                        None => value.default_type(),
+            None => value.default_type(),
         },
-
-            //     match program
-            //         .types
-            //         .get_function(function.relative_path, path, &program.namespaces)
-            //     {
-            //         Some(f) => f,
-            //         None => return Type::void(),
-            //     };
-            // found.return_type.clone()
-        // }
+        Expression::GetVariable(name) => match function.read_variable(name) {
+            Some(var) => var.data_type.clone(),
+            None => match expected_type {
+                Some(t) => t.clone(),
+                None => Type::default(),
+            },
+        },
         Expression::BinaryOperation(a, _, b) => {
             let first = a.as_ref();
             let second = b.as_ref();
@@ -181,6 +191,11 @@ fn infere_type(
             }
             data_type
         }
+        Expression::Struct(path, _) => program
+            .types
+            .get_type(function.relative_file_path, path, &program.namespaces)
+            .unwrap()
+            .clone(),
         _ => todo!("{:#?}", expression),
     };
 }

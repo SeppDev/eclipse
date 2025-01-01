@@ -1,7 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::compiler::{
-    codegen::FunctionOperations, counter::NameCounter, errors::Location, path::Path, types::Type,
+    codegen::Operations,
+    counter::NameCounter,
+    errors::{CompileResult, Location},
+    path::Path,
+    types::Type,
 };
 
 #[derive(Debug)]
@@ -29,8 +33,8 @@ pub struct Variable {
 #[derive(Debug)]
 pub struct FunctionCtx<'a> {
     pub return_type: Option<Type>,
-    pub operations: &'a mut FunctionOperations,
-    pub relative_path: &'a Path,
+    pub operations: &'a mut Operations,
+    pub relative_file_path: &'a Path,
     pub loop_info: Vec<LoopInfo>,
 
     counter: NameCounter,
@@ -40,13 +44,13 @@ pub struct FunctionCtx<'a> {
 impl<'a> FunctionCtx<'a> {
     pub fn new(
         return_type: Option<Type>,
-        operations: &'a mut FunctionOperations,
-        relative_path: &'a Path,
+        operations: &'a mut Operations,
+        relative_file_path: &'a Path,
     ) -> Self {
         Self {
             return_type,
             operations,
-            relative_path,
+            relative_file_path,
             loop_info: Vec::new(),
             counter: NameCounter::new(),
             variable_scopes: Vec::new(),
@@ -72,13 +76,25 @@ impl<'a> FunctionCtx<'a> {
         mutable: bool,
         data_type: Type,
         location: Location,
-    ) {
+    ) -> CompileResult<()> {
         let key = match key {
             Some(k) => k,
             None => self.increment_key(),
         };
-        
-        let _ = self.variable_scopes.last_mut().unwrap().insert(name.clone());
+
+        if name == "_".to_string() {
+            return Ok(());
+        }
+
+        let _ = self
+            .variable_scopes
+            .last_mut()
+            .unwrap()
+            .insert(name.clone());
+
+        if self.variables.get(&name).is_some() {
+            return Err(());
+        }
 
         self.variables.insert(
             name,
@@ -89,8 +105,10 @@ impl<'a> FunctionCtx<'a> {
                 location,
             },
         );
+
+        return Ok(());
     }
-    pub fn read_variable(&self, key: &String) -> Option<&Variable> {
-        return self.variables.get(key);
+    pub fn read_variable(&self, name: &String) -> Option<&Variable> {
+        return self.variables.get(name);
     }
 }

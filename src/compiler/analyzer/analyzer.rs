@@ -1,4 +1,5 @@
 use crate::compiler::{
+    codegen::Operations,
     errors::{CompileResult, Location},
     parser::{Node, NodeInfo, Parameter, ParsedFile},
     path::Path,
@@ -12,8 +13,6 @@ pub use program::ProgramCtx;
 
 mod function;
 pub use function::{FunctionCtx, LoopInfo};
-
-use super::{IRType, IRValue};
 
 pub fn analyze(program: &mut ProgramCtx, mut parsed: ParsedProgram) -> CompileResult<()> {
     handle_file(program, &mut parsed.main);
@@ -90,12 +89,9 @@ fn handle_function(
     return_type: Type,
     body: Vec<NodeInfo>,
 ) {
-    let mut new_params = Vec::new();
-    let mut mutables = Vec::new();
-    let mut operations = program
-        .codegen
-        .new_function(&key, &return_type, &new_params);
+    let mut irparams = Vec::new();
 
+    let mut operations = Operations::new();
     let mut function = FunctionCtx::new(
         Some(return_type.clone()),
         &mut operations,
@@ -103,60 +99,46 @@ fn handle_function(
     );
     function.push_vars_scope();
 
-    for parameter in parameters {
-        let is_basic = parameter.data_type.base.is_basic();
-        let ir_type = if is_basic {
-            parameter.data_type.convert()
-        } else {
-            IRType::Pointer
-        };
-
-        if parameter.mutable && is_basic {
-            if parameter.data_type.pointers() > 0 {
-                program.debug.error(
-                    parameter.location.clone(),
-                    format!("A parameter cannot be mutable if it is a pointer or reference."),
-                );
-            }
-
-            let key = function.increment_key();
-            new_params.push((key.clone(), ir_type));
-            mutables.push((parameter.name, key, parameter.data_type));
-            continue;
-        }
-
-        let key = function.increment_key();
-        function.insert_variable(
-            parameter.name,
-            Some(key.clone()),
-            false,
-            parameter.data_type,
-            parameter.location,
-        );
-        new_params.push((key, ir_type));
+    if !return_type.base.is_basic() {
+        irparams.push(("0".to_string(), return_type.convert()))
     }
 
-    for (name, key, data_type) in mutables {
-        new_params.push((key.clone(), data_type.convert()));
+    for parameter in parameters {
+        let key = if parameter.data_type.base.is_basic() && parameter.data_type.pointers() == 0 {
+            let key = function.increment_key();
+            let destination = function.increment_key();
 
-        let param_key = function.increment_key();
-        function.insert_variable(
-            name,
-            Some(param_key.clone()),
-            true,
-            data_type.clone(),
-            location.clone(),
-        );
+            function
+                .operations
+                .allocate(&key, &parameter.data_type.convert());
+
+            function.operations.store_from_pointer(&parameter.data_type.convert(), &destination, &key);
+
+            irparams.push((destination, parameter.data_type.convert()));
+
+
+            key
+        } else {
+            let key = function.increment_key();
+            irparams.push((key.clone(), IRType::Pointer));
+            key
+        };
 
         function
-            .operations
-            .store(&data_type.convert(), &IRValue::Variable(key), &param_key);
+            .insert_variable(
+                parameter.name,
+                Some(key),
+                false,
+                parameter.data_type,
+                parameter.location,
+            )
+            .unwrap();
     }
 
     let returns_void = return_type.base.is_void();
     let return_expected = format!("Return expected with type {return_type}");
 
-    let returned = handle_body(program, &mut function, &Some(return_type), body);
+    let returned = handle_body(program, &mut function, &Some(return_type.clone()), body);
 
     function.pop_vars_scope();
 
@@ -170,7 +152,9 @@ fn handle_function(
         }
     }
 
-    program.codegen.insert(operations);
+    program
+        .codegen
+        .insert(&key, return_type, irparams, operations);
 }
 
 mod nodes;
@@ -181,6 +165,8 @@ pub use expression::*;
 
 mod types;
 use types::*;
+
+use super::IRType;
 
 fn handle_body(
     program: &mut ProgramCtx,
@@ -253,7 +239,13 @@ fn handle_body(
             Node::Continue => handle_continue(program, function, info.location),
             Node::Scope(body) => returned = handle_body(program, function, return_type, body),
             Node::Return(expression) => {
-                handle_return(program, function, info.location, &function.return_type.clone(), expression);
+                handle_return(
+                    program,
+                    function,
+                    info.location,
+                    &function.return_type.clone(),
+                    expression,
+                );
                 returned = true;
                 break;
             }

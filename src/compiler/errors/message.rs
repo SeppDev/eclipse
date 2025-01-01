@@ -15,14 +15,13 @@ impl std::fmt::Display for MessageVariant {
         }
     }
 }
-
 #[derive(Debug)]
-pub struct Message {
+pub struct CompileMessage {
     pub variant: MessageVariant,
     message: String,
     details: Vec<Detail>,
 }
-impl Message {
+impl CompileMessage {
     pub fn error(message: String) -> Self {
         Self {
             variant: MessageVariant::Error,
@@ -70,7 +69,7 @@ impl CompileCtx {
     }
 }
 
-fn display(relative_path: &Path, message: &Message, lines: &Vec<String>) {
+fn display(relative_path: &Path, message: &CompileMessage, lines: &Vec<String>) {
     println!("{}: {}", message.variant, message.message);
 
     let first = message.details.first().unwrap();

@@ -59,6 +59,7 @@ pub enum IRType {
     Integer(usize),
     Array(usize, Box<IRType>),
     Bytes(usize),
+    Type(String),
     Pointer,
     Float,
     Double,
@@ -97,7 +98,7 @@ impl std::fmt::Display for IRType {
                 Self::Integer(bits) => format!("i{bits}"),
                 Self::PointerType(t) => format!("{t}*"),
                 Self::Pointer => format!("ptr"),
-                // Self::Struct(name) => format!("%{name}",),
+                Self::Type(name) => format!("%{name}",),
                 Self::Tuple(types) => format!("{{ {} }}", {
                     types
                         .iter()
@@ -122,7 +123,9 @@ impl Type {
             BaseType::Int(bits) | BaseType::UInt(bits) => IRType::Integer(bits.clone()),
 
             BaseType::StaticString => todo!(), //IRType::Array(size.clone(), Box::new(IRType::Integer(8))),
-            
+
+            BaseType::GetType(_) => todo!(),
+            BaseType::Struct(_) => IRType::Bytes(self.bytes()),
             // BaseType::Array(size, t) => IRType::Bytes(*size * t.bytes()),
             BaseType::Array(size, t) => IRType::Array(*size, Box::new(t.convert())),
             BaseType::Tuple(dts) => {

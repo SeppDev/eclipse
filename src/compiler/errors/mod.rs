@@ -1,16 +1,11 @@
 mod message;
+pub mod format;
 
 use super::path::Path;
-pub use message::Message;
+pub use message::CompileMessage;
 use message::MessageVariant;
 use std::{
-    borrow::BorrowMut,
-    collections::HashMap,
-    io::Write,
-    ops::Range,
-    process::exit,
-    sync::mpsc::{self, Receiver, Sender},
-    time::Duration,
+    borrow::BorrowMut, collections::HashMap, io::Write, ops::Range, process::exit, sync::mpsc::{self, Receiver, Sender}, time::Duration
 };
 
 pub type CompileResult<T> = Result<T, ()>;
@@ -34,6 +29,7 @@ impl Location {
         Self::single(0, 0)
     }
 }
+
 impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
@@ -44,7 +40,7 @@ impl std::fmt::Display for Location {
     }
 }
 
-type Map = Vec<(Path, Message)>;
+type Map = Vec<(Path, CompileMessage)>;
 
 #[derive(Debug, Default)]
 struct MsgMap {
@@ -111,7 +107,7 @@ impl CompileCtx {
         println!("No debuginfo found, but quitted");
         exit(1)
     }
-    pub fn push(&mut self, relative_file_path: Path, message: Message) {
+    pub fn push(&mut self, relative_file_path: Path, message: CompileMessage) {
         match &message.variant {
             MessageVariant::Warning => self.debuginfo.warnings.push((relative_file_path, message)),
             MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
@@ -151,16 +147,16 @@ impl CompileCtx {
         }
     }
 
-    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::error(message.to_string());
+    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut CompileMessage {
+        let mut message = CompileMessage::error(message.to_string());
         message.push("", location);
         self.debuginfo
             .errors
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.errors.last_mut().unwrap().1.borrow_mut();
     }
-    pub fn warning<T: ToString>(&mut self, location: Location, message: T) -> &mut Message {
-        let mut message = Message::warning(message.to_string());
+    pub fn warning<T: ToString>(&mut self, location: Location, message: T) -> &mut CompileMessage {
+        let mut message = CompileMessage::warning(message.to_string());
         message.push("", location);
         self.debuginfo
             .warnings
