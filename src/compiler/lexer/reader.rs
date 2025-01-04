@@ -8,8 +8,6 @@ pub struct Char {
     pub char: char,
     pub line: usize,
     pub columns: Range<usize>,
-    // pub column: usize,
-    // pub line: usize,
 }
 impl std::fmt::Display for Char {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

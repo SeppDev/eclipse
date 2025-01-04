@@ -32,7 +32,6 @@ pub enum Token {
     Comma,
     Mutable,
     Variable,
-    Give,
     ExclamationMark,
 
     If,
@@ -94,7 +93,7 @@ impl std::fmt::Display for Token {
                 ExclamationMark => "!",
                 EndOfFile => "<eof>",
                 Ampersand => "&",
-                Function => "fn",
+                Function => "function",
                 StartScope => "{",
                 EndScope => "}",
                 OpenParen => "(",
@@ -120,7 +119,6 @@ impl std::fmt::Display for Token {
                 Comma => ",",
                 Mutable => "mut",
                 Variable => "var",
-                Give => "give",
                 If => "if",
                 ElseIf => "elseif",
                 Else => "else",
@@ -152,6 +150,7 @@ impl std::fmt::Display for Token {
         )
     }
 }
+
 
 
 #[derive(Debug, Clone)]

@@ -1,16 +1,16 @@
 use crate::compiler::{
-    errors::{CompileCtx, CompileResult, Location, CompileMessage},
-    parser::{Expression, ExpressionInfo, Node, NodeInfo},
-    path::Path
+    errors::{CompileCtx, CompileMessage, CompileResult, Location},
+    nodes::ast::Located,
+    path::Path,
 };
 
 use super::{Token, TokenInfo};
-use std::{iter::Peekable, vec::IntoIter};
+use std::{fmt::Debug, iter::Peekable, vec::IntoIter};
 
 #[derive(Debug)]
 pub struct Tokens {
     pub relative_file_path: Path,
-    
+
     start_on_next: bool,
     messages: Vec<CompileMessage>,
     result_messages: Vec<String>,
@@ -37,19 +37,19 @@ impl Tokens {
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
-    pub fn result_print(&mut self, message: String) {
-        self.result_messages.push(message);
-    }
 
-    pub fn finish(self, debug: &mut CompileCtx) {
+    pub fn finish(self, ctx: &mut CompileCtx) {
         for message in self.messages {
-            debug.push(self.relative_file_path.clone(), message);
+            ctx.push(self.relative_file_path.clone(), message);
         }
         for message in self.result_messages {
-            debug.result_print(message)
+            ctx.result_print(message)
         }
         if self.starts.len() > 0 {
-            debug.result_print(format!("Failed to use all the start nodes! {:#?}", self.starts));
+            ctx.result_print(format!(
+                "Failed to use all the start nodes! {:#?}",
+                self.starts
+            ));
         }
     }
     pub fn current(&self) -> &TokenInfo {
@@ -58,34 +58,26 @@ impl Tokens {
     pub fn pop_start(&mut self) -> TokenInfo {
         self.starts.pop().unwrap()
     }
-    pub fn create_node(&mut self, node: Node) -> NodeInfo {
-        let start = self.starts.pop().unwrap_or_else(|| {
-            panic!("No starting node for: {:#?}", node);
-        });
-        let current = self.current.clone().unwrap().location;
-        let location = Location::new(
-            start.location.lines.start..current.lines.end,
-            start.location.columns.start..current.columns.end,
-        );
-        NodeInfo { node, location }
-    }
-    pub fn create_expression(&mut self, expression: Expression) -> ExpressionInfo {
-        let start = self.starts.pop().unwrap_or_else(|| {
-            panic!("No starting node for: {:#?}", expression);
-        });
-        let current = self.current.clone().unwrap().location;
-        let location = Location::new(
-            start.location.lines.start..current.lines.end,
-            start.location.columns.start..current.columns.end,
-        );
+    pub fn create_located<T: Debug>(&mut self, raw: T) -> Located<T> {
+        let start = self
+            .starts
+            .pop()
+            .unwrap_or_else(|| panic!("Missing starting node for: {raw:#?}"));
 
-        ExpressionInfo {
-            expression,
-            location,
-        }
+        let current = self.current.clone().unwrap().location;
+        let location = Location::new(
+            start.location.lines.start..current.lines.end,
+            start.location.columns.start..current.columns.end,
+        );
+        Located { location, raw }
     }
     pub fn start(&mut self) -> CompileResult<TokenInfo> {
-        let token = self.advance()?; 
+        let token = self.advance()?;
+        self.starts.push(token.clone());
+        Ok(token)
+    }
+    pub fn start_current(&mut self) -> CompileResult<TokenInfo> {
+        let token = self.current().clone();
         self.starts.push(token.clone());
         Ok(token)
     }
@@ -116,7 +108,6 @@ impl Tokens {
             Token::EndOfFile => {
                 self.error(info.location.clone(), format!("Early {}", info.token));
             }
-
             _ => {}
         }
         self.current = Some(info.clone());

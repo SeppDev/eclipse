@@ -1,11 +1,11 @@
 mod message;
 pub mod format;
 
-use super::path::Path;
+use super::{codegen::target::Target, counter::NameCounter, path::Path};
 pub use message::CompileMessage;
 use message::MessageVariant;
 use std::{
-    borrow::BorrowMut, collections::HashMap, io::Write, ops::Range, process::exit, sync::mpsc::{self, Receiver, Sender}, time::Duration
+    borrow::BorrowMut, collections::HashMap, io::Write, ops::Range, path::PathBuf, process::exit, sync::mpsc::{self, Receiver, Sender}, time::Duration
 };
 
 pub type CompileResult<T> = Result<T, ()>;
@@ -25,8 +25,13 @@ impl Location {
             columns: column..column,
         }
     }
-    pub fn void() -> Self {
-        Self::single(0, 0)
+    pub fn set_start(&mut self, location: &Location) {
+        self.columns.start = location.columns.start;
+        self.lines.start = location.lines.start;
+    }
+    pub fn set_end(&mut self, location: &Location) {
+        self.columns.end = location.columns.end;
+        self.lines.end = location.lines.end;
     }
 }
 
@@ -50,8 +55,11 @@ struct MsgMap {
 
 type Status = Option<String>;
 
-#[derive(Debug)]
 pub struct CompileCtx {
+    pub counter: NameCounter,
+    pub project_dir: PathBuf,
+    pub target: Target,
+    
     debuginfo: MsgMap,
     messages: Vec<String>,
 
@@ -62,7 +70,7 @@ pub struct CompileCtx {
     done: Receiver<()>,
 }
 impl CompileCtx {
-    pub fn new() -> Self {
+    pub fn new(project_dir: PathBuf) -> Self {
         let (sender, receiver) = mpsc::channel::<Status>();
 
         let (done_sender, done) = mpsc::channel();
@@ -90,6 +98,10 @@ impl CompileCtx {
         });
 
         Self {
+            target: Target::new(),
+            counter: NameCounter::new(),
+            project_dir,
+            
             debuginfo: MsgMap::default(),
             messages: Vec::new(),
             lines: HashMap::new(),
@@ -113,7 +125,7 @@ impl CompileCtx {
             MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
     }
-    pub fn set_path(&mut self, path: &Path) {
+    pub fn set_current_path(&mut self, path: &Path) {
         self.current_file_path = path.clone()
     }
 
@@ -123,11 +135,13 @@ impl CompileCtx {
     pub fn result_print<T: ToString>(&mut self, message: T) {
         self.messages.push(message.to_string());
     }
-
-    pub fn finish(&self) {
+    fn stop_status(&self) {
         let _ = self.sender.send(None);
         let _ = self.done.recv_timeout(Duration::from_secs(1));
-
+    }
+    pub fn finish(&self) {
+        self.stop_status();
+        
         for msg in &self.messages {
             println!("{}", msg);
         }
@@ -137,7 +151,7 @@ impl CompileCtx {
         if !has_errors && !finish {
             return;
         }
-        self.finish();
+        self.stop_status();
 
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
