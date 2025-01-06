@@ -1,11 +1,11 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Node, Parameter, RawNode, RawParameter},
+    nodes::ast::{Function, Parameter, RawFunction, RawParameter},
 };
 
 impl Tokens {
-    pub fn parse_function(&mut self, is_main: bool, key: String) -> CompileResult<Node> {
+    pub fn parse_function(&mut self, is_main: bool, key: String) -> CompileResult<Function> {
         let name = self.parse_identifier()?;
         self.expect_tokens(vec![Token::OpenParen], false)?;
 
@@ -58,7 +58,7 @@ impl Tokens {
         self.expect_tokens(vec![Token::StartScope], false)?;
         let body = self.parse_body()?;
 
-        return Ok(self.create_located(RawNode::Function {
+        return Ok(self.create_located(RawFunction {
             key: if is_main && name.raw == "main" {
                 "main".to_string()
             } else {

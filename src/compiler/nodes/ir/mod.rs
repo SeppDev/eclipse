@@ -1,11 +1,28 @@
 mod value;
 pub use value::*;
 
+mod display;
+
+#[derive(Default)]
+pub struct IRModule {
+    pub functions: Vec<Function>,
+}
+
+
+pub struct Function {
+    pub key: String,
+    pub parameters: Vec<(Type, String)>,
+    pub return_type: Type,
+    pub body: Vec<Instruction>
+}
+
 pub enum Instruction {
+    Label(String),
+    Return(Type, Option<Value>),
     Store {
         data_type: Type,
-        value: Value<Primitive>,
-        pointer: Value<Pointer>
+        value: Value,
+        pointer: Value
     },
     Define {
         destination: String,
@@ -15,7 +32,6 @@ pub enum Instruction {
 
 pub enum Operation {
     Allocate(Type),
-    Load()
 }
 
 pub enum Type {
@@ -27,4 +43,5 @@ pub enum Type {
     Reference(String),
     RawPointer,
     Boolean,
+    Void,
 }

@@ -14,6 +14,9 @@ pub type Node = Located<RawNode>;
 pub type Parameter = Located<RawParameter>;
 pub type Field = Located<RawField>;
 pub type Type = Located<RawType>;
+pub type Layout = Located<RawLayout>;
+pub type Function = Located<RawFunction>;
+
 pub type Identifier = Located<String>;
 pub type LocatedPath = Located<Path>;
 
@@ -30,12 +33,8 @@ pub struct RawField {
     pub data_type: Type,
 }
 
-#[derive(Debug, Default)]
-pub enum RawNode {
-    #[default]
-    Unknown,
-    Continue,
-    Break,
+#[derive(Debug)]
+pub enum RawLayout {
     Enum {
         name: Identifier,
         fields: Vec<Identifier>,
@@ -44,20 +43,28 @@ pub enum RawNode {
         name: Identifier,
         fields: Vec<Field>,
     },
-    Function {
-        name: Identifier,
-        key: String,
-        parameters: Vec<Parameter>,
-        return_type: Option<Type>,
-        body: Vec<Node>,
-    },
+}
+
+#[derive(Debug)]
+pub struct RawFunction {
+    pub key: String,
+    pub name: Identifier,
+    pub parameters: Vec<Parameter>,
+    pub return_type: Option<Type>,
+    pub body: Vec<Node>,
+}
+
+#[derive(Debug)]
+pub enum RawNode {
+    Continue,
+    Break,
     SetVariable {
         path: LocatedPath,
         expression: Option<Expression>,
     },
     DeclareVariable {
         name: Identifier,
-        mutable: bool,
+        mutable: Option<Located<bool>>,
         data_type: Option<Type>,
         expression: Option<Expression>,
     },
@@ -75,7 +82,6 @@ pub enum RawNode {
     Call(LocatedPath, Vec<Expression>),
     Return(Option<Expression>),
     Result(Option<Expression>),
-    NameSpace(LocatedPath),
 }
 
 #[derive(Debug)]
@@ -91,6 +97,7 @@ pub enum RawExpression {
     CompareOperation(Box<Expression>, CompareOperator, Box<Expression>),
     Array(Vec<Expression>),
     Tuple(Vec<Expression>),
+    Group(Box<Expression>),
     Minus(Box<Expression>),
     Not(Box<Expression>),
     Reference(Box<Expression>),

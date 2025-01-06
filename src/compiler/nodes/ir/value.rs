@@ -1,27 +1,21 @@
-use std::marker::PhantomData;
-
-pub enum Value<K> {
-    Reference(String, PhantomData<K>),
-    Integer(String, PhantomData<K>),
-    Float(String, PhantomData<K>),
-    Boolean(bool, PhantomData<K>),
+pub enum Value {
+    Reference(String),
+    Integer(String),
+    Float(String),
+    Boolean(bool),
+    Constant(Box<Value>)
 }
-impl Value<Pointer> {
+impl Value {
     pub fn new_reference(name: String) -> Self {
-        Value::Reference(name, PhantomData)
+        Value::Reference(name)
     }
-}
-impl Value<Primitive> {
     pub fn new_integer(value: String) -> Self {
-        Value::Integer(value, PhantomData)
+        Value::Integer(value)
     }
     pub fn new_float(value: String) -> Self {
-        Value::Float(value, PhantomData)
+        Value::Float(value)
     }
     pub fn new_bool(value: bool) -> Self {
-        Value::Boolean(value, PhantomData)
+        Value::Boolean(value)
     }
 }
-
-pub struct Pointer;
-pub struct Primitive;

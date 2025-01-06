@@ -1,15 +1,22 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::LocatedPath,
+    nodes::ast::{Located, LocatedPath},
     parser::{Node, RawNode},
 };
 
 impl Tokens {
     pub fn parse_variable(&mut self) -> CompileResult<Node> {
-        let mutable = self
-            .peek_expect_tokens(vec![Token::Mutable], true)
-            .is_some();
+        let mutable: Option<Located<bool>> = if self
+            .peek_expect_tokens(vec![Token::Mutable], false)
+            .is_some()
+        {
+            self.start()?;
+            Some(self.create_located(true))
+        } else {
+            None
+        };
+
         let name = self.parse_identifier()?;
 
         let data_type = if self.peek_expect_tokens(vec![Token::Colon], true).is_some() {

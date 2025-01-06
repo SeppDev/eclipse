@@ -65,7 +65,7 @@ impl Tokens {
 
         let raw = match name.raw.as_str() {
             "usize" => RawType::Usize,
-            "isize" => RawType::ISize,
+            "isize" => RawType::Isize,
             "i64" => RawType::Int(64),
             "u64" => RawType::UInt(64),
             "i32" => RawType::Int(32),

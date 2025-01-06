@@ -57,8 +57,7 @@ impl Tokens {
             return Err(());
         }
 
-        let mut import = start_parse(ctx, relative_file_path)?;
-        import.is_module = is_mod_file;
+        let import = start_parse(ctx, relative_file_path)?;
 
         self.pop_start();
         return Ok((name, import));

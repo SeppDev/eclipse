@@ -1,10 +1,10 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Node, RawField, RawNode},
+    nodes::ast::{Layout, RawField, RawLayout},
 };
 impl Tokens {
-    pub fn parse_struct(&mut self) -> CompileResult<Node> {
+    pub fn parse_struct(&mut self) -> CompileResult<Layout> {
         let name = self.parse_identifier()?;
         let _ = self.expect_tokens(vec![Token::StartScope], false);
         let mut fields = Vec::new();
@@ -19,6 +19,6 @@ impl Tokens {
             fields.push(self.create_located(RawField { name, data_type }));
         }
 
-        return Ok(self.create_located(RawNode::Struct { name, fields }));
+        return Ok(self.create_located(RawLayout::Struct { name, fields }));
     }
 }

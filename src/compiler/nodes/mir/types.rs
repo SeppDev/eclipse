@@ -1,13 +1,11 @@
-use super::{LocatedPath, Type};
-
-#[derive(Debug, Default)]
-pub enum RawType {
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub enum Type {
     #[default]
     Void,
     Never,
-
-    Usize,
+    
     Isize,
+    Usize,
     UInt(usize),
     Int(usize),
 
@@ -17,12 +15,11 @@ pub enum RawType {
     Boolean,
 
     Reference(Box<Type>),
-
     Tuple(Vec<Type>),
     Array(usize, Box<Type>),
-    GetType(LocatedPath),
 }
-impl std::fmt::Display for RawType {
+
+impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
@@ -34,16 +31,15 @@ impl std::fmt::Display for RawType {
                 Self::Float64 => "f64".to_string(),
                 Self::UInt(bits) => format!("u{bits}"),
                 Self::Int(bits) => format!("i{bits}"),
-                Self::Reference(base) => format!("&{}", base.raw),
+                Self::Reference(base) => format!("&{base}"),
                 Self::Usize => format!("usize"),
                 Self::Isize => format!("isize"),
                 Self::Never => "!".to_string(),
-                Self::Array(size, t) => format!("[{}; {size}]", t.raw),
-                Self::GetType(path) => format!("{}", path.raw),
+                Self::Array(size, t) => format!("[{t}; {size}]"),
                 Self::Tuple(ts) => format!(
                     "({})",
                     ts.into_iter()
-                        .map(|f| format!("{}", f.raw))
+                        .map(|f| format!("{f}"))
                         .collect::<Vec<String>>()
                         .join(", ")
                 ),

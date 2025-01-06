@@ -1,9 +1,7 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{
-        ArithmeticOperator, CompareOperator, Expression, Identifier, RawExpression,
-    },
+    nodes::ast::{ArithmeticOperator, CompareOperator, Expression, Identifier, RawExpression},
 };
 
 impl Tokens {
@@ -13,10 +11,11 @@ impl Tokens {
                 Token::String(String::new()),
                 Token::Integer(String::new()),
                 Token::Float(String::new()),
-                Token::Boolean(true),
                 Token::Identifier(String::new()),
+                Token::Boolean(true),
                 Token::ExclamationMark,
                 Token::OpenBracket,
+                Token::OpenParen,
                 Token::Asterisk,
                 Token::Ampersand,
                 Token::Minus,
@@ -57,43 +56,40 @@ impl Tokens {
                 let new_expression = self.parse_expression(true)?.unwrap();
                 RawExpression::Not(Box::new(new_expression))
             }
-            Token::OpenParen | Token::OpenBracket => {
-                let is_tuple = matches!(info.token, Token::OpenParen);
+            Token::OpenBracket => {
                 let mut expressions = Vec::new();
                 loop {
                     let new_expression = match self.parse_expression(false)? {
                         Some(expression) => expression,
                         None => {
-                            if is_tuple {
-                                self.expect_tokens(vec![Token::CloseParen], false)?;
-                            } else {
-                                self.expect_tokens(vec![Token::CloseBracket], false)?;
-                            }
+                            self.expect_tokens(vec![Token::CloseBracket], false)?;
                             break;
                         }
                     };
                     expressions.push(new_expression);
-                    let result = if is_tuple {
-                        self.expect_tokens(vec![Token::CloseParen, Token::Comma], false)?
-                    } else {
-                        self.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)?
-                    };
+                    let result =
+                        self.expect_tokens(vec![Token::CloseBracket, Token::Comma], false)?;
 
                     match result.token {
-                        Token::CloseParen | Token::CloseBracket => break,
+                        Token::CloseBracket => break,
                         Token::Comma => continue,
                         _ => panic!(),
                     };
                 }
-                if is_tuple {
-                    RawExpression::Tuple(expressions)
+
+                RawExpression::Array(expressions)
+            }
+            Token::OpenParen => {
+                let mut expressions = self.parse_arguments()?;
+                if expressions.len() == 1 {
+                    RawExpression::Group(Box::new(expressions.pop().unwrap()))
                 } else {
-                    RawExpression::Array(expressions)
+                    RawExpression::Tuple(expressions)
                 }
             }
             Token::Identifier(name) => {
                 let path = self.parse_path_current(name)?;
-                
+
                 match self.peek().token {
                     Token::StartScope => {
                         self.advance()?;

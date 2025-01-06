@@ -29,8 +29,8 @@ impl std::fmt::Display for Arch {
 #[allow(non_camel_case_types)]
 #[derive(Default)]
 pub enum Vendor {
-    #[default]
     Unkown,
+    #[default]
     PC,
 }
 impl std::fmt::Display for Vendor {

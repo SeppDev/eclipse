@@ -1,6 +1,8 @@
 use analyzer::analyze;
+use codegen::codegen;
 use errors::{CompileCtx, CompileResult};
 use lib::get_std_file;
+use optimizer::optimize;
 use parser::{start_parse, ParsedFile};
 use path::Path;
 use std::{path::PathBuf, process::Output, time::Duration};
@@ -9,6 +11,7 @@ mod codegen;
 mod lexer;
 mod parser;
 mod analyzer;
+mod optimizer;
 
 mod counter;
 mod errors;
@@ -40,9 +43,15 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
     let files = parse_program(ctx)?;
     ctx.throw(false);
     
-    analyze(ctx, files);
+    let mut module = analyze(ctx, files);
     ctx.throw(false);
-
+    
+    ctx.set_status("Optimizing");
+    optimize(ctx, &mut module);
+    
+    ctx.set_status("Codegen");
+    let source = codegen(ctx, module);
+    
     let build_command = format!(
         "clang -O3 {} -o {}",
         build_file_path.to_string_lossy(),
@@ -50,7 +59,7 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
     );
 
     std::fs::create_dir_all(&build_path).unwrap();
-    // std::fs::write(&build_file_path, source).unwrap();
+    std::fs::write(&build_file_path, source).unwrap();
 
     let output = command(build_command);
     if !output.status.success() {

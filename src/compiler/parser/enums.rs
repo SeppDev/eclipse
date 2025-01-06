@@ -1,11 +1,11 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Identifier, Node, RawNode},
+    nodes::ast::{Identifier, Layout, RawLayout},
 };
 
 impl Tokens {
-    pub fn parse_enum(&mut self) -> CompileResult<Node> {
+    pub fn parse_enum(&mut self) -> CompileResult<Layout> {
         let name = self.parse_identifier()?;
         let _ = self.expect_tokens(vec![Token::StartScope], false);
         let mut fields: Vec<Identifier> = Vec::new();
@@ -22,6 +22,6 @@ impl Tokens {
             }
         }
 
-        return Ok(self.create_located(RawNode::Enum { name, fields }));
+        return Ok(self.create_located(RawLayout::Enum { name, fields }));
     }
 }

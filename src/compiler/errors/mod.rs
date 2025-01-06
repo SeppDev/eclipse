@@ -52,7 +52,6 @@ struct MsgMap {
     warnings: Map,
     errors: Map,
 }
-
 type Status = Option<String>;
 
 pub struct CompileCtx {
@@ -115,6 +114,7 @@ impl CompileCtx {
         self.lines.insert(relative_path, lines);
     }
     pub fn quit(&self) -> ! {
+        self.finish();
         self.throw(true);
         println!("No debuginfo found, but quitted");
         exit(1)

@@ -1,20 +1,17 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::Expression
+    nodes::ast::Expression,
 };
 
 impl Tokens {
     pub fn parse_arguments(&mut self) -> CompileResult<Vec<Expression>> {
         let mut arguments = Vec::new();
 
-        loop {
-            if self
-                .peek_expect_tokens(vec![Token::CloseParen], true)
-                .is_some()
-            {
-                break;
-            };
+        while self
+            .peek_expect_tokens(vec![Token::CloseParen], true)
+            .is_none()
+        {
             let expression = match self.parse_expression(true)? {
                 Some(e) => e,
                 None => break,
