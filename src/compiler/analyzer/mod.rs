@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use infere_type::infere_type;
 
@@ -8,6 +8,8 @@ use super::{errors::CompileCtx, parser::ParsedFile};
 
 mod infere_type;
 mod types;
+
+mod variables;
 
 #[derive(Debug, Default)]
 pub struct AnalyzedModule {
@@ -41,20 +43,16 @@ fn handle_function(
     analyzed_module: &mut AnalyzedModule,
     mut function: ast::Function,
 ) {
-    let return_type = match &function.raw.return_type {
-        Some(r) => r.raw.convert(),
-        None => hlir::Type::Void,
-    };
-
     let mut mir_function = hlir::Function {
         key: function.raw.key,
         body: Vec::new(),
-        return_type,
+        return_type: function.raw.return_type.raw.convert(),
         parameters: Vec::new(),
     };
 
     let mut nodes = function.raw.body.drain(..).collect::<VecDeque<ast::Node>>();
-
+    let return_type = Some(function.raw.return_type);
+    
     let returned = loop {
         let node = match nodes.pop_front() {
             Some(n) => n,
@@ -65,7 +63,7 @@ fn handle_function(
         let node: hlir::Node = match node.raw {
             ast::RawNode::Return(expression) => {
                 returned = true;
-                handle_return(ctx, expression, &function.raw.return_type)
+                handle_return(ctx, expression, &return_type)
             }
             ast::RawNode::DeclareVariable {
                 name,
@@ -89,8 +87,9 @@ fn handle_function(
         if matches!(mir_function.return_type, hlir::Type::Void) {
             mir_function
                 .body
-                .push(hlir::Node::Return(hlir::Type::Void, None))
+                .push(hlir::Node::Return(hlir::Type::Void, None));
         } else {
+            ctx.error(function.location, "Missing return");
         }
     }
 
@@ -104,12 +103,13 @@ fn handle_decl(
     data_type: Option<ast::Type>,
     expression: Option<ast::Expression>,
 ) -> hlir::Node {
+    let data_type = infere_type(ctx, &data_type, &expression);
+
     let expression = match expression {
         Some(expression) => expression,
         None => todo!(),
     };
 
-    let data_type = infere_type(ctx, &data_type, &expression);
     let expression = handle_expression(ctx, expression, data_type.clone());
 
     hlir::Node::DeclareVariable {
@@ -123,27 +123,16 @@ fn handle_decl(
 fn handle_return(
     ctx: &mut CompileCtx,
     expression: Option<ast::Expression>,
-    data_type: &Option<ast::Type>,
+    return_type: &Option<ast::Type>,
 ) -> hlir::Node {
+    let data_type = infere_type(ctx, &return_type, &expression);
+    
     match expression {
         Some(expression) => {
-            let data_type = infere_type(ctx, &data_type, &expression);
             let expression = handle_expression(ctx, expression, data_type.clone());
             hlir::Node::Return(data_type, Some(expression))
         }
-        None => {
-            let data_type = match data_type {
-                Some(dt) => dt,
-                None => return hlir::Node::Return(hlir::Type::Void, None),
-            };
-            
-            let converted = data_type.raw.convert();
-            if !matches!(converted, hlir::Type::Void) {
-                ctx.error(data_type.location.clone(), "Expected return");
-            }
-            
-            hlir::Node::Return(converted, None)
-        }
+        None => hlir::Node::Return(data_type, None),
     }
 }
 

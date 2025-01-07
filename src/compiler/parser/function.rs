@@ -1,7 +1,7 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Function, Parameter, RawFunction, RawParameter},
+    nodes::ast::{Function, Parameter, RawFunction, RawParameter, RawType, Type},
 };
 
 impl Tokens {
@@ -50,9 +50,12 @@ impl Tokens {
         }
 
         let return_type = if self.peek_expect_tokens(vec![Token::Colon], true).is_some() {
-            Some(self.parse_type()?)
+            self.parse_type()?
         } else {
-            None
+            Type {
+                location: name.location.clone(),
+                raw: RawType::Void
+            }
         };
 
         self.expect_tokens(vec![Token::StartScope], false)?;

@@ -6,7 +6,7 @@ pub mod target;
 mod transform;
 
 struct Source {
-    body: String,
+    pub body: String,
 }
 
 impl Source {
@@ -24,18 +24,26 @@ impl Source {
     }
 }
 
-pub fn codegen(ctx: &CompileCtx, module: AnalyzedModule) -> String {
+pub fn codegen(ctx: &mut CompileCtx, module: AnalyzedModule) -> String {
     let mut source = Source::new();
     let ir = transform(ctx, module);
 
     source.pushln(format!("target triple = \"{}\"", ctx.target));
 
-    source.pushln(
-        ir.functions
-            .into_iter()
-            .map(|function| format!("{function}"))
-            .collect::<String>(),
-    );
+    for function in ir.functions {
+        let mut body = Source::new();
+        
+        for instruction in function.body {            
+            body.pushln(format!("{instruction}"));
+        };
+        
+        source.pushln(format!(
+            "define {} @{}() {{\nstart:\n {} \n}}",
+            function.return_type,
+            function.key,
+            body.body
+        ))
+    }
 
     return source.body;
 }

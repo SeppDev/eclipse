@@ -4,6 +4,8 @@ pub enum Type {
     Void,
     Never,
     
+    Isize,
+    Usize,
     UInt(usize),
     Int(usize),
 
@@ -28,6 +30,8 @@ impl std::fmt::Display for Type {
                 Self::Void => "void".to_string(),
                 Self::Float32 => "f32".to_string(),
                 Self::Float64 => "f64".to_string(),
+                Self::Usize => "usize".to_string(),
+                Self::Isize => "isize".to_string(),
                 Self::UInt(bits) => format!("u{bits}"),
                 Self::Int(bits) => format!("i{bits}"),
                 Self::Reference(base) => format!("&{base}"),

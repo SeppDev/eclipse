@@ -76,9 +76,8 @@ pub enum RawExpression {
     #[default]
     Unknown,
     Integer(String),
-    Boolean(bool),
     Float(String),
-    GetPath(Path),
+    Boolean(bool),
     Field(Box<Expression>, String),
     Index(Box<Expression>, Box<Expression>),
     Call(String, Vec<Expression>),

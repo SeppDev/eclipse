@@ -50,7 +50,7 @@ pub struct RawFunction {
     pub key: String,
     pub name: Identifier,
     pub parameters: Vec<Parameter>,
-    pub return_type: Option<Type>,
+    pub return_type: Type,
     pub body: Vec<Node>,
 }
 

@@ -1,4 +1,6 @@
 mod value;
+use std::collections::VecDeque;
+
 pub use value::*;
 
 mod display;
@@ -8,12 +10,11 @@ pub struct IRModule {
     pub functions: Vec<Function>,
 }
 
-
 pub struct Function {
     pub key: String,
     pub parameters: Vec<(Type, String)>,
     pub return_type: Type,
-    pub body: Vec<Instruction>
+    pub body: VecDeque<Instruction>
 }
 
 pub enum Instruction {
@@ -32,8 +33,12 @@ pub enum Instruction {
 
 pub enum Operation {
     Allocate(Type),
+    Load(Type, Value),
+    Constant(Type, Value)
 }
 
+
+#[derive(Clone)]
 pub enum Type {
     Int(usize),
     Bytes(usize),

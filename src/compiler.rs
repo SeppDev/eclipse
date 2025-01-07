@@ -37,7 +37,7 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
     let build_path = ctx.project_dir.join("build");
     let build_file_path = build_path.join("build.ll");
 
-    let mut executable_path = build_path.clone();
+    let mut executable_path = build_path.join("build");
     ctx.target.set_extension(&mut executable_path);
 
     let files = parse_program(ctx)?;
@@ -58,8 +58,6 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
         executable_path.to_string_lossy()
     );
     
-    ctx.result_print(build_command.clone());
-
     std::fs::create_dir_all(&build_path).unwrap();
     std::fs::write(&build_file_path, source).unwrap();
 

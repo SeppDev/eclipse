@@ -1,17 +1,5 @@
-use super::{Function, Instruction, Operation, Type, Value};
+use super::{Instruction, Operation, Type, Value};
 use std::fmt::Display;
-
-impl Display for Function {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "define {} @{}() {{\nstart:\n {} \n}}",
-            self.return_type,
-            self.key,
-            self.body.iter().map(|i| format!("{i}")).collect::<String>()
-        )
-    }
-}
 
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -44,7 +32,10 @@ impl Display for Operation {
             f,
             "{}",
             match self {
-                Self::Allocate(data_type) => format!("allocate {data_type}"),
+                Self::Allocate(data_type) => format!("alloca {data_type}"),
+                Self::Load(data_type, value) => format!("load {data_type}, ptr {value}"),
+                
+                Self::Constant(data_type, value) => format!("constant {data_type} {value}"),
             }
         )
     }
@@ -57,9 +48,9 @@ impl Display for Value {
             "{}",
             match self {
                 Self::Reference(body) => format!("%{body}"),
-                Self::Integer(body) | Self::Float(body) => format!("{body}"),
+                Self::Integer(body) => format!("{body}"),
+                Self::Float(body) => format!("{body}"),
                 Self::Boolean(body) => format!("{body}"),
-                Self::Constant(body) => format!("constant {body}")
             }
         )
     }

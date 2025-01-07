@@ -5,21 +5,24 @@ use crate::compiler::{
 
 pub fn infere_type(
     ctx: &mut CompileCtx,
-    expected_type: &Option<ast::Type>,
-    expression: &ast::Expression,
+    declared_type: &Option<ast::Type>,
+    expression: &Option<ast::Expression>,
 ) -> hlir::Type {
-    let infered = infere(ctx, &expected_type, expression);
+    let infered = match expression {
+        Some(expr) => infere(ctx, &declared_type, expr),
+        None => hlir::Type::Void,
+    };
 
-    if let Some(expected) = expected_type {
-        let expected_type: hlir::Type = expected.raw.convert();
-        if expected_type != infered {
+    if let Some(declared_type) = declared_type {
+        let converted = declared_type.raw.convert();
+        if converted != infered {
             ctx.error(
-            expected.location.clone(),
-            format!("Expected {expected_type} but got {infered}"),
+                declared_type.location.clone(),
+                format!("Expected {converted} but got {infered}"),
             );
         }
     }
-
+ 
     infered
 }
 
