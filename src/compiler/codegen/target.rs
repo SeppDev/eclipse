@@ -150,7 +150,7 @@ impl Target {
     }
     pub fn set_extension(&self, path: &mut PathBuf) {
         match self.os {
-            OS::Windows => path.set_extension(".exe"),
+            OS::Windows => path.set_extension("exe"),
             _ => return,
         };
     }

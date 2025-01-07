@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use infere_type::infere_type;
 
 use super::nodes::ast::{Identifier, Located};
-use super::nodes::{ast, mir};
+use super::nodes::{ast, hlir};
 use super::{errors::CompileCtx, parser::ParsedFile};
 
 mod infere_type;
@@ -11,7 +11,7 @@ mod types;
 
 #[derive(Debug, Default)]
 pub struct AnalyzedModule {
-    pub functions: Vec<mir::Function>,
+    pub functions: Vec<hlir::Function>,
 }
 
 pub fn analyze(ctx: &mut CompileCtx, mut files: Vec<ParsedFile>) -> AnalyzedModule {
@@ -43,10 +43,10 @@ fn handle_function(
 ) {
     let return_type = match &function.raw.return_type {
         Some(r) => r.raw.convert(),
-        None => mir::Type::Void,
+        None => hlir::Type::Void,
     };
 
-    let mut mir_function = mir::Function {
+    let mut mir_function = hlir::Function {
         key: function.raw.key,
         body: Vec::new(),
         return_type,
@@ -62,7 +62,7 @@ fn handle_function(
         };
 
         let mut returned = false;
-        let node: mir::Node = match node.raw {
+        let node: hlir::Node = match node.raw {
             ast::RawNode::Return(expression) => {
                 returned = true;
                 handle_return(ctx, expression, &function.raw.return_type)
@@ -86,10 +86,10 @@ fn handle_function(
     };
 
     if !returned {
-        if matches!(mir_function.return_type, mir::Type::Void) {
+        if matches!(mir_function.return_type, hlir::Type::Void) {
             mir_function
                 .body
-                .push(mir::Node::Return(mir::Type::Void, None))
+                .push(hlir::Node::Return(hlir::Type::Void, None))
         } else {
         }
     }
@@ -103,7 +103,7 @@ fn handle_decl(
     name: Identifier,
     data_type: Option<ast::Type>,
     expression: Option<ast::Expression>,
-) -> mir::Node {
+) -> hlir::Node {
     let expression = match expression {
         Some(expression) => expression,
         None => todo!(),
@@ -112,7 +112,7 @@ fn handle_decl(
     let data_type = infere_type(ctx, &data_type, &expression);
     let expression = handle_expression(ctx, expression, data_type.clone());
 
-    mir::Node::DeclareVariable {
+    hlir::Node::DeclareVariable {
         name: name.raw,
         mutable: mutable.is_some(),
         data_type,
@@ -124,25 +124,25 @@ fn handle_return(
     ctx: &mut CompileCtx,
     expression: Option<ast::Expression>,
     data_type: &Option<ast::Type>,
-) -> mir::Node {
+) -> hlir::Node {
     match expression {
         Some(expression) => {
             let data_type = infere_type(ctx, &data_type, &expression);
             let expression = handle_expression(ctx, expression, data_type.clone());
-            mir::Node::Return(data_type, Some(expression))
+            hlir::Node::Return(data_type, Some(expression))
         }
         None => {
             let data_type = match data_type {
                 Some(dt) => dt,
-                None => return mir::Node::Return(mir::Type::Void, None),
+                None => return hlir::Node::Return(hlir::Type::Void, None),
             };
             
             let converted = data_type.raw.convert();
-            if !matches!(converted, mir::Type::Void) {
+            if !matches!(converted, hlir::Type::Void) {
                 ctx.error(data_type.location.clone(), "Expected return");
             }
             
-            mir::Node::Return(converted, None)
+            hlir::Node::Return(converted, None)
         }
     }
 }
@@ -150,18 +150,18 @@ fn handle_return(
 fn handle_expression(
     ctx: &mut CompileCtx,
     expression: ast::Expression,
-    data_type: mir::Type,
-) -> mir::Expression {
+    data_type: hlir::Type,
+) -> hlir::Expression {
     let raw = match expression.raw {
-        ast::RawExpression::Integer(value) => mir::RawExpression::Integer(value),
-        ast::RawExpression::Boolean(value) => mir::RawExpression::Boolean(value),
+        ast::RawExpression::Integer(value) => hlir::RawExpression::Integer(value),
+        ast::RawExpression::Boolean(value) => hlir::RawExpression::Boolean(value),
         raw => {
             ctx.error(
                 expression.location,
                 format!("Not yet implemented: {raw:#?}"),
             );
-            mir::RawExpression::default()
+            hlir::RawExpression::default()
         }
     };
-    mir::Expression::new(raw, data_type)
+    hlir::Expression::new(raw, data_type)
 }

@@ -4,8 +4,6 @@ pub enum Type {
     Void,
     Never,
     
-    Isize,
-    Usize,
     UInt(usize),
     Int(usize),
 
@@ -14,6 +12,7 @@ pub enum Type {
 
     Boolean,
 
+    Bytes(usize),
     Reference(Box<Type>),
     Tuple(Vec<Type>),
     Array(usize, Box<Type>),
@@ -32,10 +31,9 @@ impl std::fmt::Display for Type {
                 Self::UInt(bits) => format!("u{bits}"),
                 Self::Int(bits) => format!("i{bits}"),
                 Self::Reference(base) => format!("&{base}"),
-                Self::Usize => format!("usize"),
-                Self::Isize => format!("isize"),
                 Self::Never => "!".to_string(),
-                Self::Array(size, t) => format!("[{t}; {size}]"),
+                Self::Bytes(bytes) => format!("[{bytes} x i8]"),
+                Self::Array(size, t) => format!("[{t} x {size}]"),
                 Self::Tuple(ts) => format!(
                     "({})",
                     ts.into_iter()

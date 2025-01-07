@@ -57,6 +57,8 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
         build_file_path.to_string_lossy(),
         executable_path.to_string_lossy()
     );
+    
+    ctx.result_print(build_command.clone());
 
     std::fs::create_dir_all(&build_path).unwrap();
     std::fs::write(&build_file_path, source).unwrap();

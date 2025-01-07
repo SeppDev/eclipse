@@ -77,7 +77,9 @@ impl Display for Type {
                 Self::Boolean => format!("i1"),
                 Self::Int(bits) => format!("i{bits}"),
                 Self::Pointer(data_type) => format!("{data_type}*"),
-                Self::Reference(body) => format!("&{body}"),
+                Self::Type(body) => format!("&{body}"),
+                Self::Float64 => format!("double"),
+                Self::Float32 => format!("float"),
                 Self::RawPointer => format!("ptr"),
                 Self::Tuple(ts) => format!(
                     "({})",

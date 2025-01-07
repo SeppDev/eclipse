@@ -1,17 +1,17 @@
 use crate::compiler::{
     errors::CompileCtx,
-    nodes::{ast, mir},
+    nodes::{ast, hlir},
 };
 
 pub fn infere_type(
     ctx: &mut CompileCtx,
     expected_type: &Option<ast::Type>,
     expression: &ast::Expression,
-) -> mir::Type {
+) -> hlir::Type {
     let infered = infere(ctx, &expected_type, expression);
 
     if let Some(expected) = expected_type {
-        let expected_type: mir::Type = expected.raw.convert();
+        let expected_type: hlir::Type = expected.raw.convert();
         if expected_type != infered {
             ctx.error(
             expected.location.clone(),
@@ -27,17 +27,17 @@ fn infere(
     ctx: &mut CompileCtx,
     expected_type: &Option<ast::Type>,
     expression: &ast::Expression,
-) -> mir::Type {
+) -> hlir::Type {
     return match &expression.raw {
         &ast::RawExpression::Integer(_) => {
             if let Some(ast) = expected_type {
                 if ast.raw.is_integer() {
                     ast.raw.convert()
                 } else {
-                    mir::Type::Int(32)
+                    hlir::Type::Int(32)
                 }
             } else {
-                mir::Type::Int(32)
+                hlir::Type::Int(32)
             }
         }
         &ast::RawExpression::Boolean(_) => {
@@ -45,10 +45,10 @@ fn infere(
                 if ast.raw.is_boolean() {
                     ast.raw.convert()
                 } else {
-                    mir::Type::Boolean
+                    hlir::Type::Boolean
                 }
             } else {
-                mir::Type::Boolean
+                hlir::Type::Boolean
             }
         }
         raw => {
@@ -56,7 +56,7 @@ fn infere(
                 expression.location.clone(),
                 format!("Not yet implemented: {raw:#?}"),
             );
-            mir::Type::default()
+            hlir::Type::default()
         }
     };
 }
@@ -70,13 +70,13 @@ impl ast::RawType {
         use ast::RawType::*;
         matches!(self, Boolean)
     }
-    pub(super) fn convert(&self) -> mir::Type {
+    pub(super) fn convert(&self) -> hlir::Type {
         match self {
-            Self::Void => mir::Type::Void,
-            Self::Tuple(fields) if fields.len() == 0 => mir::Type::Void,
+            Self::Void => hlir::Type::Void,
+            Self::Tuple(fields) if fields.len() == 0 => hlir::Type::Void,
             Self::Tuple(fields) if fields.len() == 1 => fields.first().unwrap().raw.convert(),
-            Self::UInt(n) => mir::Type::UInt(*n),
-            Self::Int(n) => mir::Type::Int(*n),
+            Self::UInt(n) => hlir::Type::UInt(*n),
+            Self::Int(n) => hlir::Type::Int(*n),
             _ => todo!(),
         }
     }

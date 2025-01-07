@@ -40,8 +40,10 @@ pub enum Type {
     Array(usize, Box<Type>),
     Pointer(Box<Type>),
     Tuple(Vec<Type>),
-    Reference(String),
+    Type(String),
     RawPointer,
     Boolean,
+    Float32,
+    Float64,
     Void,
 }
