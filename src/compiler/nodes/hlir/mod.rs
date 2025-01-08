@@ -1,4 +1,4 @@
-use crate::compiler::path::Path;
+use crate::compiler::{analyzer::Variables, path::Path};
 
 mod types;
 pub use types::Type;
@@ -25,18 +25,17 @@ pub struct Parameter {
     pub data_type: Type,
 }
 
-#[derive(Debug)]
 pub struct Field {
     pub name: String,
     pub data_type: Type,
 }
 
-#[derive(Debug)]
 pub struct Function {
     pub key: String,
     pub parameters: Vec<Parameter>,
     pub return_type: Type,
     pub body: Vec<Node>,
+    pub variables: Variables
 }
 
 #[derive(Debug, Default)]

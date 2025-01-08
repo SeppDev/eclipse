@@ -7,13 +7,13 @@ impl ir::Function {
     pub(super) fn handle_decl(
         &mut self,
         ctx: &mut CompileCtx,
-        key: String,
+        name: String,
         mutable: bool,
         data_type: hlir::Type,
         expression: hlir::Expression,
     ) {
         let ir_type = ctx.target.convert(&data_type);
-        let destination = key;
+        let destination = name;
 
         let value: ir::Value = match expression.raw {
             hlir::RawExpression::Integer(value) => ir::Value::Integer(value),

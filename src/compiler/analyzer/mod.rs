@@ -1,17 +1,19 @@
 use std::collections::VecDeque;
 
-use infere_type::infere_type;
-
-use super::nodes::ast::{Identifier, Located};
 use super::nodes::{ast, hlir};
 use super::{errors::CompileCtx, parser::ParsedFile};
 
 mod infere_type;
 mod types;
 
-mod variables;
+mod variable;
+mod expression;
+mod result;
 
-#[derive(Debug, Default)]
+mod variables;
+pub use variables::Variables;
+
+#[derive(Default)]
 pub struct AnalyzedModule {
     pub functions: Vec<hlir::Function>,
 }
@@ -48,6 +50,7 @@ fn handle_function(
         body: Vec::new(),
         return_type: function.raw.return_type.raw.convert(),
         parameters: Vec::new(),
+        variables: Variables::new()
     };
 
     let mut nodes = function.raw.body.drain(..).collect::<VecDeque<ast::Node>>();
@@ -63,14 +66,14 @@ fn handle_function(
         let node: hlir::Node = match node.raw {
             ast::RawNode::Return(expression) => {
                 returned = true;
-                handle_return(ctx, expression, &return_type)
+                mir_function.handle_return(ctx, expression, &return_type)
             }
             ast::RawNode::DeclareVariable {
                 name,
                 mutable,
                 data_type,
                 expression,
-            } => handle_decl(ctx, mutable, name, data_type, expression),
+            } => mir_function.handle_decl(ctx, name, mutable, data_type, expression),
             raw => {
                 ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                 continue;
@@ -96,61 +99,3 @@ fn handle_function(
     let _ = analyzed_module.functions.push(mir_function);
 }
 
-fn handle_decl(
-    ctx: &mut CompileCtx,
-    mutable: Option<Located<bool>>,
-    name: Identifier,
-    data_type: Option<ast::Type>,
-    expression: Option<ast::Expression>,
-) -> hlir::Node {
-    let data_type = infere_type(ctx, &data_type, &expression);
-
-    let expression = match expression {
-        Some(expression) => expression,
-        None => todo!(),
-    };
-
-    let expression = handle_expression(ctx, expression, data_type.clone());
-
-    hlir::Node::DeclareVariable {
-        name: name.raw,
-        mutable: mutable.is_some(),
-        data_type,
-        expression,
-    }
-}
-
-fn handle_return(
-    ctx: &mut CompileCtx,
-    expression: Option<ast::Expression>,
-    return_type: &Option<ast::Type>,
-) -> hlir::Node {
-    let data_type = infere_type(ctx, &return_type, &expression);
-    
-    match expression {
-        Some(expression) => {
-            let expression = handle_expression(ctx, expression, data_type.clone());
-            hlir::Node::Return(data_type, Some(expression))
-        }
-        None => hlir::Node::Return(data_type, None),
-    }
-}
-
-fn handle_expression(
-    ctx: &mut CompileCtx,
-    expression: ast::Expression,
-    data_type: hlir::Type,
-) -> hlir::Expression {
-    let raw = match expression.raw {
-        ast::RawExpression::Integer(value) => hlir::RawExpression::Integer(value),
-        ast::RawExpression::Boolean(value) => hlir::RawExpression::Boolean(value),
-        raw => {
-            ctx.error(
-                expression.location,
-                format!("Not yet implemented: {raw:#?}"),
-            );
-            hlir::RawExpression::default()
-        }
-    };
-    hlir::Expression::new(raw, data_type)
-}

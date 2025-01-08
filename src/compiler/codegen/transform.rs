@@ -44,8 +44,8 @@ fn handle_function(
     module: &mut IRModule,
     mut function: hlir::Function,
 ) -> ir::Function {
-    let key = function.key.drain(..).collect::<String>();
-
+    let key = function.key;
+    
     let mut ir_function = ir::Function {
         key,
         return_type: ctx.target.convert(&function.return_type),
@@ -54,7 +54,6 @@ fn handle_function(
     };
     
     let mut nodes = function.body.into_iter();
-    
     loop {
         let node = match nodes.next() {
             Some(n) => n,
@@ -63,11 +62,11 @@ fn handle_function(
         
         match node {
             hlir::Node::DeclareVariable {
-                key,
+                name,
                 mutable,
                 data_type,
                 expression,
-            } => ir_function.handle_decl(ctx, key, mutable, data_type, expression),
+            } => ir_function.handle_decl(ctx, name, mutable, data_type, expression),
             hlir::Node::Return(data_type, expression) => {
                 ir_function.handle_return(ctx, data_type, expression)
             }
