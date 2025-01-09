@@ -20,14 +20,21 @@ impl ir::Function {
             }
         };
 
+        let ir_type = ctx.target.convert(&data_type);
+
         let value: ir::Value = match expression.raw {
+            hlir::RawExpression::GetVariable(name) => {
+                let key = ctx.counter.increment();
+                self.push(ir::Instruction::Define {
+                    destination: key.clone(),
+                    operation: ir::Operation::Load(ir_type.clone(), ir::Value::Reference(name)),
+                });
+                ir::Value::Reference(key)
+            }
             hlir::RawExpression::Integer(value) => ir::Value::Integer(value),
             _ => todo!(),
         };
 
-        self.push(ir::Instruction::Return(
-            ctx.target.convert(&data_type),
-            Some(value),
-        ));
+        self.push(ir::Instruction::Return(ir_type, Some(value)));
     }
 }

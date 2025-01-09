@@ -2,10 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use crate::compiler::{errors::Location, nodes::hlir};
 
+#[derive(Default)]
 pub struct Variable {
-    location: Location,
-    mutable: bool,
-    data_type: hlir::Type,
+    pub key: String,
+    pub location: Location,
+    pub mutable: bool,
+    pub data_type: hlir::Type,
 }
 
 #[derive(Default)]
@@ -20,6 +22,7 @@ impl Variables {
     pub fn insert(
         &mut self,
         name: String,
+        key: String,
         mutable: bool,
         data_type: hlir::Type,
         location: Location,
@@ -29,12 +32,16 @@ impl Variables {
         }
         
         let variable = Variable {
+            key,
             location,
             mutable,
             data_type,
         };
         
         return self.variables.insert(name, variable)
+    }
+    pub fn get(&self, name: &String) -> Option<&Variable> {
+        return self.variables.get(name);
     }
     pub fn push_scope(&mut self) {
         self.states.push(HashSet::new());

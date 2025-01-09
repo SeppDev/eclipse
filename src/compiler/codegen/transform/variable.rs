@@ -16,6 +16,14 @@ impl ir::Function {
         let destination = name;
 
         let value: ir::Value = match expression.raw {
+            hlir::RawExpression::GetVariable(name) => {
+                let key = ctx.counter.increment();
+                self.push(ir::Instruction::Define {
+                    destination: key.clone(),
+                    operation: ir::Operation::Load(ir_type.clone(), ir::Value::Reference(name)),
+                });
+                ir::Value::Reference(key)
+            }
             hlir::RawExpression::Integer(value) => ir::Value::Integer(value),
             _ => todo!(),
         };

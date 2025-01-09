@@ -73,7 +73,7 @@ fn handle_function(
                 mutable,
                 data_type,
                 expression,
-            } => mir_function.handle_decl(ctx, name, mutable, data_type, expression),
+            } => mir_function.handle_decl(ctx, node.location, name, mutable, data_type, expression),
             raw => {
                 ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                 continue;

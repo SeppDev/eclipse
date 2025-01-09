@@ -49,6 +49,9 @@ impl Path {
         clone.pop();
         clone
     }
+    pub fn len(&self) -> usize {
+        return self.components.len()
+    }
     pub fn first(&self) -> Option<&String> {
         return self.components.first();
     }

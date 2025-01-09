@@ -1,7 +1,5 @@
 use crate::compiler::{errors::CompileCtx, nodes::{ast, hlir}};
 
-use super::infere_type::infere_type;
-
 impl hlir::Function {
     pub fn handle_return(
         &mut self,
@@ -9,7 +7,7 @@ impl hlir::Function {
         expression: Option<ast::Expression>,
         return_type: &Option<ast::Type>,
     ) -> hlir::Node {
-        let data_type = infere_type(ctx, &return_type, &expression);
+        let data_type = self.infere_type(ctx, &return_type, &expression);
         
         match expression {
             Some(expression) => {

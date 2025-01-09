@@ -20,6 +20,7 @@ pub struct Function {
 pub enum Instruction {
     Label(String),
     Return(Type, Option<Value>),
+    
     Store {
         data_type: Type,
         value: Value,
