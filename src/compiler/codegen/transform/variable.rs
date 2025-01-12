@@ -13,14 +13,13 @@ impl ir::Function {
         expression: hlir::Expression,
     ) {
         let ir_type = ctx.target.convert(&data_type);
-        
+
         let destination = self.variables.generate();
-        let mut is_register = false;
 
         let value: ir::Value = match expression.raw {
             hlir::RawExpression::GetVariable(name) => {
                 self.allocate(destination.clone(), ir_type.clone());
-                
+
                 let variable = self.variables.get(&name);
                 if variable.is_register_value {
                     ir::Value::Reference(variable.key.clone())
@@ -28,7 +27,10 @@ impl ir::Function {
                     let key = ctx.counter.increment();
                     self.push(ir::Instruction::Define {
                         destination: key.clone(),
-                        operation: ir::Operation::Load(ir_type.clone(), ir::Value::Reference(variable.key.clone())),
+                        operation: ir::Operation::Load(
+                            ir_type.clone(),
+                            ir::Value::Reference(variable.key.clone()),
+                        ),
                     });
 
                     ir::Value::Reference(key)
@@ -39,9 +41,8 @@ impl ir::Function {
                 ir::Value::Integer(value)
             }
             hlir::RawExpression::Call(key, _) => {
-                is_register = true;
-                self.variables.insert(name, is_register);
-                
+                self.variables.insert(name, true);
+
                 self.push(ir::Instruction::Define {
                     destination,
                     operation: ir::Operation::Call(ir_type, key, Vec::new()),
@@ -50,9 +51,9 @@ impl ir::Function {
             }
             _ => todo!(),
         };
-        
-        self.variables.insert(name, is_register);
 
+        self.variables.insert(name, false);
+ 
         self.push(ir::Instruction::Store {
             data_type: ir_type,
             value,

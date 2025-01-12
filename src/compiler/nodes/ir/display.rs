@@ -34,6 +34,7 @@ impl Display for Operation {
             match self {
                 Self::Allocate(data_type) => format!("alloca {data_type}"),
                 Self::Load(data_type, value) => format!("load {data_type}, ptr {value}"),
+                Self::Constant(data_type, value) => format!("constant {data_type} {value}"),
                 Self::Call(data_type, key, arguments) => format!(
                     "call {data_type} @{key}({})",
                     arguments

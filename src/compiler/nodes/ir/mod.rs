@@ -35,7 +35,8 @@ pub enum Instruction {
 pub enum Operation {
     Allocate(Type),
     Load(Type, Value),
-    Call(Type, String, Vec<(Type, Value)>)
+    Call(Type, String, Vec<(Type, Value)>),
+    Constant(Type, Value)
 }
 
 pub enum Value {
