@@ -1,11 +1,17 @@
 mod message;
-pub mod format;
 
 use super::{codegen::target::Target, counter::NameCounter, path::Path};
 pub use message::CompileMessage;
 use message::MessageVariant;
 use std::{
-    borrow::BorrowMut, collections::HashMap, io::Write, ops::Range, path::PathBuf, process::exit, sync::mpsc::{self, Receiver, Sender}, time::Duration
+    borrow::BorrowMut,
+    collections::HashMap,
+    io::Write,
+    ops::Range,
+    path::PathBuf,
+    process::exit,
+    sync::mpsc::{self, Receiver, Sender},
+    time::Duration,
 };
 
 pub type CompileResult<T> = Result<T, ()>;
@@ -58,12 +64,12 @@ pub struct CompileCtx {
     pub counter: NameCounter,
     pub project_dir: PathBuf,
     pub target: Target,
-    
+    pub current_file_path: Path,
+
     debuginfo: MsgMap,
     messages: Vec<String>,
 
     lines: HashMap<Path, Vec<String>>,
-    current_file_path: Path,
 
     sender: Sender<Status>,
     done: Receiver<()>,
@@ -100,7 +106,7 @@ impl CompileCtx {
             target: Target::new(),
             counter: NameCounter::new(),
             project_dir,
-            
+
             debuginfo: MsgMap::default(),
             messages: Vec::new(),
             lines: HashMap::new(),
@@ -110,11 +116,10 @@ impl CompileCtx {
             done,
         }
     }
-    pub fn set_lines(&mut self, relative_path: Path, lines: Vec<String>) {
-        self.lines.insert(relative_path, lines);
+    pub fn set_lines(&mut self, lines: Vec<String>) {
+        self.lines.insert(self.current_file_path.clone(), lines);
     }
     pub fn quit(&self) -> ! {
-        self.finish();
         self.throw(true);
         println!("No debuginfo found, but quitted");
         exit(1)
@@ -125,8 +130,8 @@ impl CompileCtx {
             MessageVariant::Error => self.debuginfo.errors.push((relative_file_path, message)),
         }
     }
-    pub fn set_current_path(&mut self, path: &Path) {
-        self.current_file_path = path.clone()
+    pub fn set_current_path(&mut self, path: Path) {
+        self.current_file_path = path
     }
 
     pub fn set_status<T: ToString>(&self, message: T) {
@@ -139,13 +144,6 @@ impl CompileCtx {
         let _ = self.sender.send(None);
         let _ = self.done.recv_timeout(Duration::from_secs(1));
     }
-    pub fn finish(&self) {
-        self.stop_status();
-        
-        for msg in &self.messages {
-            println!("{}", msg);
-        }
-    }
     pub fn throw(&self, finish: bool) {
         let has_errors = self.debuginfo.errors.len() > 0;
         if !has_errors && !finish {
@@ -155,6 +153,10 @@ impl CompileCtx {
 
         self.display(&self.debuginfo.warnings);
         self.display(&self.debuginfo.errors);
+
+        for msg in &self.messages {
+            println!("{}", msg);
+        }
 
         if has_errors {
             exit(1)

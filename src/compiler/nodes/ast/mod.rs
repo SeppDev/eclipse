@@ -34,14 +34,20 @@ pub struct RawField {
 }
 
 #[derive(Debug)]
+pub enum Fields {
+    List(Vec<Type>),
+    Struct(Vec<Field>)
+}
+
+#[derive(Debug)]
 pub enum RawLayout {
     Enum {
         name: Identifier,
-        fields: Vec<Identifier>,
+        fields: Vec<(Identifier, Option<Fields>)>,
     },
     Struct {
         name: Identifier,
-        fields: Vec<Field>,
+        fields: Fields,
     },
 }
 
@@ -92,7 +98,6 @@ pub enum RawExpression {
     GetPath(LocatedPath),
     Field(Box<Expression>, Identifier),
     Index(Box<Expression>, Box<Expression>),
-    Call(Box<Expression>, Vec<Expression>),
     BinaryOperation(Box<Expression>, ArithmeticOperator, Box<Expression>),
     CompareOperation(Box<Expression>, CompareOperator, Box<Expression>),
     Array(Vec<Expression>),
@@ -102,7 +107,8 @@ pub enum RawExpression {
     Not(Box<Expression>),
     Reference(Box<Expression>),
     DeReference(Box<Expression>),
-    Struct(LocatedPath, Vec<(Identifier, Expression)>),
+    Invoke(Box<Expression>, Vec<Expression>),
+    InvokeStruct(LocatedPath, Vec<(Identifier, Expression)>),
 }
 
 #[derive(Debug)]

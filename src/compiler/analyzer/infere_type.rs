@@ -3,15 +3,18 @@ use crate::compiler::{
     nodes::{ast, hlir},
 };
 
+use super::{expression::InvokeType, types::ModuleTypes};
+
 impl hlir::Function {
-    pub fn infere_type(
+    pub(super) fn infere_type(
         &self,
         ctx: &mut CompileCtx,
+        types: &ModuleTypes,
         declared_type: &Option<ast::Type>,
         expression: &Option<ast::Expression>,
     ) -> hlir::Type {
         let infered = match expression {
-            Some(expr) => self.infere(ctx, &declared_type, expr),
+            Some(expr) => self.infere(ctx, types, &declared_type, expr),
             None => hlir::Type::Void,
         };
 
@@ -31,26 +34,37 @@ impl hlir::Function {
     fn infere(
         &self,
         ctx: &mut CompileCtx,
+        types: &ModuleTypes,
         expected_type: &Option<ast::Type>,
         expression: &ast::Expression,
     ) -> hlir::Type {
         return match &expression.raw {
-            ast::RawExpression::GetPath(path) if path.raw.len() == 1 => {
-                let name = path.raw.first().unwrap();
-                match self.variables.get(name) {
-                    Some(var) => var.data_type.clone(),
-                    None => todo!()
+            ast::RawExpression::Invoke(path, _) => {
+                let invoke_type = self.get_invoke_type(ctx, types, path);
+                match invoke_type {
+                    InvokeType::Unkown => hlir::Type::default(),
+                    InvokeType::Function { return_type, .. } => return_type.clone(),
                 }
+            }
+            ast::RawExpression::GetPath(path) => {
+                if path.raw.len() == 1 {
+                    let name = path.raw.first().unwrap();
+                    match self.variables.get(name) {
+                        Some(var) => return var.data_type.clone(),
+                        None => {}
+                    };
+                }
+                hlir::Type::default()
             }
             ast::RawExpression::Integer(_) => {
                 if let Some(ast) = expected_type {
                     if ast.raw.is_integer() {
                         ast.raw.convert()
                     } else {
-                        hlir::Type::Int(32)
+                        hlir::Type::Int(ctx.target.pointer_width())
                     }
                 } else {
-                    hlir::Type::Int(32)
+                    hlir::Type::Int(ctx.target.pointer_width())
                 }
             }
             ast::RawExpression::Boolean(_) => {

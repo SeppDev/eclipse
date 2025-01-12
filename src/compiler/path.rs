@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, Eq, Hash, Clone, Default)]
 pub struct Path {
-    components: Vec<String>,
+    pub components: Vec<String>,
 }
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -20,13 +20,6 @@ impl Path {
         Self {
             components: Vec::new(),
         }
-    }
-    pub fn convert(&self) -> PathBuf {
-        let mut p = PathBuf::new();
-        for a in &self.components {
-            p.push(a);
-        }
-        return p;
     }
     pub fn from<T: ToString>(root: T) -> Self {
         let mut path = Self::new();
@@ -49,13 +42,20 @@ impl Path {
         clone.pop();
         clone
     }
+    pub fn into_path_buf(&self) -> PathBuf {
+        let mut buf = PathBuf::new();
+        for p in &self.components {
+            buf.push(p);
+        }
+        buf
+    }
     pub fn len(&self) -> usize {
-        return self.components.len()
+        return self.components.len();
     }
     pub fn first(&self) -> Option<&String> {
         return self.components.first();
     }
-    pub fn components(&self) -> Vec<String> {
-        return self.components.clone()
+    pub fn last(&self) -> Option<&String> {
+        return self.components.last();
     }
 }

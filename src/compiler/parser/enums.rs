@@ -1,25 +1,28 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Identifier, Layout, RawLayout},
+    nodes::ast::{Layout, RawLayout},
 };
 
 impl Tokens {
     pub fn parse_enum(&mut self) -> CompileResult<Layout> {
         let name = self.parse_identifier()?;
-        let _ = self.expect_tokens(vec![Token::StartScope], false);
-        let mut fields: Vec<Identifier> = Vec::new();
-
-        loop {
-            let identifier = self.parse_identifier()?;
-            fields.push(identifier);
-
-            let result = self.expect_tokens(vec![Token::Comma, Token::EndScope], false)?;
-            match result.token {
-                Token::Comma => continue,
-                Token::EndScope => break,
-                _ => panic!(),
-            }
+        let mut enums = Vec::new();
+        
+        let mut fields = Vec::new();
+        while self
+            .peek_expect_tokens(vec![Token::EndScope], true)
+            .is_none()
+        {
+            self.start_next();
+            let identifier = self.parse_type()?;
+            let fields = if self.peek_expect_tokens(vec![Token::StartScope, Token::OpenParen], false).is_some() {
+                Some(self.parse_fields()?)
+            } else {
+                None
+            };
+            
+            enums.push((identifier, fields))
         }
 
         return Ok(self.create_located(RawLayout::Enum { name, fields }));

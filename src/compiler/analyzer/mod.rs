@@ -1,16 +1,19 @@
 use std::collections::VecDeque;
+use std::path::PathBuf;
 
 use super::nodes::{ast, hlir};
+use super::FILE_EXTENSION;
 use super::{errors::CompileCtx, parser::ParsedFile};
 
 mod infere_type;
 mod types;
 
-mod variable;
-mod expression;
-mod result;
+mod nodes;
 
+mod expression;
 mod variables;
+use types::ModuleTypes;
+pub use types::ParsedProject;
 pub use variables::Variables;
 
 #[derive(Default)]
@@ -18,44 +21,57 @@ pub struct AnalyzedModule {
     pub functions: Vec<hlir::Function>,
 }
 
-pub fn analyze(ctx: &mut CompileCtx, mut files: Vec<ParsedFile>) -> AnalyzedModule {
-    types::parse_types(ctx, &mut files);
+pub fn analyze(ctx: &mut CompileCtx, mut project: ParsedProject) -> AnalyzedModule {
+    let types = types::parse_types(ctx, &mut project);
 
     let mut analyzed_module = AnalyzedModule::default();
 
-    for file in files {
-        handle_file(ctx, &mut analyzed_module, file);
+    for file in vec![project.main, project.std] {
+        handle_file(ctx, &types, &mut analyzed_module, file);
     }
 
     return analyzed_module;
 }
 
-fn handle_file(ctx: &mut CompileCtx, analyzed_module: &mut AnalyzedModule, file: ParsedFile) {
-    for (_, file) in file.imports {
-        handle_file(ctx, analyzed_module, file);
-    }
+fn handle_file(
+    ctx: &mut CompileCtx,
+    types: &ModuleTypes,
+    analyzed_module: &mut AnalyzedModule,
+    file: ParsedFile,
+) {
+    ctx.set_current_path(file.relative_file_path);
+    ctx.set_status(format!(
+        "Analyzing: {}.{FILE_EXTENSION}",
+        ctx.current_file_path.into_path_buf().to_string_lossy()
+    ));
 
     for function in file.functions {
-        handle_function(ctx, analyzed_module, function);
+        handle_function(ctx, types, analyzed_module, function);
+    }
+
+    for (_, file) in file.imports {
+        handle_file(ctx, types, analyzed_module, file);
     }
 }
 
 fn handle_function(
     ctx: &mut CompileCtx,
+    types: &ModuleTypes,
     analyzed_module: &mut AnalyzedModule,
     mut function: ast::Function,
 ) {
-    let mut mir_function = hlir::Function {
+    let mut hlir_function = hlir::Function {
         key: function.raw.key,
         body: Vec::new(),
         return_type: function.raw.return_type.raw.convert(),
         parameters: Vec::new(),
-        variables: Variables::new()
+        variables: Variables::new(),
     };
+    hlir_function.variables.push_scope();
 
     let mut nodes = function.raw.body.drain(..).collect::<VecDeque<ast::Node>>();
-    let return_type = Some(function.raw.return_type);
-    
+    let return_type = Some(function.raw.return_type.clone());
+
     let returned = loop {
         let node = match nodes.pop_front() {
             Some(n) => n,
@@ -66,29 +82,37 @@ fn handle_function(
         let node: hlir::Node = match node.raw {
             ast::RawNode::Return(expression) => {
                 returned = true;
-                mir_function.handle_return(ctx, expression, &return_type)
+                hlir_function.handle_return(ctx, types, expression, &return_type)
             }
             ast::RawNode::DeclareVariable {
                 name,
                 mutable,
                 data_type,
                 expression,
-            } => mir_function.handle_decl(ctx, node.location, name, mutable, data_type, expression),
+            } => hlir_function.handle_decl(
+                ctx,
+                types,
+                node.location,
+                name,
+                mutable,
+                data_type,
+                expression,
+            ),
             raw => {
                 ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                 continue;
             }
         };
 
-        mir_function.body.push(node);
+        hlir_function.body.push(node);
         if returned {
             break returned;
         }
     };
 
     if !returned {
-        if matches!(mir_function.return_type, hlir::Type::Void) {
-            mir_function
+        if matches!(hlir_function.return_type, hlir::Type::Void) {
+            hlir_function
                 .body
                 .push(hlir::Node::Return(hlir::Type::Void, None));
         } else {
@@ -96,6 +120,26 @@ fn handle_function(
         }
     }
 
-    let _ = analyzed_module.functions.push(mir_function);
-}
+    hlir_function.variables.pop_scope();
 
+    for (_, variable) in &hlir_function.variables.map {
+        let name = &variable.name;
+        
+        if !variable.used {
+            ctx.warning(
+                variable.location.clone(),
+                format!("The value of '{name}' is assigned but never used!"),
+            );
+            continue;
+        }
+        if variable.mutable && !variable.modified {
+            ctx.warning(
+                variable.location.clone(),
+                format!("The value of '{name}' is never modified!"),
+            );
+            continue;
+        }
+    }
+
+    analyzed_module.functions.push(hlir_function);
+}

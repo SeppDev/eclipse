@@ -1,6 +1,6 @@
 use super::{LocatedPath, Type};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub enum RawType {
     #[default]
     Void,

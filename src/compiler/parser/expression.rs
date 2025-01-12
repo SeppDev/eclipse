@@ -93,7 +93,7 @@ impl Tokens {
                 match self.peek().token {
                     Token::StartScope => {
                         self.advance()?;
-                        RawExpression::Struct(path, self.parse_struct_expression_fields()?)
+                        RawExpression::InvokeStruct(path, self.parse_struct_expression_fields()?)
                     }
                     _ => RawExpression::GetPath(path),
                 }
@@ -117,7 +117,7 @@ impl Tokens {
                 }
                 Token::OpenParen => {
                     let arguments = self.parse_arguments()?;
-                    first = self.create_located(RawExpression::Call(Box::new(first), arguments))
+                    first = self.create_located(RawExpression::Invoke(Box::new(first), arguments))
                 }
                 Token::OpenBracket => {
                     let index = self.parse_expression(true)?.unwrap();

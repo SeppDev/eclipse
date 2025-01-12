@@ -24,12 +24,18 @@ impl ir::Function {
 
         let value: ir::Value = match expression.raw {
             hlir::RawExpression::GetVariable(name) => {
-                let key = ctx.counter.increment();
-                self.push(ir::Instruction::Define {
-                    destination: key.clone(),
-                    operation: ir::Operation::Load(ir_type.clone(), ir::Value::Reference(name)),
-                });
-                ir::Value::Reference(key)
+                let variable = self.variables.get(&name);
+                if variable.is_register_value {
+                    ir::Value::Reference(variable.key.clone())
+                } else {
+                    let key = ctx.counter.increment();
+                    self.push(ir::Instruction::Define {
+                        destination: key.clone(),
+                        operation: ir::Operation::Load(ir_type.clone(), ir::Value::Reference(variable.key.clone())),
+                    });
+
+                    ir::Value::Reference(key)
+                }
             }
             hlir::RawExpression::Integer(value) => ir::Value::Integer(value),
             _ => todo!(),

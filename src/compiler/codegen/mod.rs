@@ -2,6 +2,8 @@ use transform::transform;
 
 use super::{analyzer::AnalyzedModule, errors::CompileCtx};
 
+pub mod variables;
+
 pub mod target;
 mod transform;
 
@@ -32,16 +34,14 @@ pub fn codegen(ctx: &mut CompileCtx, module: AnalyzedModule) -> String {
 
     for function in ir.functions {
         let mut body = Source::new();
-        
-        for instruction in function.body {            
+
+        for instruction in function.body {
             body.pushln(format!("{instruction}"));
-        };
-        
+        }
+
         source.pushln(format!(
-            "define {} @{}() {{\nstart:\n {} \n}}",
-            function.return_type,
-            function.key,
-            body.body
+            "define {} @{}() {{\nstart:\n {}}}\n",
+            function.return_type, function.key, body.body
         ))
     }
 

@@ -1,7 +1,6 @@
-mod value;
 use std::collections::VecDeque;
 
-pub use value::*;
+use crate::compiler::codegen;
 
 mod display;
 
@@ -14,7 +13,8 @@ pub struct Function {
     pub key: String,
     pub parameters: Vec<(Type, String)>,
     pub return_type: Type,
-    pub body: VecDeque<Instruction>
+    pub body: VecDeque<Instruction>,
+    pub variables: codegen::variables::VariablesMap
 }
 
 pub enum Instruction {
@@ -35,7 +35,14 @@ pub enum Instruction {
 pub enum Operation {
     Allocate(Type),
     Load(Type, Value),
-    Constant(Type, Value)
+    Call(Type, String, Vec<(Type, Value)>)
+}
+
+pub enum Value {
+    Reference(String),
+    Integer(String),
+    Float(String),
+    Boolean(bool),
 }
 
 

@@ -9,11 +9,7 @@ use super::{
     Token, TokenInfo, Tokens,
 };
 
-pub fn tokenize(
-    debug: &mut CompileCtx,
-    relative_file_path: Path,
-    source: String,
-) -> CompileResult<Tokens> {
+pub fn tokenize(ctx: &mut CompileCtx, source: String) -> CompileResult<Tokens> {
     let mut reader = Reader::new(source);
     let mut tokens: Vec<TokenInfo> = Vec::new();
 
@@ -28,9 +24,9 @@ pub fn tokenize(
 
     let lines = reader.lines.len();
     tokens.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
-    debug.set_lines(relative_file_path.clone(), reader.lines);
+    ctx.set_lines(reader.lines);
 
-    return Ok(Tokens::new(tokens, relative_file_path));
+    return Ok(Tokens::new(tokens, ctx.current_file_path.clone()));
 }
 
 fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo> {
@@ -85,9 +81,7 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                         location: Location::new(char.line..char.line, char.columns),
                     })
                 }
-                None => {
-                    return Err(())
-                }
+                None => return Err(()),
             }
         }
     }
@@ -99,25 +93,25 @@ fn match_token(word: &String) -> Option<Token> {
         "if" => Token::If,
         "else" => Token::Else,
         "elseif" => Token::ElseIf,
-        
+
         "mut" => Token::Mutable,
         "var" => Token::Variable,
-        
+
         "true" => Token::Boolean(true),
         "false" => Token::Boolean(false),
-        
+
         "pub" => Token::Pub,
         "import" => Token::Import,
         "use" => Token::Use,
-        
+
         "unsafe" => Token::Unsafe,
-        
+
         "enum" => Token::Enum,
         "struct" => Token::Struct,
-        
+
         "return" => Token::Return,
         "result" => Token::Result,
-        
+
         "loop" => Token::Loop,
         "while" => Token::While,
         "break" => Token::Break,

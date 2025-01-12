@@ -9,6 +9,8 @@ use crate::compiler::{
     },
 };
 
+use super::variables::VariablesMap;
+
 mod result;
 mod types;
 mod variable;
@@ -51,6 +53,7 @@ fn handle_function(
         return_type: ctx.target.convert(&function.return_type),
         parameters: Vec::new(),
         body: VecDeque::new(),
+        variables: VariablesMap::new()
     };
     
     let mut nodes = function.body.into_iter();

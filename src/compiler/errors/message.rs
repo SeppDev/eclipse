@@ -75,7 +75,7 @@ fn display(relative_path: &Path, message: &CompileMessage, lines: &Vec<String>) 
     let first = message.details.first().unwrap();
     println!(
         "  --> {}.{}:{}:{}",
-        relative_path.convert().to_string_lossy(),
+        relative_path.into_path_buf().to_string_lossy(),
         FILE_EXTENSION,
         first.location.lines.start,
         first.location.columns.start
