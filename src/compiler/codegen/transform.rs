@@ -14,6 +14,8 @@ use super::variables::VariablesMap;
 mod result;
 mod types;
 mod variable;
+mod expression;
+mod call;
 
 impl ir::Function {
     fn push(&mut self, instruction: ir::Instruction) {

@@ -41,6 +41,7 @@ pub enum Operation {
 
 pub enum Value {
     Reference(String),
+    Register(String),
     Integer(String),
     Float(String),
     Boolean(bool),

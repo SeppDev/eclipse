@@ -13,16 +13,15 @@ impl ir::Function {
         expression: hlir::Expression,
     ) {
         let ir_type = ctx.target.convert(&data_type);
-
         let destination = self.variables.generate();
 
-        let value: ir::Value = match expression.raw {
+        let value = match expression.raw {
             hlir::RawExpression::GetVariable(name) => {
                 self.allocate(destination.clone(), ir_type.clone());
 
                 let variable = self.variables.get(&name);
                 if variable.is_register_value {
-                    ir::Value::Reference(variable.key.clone())
+                    ir::Value::Register(variable.key.clone())
                 } else {
                     let key = ctx.counter.increment();
                     self.push(ir::Instruction::Define {
@@ -39,6 +38,10 @@ impl ir::Function {
             hlir::RawExpression::Integer(value) => {
                 self.allocate(destination.clone(), ir_type.clone());
                 ir::Value::Integer(value)
+            }
+            hlir::RawExpression::Boolean(value) => {
+                self.allocate(destination.clone(), ir_type.clone());
+                ir::Value::Boolean(value)
             }
             hlir::RawExpression::Call(key, _) => {
                 self.variables.insert(name, true);

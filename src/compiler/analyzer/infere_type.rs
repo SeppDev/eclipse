@@ -105,6 +105,9 @@ impl ast::RawType {
             Self::Tuple(fields) if fields.len() == 1 => fields.first().unwrap().raw.convert(),
             Self::UInt(n) => hlir::Type::UInt(*n),
             Self::Int(n) => hlir::Type::Int(*n),
+            Self::Boolean => hlir::Type::Boolean,
+            Self::Isize => hlir::Type::Isize,
+            Self::Usize => hlir::Type::Usize,
             _ => todo!(),
         }
     }

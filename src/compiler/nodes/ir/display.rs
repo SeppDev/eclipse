@@ -54,7 +54,7 @@ impl Display for Value {
             f,
             "{}",
             match self {
-                Self::Reference(body) => format!("%{body}"),
+                Self::Reference(body) | Self::Register(body) => format!("%{body}"),
                 Self::Integer(body) => format!("{body}"),
                 Self::Float(body) => format!("{body}"),
                 Self::Boolean(body) => format!("{body}"),
