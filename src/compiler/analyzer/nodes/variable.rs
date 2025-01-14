@@ -23,7 +23,7 @@ impl hlir::Function {
             None => todo!(),
         };
 
-        let data_type = self.infere_type(ctx, types, &data_type, &expression);
+        let data_type = self.infere_type(ctx, types, data_type, &expression);
         let expression = self.handle_expression(ctx, types, expression, data_type.clone());
 
         let key =

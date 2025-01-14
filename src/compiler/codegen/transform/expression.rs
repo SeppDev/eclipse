@@ -63,6 +63,7 @@ impl ir::Function {
                 self.handle_store_expression(ctx, &destination, expression);
                 return ir::Value::Register(destination)
             }
+            hlir::RawExpression::Group(expression) => self.handle_expression(ctx, *expression),
             _ => todo!(),
         }
     }

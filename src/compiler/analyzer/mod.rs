@@ -90,7 +90,6 @@ fn handle_function(
     }
 
     let mut nodes = function.raw.body.drain(..).collect::<VecDeque<ast::Node>>();
-    let return_type = Some(function.raw.return_type.clone());
 
     let returned = loop {
         let node = match nodes.pop_front() {
@@ -102,7 +101,7 @@ fn handle_function(
         let node: hlir::Node = match node.raw {
             ast::RawNode::Return(expression) => {
                 returned = true;
-                hlir_function.handle_return(ctx, types, expression, &return_type)
+                hlir_function.handle_return(ctx, types, expression, Some(function.raw.return_type.clone()))
             }
             ast::RawNode::DeclareVariable {
                 name,

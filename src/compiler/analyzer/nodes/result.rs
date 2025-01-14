@@ -6,12 +6,12 @@ impl hlir::Function {
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
         expression: Option<ast::Expression>,
-        return_type: &Option<ast::Type>,
+        return_type: Option<ast::Type>,
     ) -> hlir::Node {
         
         match expression {
             Some(expression) => {
-                let data_type = self.infere_type(ctx, types, &return_type, &expression);
+                let data_type = self.infere_type(ctx, types, return_type, &expression);
 
                 let expression = self.handle_expression(ctx, types, expression, data_type.clone());
                 hlir::Node::Return(data_type, Some(expression))

@@ -27,7 +27,7 @@ impl hlir::Function {
                     Some(variable) => {
                         variable.used = true;
                         hlir::RawExpression::GetVariable(variable.key.clone())
-                    },
+                    }
                     None => {
                         ctx.error(
                             expression.location,
@@ -37,17 +37,36 @@ impl hlir::Function {
                     }
                 }
             }
+            ast::RawExpression::Group(expression) => hlir::RawExpression::Group(Box::new(
+                self.handle_expression(ctx, types, *expression, data_type.clone()),
+            )),
+            ast::RawExpression::Tuple(expressions) => {
+                let tuple = match &data_type {
+                    hlir::Type::Tuple(types) => types,
+                    _ => {
+                        ctx.error(
+                            expression.location,
+                            format!("Expected tuple, found {data_type}"),
+                        );
+                        return hlir::Expression::default();
+                    }
+                };
+
+                let expressions = expressions
+                    .into_iter().zip(tuple)
+                    .map(|(expression, data_type)| {
+                        self.handle_expression(ctx, types, expression, data_type.clone())
+                    })
+                    .collect();
+                hlir::RawExpression::Tuple(expressions)
+            }
             ast::RawExpression::Integer(value) => hlir::RawExpression::Integer(value),
             ast::RawExpression::Boolean(value) => hlir::RawExpression::Boolean(value),
             ast::RawExpression::BinaryOperation(first, operator, second) => {
                 let first = self.handle_expression(ctx, types, *first, data_type.clone());
                 let second = self.handle_expression(ctx, types, *second, data_type.clone());
-                
-                hlir::RawExpression::BinaryOperation(
-                    Box::new(first),
-                    operator,
-                    Box::new(second),
-                )   
+
+                hlir::RawExpression::BinaryOperation(Box::new(first), operator, Box::new(second))
             }
             raw => {
                 ctx.error(
@@ -72,10 +91,8 @@ impl hlir::Function {
             InvokeType::Function {
                 key,
                 parameters,
-                return_type,
+                return_type: _,
             } => {
-                let mut ir_arguments = Vec::new();
-
                 if arguments.len() != parameters.len() {
                     ctx.error(
                         invoke.location,
@@ -89,16 +106,15 @@ impl hlir::Function {
                 }
                 arguments.reverse();
 
-                for parameter in parameters.into_iter() {
-                    let argument = arguments.pop().unwrap();
-
-                    let expression = self.handle_expression(ctx, types, argument, parameter.clone());
-                    ir_arguments.push(expression);
-                }
-
                 hlir::RawExpression::Call(
                     key.clone(),
-                    ir_arguments,
+                    parameters
+                        .iter()
+                        .zip(arguments)
+                        .map(|(param_type, argument)| {
+                            self.handle_expression(ctx, types, argument, param_type.clone())
+                        })
+                        .collect(),
                 )
             }
         }
@@ -110,24 +126,20 @@ impl hlir::Function {
         path: &Box<Expression>,
     ) -> Invoke<'a> {
         let t = match &path.raw {
-            ast::RawExpression::GetPath(path) => {
-                match types.get_path(ctx, &path.raw) {
-                    Some(function) => {
-                        InvokeType::Function {
-                            key: &function.key,
-                            parameters: &function.parameters,
-                            return_type: &function.return_type,
-                        }
-                    },
-                    None => {
-                        ctx.error(
-                            path.location.clone(),
-                            format!("Could not find: {}", path.raw),
-                        );
-                        InvokeType::default()
-                    }
+            ast::RawExpression::GetPath(path) => match types.get_path(ctx, &path.raw) {
+                Some(function) => InvokeType::Function {
+                    key: &function.key,
+                    parameters: &function.parameters,
+                    return_type: &function.return_type,
+                },
+                None => {
+                    ctx.error(
+                        path.location.clone(),
+                        format!("Could not find: {}", path.raw),
+                    );
+                    InvokeType::default()
                 }
-            }
+            },
             raw => {
                 ctx.error(
                     path.location.clone(),
