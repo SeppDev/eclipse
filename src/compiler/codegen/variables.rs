@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use crate::compiler::counter::NameCounter;
 
 pub struct Variable {
@@ -11,7 +10,7 @@ pub struct Variable {
 pub struct VariablesMap {
     future_keys: Vec<String>,
     counter: NameCounter,
-    map: HashMap<String, Variable>, // Changed key to `String` to avoid lifetime issues
+    map: HashMap<String, Variable>,
 }
 
 impl VariablesMap {
@@ -29,7 +28,7 @@ impl VariablesMap {
     pub fn insert(&mut self, name: String, is_register: bool) -> &str {
         let key = match self.future_keys.pop() {
             Some(k) => k,
-            None => self.counter.increment(),
+            None => self.increment(),
         };
         
         let old = self.map.insert(
@@ -44,6 +43,6 @@ impl VariablesMap {
         &self.map.get(&name).unwrap().key
     }
     pub fn get(&self, name: &String) -> &Variable {
-        self.map.get(name).unwrap()
+        self.map.get(name).expect(format!("Failed to get variable from '{name}'").as_str())
     }
 }

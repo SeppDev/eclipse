@@ -1,48 +1,27 @@
-use super::{Instruction, Operation, Type, Value};
+use super::{BinaryOperation, BinaryOperationPrefix, Type, Value};
 use std::fmt::Display;
 
-impl Display for Instruction {
+impl Display for BinaryOperation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Label(l) => format!("{l}"),
-                Self::Define {
-                    destination,
-                    operation,
-                } => format!("\t%{destination} = {operation}"),
-                Self::Store {
-                    data_type,
-                    value,
-                    pointer,
-                } => format!("\tstore {data_type} {value}, ptr {pointer}"),
-                Self::Return(data_type, value) => match value {
-                    Some(val) => format!("\tret {data_type} {val}"),
-                    None => format!("\tret {data_type}"),
-                },
-            }
-        )
+        write!(f, "{}", match self {
+            Self::Add(prefix) => format!("{prefix}add"),
+            Self::Subtract(prefix) => format!("{prefix}sub"),
+            Self::Divide(prefix) => format!("{prefix}div"),
+            Self::Multiply(prefix) => format!("{prefix}mul"),
+            Self::Remainder(prefix) => format!("{prefix}rem"),
+
+        })
     }
 }
-
-impl Display for Operation {
+impl Display for BinaryOperationPrefix {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Self::Allocate(data_type) => format!("alloca {data_type}"),
-                Self::Load(data_type, value) => format!("load {data_type}, ptr {value}"),
-                Self::Constant(data_type, value) => format!("constant {data_type} {value}"),
-                Self::Call(data_type, key, arguments) => format!(
-                    "call {data_type} @{key}({})",
-                    arguments
-                        .iter()
-                        .map(|(data_type, value)| format!("{data_type} {value}"))
-                        .collect::<Vec<String>>()
-                        .join(", ")
-                ),
+                Self::Float => format!("f"),
+                Self::Unsigned => format!("u"),
+                Self::Signed => format!(""),
             }
         )
     }

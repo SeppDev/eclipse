@@ -7,7 +7,7 @@ pub mod variables;
 pub mod target;
 mod transform;
 
-struct Source {
+pub struct Source {
     pub body: String,
 }
 
@@ -24,6 +24,11 @@ impl Source {
         self.push(contents);
         self.body.push('\n');
     }
+    fn tpushln<T: ToString>(&mut self, contents: T) {
+        self.push("\t");
+        self.push(contents);
+        self.body.push('\n');
+    }
 }
 
 pub fn codegen(ctx: &mut CompileCtx, module: AnalyzedModule) -> String {
@@ -33,15 +38,17 @@ pub fn codegen(ctx: &mut CompileCtx, module: AnalyzedModule) -> String {
     source.pushln(format!("target triple = \"{}\"", ctx.target));
 
     for function in ir.functions {
-        let mut body = Source::new();
-
-        for instruction in function.body {
-            body.pushln(format!("{instruction}"));
-        }
-
         source.pushln(format!(
-            "define {} @{}() {{\nstart:\n {}}}\n",
-            function.return_type, function.key, body.body
+            "define {} @{}({}) {{\nstart:\n {}}}\n",
+            function.return_type,
+            function.key,
+            function
+                .parameters
+                .into_iter()
+                .map(|(dt, key)| format!("{dt} %{key}"))
+                .collect::<Vec<String>>()
+                .join(", "),
+            function.body.body
         ))
     }
 

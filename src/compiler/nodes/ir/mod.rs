@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
+use std::collections::HashMap;
 
-use crate::compiler::codegen;
+use crate::compiler::{self, codegen};
 
 mod display;
 
@@ -13,30 +13,23 @@ pub struct Function {
     pub key: String,
     pub parameters: Vec<(Type, String)>,
     pub return_type: Type,
-    pub body: VecDeque<Instruction>,
-    pub variables: codegen::variables::VariablesMap
+    pub body: codegen::Source,
+    pub variables: codegen::variables::VariablesMap,
+    pub old_variables: HashMap<String, compiler::analyzer::Variable>,
 }
 
-pub enum Instruction {
-    Label(String),
-    Return(Type, Option<Value>),
-    
-    Store {
-        data_type: Type,
-        value: Value,
-        pointer: Value
-    },
-    Define {
-        destination: String,
-        operation: Operation
-    }
+pub enum BinaryOperationPrefix {
+    Float,
+    Signed,
+    Unsigned,
 }
 
-pub enum Operation {
-    Allocate(Type),
-    Load(Type, Value),
-    Call(Type, String, Vec<(Type, Value)>),
-    Constant(Type, Value)
+pub enum BinaryOperation {
+    Add(BinaryOperationPrefix),
+    Subtract(BinaryOperationPrefix),
+    Divide(BinaryOperationPrefix),
+    Multiply(BinaryOperationPrefix),
+    Remainder(BinaryOperationPrefix),
 }
 
 pub enum Value {
@@ -46,7 +39,6 @@ pub enum Value {
     Float(String),
     Boolean(bool),
 }
-
 
 #[derive(Clone)]
 pub enum Type {

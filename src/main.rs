@@ -13,7 +13,7 @@ enum Action {
 fn main() {
     let mut project_dir = std::env::current_dir().unwrap();
     let mut args = std::env::args();
-    args.next();
+    args.next();;
 
     let action = match args.next() {
         Some(a) => match a.as_str() {

@@ -11,12 +11,9 @@ impl hlir::Function {
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
         declared_type: &Option<ast::Type>,
-        expression: &Option<ast::Expression>,
+        expression: &ast::Expression,
     ) -> hlir::Type {
-        let infered = match expression {
-            Some(expr) => self.infere(ctx, types, &declared_type, expr),
-            None => hlir::Type::Void,
-        };
+        let infered = self.infere(ctx, types, &declared_type, expression);
 
         if let Some(declared_type) = declared_type {
             let converted = declared_type.raw.convert();
@@ -40,7 +37,7 @@ impl hlir::Function {
     ) -> hlir::Type {
         return match &expression.raw {
             ast::RawExpression::Invoke(path, _) => {
-                let invoke_type = self.get_invoke_type(ctx, types, path);
+                let invoke_type = self.get_invoke_type(ctx, types, path).raw;
                 match invoke_type {
                     InvokeType::Unkown => hlir::Type::default(),
                     InvokeType::Function { return_type, .. } => return_type.clone(),
@@ -77,6 +74,18 @@ impl hlir::Function {
                 } else {
                     hlir::Type::Boolean
                 }
+            }
+            ast::RawExpression::BinaryOperation(first, _, second) => {
+                let first = self.infere_type(ctx, types, expected_type, &first);
+                let second = self.infere_type(ctx, types, expected_type, &second);
+
+                if first != second {
+                    ctx.error(
+                        expression.location.clone(),
+                        format!("Expected {first} but got {second}"),
+                    );
+                }
+                first
             }
             raw => {
                 ctx.error(

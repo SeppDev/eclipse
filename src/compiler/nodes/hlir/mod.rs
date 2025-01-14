@@ -50,7 +50,6 @@ pub enum Node {
     },
     DeclareVariable {
         name: String,
-        mutable: bool,
         data_type: Type,
         expression: Expression,
     },

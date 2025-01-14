@@ -16,6 +16,10 @@ impl hlir::Function {
     fn check_function(mut self) -> Self {
         let body = self.body.drain(..).collect::<Vec<hlir::Node>>();
 
+        self.variables.map.iter_mut().for_each(|(_, variable)| {
+            variable.mutable = variable.modified;
+        });
+
         let function = Rc::new(&mut self);
 
         let new_body = body
@@ -30,7 +34,8 @@ impl hlir::Function {
 
 impl hlir::Node {
     fn is_essential(&self, function: &Rc<&mut hlir::Function>) -> bool {
-        self.is_essential_variable(function)
+        // self.is_essential_variable(function)
+        return true;
     }
     fn is_essential_variable(&self, function: &Rc<&mut hlir::Function>) -> bool {
         let (key, expression) = if let hlir::Node::DeclareVariable {
@@ -51,7 +56,7 @@ impl hlir::Node {
         ) {
             return true;
         }
-        
+
         let variable = function.variables.map.get(key).unwrap();
         return variable.used;
     }

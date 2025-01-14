@@ -14,7 +14,7 @@ mod expression;
 mod variables;
 use types::ModuleTypes;
 pub use types::ParsedProject;
-pub use variables::Variables;
+pub use variables::{Variables, Variable};
 
 #[derive(Default)]
 pub struct AnalyzedModule {
@@ -69,6 +69,26 @@ fn handle_function(
     };
     hlir_function.variables.push_scope();
 
+    for parameter in function.raw.parameters {
+        let data_type = parameter.raw.data_type.raw.convert();
+        
+        let key = match hlir_function.variables.insert(
+            parameter.raw.name.raw,
+            parameter.raw.mutable,
+            data_type.clone(),
+            parameter.location,
+        ) {
+            Ok(k) => k,
+            Err(old) => todo!()
+        };
+        
+        hlir_function.parameters.push(hlir::Parameter {
+            name: key,
+            mutable: parameter.raw.mutable,
+            data_type,
+        });
+    }
+
     let mut nodes = function.raw.body.drain(..).collect::<VecDeque<ast::Node>>();
     let return_type = Some(function.raw.return_type.clone());
 
@@ -98,6 +118,13 @@ fn handle_function(
                 data_type,
                 expression,
             ),
+            ast::RawNode::SetPath(path, expression) => hlir_function.handle_set(
+                ctx,
+                types,
+                node.location,
+                path,
+                expression
+            ),
             raw => {
                 ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                 continue;
@@ -124,7 +151,7 @@ fn handle_function(
 
     for (_, variable) in &hlir_function.variables.map {
         let name = &variable.name;
-        
+
         if !variable.used {
             ctx.warning(
                 variable.location.clone(),

@@ -8,14 +8,22 @@ impl hlir::Function {
         expression: Option<ast::Expression>,
         return_type: &Option<ast::Type>,
     ) -> hlir::Node {
-        let data_type = self.infere_type(ctx, types, &return_type, &expression);
         
         match expression {
             Some(expression) => {
+                let data_type = self.infere_type(ctx, types, &return_type, &expression);
+
                 let expression = self.handle_expression(ctx, types, expression, data_type.clone());
                 hlir::Node::Return(data_type, Some(expression))
             }
-            None => hlir::Node::Return(data_type, None),
+            None => {
+                let data_type = match return_type {
+                    Some(return_type) => return_type.raw.convert(),
+                    None => hlir::Type::Void,
+                };
+
+                hlir::Node::Return(data_type, None)
+            },
         }
     }
 

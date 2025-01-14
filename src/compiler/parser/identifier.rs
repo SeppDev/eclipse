@@ -52,11 +52,11 @@ impl Tokens {
                 let expression = self.parse_expression(true)?.unwrap();
 
                 let operator = match info.token {
-                    Token::PlusEquals => ArithmeticOperator::Plus,
+                    Token::PlusEquals => ArithmeticOperator::Add,
                     Token::SubtractEquals => ArithmeticOperator::Subtract,
                     Token::MultiplyEquals => ArithmeticOperator::Multiply,
                     Token::DivideEquals => ArithmeticOperator::Division,
-                    Token::PercentEquals => ArithmeticOperator::Modulus,
+                    Token::PercentEquals => ArithmeticOperator::Remainder,
                     _ => panic!(),
                 };
 
@@ -71,10 +71,7 @@ impl Tokens {
                     raw: binary_expression,
                 };
 
-                return Ok(self.create_located(RawNode::SetVariable {
-                    path,
-                    expression: Some(binary_expression),
-                }));
+                return Ok(self.create_located(RawNode::SetPath(path, binary_expression)));
             }
             _ => {
                 let message = format!("Not yet implemented: {info:#?} {}", path.raw);

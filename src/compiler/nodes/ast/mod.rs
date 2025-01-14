@@ -8,6 +8,11 @@ pub struct Located<T> {
     pub location: Location,
     pub raw: T,
 }
+impl<T> Located<T> {
+    pub fn new(location: Location, raw: T) -> Self {
+        Self { location, raw }
+    }
+}
 
 pub type Expression = Located<RawExpression>;
 pub type Node = Located<RawNode>;
@@ -64,10 +69,7 @@ pub struct RawFunction {
 pub enum RawNode {
     Continue,
     Break,
-    SetVariable {
-        path: LocatedPath,
-        expression: Option<Expression>,
-    },
+    SetPath(LocatedPath, Expression),
     DeclareVariable {
         name: Identifier,
         mutable: Option<Located<bool>>,
@@ -113,8 +115,8 @@ pub enum RawExpression {
 
 #[derive(Debug)]
 pub enum ArithmeticOperator {
-    Modulus,
-    Plus,
+    Remainder,
+    Add,
     Subtract,
     Division,
     Multiply,

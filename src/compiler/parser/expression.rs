@@ -160,11 +160,11 @@ impl Tokens {
 
         let mut info = if is_arithmetic {
             let arithmetic_operator = match info.token {
-                Token::Plus => ArithmeticOperator::Plus,
+                Token::Plus => ArithmeticOperator::Add,
                 Token::Minus => ArithmeticOperator::Subtract,
                 Token::ForwardSlash => ArithmeticOperator::Division,
                 Token::Asterisk => ArithmeticOperator::Multiply,
-                Token::Percent => ArithmeticOperator::Modulus,
+                Token::Percent => ArithmeticOperator::Remainder,
                 _ => panic!(),
             };
 

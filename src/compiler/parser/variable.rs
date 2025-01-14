@@ -40,7 +40,7 @@ impl Tokens {
     }
 
     pub fn parse_set_variable(&mut self, path: LocatedPath) -> CompileResult<Node> {
-        let expression = self.parse_expression(true)?;
-        return Ok(self.create_located(RawNode::SetVariable { path, expression }));
+        let expression = self.parse_expression(true)?.unwrap();
+        return Ok(self.create_located(RawNode::SetPath(path, expression)));
     }
 }

@@ -1,31 +1,82 @@
-use std::collections::VecDeque;
-
 use crate::compiler::{
     analyzer::AnalyzedModule,
     errors::CompileCtx,
     nodes::{
         hlir,
-        ir::{self, IRModule},
+        ir::{self, BinaryOperation, IRModule},
     },
 };
 
 use super::variables::VariablesMap;
 
+mod call;
+mod expression;
 mod result;
 mod types;
 mod variable;
-mod expression;
-mod call;
 
 impl ir::Function {
-    fn push(&mut self, instruction: ir::Instruction) {
-        self.body.push_back(instruction)
+    // fn push(&mut self, instruction: ir::Instruction) {
+    //     self.body.push_back(instruction)
+    // }
+    pub(super) fn label(&mut self, label: &String) {
+        self.body.pushln(format!("{label}:"));
     }
-    fn allocate(&mut self, destination: String, data_type: ir::Type) {
-        self.body.push_front(ir::Instruction::Define {
-            destination,
-            operation: ir::Operation::Allocate(data_type),
-        })
+    pub(super) fn store(&mut self, destination: &String, data_type: &ir::Type, value: &ir::Value) {
+        self.body
+            .tpushln(format!("store {data_type} {value}, ptr %{destination}"));
+    }
+    pub(super) fn allocate(&mut self, destination: &String, data_type: &ir::Type) {
+        self.body
+            .tpushln(format!("%{destination} = alloca {data_type}"));
+    }
+    pub(super) fn load(&mut self, destination: &String, data_type: &ir::Type, value: &ir::Value) {
+        self.body
+            .tpushln(format!("%{destination} = load {data_type}, ptr {value}"));
+    }
+    pub(super) fn binary_operation(
+        &mut self,
+        destination: &String,
+        data_type: &ir::Type,
+        operation: &BinaryOperation,
+        first: &ir::Value,
+        second: &ir::Value,
+    ) {
+        self.body.tpushln(format!(
+            "%{destination} = {operation} {data_type} {first}, {second}"
+        ));
+    }
+    pub(super) fn r#return(&mut self, data_type: &ir::Type, value: Option<&ir::Value>) {
+        match value {
+            Some(val) => {
+                self.body.tpushln(format!("ret {data_type} {val}"));
+            }
+            None => {
+                self.body.tpushln(format!("ret {data_type}"));
+            }
+        }
+    }
+    pub(super) fn call(
+        &mut self,
+        destination: Option<&String>,
+        data_type: &ir::Type,
+        key: &String,
+        arguments: Vec<(ir::Type, ir::Value)>,
+    ) {
+        let arguments = arguments
+            .iter()
+            .map(|(data_type, value)| format!("{data_type} {value}"))
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        match destination {
+            Some(dest) => self
+                .body
+                .tpushln(format!("%{dest} = call {data_type} @{key}({arguments})")),
+            None => self
+                .body
+                .tpushln(format!("call {data_type} @{key}({arguments})")),
+        };
     }
 }
 
@@ -46,36 +97,44 @@ pub fn transform(ctx: &mut CompileCtx, mut module: AnalyzedModule) -> IRModule {
 fn handle_function(
     ctx: &mut CompileCtx,
     module: &mut IRModule,
-    mut function: hlir::Function,
+    function: hlir::Function,
 ) -> ir::Function {
     let key = function.key;
-    
+
     let mut ir_function = ir::Function {
         key,
         return_type: ctx.target.convert(&function.return_type),
         parameters: Vec::new(),
-        body: VecDeque::new(),
-        variables: VariablesMap::new()
+        body: super::Source::new(),
+        variables: VariablesMap::new(),
+        old_variables: function.variables.map
     };
-    
+
+    for parameter in function.parameters {
+        ir_function.variables.insert(parameter.name.clone(), true);
+
+        ir_function
+            .parameters
+            .push((ctx.target.convert(&parameter.data_type), parameter.name));
+    }
+
     let mut nodes = function.body.into_iter();
     loop {
         let node = match nodes.next() {
             Some(n) => n,
             None => break,
         };
-        
+
         match node {
             hlir::Node::DeclareVariable {
                 name,
-                mutable,
                 data_type,
                 expression,
-            } => ir_function.handle_decl(ctx, name, mutable, data_type, expression),
+            } => ir_function.handle_decl(ctx, name, data_type, expression),
             hlir::Node::Return(data_type, expression) => {
                 ir_function.handle_return(ctx, data_type, expression)
             }
-
+            hlir::Node::SetVariable { name, expression } => ir_function.handle_set_variable(ctx, name, expression),
             _ => todo!(),
         }
     }
