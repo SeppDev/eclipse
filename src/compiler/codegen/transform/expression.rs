@@ -22,8 +22,8 @@ impl ir::Function {
                 let second = self.handle_expression(ctx, *second);
 
                 let prefix = match expression.data_type {
-                    hlir::Type::Int(_) => ir::BinaryOperationPrefix::Signed,
-                    hlir::Type::UInt(_) => ir::BinaryOperationPrefix::Unsigned,
+                    hlir::Type::Int(_)  | hlir::Type::Isize => ir::BinaryOperationPrefix::Signed,
+                    hlir::Type::UInt(_) | hlir::Type::Usize => ir::BinaryOperationPrefix::Unsigned,
                     hlir::Type::Float32 | hlir::Type::Float64 => ir::BinaryOperationPrefix::Float,
                     _ => panic!(),
                 };

@@ -4,26 +4,25 @@ use std::fmt::Display;
 impl Display for BinaryOperation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", match self {
-            Self::Add(prefix) => format!("{prefix}add"),
-            Self::Subtract(prefix) => format!("{prefix}sub"),
-            Self::Divide(prefix) => format!("{prefix}div"),
-            Self::Multiply(prefix) => format!("{prefix}mul"),
-            Self::Remainder(prefix) => format!("{prefix}rem"),
+            Self::Add(prefix) => format!("{}add", prefix.to_string(&self)),
+            Self::Subtract(prefix) => format!("{}sub", prefix.to_string(&self)),
 
+            Self::Multiply(prefix) => format!("{}mul", prefix.to_string(&self)),
+
+            Self::Divide(prefix) => format!("{}div", prefix.to_string(&self)),
+            Self::Remainder(prefix) => format!("{}rem", prefix.to_string(&self)),
         })
     }
 }
-impl Display for BinaryOperationPrefix {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Float => format!("f"),
-                Self::Unsigned => format!("u"),
-                Self::Signed => format!(""),
-            }
-        )
+impl BinaryOperationPrefix {
+    fn to_string(&self, operation: &BinaryOperation) -> &str {
+        match self {
+            Self::Float => "f",
+            Self::Unsigned if matches!(operation, BinaryOperation::Divide(..) | BinaryOperation::Remainder(..)) => "u",
+            Self::Signed if matches!(operation, BinaryOperation::Divide(..) | BinaryOperation::Remainder(..)) => "s",
+            Self::Signed => "",
+            _ => ""
+        }
     }
 }
 

@@ -24,8 +24,8 @@ impl hlir::Function {
 
         let new_body = body
             .into_iter()
-            .filter_map(|node| node.is_essential(&function.clone()).then_some(node))
             .map(|node| node.optimize_node())
+            .filter_map(|node| node.is_essential(&function.clone()).then_some(node))
             .collect::<Vec<hlir::Node>>();
 
         self.body = new_body;

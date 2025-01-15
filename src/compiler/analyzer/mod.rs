@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::path::PathBuf;
 
 use super::nodes::{ast, hlir};
 use super::FILE_EXTENSION;
@@ -16,7 +15,7 @@ use types::ModuleTypes;
 pub use types::ParsedProject;
 pub use variables::{Variables, Variable};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct AnalyzedModule {
     pub functions: Vec<hlir::Function>,
 }

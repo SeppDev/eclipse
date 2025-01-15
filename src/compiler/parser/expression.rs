@@ -101,7 +101,7 @@ impl Tokens {
             _ => panic!(),
         };
 
-        let mut first = self.create_located(base_expression);
+        let mut expression = self.create_located(base_expression);
         loop {
             let info = match self.peek_expect_tokens(
                 vec![Token::Dot, Token::OpenParen, Token::OpenBracket],
@@ -113,22 +113,45 @@ impl Tokens {
             match info.token {
                 Token::Dot => {
                     let identifier = self.parse_identifier()?;
-                    first = self.create_located(RawExpression::Field(Box::new(first), identifier))
+                    expression = self.create_located(RawExpression::Field(Box::new(expression), identifier))
                 }
                 Token::OpenParen => {
                     let arguments = self.parse_arguments()?;
-                    first = self.create_located(RawExpression::Invoke(Box::new(first), arguments))
+                    expression = self.create_located(RawExpression::Invoke(Box::new(expression), arguments))
                 }
                 Token::OpenBracket => {
                     let index = self.parse_expression(true)?.unwrap();
                     self.expect_tokens(vec![Token::CloseBracket], false)?;
-                    first =
-                        self.create_located(RawExpression::Index(Box::new(first), Box::new(index)));
+                    expression =
+                        self.create_located(RawExpression::Index(Box::new(expression), Box::new(index)));
                 }
                 _ => todo!(),
             }
         }
 
+        return self._parse_expression(expression);
+    }
+    fn _parse_expression(&mut self, first_expression: Expression) -> CompileResult<Option<Expression>> {
+        return Ok(Some(first_expression));
+    }
+
+    fn parse_struct_expression_fields(&mut self) -> CompileResult<Vec<(Identifier, Expression)>> {
+        let mut fields = Vec::new();
+        while self
+            .peek_expect_tokens(vec![Token::EndScope], true)
+            .is_none()
+        {
+            let name = self.parse_identifier()?;
+            self.expect_tokens(vec![Token::Colon], false)?;
+            let expression = self.parse_expression(true)?.unwrap();
+            self.peek_expect_tokens(vec![Token::Comma], true);
+            fields.push((name, expression))
+        }
+        return Ok(fields);
+    }
+}
+
+/*
         let info = match self.peek_expect_tokens(
             vec![
                 Token::Plus,
@@ -168,6 +191,13 @@ impl Tokens {
                 _ => panic!(),
             };
 
+            let second_priority =
+                if let RawExpression::BinaryOperation(_, operator, _) = &second_expression.raw {
+                    operator.priority()
+                } else {
+                    0
+                };
+
             self.create_located(RawExpression::BinaryOperation(
                 Box::new(first),
                 arithmetic_operator,
@@ -192,20 +222,4 @@ impl Tokens {
         };
 
         info.location = first_location;
-        return Ok(Some(info));
-    }
-    fn parse_struct_expression_fields(&mut self) -> CompileResult<Vec<(Identifier, Expression)>> {
-        let mut fields = Vec::new();
-        while self
-            .peek_expect_tokens(vec![Token::EndScope], true)
-            .is_none()
-        {
-            let name = self.parse_identifier()?;
-            self.expect_tokens(vec![Token::Colon], false)?;
-            let expression = self.parse_expression(true)?.unwrap();
-            self.peek_expect_tokens(vec![Token::Comma], true);
-            fields.push((name, expression))
-        }
-        return Ok(fields);
-    }
-}
+*/

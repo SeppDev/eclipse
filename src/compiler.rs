@@ -41,9 +41,11 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
     let project = parse_program(ctx)?;
     ctx.throw(false);
 
+    
     let analyzed_module = analyze(ctx, project);
     ctx.throw(false);
-
+    ctx.result_print(format!("{:#?}", analyzed_module.functions));
+    
     let analyzed_module = if ctx.options.release {
         ctx.set_status("Optimizing");
         optimize(ctx, analyzed_module)

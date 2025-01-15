@@ -115,11 +115,22 @@ pub enum RawExpression {
 
 #[derive(Debug)]
 pub enum ArithmeticOperator {
-    Remainder,
     Add,
     Subtract,
     Division,
     Multiply,
+    Remainder,
+}
+impl ArithmeticOperator {
+    pub fn priority(&self) -> u8 {
+        match self {
+            ArithmeticOperator::Add => 1,
+            ArithmeticOperator::Subtract => 1,
+            ArithmeticOperator::Division => 1,
+            ArithmeticOperator::Multiply => 2,
+            ArithmeticOperator::Remainder => 3,
+        }
+    }
 }
 
 #[derive(Debug)]

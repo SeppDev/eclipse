@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::compiler::{counter::NameCounter, errors::Location, nodes::hlir};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Variable {
     pub name: String,
     pub key: String,
@@ -15,7 +15,7 @@ pub struct Variable {
 }
 
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Variables {
     pub map: HashMap<String, Variable>,
     future_keys: Vec<String>,

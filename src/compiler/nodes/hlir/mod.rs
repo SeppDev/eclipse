@@ -30,6 +30,7 @@ pub struct Field {
     pub data_type: Type,
 }
 
+#[derive(Debug)]
 pub struct Function {
     pub key: String,
     pub parameters: Vec<Parameter>,
