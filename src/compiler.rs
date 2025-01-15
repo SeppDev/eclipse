@@ -1,9 +1,9 @@
 use analyzer::{analyze, ParsedProject};
 use codegen::codegen;
-use errors::{CompileCtx, CompileResult};
+pub use errors::{CompileCtx, CompileResult};
 use lib::get_std_file;
 use optimizer::optimize;
-use parser::{start_parse, ParsedFile};
+use parser::start_parse;
 use path::Path;
 use std::{path::PathBuf, process::Output, time::Duration};
 
@@ -44,8 +44,12 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
     let analyzed_module = analyze(ctx, project);
     ctx.throw(false);
 
-    ctx.set_status("Optimizing");
-    let analyzed_module = optimize(ctx, analyzed_module);
+    let analyzed_module = if ctx.options.release {
+        ctx.set_status("Optimizing");
+        optimize(ctx, analyzed_module)
+    } else {
+        analyzed_module
+    };
 
     ctx.set_status("Codegen");
     let source = codegen(ctx, analyzed_module);
@@ -68,8 +72,7 @@ fn compile(ctx: &mut CompileCtx) -> CompileResult<PathBuf> {
     return Ok(executable_path);
 }
 
-pub fn build(project_dir: PathBuf) -> PathBuf {
-    let mut ctx = CompileCtx::new(project_dir);
+pub fn build(mut ctx: CompileCtx) -> PathBuf {
     let start = std::time::Instant::now();
     let path = compile(&mut ctx).unwrap_or_else(|_| ctx.quit());
     ctx.throw(true);

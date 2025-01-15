@@ -60,11 +60,17 @@ struct MsgMap {
 }
 type Status = Option<String>;
 
+#[derive(Default)]
+pub struct Options {
+    pub release: bool
+}
+
 pub struct CompileCtx {
     pub counter: NameCounter,
     pub project_dir: PathBuf,
     pub target: Target,
     pub current_file_path: Path,
+    pub options: Options,
 
     debuginfo: MsgMap,
     messages: Vec<String>,
@@ -106,6 +112,7 @@ impl CompileCtx {
             target: Target::new(),
             counter: NameCounter::new(),
             project_dir,
+            options: Options::default(),
 
             debuginfo: MsgMap::default(),
             messages: Vec::new(),
