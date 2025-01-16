@@ -41,7 +41,7 @@ pub struct RawField {
 #[derive(Debug)]
 pub enum Fields {
     List(Vec<Type>),
-    Struct(Vec<Field>)
+    Struct(Vec<Field>),
 }
 
 #[derive(Debug)]
@@ -100,8 +100,9 @@ pub enum RawExpression {
     GetPath(LocatedPath),
     Field(Box<Expression>, Identifier),
     Index(Box<Expression>, Box<Expression>),
-    BinaryOperation(Box<Expression>, ArithmeticOperator, Box<Expression>),
-    CompareOperation(Box<Expression>, CompareOperator, Box<Expression>),
+    Operation(Box<Expression>, Operator, Box<Expression>),
+    // BinaryOperation(Box<Expression>, ArithmeticOperator, Box<Expression>),
+    // CompareOperation(Box<Expression>, CompareOperator, Box<Expression>),
     Array(Vec<Expression>),
     Tuple(Vec<Expression>),
     Group(Box<Expression>),
@@ -114,27 +115,13 @@ pub enum RawExpression {
 }
 
 #[derive(Debug)]
-pub enum ArithmeticOperator {
+pub enum Operator {
     Add,
     Subtract,
-    Division,
     Multiply,
+    Divide,
     Remainder,
-}
-impl ArithmeticOperator {
-    pub fn priority(&self) -> u8 {
-        match self {
-            ArithmeticOperator::Add => 1,
-            ArithmeticOperator::Subtract => 1,
-            ArithmeticOperator::Division => 1,
-            ArithmeticOperator::Multiply => 2,
-            ArithmeticOperator::Remainder => 3,
-        }
-    }
-}
 
-#[derive(Debug)]
-pub enum CompareOperator {
     Equals,
     NotEquals,
     GreaterThan,
@@ -142,3 +129,28 @@ pub enum CompareOperator {
     LessThan,
     LessThanOrEquals,
 }
+
+// #[derive(Debug)]
+// pub enum ArithmeticOperator {
+//     Add,
+//     Subtract,
+//     Division,
+//     Multiply,
+//     Remainder,
+// }
+// impl ArithmeticOperator {
+//     pub fn priority(&self) -> u8 {
+//         match self {
+//             ArithmeticOperator::Add => 1,
+//             ArithmeticOperator::Subtract => 1,
+//             ArithmeticOperator::Division => 1,
+//             ArithmeticOperator::Multiply => 2,
+//             ArithmeticOperator::Remainder => 3,
+//         }
+//     }
+// }
+
+// #[derive(Debug)]
+// pub enum CompareOperator {
+//
+// }

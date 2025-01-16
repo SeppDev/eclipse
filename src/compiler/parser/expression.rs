@@ -1,11 +1,19 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{ArithmeticOperator, CompareOperator, Expression, Identifier, RawExpression},
+    nodes::ast::{Expression, Operator, Identifier, RawExpression},
 };
 
 impl Tokens {
     pub fn parse_expression(&mut self, required: bool) -> CompileResult<Option<Expression>> {
+        let expression = match self.parse_base_expression(required)? {
+            Some(e) => e,
+            None => return Ok(None),
+        };
+
+        return self.parse_expression_after(expression);
+    }
+    fn parse_base_expression(&mut self, required: bool) -> CompileResult<Option<Expression>> {
         let info = match self.peek_expect_tokens(
             vec![
                 Token::String(String::new()),
@@ -113,25 +121,65 @@ impl Tokens {
             match info.token {
                 Token::Dot => {
                     let identifier = self.parse_identifier()?;
-                    expression = self.create_located(RawExpression::Field(Box::new(expression), identifier))
+                    expression =
+                        self.create_located(RawExpression::Field(Box::new(expression), identifier))
                 }
                 Token::OpenParen => {
                     let arguments = self.parse_arguments()?;
-                    expression = self.create_located(RawExpression::Invoke(Box::new(expression), arguments))
+                    expression =
+                        self.create_located(RawExpression::Invoke(Box::new(expression), arguments))
                 }
                 Token::OpenBracket => {
                     let index = self.parse_expression(true)?.unwrap();
                     self.expect_tokens(vec![Token::CloseBracket], false)?;
-                    expression =
-                        self.create_located(RawExpression::Index(Box::new(expression), Box::new(index)));
+                    expression = self.create_located(RawExpression::Index(
+                        Box::new(expression),
+                        Box::new(index),
+                    ));
                 }
                 _ => todo!(),
             }
         }
 
-        return self._parse_expression(expression);
+        return self.parse_expression_after(expression);
     }
-    fn _parse_expression(&mut self, first_expression: Expression) -> CompileResult<Option<Expression>> {
+    fn parse_expression_after(
+        &mut self,
+        first_expression: Expression,
+    ) -> CompileResult<Option<Expression>> {
+        let mut queue: Vec<Token> = Vec::with_capacity(4);
+
+        loop {
+            let info = match self.peek_expect_tokens(
+                vec![
+                    Token::OpenParen,
+                    Token::CloseParen,
+                    Token::Plus,
+                    Token::Minus,
+                    Token::Asterisk,
+                    Token::ForwardSlash,
+                    Token::Percent,
+                    Token::Compare,
+                    Token::NotEquals,
+                    Token::LessThan,
+                    Token::LessThanOrEquals,
+                    Token::GreaterThan,
+                    Token::GreaterThanOrEquals,
+                ],
+                false,
+            ) {
+                Some(_) => self.start()?,
+                None => break,
+            };
+
+            // let is_arithmetic = matches!(
+            //     info.token,
+            //     Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent
+            // );
+
+            let expression = self.parse_base_expression(true)?.unwrap();
+        }
+
         return Ok(Some(first_expression));
     }
 
@@ -151,10 +199,19 @@ impl Tokens {
     }
 }
 
+impl Operator {
+    fn priority(&self) -> u8 {
+        match &self {
+            Self::
+        }
+    }
+}
+
 /*
         let info = match self.peek_expect_tokens(
             vec![
-                Token::Plus,
+
+Token::Plus,
                 Token::Minus,
                 Token::Asterisk,
                 Token::ForwardSlash,
@@ -164,8 +221,7 @@ impl Tokens {
                 Token::LessThan,
                 Token::LessThanOrEquals,
                 Token::GreaterThan,
-                Token::GreaterThanOrEquals,
-            ],
+                Token::GreaterThanOrEquals,            ],
             false,
         ) {
             Some(_) => self.start()?,
@@ -176,10 +232,7 @@ impl Tokens {
         let mut first_location = first.location.clone();
         first_location.columns.end = second_expression.location.columns.end;
 
-        let is_arithmetic = matches!(
-            info.token,
-            Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent
-        );
+
 
         let mut info = if is_arithmetic {
             let arithmetic_operator = match info.token {
