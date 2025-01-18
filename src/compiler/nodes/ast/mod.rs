@@ -107,6 +107,8 @@ pub enum RawExpression {
     Group(Box<Expression>),
     Minus(Box<Expression>),
     Not(Box<Expression>),
+    Increment(Box<Expression>),
+    Decrement(Box<Expression>),
     Reference(Box<Expression>),
     DeReference(Box<Expression>),
     Invoke(Box<Expression>, Vec<Expression>),

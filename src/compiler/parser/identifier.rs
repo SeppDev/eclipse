@@ -32,6 +32,8 @@ impl Tokens {
                 Token::MultiplyEquals,
                 Token::PercentEquals,
                 Token::DoubleColon,
+                Token::Increment,
+                Token::Decrement,
             ],
             false,
         )?;
@@ -40,6 +42,37 @@ impl Tokens {
             Token::OpenParen => {
                 let arguments = self.parse_arguments()?;
                 self.create_located(RawNode::Call(path, arguments))
+            }
+            Token::Increment | Token::Decrement => {
+                let variable = Expression {
+                    location: path.location.clone(),
+                    raw: RawExpression::GetPath(path.clone()),
+                };
+
+                let operator = match info.token {
+                    Token::Increment => ast::ArithmeticOperator::Add,
+                    Token::Decrement => ast::ArithmeticOperator::Subtract,
+                    _ => panic!(),
+                };
+
+                let mut location = info.location.clone();
+                location.set_end(&info.location);
+
+                let second_expression =
+                    Located::new(location.clone(), RawExpression::Integer("1".to_string()));
+
+                let binary_expression = RawExpression::ArithmeticOperation(
+                    Box::new(variable),
+                    operator,
+                    Box::new(second_expression),
+                );
+
+                let binary_expression = Expression {
+                    location,
+                    raw: binary_expression,
+                };
+
+                return Ok(self.create_located(RawNode::SetPath(path, binary_expression)));
             }
             Token::Equals => self.parse_set_variable(path)?,
             Token::PlusEquals

@@ -29,6 +29,8 @@ impl Tokens {
                 Token::Asterisk,
                 Token::Ampersand,
                 Token::Minus,
+                Token::Increment,
+                Token::Decrement,
             ],
             false,
         ) {
@@ -47,6 +49,14 @@ impl Tokens {
         self.start()?;
 
         let base_expression = match info.token {
+            Token::Increment => {
+                let new_expression = self.parse_base_expression(true)?.unwrap();
+                RawExpression::Increment(Box::new(new_expression))
+            }
+            Token::Decrement => {
+                let new_expression = self.parse_base_expression(true)?.unwrap();
+                RawExpression::Decrement(Box::new(new_expression))
+            }
             Token::Integer(integer) => RawExpression::Integer(integer),
             Token::Float(float) => RawExpression::Float(float),
             Token::Boolean(boolean) => RawExpression::Boolean(boolean),

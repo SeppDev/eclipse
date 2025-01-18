@@ -41,6 +41,22 @@ impl hlir::Function {
             ast::RawExpression::Group(expression) => {
                 self.infere(ctx, types, expected_type, expression)
             }
+            ast::RawExpression::Increment(expression) => {
+                let data_type = self.infere(ctx, types, expected_type, expression);
+                if !data_type.is_integer() {
+                    ctx.error(expression.location.clone(), "Can only increment integers");
+                    return hlir::Type::Int(ctx.target.pointer_width());
+                }
+                data_type
+            }
+            ast::RawExpression::Decrement(expression) => {
+                let data_type = self.infere(ctx, types, expected_type, expression);
+                if !data_type.is_integer() {
+                    ctx.error(expression.location.clone(), "Can only decrement integers");
+                    return hlir::Type::Int(ctx.target.pointer_width());
+                }
+                data_type
+            }
             ast::RawExpression::Tuple(expressions) => {
                 let types = match expected_type {
                     Some(expected) => {
@@ -83,8 +99,9 @@ impl hlir::Function {
             }
             ast::RawExpression::Integer(_) => {
                 if let Some(ast) = expected_type {
-                    if ast.is_integer() {
-                        ast.convert()
+                    let converted = ast.convert();
+                    if converted.is_integer() {
+                        converted
                     } else {
                         hlir::Type::Int(ctx.target.pointer_width())
                     }
@@ -92,17 +109,7 @@ impl hlir::Function {
                     hlir::Type::Int(ctx.target.pointer_width())
                 }
             }
-            ast::RawExpression::Boolean(_) => {
-                if let Some(ast) = expected_type {
-                    if ast.is_boolean() {
-                        ast.convert()
-                    } else {
-                        hlir::Type::Boolean
-                    }
-                } else {
-                    hlir::Type::Boolean
-                }
-            }
+            ast::RawExpression::Boolean(_) => hlir::Type::Boolean,
             ast::RawExpression::ArithmeticOperation(first, _, second) => {
                 let first = self.infere(ctx, types, expected_type, &first);
                 let second = self.infere(ctx, types, expected_type, &second);
@@ -126,15 +133,14 @@ impl hlir::Function {
     }
 }
 
-impl ast::RawType {
+impl hlir::Type {
     fn is_integer(&self) -> bool {
-        use ast::RawType::*;
+        use hlir::Type::*;
         matches!(self, UInt(..) | Int(..) | Isize | Usize)
     }
-    fn is_boolean(&self) -> bool {
-        use ast::RawType::*;
-        matches!(self, Boolean)
-    }
+}
+
+impl ast::RawType {
     pub(super) fn convert(&self) -> hlir::Type {
         match self {
             Self::Void => hlir::Type::Void,

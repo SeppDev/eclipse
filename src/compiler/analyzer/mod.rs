@@ -123,6 +123,7 @@ fn handle_function(
             ast::RawNode::SetPath(path, expression) => {
                 hlir_function.handle_set(ctx, types, node.location, path, expression)
             }
+
             raw => {
                 ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                 continue;

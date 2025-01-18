@@ -134,6 +134,8 @@ fn match_token(word: &String) -> Option<Token> {
         "*" => Token::Asterisk,
         "/" => Token::ForwardSlash,
         "%" => Token::Percent,
+        "++" => Token::Increment,
+        "--" => Token::Decrement,
 
         "." => Token::Dot,
         "," => Token::Comma,

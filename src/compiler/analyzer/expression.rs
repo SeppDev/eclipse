@@ -37,6 +37,30 @@ impl hlir::Function {
                     }
                 }
             }
+            ast::RawExpression::Increment(expression) => {
+                let first = self.handle_expression(ctx, types, *expression, data_type.clone());
+                let second = hlir::Expression::new(
+                    hlir::RawExpression::Integer("1".to_string()),
+                    data_type.clone(),
+                );
+                hlir::RawExpression::BinaryOperation(
+                    Box::new(first),
+                    ast::ArithmeticOperator::Add,
+                    Box::new(second),
+                )
+            }
+            ast::RawExpression::Decrement(expression) => {
+                let first = self.handle_expression(ctx, types, *expression, data_type.clone());
+                let second = hlir::Expression::new(
+                    hlir::RawExpression::Integer("1".to_string()),
+                    data_type.clone(),
+                );
+                hlir::RawExpression::BinaryOperation(
+                    Box::new(first),
+                    ast::ArithmeticOperator::Subtract,
+                    Box::new(second),
+                )
+            }
             ast::RawExpression::Group(expression) => hlir::RawExpression::Group(Box::new(
                 self.handle_expression(ctx, types, *expression, data_type.clone()),
             )),

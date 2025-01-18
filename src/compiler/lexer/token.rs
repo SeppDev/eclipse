@@ -44,6 +44,8 @@ pub enum Token {
     ForwardSlash,
     Asterisk,
     Percent,
+    Increment,
+    Decrement,
 
     Loop,
     While,
@@ -144,6 +146,8 @@ impl std::fmt::Display for Token {
                 DivideEquals => "/=",
                 MultiplyEquals => "*=",
                 PercentEquals => "%=",
+                Increment => "++",
+                Decrement => "--",
 
                 Boolean(_) => "bool",
                 String(_) => "\"string\"",
