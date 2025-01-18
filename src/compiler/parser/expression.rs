@@ -203,6 +203,8 @@ impl Tokens {
                     Token::Asterisk,
                     Token::ForwardSlash,
                     Token::Percent,
+                    Token::LeftBitshift,
+                    Token::RightBitshift,
                 ],
                 true,
             ) {
@@ -216,7 +218,9 @@ impl Tokens {
                 Token::Asterisk => ArithmeticOperator::Multiply,
                 Token::ForwardSlash => ArithmeticOperator::Divide,
                 Token::Percent => ArithmeticOperator::Remainder,
-                _ => todo!(),
+                Token::LeftBitshift => ArithmeticOperator::LeftBitshift,
+                Token::RightBitshift => ArithmeticOperator::RightBitshift,
+                _ => panic!(),
             };
 
             loop {
@@ -299,7 +303,8 @@ impl ArithmeticOperator {
     fn precedence(&self) -> u8 {
         match self {
             Self::Add | Self::Subtract => 1,
-            Self::Multiply | Self::Divide | Self::Remainder => 3,
+            Self::Multiply | Self::Divide | Self::Remainder => 2,
+            Self::LeftBitshift | Self::RightBitshift => 3,
         }
     }
 }

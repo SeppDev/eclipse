@@ -5,7 +5,6 @@ use crate::compiler::errors::Location;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     // Unkown,
-
     EndOfFile,
     Function,
     StartScope,
@@ -38,6 +37,8 @@ pub enum Token {
     ElseIf,
     Else,
 
+    LeftBitshift,
+    RightBitshift,
     Plus,
     Minus,
     ForwardSlash,
@@ -61,7 +62,7 @@ pub enum Token {
     DivideEquals,
     MultiplyEquals,
     PercentEquals,
-    
+
     Boolean(bool),
     String(String),
     Integer(String),
@@ -122,6 +123,9 @@ impl std::fmt::Display for Token {
                 If => "if",
                 ElseIf => "elseif",
                 Else => "else",
+
+                LeftBitshift => "<<",
+                RightBitshift => ">>",
                 Plus => "+",
                 Minus => "-",
                 Asterisk => "*",
@@ -140,7 +144,7 @@ impl std::fmt::Display for Token {
                 DivideEquals => "/=",
                 MultiplyEquals => "*=",
                 PercentEquals => "%=",
-                
+
                 Boolean(_) => "bool",
                 String(_) => "\"string\"",
                 Integer(i) => i,
@@ -150,8 +154,6 @@ impl std::fmt::Display for Token {
         )
     }
 }
-
-
 
 #[derive(Debug, Clone)]
 pub struct TokenInfo {

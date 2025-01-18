@@ -6,6 +6,9 @@ use crate::compiler::{
 };
 
 impl Tokens {
+    pub fn parse_tree_path(&mut self) -> CompileResult<()> {
+        todo!();
+    }
     pub fn parse_path(&mut self) -> CompileResult<LocatedPath> {
         self.start_next();
         let root = self.parse_identifier()?;

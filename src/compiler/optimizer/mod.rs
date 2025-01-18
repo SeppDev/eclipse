@@ -88,7 +88,7 @@ impl hlir::Node {
 }
 
 impl hlir::Expression {
-    fn optimize_expression(self) -> Self {
+    fn optimize_expression(mut self) -> Self {
         match self.raw {
             hlir::RawExpression::BinaryOperation(first, operation, second) => {
                 let first = first.optimize_expression();
@@ -106,6 +106,8 @@ impl hlir::Expression {
                         ast::ArithmeticOperator::Multiply => first * second,
                         ast::ArithmeticOperator::Remainder => first % second,
                         ast::ArithmeticOperator::Divide => first / second,
+                        ast::ArithmeticOperator::LeftBitshift => first << second,
+                        ast::ArithmeticOperator::RightBitshift => first >> second,
                     };
 
                     return Self {
@@ -113,19 +115,17 @@ impl hlir::Expression {
                         raw: hlir::RawExpression::Integer(format!("{result}")),
                     };
                 }
-                return Self {
-                    data_type: self.data_type,
-                    raw: hlir::RawExpression::BinaryOperation(
-                        Box::new(first),
-                        operation,
-                        Box::new(second),
-                    ),
-                };
+                self.raw = hlir::RawExpression::BinaryOperation(
+                    Box::new(first),
+                    operation,
+                    Box::new(second),
+                )
             }
-            // hlir::RawExpression::Group(expression) => {
-            // hlir::RawExpression::Group(Box::new(expression.optimize_expression()))
-            // }
+            hlir::RawExpression::Group(expression) => {
+                self.raw = expression.optimize_expression().raw;
+            }
             _ => return self,
         };
+        self
     }
 }

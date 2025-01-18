@@ -1,7 +1,6 @@
 use crate::compiler::{
     errors::{CompileCtx, CompileResult, Location},
     lexer::reader::TokenKind,
-    path::Path,
 };
 
 use super::{
@@ -128,6 +127,8 @@ fn match_token(word: &String) -> Option<Token> {
         "_" => Token::Underscore,
         "!" => Token::ExclamationMark,
 
+        "<<" => Token::LeftBitshift,
+        ">>" => Token::RightBitshift,
         "+" => Token::Plus,
         "-" => Token::Minus,
         "*" => Token::Asterisk,

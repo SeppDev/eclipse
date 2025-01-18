@@ -120,6 +120,8 @@ pub enum ArithmeticOperator {
     Multiply,
     Divide,
     Remainder,
+    LeftBitshift,
+    RightBitshift,
 }
 
 #[derive(Debug)]

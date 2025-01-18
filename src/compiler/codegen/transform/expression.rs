@@ -29,6 +29,10 @@ impl ir::Function {
                 };
 
                 let operation = match operator {
+                    ast::ArithmeticOperator::LeftBitshift => ir::BinaryOperation::LeftBitshift,
+                    ast::ArithmeticOperator::RightBitshift => {
+                        ir::BinaryOperation::RightBitshift(prefix)
+                    }
                     ast::ArithmeticOperator::Add => ir::BinaryOperation::Add(prefix),
                     ast::ArithmeticOperator::Subtract => ir::BinaryOperation::Subtract(prefix),
                     ast::ArithmeticOperator::Divide => ir::BinaryOperation::Divide(prefix),

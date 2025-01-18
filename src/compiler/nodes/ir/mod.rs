@@ -30,6 +30,8 @@ pub enum BinaryOperation {
     Divide(BinaryOperationPrefix),
     Multiply(BinaryOperationPrefix),
     Remainder(BinaryOperationPrefix),
+    LeftBitshift,
+    RightBitshift(BinaryOperationPrefix),
 }
 
 pub enum Value {

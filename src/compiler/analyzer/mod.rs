@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use super::nodes::{ast, hlir};
 use super::FILE_EXTENSION;
 use super::{errors::CompileCtx, parser::ParsedFile};
@@ -13,7 +11,7 @@ mod expression;
 mod variables;
 use types::ModuleTypes;
 pub use types::ParsedProject;
-pub use variables::{Variables, Variable};
+pub use variables::{Variable, Variables};
 
 #[derive(Debug, Default)]
 pub struct AnalyzedModule {
@@ -70,7 +68,7 @@ fn handle_function(
 
     for parameter in function.raw.parameters {
         let data_type = parameter.raw.data_type.raw.convert();
-        
+
         let key = match hlir_function.variables.insert(
             parameter.raw.name.raw,
             parameter.raw.mutable,
@@ -78,9 +76,9 @@ fn handle_function(
             parameter.location,
         ) {
             Ok(k) => k,
-            Err(old) => todo!()
+            Err(old) => todo!(),
         };
-        
+
         hlir_function.parameters.push(hlir::Parameter {
             name: key,
             mutable: parameter.raw.mutable,
@@ -88,10 +86,11 @@ fn handle_function(
         });
     }
 
-    let mut nodes = function.raw.body.drain(..).collect::<VecDeque<ast::Node>>();
+    let mut nodes = function.raw.body.drain(..).collect::<Vec<ast::Node>>();
+    nodes.reverse();
 
     let returned = loop {
-        let node = match nodes.pop_front() {
+        let node = match nodes.pop() {
             Some(n) => n,
             None => break false,
         };
@@ -100,7 +99,12 @@ fn handle_function(
         let node: hlir::Node = match node.raw {
             ast::RawNode::Return(expression) => {
                 returned = true;
-                hlir_function.handle_return(ctx, types, expression, Some(function.raw.return_type.clone()))
+                hlir_function.handle_return(
+                    ctx,
+                    types,
+                    expression,
+                    Some(function.raw.return_type.clone()),
+                )
             }
             ast::RawNode::DeclareVariable {
                 name,
@@ -116,13 +120,9 @@ fn handle_function(
                 data_type,
                 expression,
             ),
-            ast::RawNode::SetPath(path, expression) => hlir_function.handle_set(
-                ctx,
-                types,
-                node.location,
-                path,
-                expression
-            ),
+            ast::RawNode::SetPath(path, expression) => {
+                hlir_function.handle_set(ctx, types, node.location, path, expression)
+            }
             raw => {
                 ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                 continue;
