@@ -39,13 +39,13 @@ fn main() {
             other => {
                 let (key, value) = match other.split_once("=") {
                     Some(a) => a,
-                    None => todo!()
+                    None => todo!(),
                 };
                 match key.to_lowercase().as_str() {
-                    "project_path" => ctx.project_dir = PathBuf::from(value), 
-                    _ => todo!()
+                    "project_path" => ctx.project_dir = PathBuf::from(value),
+                    _ => todo!(),
                 }
-            },
+            }
         }
     }
 

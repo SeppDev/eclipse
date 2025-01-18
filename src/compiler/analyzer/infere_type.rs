@@ -3,10 +3,7 @@ use crate::compiler::{
     nodes::{ast, hlir},
 };
 
-use super::{
-    expression::{self, InvokeType},
-    types::ModuleTypes,
-};
+use super::{expression::InvokeType, types::ModuleTypes};
 
 impl hlir::Function {
     pub(super) fn infere_type(
@@ -106,7 +103,7 @@ impl hlir::Function {
                     hlir::Type::Boolean
                 }
             }
-            ast::RawExpression::BinaryOperation(first, _, second) => {
+            ast::RawExpression::ArithmeticOperation(first, _, second) => {
                 let first = self.infere(ctx, types, expected_type, &first);
                 let second = self.infere(ctx, types, expected_type, &second);
 

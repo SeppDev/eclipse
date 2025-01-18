@@ -1,8 +1,7 @@
 use crate::compiler::{
     errors::CompileResult,
     nodes::ast::{
-        ArithmeticOperator, Expression, Identifier, Located, LocatedPath, Node, RawExpression,
-        RawNode,
+        self, Expression, Identifier, Located, LocatedPath, Node, RawExpression, RawNode,
     },
 };
 
@@ -23,16 +22,19 @@ impl Tokens {
         return Ok(Located::default());
     }
     pub fn parse_after_path(&mut self, path: LocatedPath) -> CompileResult<Node> {
-        let info = self.expect_tokens(vec![
-            Token::OpenParen,
-            Token::Equals,
-            Token::PlusEquals,
-            Token::SubtractEquals,
-            Token::DivideEquals,
-            Token::MultiplyEquals,
-            Token::PercentEquals,
-            Token::DoubleColon,
-        ], false)?;
+        let info = self.expect_tokens(
+            vec![
+                Token::OpenParen,
+                Token::Equals,
+                Token::PlusEquals,
+                Token::SubtractEquals,
+                Token::DivideEquals,
+                Token::MultiplyEquals,
+                Token::PercentEquals,
+                Token::DoubleColon,
+            ],
+            false,
+        )?;
 
         return Ok(match info.token {
             Token::OpenParen => {
@@ -52,15 +54,15 @@ impl Tokens {
                 let expression = self.parse_expression(true)?.unwrap();
 
                 let operator = match info.token {
-                    Token::PlusEquals => ArithmeticOperator::Add,
-                    Token::SubtractEquals => ArithmeticOperator::Subtract,
-                    Token::MultiplyEquals => ArithmeticOperator::Multiply,
-                    Token::DivideEquals => ArithmeticOperator::Division,
-                    Token::PercentEquals => ArithmeticOperator::Remainder,
+                    Token::PlusEquals => ast::ArithmeticOperator::Add,
+                    Token::SubtractEquals => ast::ArithmeticOperator::Subtract,
+                    Token::MultiplyEquals => ast::ArithmeticOperator::Multiply,
+                    Token::DivideEquals => ast::ArithmeticOperator::Divide,
+                    Token::PercentEquals => ast::ArithmeticOperator::Remainder,
                     _ => panic!(),
                 };
 
-                let binary_expression = RawExpression::BinaryOperation(
+                let binary_expression = RawExpression::ArithmeticOperation(
                     Box::new(variable),
                     operator,
                     Box::new(expression),

@@ -53,7 +53,8 @@ impl hlir::Function {
                 };
 
                 let expressions = expressions
-                    .into_iter().zip(tuple)
+                    .into_iter()
+                    .zip(tuple)
                     .map(|(expression, data_type)| {
                         self.handle_expression(ctx, types, expression, data_type.clone())
                     })
@@ -62,7 +63,7 @@ impl hlir::Function {
             }
             ast::RawExpression::Integer(value) => hlir::RawExpression::Integer(value),
             ast::RawExpression::Boolean(value) => hlir::RawExpression::Boolean(value),
-            ast::RawExpression::BinaryOperation(first, operator, second) => {
+            ast::RawExpression::ArithmeticOperation(first, operator, second) => {
                 let first = self.handle_expression(ctx, types, *first, data_type.clone());
                 let second = self.handle_expression(ctx, types, *second, data_type.clone());
 

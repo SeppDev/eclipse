@@ -1,6 +1,10 @@
 use std::rc::Rc;
 
-use super::{analyzer::AnalyzedModule, errors::CompileCtx, nodes::{ast::ArithmeticOperator, hlir}};
+use super::{
+    analyzer::AnalyzedModule,
+    errors::CompileCtx,
+    nodes::{ast, hlir},
+};
 
 pub fn optimize(ctx: &mut CompileCtx, mut module: AnalyzedModule) -> AnalyzedModule {
     module.functions = module
@@ -62,19 +66,25 @@ impl hlir::Node {
     }
     fn optimize_node(self) -> Self {
         return match self {
-            hlir::Node::DeclareVariable { name, data_type, expression } => {
-                hlir::Node::DeclareVariable { name, data_type, expression: expression.optimize_expression() }
-            }
-            hlir::Node::Return(data_type, expression) => {
-                hlir::Node::Return(data_type, match expression {
+            hlir::Node::DeclareVariable {
+                name,
+                data_type,
+                expression,
+            } => hlir::Node::DeclareVariable {
+                name,
+                data_type,
+                expression: expression.optimize_expression(),
+            },
+            hlir::Node::Return(data_type, expression) => hlir::Node::Return(
+                data_type,
+                match expression {
                     Some(expression) => Some(expression.optimize_expression()),
                     None => None,
-                })
-            }
+                },
+            ),
             _ => self,
         };
-        
-    } 
+    }
 }
 
 impl hlir::Expression {
@@ -84,29 +94,38 @@ impl hlir::Expression {
                 let first = first.optimize_expression();
                 let second = second.optimize_expression();
 
-                if let (hlir::RawExpression::Integer(first), hlir::RawExpression::Integer(second)) = (&first.raw, &second.raw) {
+                if let (hlir::RawExpression::Integer(first), hlir::RawExpression::Integer(second)) =
+                    (&first.raw, &second.raw)
+                {
                     let first = first.parse::<isize>().expect("Failed to parse integer");
                     let second = second.parse::<isize>().expect("Failed to parse integer");
 
                     let result = match operation {
-                        ArithmeticOperator::Add => first + second,
-                        ArithmeticOperator::Subtract => first - second,
-                        ArithmeticOperator::Multiply => first * second,
-                        ArithmeticOperator::Remainder => first % second,
-                        ArithmeticOperator::Division => first / second,
+                        ast::ArithmeticOperator::Add => first + second,
+                        ast::ArithmeticOperator::Subtract => first - second,
+                        ast::ArithmeticOperator::Multiply => first * second,
+                        ast::ArithmeticOperator::Remainder => first % second,
+                        ast::ArithmeticOperator::Divide => first / second,
                     };
 
                     return Self {
                         data_type: self.data_type,
-                        raw:  hlir::RawExpression::Integer(format!("{result}")),
-                    }
+                        raw: hlir::RawExpression::Integer(format!("{result}")),
+                    };
                 }
                 return Self {
                     data_type: self.data_type,
-                    raw: hlir::RawExpression::BinaryOperation(Box::new(first), operation, Box::new(second)),
-                }
+                    raw: hlir::RawExpression::BinaryOperation(
+                        Box::new(first),
+                        operation,
+                        Box::new(second),
+                    ),
+                };
             }
-            _ => return self
+            // hlir::RawExpression::Group(expression) => {
+            // hlir::RawExpression::Group(Box::new(expression.optimize_expression()))
+            // }
+            _ => return self,
         };
     }
 }

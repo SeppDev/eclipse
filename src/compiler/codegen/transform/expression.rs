@@ -1,6 +1,6 @@
 use crate::compiler::{
     errors::CompileCtx,
-    nodes::{ast::ArithmeticOperator, hlir, ir},
+    nodes::{ast, hlir, ir},
 };
 
 impl ir::Function {
@@ -22,18 +22,18 @@ impl ir::Function {
                 let second = self.handle_expression(ctx, *second);
 
                 let prefix = match expression.data_type {
-                    hlir::Type::Int(_)  | hlir::Type::Isize => ir::BinaryOperationPrefix::Signed,
+                    hlir::Type::Int(_) | hlir::Type::Isize => ir::BinaryOperationPrefix::Signed,
                     hlir::Type::UInt(_) | hlir::Type::Usize => ir::BinaryOperationPrefix::Unsigned,
                     hlir::Type::Float32 | hlir::Type::Float64 => ir::BinaryOperationPrefix::Float,
                     _ => panic!(),
                 };
 
                 let operation = match operator {
-                    ArithmeticOperator::Add => ir::BinaryOperation::Add(prefix),
-                    ArithmeticOperator::Subtract => ir::BinaryOperation::Subtract(prefix),
-                    ArithmeticOperator::Division => ir::BinaryOperation::Divide(prefix),
-                    ArithmeticOperator::Multiply => ir::BinaryOperation::Multiply(prefix),
-                    ArithmeticOperator::Remainder => ir::BinaryOperation::Remainder(prefix),
+                    ast::ArithmeticOperator::Add => ir::BinaryOperation::Add(prefix),
+                    ast::ArithmeticOperator::Subtract => ir::BinaryOperation::Subtract(prefix),
+                    ast::ArithmeticOperator::Divide => ir::BinaryOperation::Divide(prefix),
+                    ast::ArithmeticOperator::Multiply => ir::BinaryOperation::Multiply(prefix),
+                    ast::ArithmeticOperator::Remainder => ir::BinaryOperation::Remainder(prefix),
                 };
 
                 self.binary_operation(&result, &ir_type, &operation, &first, &second);
@@ -61,7 +61,7 @@ impl ir::Function {
             hlir::RawExpression::Call(..) => {
                 let destination = self.variables.increment();
                 self.handle_store_expression(ctx, &destination, expression);
-                return ir::Value::Register(destination)
+                return ir::Value::Register(destination);
             }
             hlir::RawExpression::Group(expression) => self.handle_expression(ctx, *expression),
             _ => todo!(),
@@ -85,7 +85,7 @@ impl ir::Function {
                     let value = self.handle_expression(ctx, argument);
                     ir_arguments.push((argument_type, value));
                 }
-                
+
                 self.call(Some(&destination), &ir_type, &key, ir_arguments);
             }
             _ => {

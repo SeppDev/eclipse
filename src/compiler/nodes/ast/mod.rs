@@ -100,9 +100,8 @@ pub enum RawExpression {
     GetPath(LocatedPath),
     Field(Box<Expression>, Identifier),
     Index(Box<Expression>, Box<Expression>),
-    Operation(Box<Expression>, Operator, Box<Expression>),
-    // BinaryOperation(Box<Expression>, ArithmeticOperator, Box<Expression>),
-    // CompareOperation(Box<Expression>, CompareOperator, Box<Expression>),
+    CompareOperation(Box<Expression>, CompareOperator, Box<Expression>),
+    ArithmeticOperation(Box<Expression>, ArithmeticOperator, Box<Expression>),
     Array(Vec<Expression>),
     Tuple(Vec<Expression>),
     Group(Box<Expression>),
@@ -115,13 +114,16 @@ pub enum RawExpression {
 }
 
 #[derive(Debug)]
-pub enum Operator {
+pub enum ArithmeticOperator {
     Add,
     Subtract,
     Multiply,
     Divide,
     Remainder,
+}
 
+#[derive(Debug)]
+pub enum CompareOperator {
     Equals,
     NotEquals,
     GreaterThan,
@@ -129,28 +131,3 @@ pub enum Operator {
     LessThan,
     LessThanOrEquals,
 }
-
-// #[derive(Debug)]
-// pub enum ArithmeticOperator {
-//     Add,
-//     Subtract,
-//     Division,
-//     Multiply,
-//     Remainder,
-// }
-// impl ArithmeticOperator {
-//     pub fn priority(&self) -> u8 {
-//         match self {
-//             ArithmeticOperator::Add => 1,
-//             ArithmeticOperator::Subtract => 1,
-//             ArithmeticOperator::Division => 1,
-//             ArithmeticOperator::Multiply => 2,
-//             ArithmeticOperator::Remainder => 3,
-//         }
-//     }
-// }
-
-// #[derive(Debug)]
-// pub enum CompareOperator {
-//
-// }

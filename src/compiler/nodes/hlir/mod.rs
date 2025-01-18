@@ -8,7 +8,7 @@ use super::ast::{ArithmeticOperator, CompareOperator};
 #[derive(Debug, Default)]
 pub struct Typed<T: Default> {
     pub data_type: Type,
-    pub raw: T
+    pub raw: T,
 }
 
 pub type Expression = Typed<RawExpression>;
@@ -36,7 +36,7 @@ pub struct Function {
     pub parameters: Vec<Parameter>,
     pub return_type: Type,
     pub body: Vec<Node>,
-    pub variables: Variables
+    pub variables: Variables,
 }
 
 #[derive(Debug, Default)]
