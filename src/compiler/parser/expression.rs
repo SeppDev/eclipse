@@ -1,8 +1,9 @@
 use crate::compiler::{
-    counter::NameCounter,
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{ArithmeticOperator, Expression, Identifier, Located, RawExpression},
+    nodes::ast::{
+        ArithmeticOperator, CompareOperator, Expression, Identifier, Located, RawExpression,
+    },
 };
 
 impl Tokens {
@@ -153,7 +154,31 @@ impl Tokens {
             ],
             true,
         );
-        return Ok(Some(expression));
+
+        let info = match info {
+            Some(i) => i,
+            None => return Ok(Some(expression)),
+        };
+
+        let operator = match info.token {
+            Token::Compare => CompareOperator::Equals,
+            Token::NotEquals => CompareOperator::NotEquals,
+            Token::LessThan => CompareOperator::LessThan,
+            Token::LessThanOrEquals => CompareOperator::LessThanOrEquals,
+            Token::GreaterThan => CompareOperator::GreaterThan,
+            Token::GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
+            _ => panic!(),
+        };
+
+        let second = self.parse_expression(true)?.unwrap();
+
+        let mut location = expression.location.clone();
+        location.set_end(&second.location);
+
+        let new_raw_expression =
+            RawExpression::CompareOperation(Box::new(expression), operator, Box::new(second));
+
+        return Ok(Some(Located::new(location, new_raw_expression)));
     }
     fn parse_expression_after(
         &mut self,
@@ -202,7 +227,7 @@ impl Tokens {
                         break;
                     }
                 };
-                if last.precedence() > operator.precedence() {
+                if last.precedence() >= operator.precedence() {
                     output.push(Output::Operator(operator_stack.pop().unwrap()));
                 } else {
                     operator_stack.push(operator);
@@ -229,8 +254,6 @@ impl Tokens {
 
         let mut solve_stack: Vec<Expression> = Vec::new();
 
-        // let mut current_operation: Option<Expression> = None;
-
         loop {
             let operator = match output.pop() {
                 Some(o) => match o {
@@ -248,7 +271,8 @@ impl Tokens {
 
             let location = first.location.clone();
 
-            let raw = RawExpression::ArithmeticOperation(Box::new(first), operator, Box::new(second));
+            let raw =
+                RawExpression::ArithmeticOperation(Box::new(first), operator, Box::new(second));
             let located = Located::new(location, raw);
 
             solve_stack.push(located);
@@ -274,90 +298,8 @@ impl Tokens {
 impl ArithmeticOperator {
     fn precedence(&self) -> u8 {
         match self {
-            Self::Subtract => 1,
-            Self::Add => 2,
-            Self::Multiply => 3,
-            Self::Divide => 4,
-            // Self::Add | Self::Subtract => 1,
-            // Self::Divide | Self::Multiply => 2,
-            // Self::Remainder => 3,
-            _ => 0,
+            Self::Add | Self::Subtract => 1,
+            Self::Multiply | Self::Divide | Self::Remainder => 3,
         }
     }
 }
-
-/*
-
-// let is_arithmetic = matches!(
-            //     info.token,
-            //     Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent
-            // );
-
-        let info = match self.peek_expect_tokens(
-            vec![
-
-Token::Plus,
-                Token::Minus,
-                Token::Asterisk,
-                Token::ForwardSlash,
-                Token::Percent,
-                Token::Compare,
-                Token::NotEquals,
-                Token::LessThan,
-                Token::LessThanOrEquals,
-                Token::GreaterThan,
-                Token::GreaterThanOrEquals,            ],
-            false,
-        ) {
-            Some(_) => self.start()?,
-            None => return Ok(Some(first)),
-        };
-
-        let second_expression = self.parse_expression(true)?.unwrap();
-        let mut first_location = first.location.clone();
-        first_location.columns.end = second_expression.location.columns.end;
-
-
-
-        let mut info = if is_arithmetic {
-            let arithmetic_operator = match info.token {
-                Token::Plus => ArithmeticOperator::Add,
-                Token::Minus => ArithmeticOperator::Subtract,
-                Token::ForwardSlash => ArithmeticOperator::Division,
-                Token::Asterisk => ArithmeticOperator::Multiply,
-                Token::Percent => ArithmeticOperator::Remainder,
-                _ => panic!(),
-            };
-
-            let second_priority =
-                if let RawExpression::BinaryOperation(_, operator, _) = &second_expression.raw {
-                    operator.priority()
-                } else {
-                    0
-                };
-
-            self.create_located(RawExpression::BinaryOperation(
-                Box::new(first),
-                arithmetic_operator,
-                Box::new(second_expression),
-            ))
-        } else {
-            let compare_operator = match info.token {
-                Token::Compare => CompareOperator::Equals,
-                Token::NotEquals => CompareOperator::NotEquals,
-                Token::LessThan => CompareOperator::LessThan,
-                Token::LessThanOrEquals => CompareOperator::LessThanOrEquals,
-                Token::GreaterThan => CompareOperator::GreaterThan,
-                Token::GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
-                _ => panic!(),
-            };
-
-            self.create_located(RawExpression::CompareOperation(
-                Box::new(first),
-                compare_operator,
-                Box::new(second_expression),
-            ))
-        };
-
-        info.location = first_location;
-*/
