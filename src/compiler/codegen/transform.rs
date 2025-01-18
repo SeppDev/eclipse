@@ -26,9 +26,28 @@ impl ir::Function {
         self.body
             .tpushln(format!("store {data_type} {value}, ptr %{destination}"));
     }
+    pub(super) fn store_pointer(
+        &mut self,
+        destination: &String,
+        data_type: &ir::Type,
+        pointer: &String,
+    ) {
+        self.body
+            .tpushln(format!("store {data_type} %{pointer}, ptr %{destination}"));
+    }
     pub(super) fn allocate(&mut self, destination: &String, data_type: &ir::Type) {
         self.body
             .tpushln(format!("%{destination} = alloca {data_type}"));
+    }
+
+    pub(super) fn load_pointer(
+        &mut self,
+        destination: &String,
+        data_type: &ir::Type,
+        pointer: &String,
+    ) {
+        self.body
+            .tpushln(format!("%{destination} = load {data_type}, ptr %{pointer}"));
     }
     pub(super) fn load(&mut self, destination: &String, data_type: &ir::Type, value: &ir::Value) {
         self.body
@@ -107,15 +126,28 @@ fn handle_function(
         parameters: Vec::new(),
         body: super::Source::new(),
         variables: VariablesMap::new(),
-        old_variables: function.variables.map
+        old_variables: function.variables.map,
     };
 
     for parameter in function.parameters {
-        ir_function.variables.insert(parameter.name.clone(), true);
+        let ir_type = ctx.target.convert(&parameter.data_type);
 
-        ir_function
-            .parameters
-            .push((ctx.target.convert(&parameter.data_type), parameter.name));
+        if parameter.mutable {
+            let param_name = ir_function.variables.increment();
+            let loaded_key = ir_function.variables.generate();
+            ir_function.allocate(&loaded_key, &ir_type);
+            ir_function.store_pointer(&loaded_key, &ir_type, &param_name);
+
+            ir_function.parameters.push((ir_type, param_name));
+
+            ir_function
+                .variables
+                .insert(parameter.name, false)
+                .to_string();
+        } else {
+            ir_function.variables.insert(parameter.name.clone(), true);
+            ir_function.parameters.push((ir_type, parameter.name));
+        }
     }
 
     let mut nodes = function.body.into_iter();
@@ -134,7 +166,9 @@ fn handle_function(
             hlir::Node::Return(data_type, expression) => {
                 ir_function.handle_return(ctx, data_type, expression)
             }
-            hlir::Node::SetVariable { name, expression } => ir_function.handle_set_variable(ctx, name, expression),
+            hlir::Node::SetVariable { name, expression } => {
+                ir_function.handle_set_variable(ctx, name, expression)
+            }
             _ => todo!(),
         }
     }

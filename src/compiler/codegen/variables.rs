@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::compiler::counter::NameCounter;
+use std::collections::HashMap;
 
 pub struct Variable {
     pub is_register_value: bool,
@@ -30,7 +30,7 @@ impl VariablesMap {
             Some(k) => k,
             None => self.increment(),
         };
-        
+
         let old = self.map.insert(
             name.clone(),
             Variable {
@@ -43,6 +43,8 @@ impl VariablesMap {
         &self.map.get(&name).unwrap().key
     }
     pub fn get(&self, name: &String) -> &Variable {
-        self.map.get(name).expect(format!("Failed to get variable from '{name}'").as_str())
+        self.map
+            .get(name)
+            .expect(format!("Failed to get variable from '{name}'").as_str())
     }
 }
