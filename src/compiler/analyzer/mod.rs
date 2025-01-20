@@ -89,53 +89,7 @@ fn handle_function(
     let mut nodes = function.raw.body.drain(..).collect::<Vec<ast::Node>>();
     nodes.reverse();
 
-    let returned = loop {
-        let node = match nodes.pop() {
-            Some(n) => n,
-            None => break false,
-        };
-
-        let mut returned = false;
-        let node: hlir::Node = match node.raw {
-            ast::RawNode::Return(expression) => {
-                returned = true;
-                hlir_function.handle_return(
-                    ctx,
-                    types,
-                    expression,
-                    Some(function.raw.return_type.clone()),
-                )
-            }
-            ast::RawNode::DeclareVariable {
-                name,
-                mutable,
-                data_type,
-                expression,
-            } => hlir_function.handle_decl(
-                ctx,
-                types,
-                node.location,
-                name,
-                mutable,
-                data_type,
-                expression,
-            ),
-            ast::RawNode::SetPath(path, expression) => {
-                hlir_function.handle_set(ctx, types, node.location, path, expression)
-            }
-
-            raw => {
-                ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
-                continue;
-            }
-        };
-
-        hlir_function.body.push(node);
-        if returned {
-            break returned;
-        }
-    };
-
+    let returned = hlir_function.handle_body(ctx, types, nodes);
     if !returned {
         if matches!(hlir_function.return_type, hlir::Type::Void) {
             hlir_function

@@ -1,4 +1,8 @@
-use crate::compiler::{analyzer::types::ModuleTypes, errors::CompileCtx, nodes::{ast, hlir}};
+use crate::compiler::{
+    analyzer::types::ModuleTypes,
+    errors::CompileCtx,
+    nodes::{ast, hlir},
+};
 
 impl hlir::Function {
     pub fn handle_return(
@@ -8,7 +12,6 @@ impl hlir::Function {
         expression: Option<ast::Expression>,
         return_type: Option<ast::Type>,
     ) -> hlir::Node {
-        
         match expression {
             Some(expression) => {
                 let data_type = self.infere_type(ctx, types, return_type, &expression);
@@ -23,8 +26,7 @@ impl hlir::Function {
                 };
 
                 hlir::Node::Return(data_type, None)
-            },
+            }
         }
     }
-
 }
