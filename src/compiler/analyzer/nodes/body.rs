@@ -9,19 +9,22 @@ impl hlir::Function {
         &mut self,
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
-        body: Vec<ast::Node>,
-    ) -> bool {
+        return_type: &Option<ast::Type>,
+        mut body: Vec<ast::Node>,
+    ) -> Vec<hlir::Node> {
+        self.variables.push_scope();
+        let mut nodes = Vec::new();
         loop {
             let node = match body.pop() {
                 Some(n) => n,
-                None => break false,
+                None => break,
             };
 
             let mut returned = false;
             let node: hlir::Node = match node.raw {
                 ast::RawNode::Return(expression) => {
                     returned = true;
-                    self.handle_return(ctx, types, expression, Some(self.raw.return_type.clone()))
+                    self.handle_return(ctx, types, expression, return_type)
                 }
                 ast::RawNode::DeclareVariable {
                     name,
@@ -43,16 +46,22 @@ impl hlir::Function {
                 ast::RawNode::Loop { condition, body } => {
                     self.handle_loop(ctx, types, condition, body)
                 }
+                ast::RawNode::Scope(body) => {
+                    hlir::Node::Scope(self.handle_body(ctx, types, return_type, body))
+                }
                 raw => {
                     ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
                     continue;
                 }
             };
 
-            self.body.push(node);
+            nodes.push(node);
             if returned {
-                break returned;
+                break;
             }
         }
+
+        self.variables.pop_scope();
+        return nodes;
     }
 }

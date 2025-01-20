@@ -1,6 +1,6 @@
 use crate::compiler::{
     analyzer::types::ModuleTypes,
-    errors::CompileCtx,
+    errors::{CompileCtx, Location},
     nodes::{ast, hlir},
 };
 
@@ -10,7 +10,7 @@ impl hlir::Function {
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
         expression: Option<ast::Expression>,
-        return_type: Option<ast::Type>,
+        return_type: &Option<ast::Type>,
     ) -> hlir::Node {
         match expression {
             Some(expression) => {
@@ -21,7 +21,13 @@ impl hlir::Function {
             }
             None => {
                 let data_type = match return_type {
-                    Some(return_type) => return_type.raw.convert(),
+                    Some(return_type) => {
+                        let converted = return_type.raw.convert();
+                        if converted != hlir::Type::Void {
+                            ctx.error(return_type.location.clone(), "Missing expression");
+                        }
+                        converted
+                    }
                     None => hlir::Type::Void,
                 };
 

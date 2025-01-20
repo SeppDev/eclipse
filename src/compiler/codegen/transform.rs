@@ -9,6 +9,7 @@ use crate::compiler::{
 
 use super::variables::VariablesMap;
 
+mod body;
 mod call;
 mod expression;
 mod result;
@@ -150,28 +151,7 @@ fn handle_function(
         }
     }
 
-    let mut nodes = function.body.into_iter();
-    loop {
-        let node = match nodes.next() {
-            Some(n) => n,
-            None => break,
-        };
-
-        match node {
-            hlir::Node::DeclareVariable {
-                name,
-                data_type,
-                expression,
-            } => ir_function.handle_decl(ctx, name, data_type, expression),
-            hlir::Node::Return(data_type, expression) => {
-                ir_function.handle_return(ctx, data_type, expression)
-            }
-            hlir::Node::SetVariable { name, expression } => {
-                ir_function.handle_set_variable(ctx, name, expression)
-            }
-            _ => todo!(),
-        }
-    }
+    ir_function.handle_body(ctx, function.body);
 
     return ir_function;
 }

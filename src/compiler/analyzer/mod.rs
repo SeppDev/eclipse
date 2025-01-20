@@ -89,7 +89,17 @@ fn handle_function(
     let mut nodes = function.raw.body.drain(..).collect::<Vec<ast::Node>>();
     nodes.reverse();
 
-    let returned = hlir_function.handle_body(ctx, types, nodes);
+    hlir_function.body =
+        hlir_function.handle_body(ctx, types, &Some(function.raw.return_type), nodes);
+
+    let returned = match hlir_function.body.last() {
+        Some(node) => match node {
+            hlir::Node::Return(_, _) => true,
+            _ => false,
+        },
+        None => false,
+    };
+
     if !returned {
         if matches!(hlir_function.return_type, hlir::Type::Void) {
             hlir_function

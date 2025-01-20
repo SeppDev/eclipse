@@ -10,7 +10,7 @@ impl hlir::Function {
         &self,
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
-        declared_type: Option<ast::Type>,
+        declared_type: &Option<ast::Type>,
         expression: &ast::Expression,
     ) -> hlir::Type {
         if let Some(declared_type) = declared_type {
@@ -21,7 +21,8 @@ impl hlir::Function {
                 ctx.error(
                     declared_type.location.clone(),
                     format!("Expected {converted} but got {infered}"),
-                );
+                )
+                .push("", expression.location.clone());
             }
 
             infered
