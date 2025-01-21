@@ -79,7 +79,7 @@ impl Tokens {
             "bool" => RawType::Boolean,
             "!" => RawType::Never,
             // _ => RawType::GetType(self.parse_path_root(name)?),
-            _ => todo!()
+            raw => todo!("{raw}"),
         };
         return Ok(self.create_located(raw));
     }

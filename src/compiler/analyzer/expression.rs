@@ -129,7 +129,6 @@ impl hlir::Function {
                     );
                     return hlir::RawExpression::default();
                 }
-                arguments.reverse();
 
                 hlir::RawExpression::Call(
                     key.clone(),
