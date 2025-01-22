@@ -2,8 +2,10 @@ use std::{path::PathBuf, process::exit};
 
 mod run;
 use compiler::CompileCtx;
+use lsp::logger::Logger;
 use run::run;
 
+mod lsp;
 mod compiler;
 
 enum Action {
@@ -18,6 +20,7 @@ fn main() {
 
     let action = match args.next() {
         Some(a) => match a.as_str() {
+            "lsp" => lsp::init(),
             "run" => Action::Run,
             "build" => Action::Build,
             _ => {
