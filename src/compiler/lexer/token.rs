@@ -1,6 +1,4 @@
-use std::ops::Range;
-
-use crate::compiler::errors::Location;
+use crate::common::location::{Position, PositionRange};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
@@ -162,18 +160,15 @@ impl std::fmt::Display for Token {
 #[derive(Debug, Clone)]
 pub struct TokenInfo {
     pub token: Token,
-    pub location: Location,
+    pub position: PositionRange,
 }
 impl TokenInfo {
-    pub fn new(token: Token, lines: Range<usize>, columns: Range<usize>) -> Self {
-        Self {
-            token,
-            location: Location::new(lines, columns),
-        }
+    pub fn new(token: Token, position: PositionRange) -> Self {
+        Self { token, position }
     }
 }
 impl std::fmt::Display for TokenInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Token: {} : {}", self.token, self.location)
+        write!(f, "Token: {} : {}", self.token, self.position)
     }
 }

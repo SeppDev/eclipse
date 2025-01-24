@@ -1,6 +1,9 @@
-use crate::compiler::{path::Path, FILE_EXTENSION};
+use crate::{
+    common::location::PositionRange,
+    compiler::{path::Path, FILE_EXTENSION},
+};
 
-use super::{CompileCtx, Location, Map};
+use super::{CompileCtx, Map};
 
 #[derive(Debug, PartialEq)]
 pub enum MessageVariant {
@@ -40,8 +43,12 @@ impl CompileMessage {
         let detail = self.details.first_mut().unwrap();
         detail.set_notice(notice);
     }
-    pub fn push<Notice: ToString>(&mut self, notice: Notice, location: Location) -> &mut Detail {
-        self.details.push(Detail::new(notice.to_string(), location));
+    pub fn push<Notice: ToString>(
+        &mut self,
+        notice: Notice,
+        position: PositionRange,
+    ) -> &mut Detail {
+        self.details.push(Detail::new(notice.to_string(), position));
         self.details.last_mut().unwrap()
     }
 }
@@ -49,14 +56,14 @@ impl CompileMessage {
 #[derive(Debug, Clone)]
 pub struct Detail {
     pub notice: String,
-    pub location: Location,
+    pub position: PositionRange,
 }
 impl Detail {
     pub fn set_notice<Notice: ToString>(&mut self, notice: Notice) {
         self.notice = notice.to_string();
     }
-    pub fn new(notice: String, location: Location) -> Self {
-        Self { notice, location }
+    pub fn new(notice: String, position: PositionRange) -> Self {
+        Self { notice, position }
     }
 }
 
@@ -77,14 +84,14 @@ fn display(relative_path: &Path, message: &CompileMessage, lines: &Vec<String>) 
         "  --> {}.{}:{}:{}",
         relative_path.into_path_buf().to_string_lossy(),
         FILE_EXTENSION,
-        first.location.lines.start,
-        first.location.columns.start
+        first.position.start.line,
+        first.position.start.column
     );
 
     let mut spacing = String::new();
     for detail in &message.details {
-        let location = &detail.location;
-        let temp_spacing = String::from(" ").repeat(format!("{}", location.lines.start).len());
+        let location = &detail.position;
+        let temp_spacing = String::from(" ").repeat(format!("{}", location.start.line).len());
 
         if temp_spacing.len() > spacing.len() {
             spacing = temp_spacing;
@@ -92,25 +99,25 @@ fn display(relative_path: &Path, message: &CompileMessage, lines: &Vec<String>) 
     }
 
     for detail in &message.details {
-        let location = &detail.location;
-        let line = lines.get(location.lines.start - 1).unwrap();
-        let total_spacing = format!("{}", detail.location.lines.start).len();
+        let position = &detail.position;
+        let line = lines.get(position.start.line - 1).unwrap();
+        let total_spacing = format!("{}", detail.position.start.line).len();
         let line_spacing = String::from(" ").repeat(spacing.len() - total_spacing);
 
         let repeat: usize = {
-            if location.lines.len() > 1 {
-                line.len() - location.columns.start + 1
-            } else {
-                (location.columns.end - location.columns.start).max(1)
-            }
+            // if location.lines.len() > 1 {
+            // line.len() - location.columns.start + 1
+            // } else {
+            (position.end.column - position.start.column).max(1)
+            // }
         };
 
         println!(" {} |", spacing);
-        println!(" {}{} | {}", line_spacing, location.lines.start, line);
+        println!(" {}{} | {}", line_spacing, position.start.line, line);
         println!(
             " {} | {}{} {}",
             spacing,
-            " ".repeat(location.columns.start.max(1) - 1),
+            " ".repeat(position.start.column.max(1) - 1),
             "^".repeat(repeat),
             detail.notice
         );

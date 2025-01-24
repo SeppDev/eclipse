@@ -1,19 +1,19 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::compiler::{counter::NameCounter, errors::Location, nodes::hlir};
+use crate::common::location::PositionRange;
+use crate::compiler::{counter::NameCounter, nodes::hlir};
 
 #[derive(Debug, Default)]
 pub struct Variable {
     pub name: String,
     pub key: String,
-    pub location: Location,
+    pub position: PositionRange,
     pub mutable: bool,
     pub data_type: hlir::Type,
 
     pub modified: bool,
     pub used: bool,
 }
-
 
 #[derive(Debug, Default)]
 pub struct Variables {
@@ -40,7 +40,7 @@ impl Variables {
         name: String,
         mutable: bool,
         data_type: hlir::Type,
-        location: Location,
+        position: PositionRange,
     ) -> Result<String, String> {
         // if name == "_" {
         //     return None;
@@ -60,7 +60,7 @@ impl Variables {
         let variable = Variable {
             name,
             key: key.clone(),
-            location,
+            position,
             mutable,
             data_type,
 

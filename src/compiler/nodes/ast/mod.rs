@@ -1,16 +1,16 @@
-use crate::compiler::{errors::Location, path::Path};
+use crate::{common::location::PositionRange, compiler::path::Path};
 
 mod types;
 pub use types::RawType;
 
 #[derive(Debug, Default, Clone)]
 pub struct Located<T> {
-    pub location: Location,
+    pub position: PositionRange,
     pub raw: T,
 }
 impl<T> Located<T> {
-    pub fn new(location: Location, raw: T) -> Self {
-        Self { location, raw }
+    pub fn new(position: PositionRange, raw: T) -> Self {
+        Self { position, raw }
     }
 }
 

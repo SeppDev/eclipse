@@ -1,8 +1,10 @@
 use crate::compiler::{
-    errors::{CompileCtx, CompileMessage, CompileResult, Location},
+    errors::{CompileCtx, CompileMessage, CompileResult},
     nodes::ast::Located,
     path::Path,
 };
+
+use crate::common::location::PositionRange;
 
 use super::{Token, TokenInfo};
 use std::{fmt::Debug, iter::Peekable, vec::IntoIter};
@@ -31,9 +33,13 @@ impl Tokens {
         };
     }
 
-    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut CompileMessage {
+    pub fn error<T: ToString>(
+        &mut self,
+        position: PositionRange,
+        message: T,
+    ) -> &mut CompileMessage {
         let mut message = CompileMessage::error(message.to_string());
-        message.push("", location);
+        message.push("", position);
         self.messages.push(message);
         return self.messages.last_mut().unwrap();
     }
@@ -64,12 +70,9 @@ impl Tokens {
             .pop()
             .unwrap_or_else(|| panic!("Missing starting node for: {raw:#?}"));
 
-        let current = self.current.clone().unwrap().location;
-        let location = Location::new(
-            start.location.lines.start..current.lines.end,
-            start.location.columns.start..current.columns.end,
-        );
-        Located { location, raw }
+        let current = self.current.clone().unwrap().position;
+        let position = start.position.start.extend(current.end);
+        Located::new(position, raw)
     }
     pub fn start(&mut self) -> CompileResult<TokenInfo> {
         let token = self.advance()?;
@@ -97,7 +100,7 @@ impl Tokens {
             None => {
                 let current = self.current.as_ref().unwrap();
                 self.error(
-                    current.location.clone(),
+                    current.position.clone(),
                     format!("No token found {}", current.token),
                 );
                 return Err(());
@@ -106,7 +109,7 @@ impl Tokens {
 
         match info.token {
             Token::EndOfFile => {
-                self.error(info.location.clone(), format!("Early {}", info.token));
+                self.error(info.position.clone(), format!("Early {}", info.token));
             }
             _ => {}
         }

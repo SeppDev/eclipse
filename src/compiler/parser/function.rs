@@ -1,7 +1,7 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Function, Parameter, RawFunction, RawParameter, RawType, Type},
+    nodes::ast::{Function, Located, Parameter, RawFunction, RawParameter, RawType, Type},
 };
 
 impl Tokens {
@@ -24,19 +24,19 @@ impl Tokens {
                 let name = self.parse_identifier()?;
                 let data_type = self.parse_type()?;
 
-                let mut location = self.pop_start().location;
+                let mut position = self.pop_start().position;
                 let current = self.current();
-                location.lines.end = current.location.lines.end;
-                location.columns.end = current.location.columns.end;
 
-                let parameter = Parameter {
-                    location,
-                    raw: RawParameter {
+                position.set_end(current.position.end);
+
+                let parameter = Located::new(
+                    position,
+                    RawParameter {
                         mutable,
                         name,
                         data_type,
                     },
-                };
+                );
 
                 parameters.push(parameter);
 
@@ -52,10 +52,7 @@ impl Tokens {
         let return_type = if self.peek_expect_tokens(vec![Token::Colon], true).is_some() {
             self.parse_type()?
         } else {
-            Type {
-                location: name.location.clone(),
-                raw: RawType::Void
-            }
+            Located::new(name.position, RawType::Void)
         };
 
         self.expect_tokens(vec![Token::StartScope], false)?;

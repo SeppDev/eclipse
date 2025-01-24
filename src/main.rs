@@ -4,6 +4,7 @@ mod run;
 use compiler::CompileCtx;
 use run::run;
 
+mod common;
 mod compiler;
 mod lsp;
 

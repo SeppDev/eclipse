@@ -1,18 +1,20 @@
 use crate::compiler::{
     analyzer::types::ModuleTypes,
-    errors::{CompileCtx, Location},
+    errors::CompileCtx,
     nodes::{
         ast::{self, Identifier, Located, LocatedPath},
         hlir,
     },
 };
 
+use crate::common::location::PositionRange;
+
 impl hlir::Function {
     pub fn handle_decl(
         &mut self,
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
-        location: Location,
+        position: PositionRange,
         name: Identifier,
         mutable: Option<Located<bool>>,
         data_type: Option<ast::Type>,
@@ -29,7 +31,7 @@ impl hlir::Function {
         let key =
             match self
                 .variables
-                .insert(name.raw, mutable.is_some(), data_type.clone(), location)
+                .insert(name.raw, mutable.is_some(), data_type.clone(), position)
             {
                 Ok(k) => k,
                 Err(_) => todo!(),
@@ -45,7 +47,7 @@ impl hlir::Function {
         &mut self,
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
-        location: Location,
+        position: PositionRange,
         path: LocatedPath,
         expression: ast::Expression,
     ) -> hlir::Node {
@@ -57,7 +59,7 @@ impl hlir::Function {
 
                         if !var.mutable {
                             ctx.error(
-                                location,
+                                position,
                                 format!("Cannot modify immutable variable '{name}'"),
                             );
                         }
@@ -75,7 +77,7 @@ impl hlir::Function {
             }
         }
 
-        ctx.error(location, format!("Cannot find value at path {}", path.raw));
+        ctx.error(position, format!("Cannot find value at path {}", path.raw));
 
         hlir::Node::default()
     }

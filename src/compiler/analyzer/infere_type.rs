@@ -19,10 +19,10 @@ impl hlir::Function {
 
             if converted != infered {
                 ctx.error(
-                    declared_type.location.clone(),
+                    declared_type.position,
                     format!("Expected {converted} but got {infered}"),
                 )
-                .push("", expression.location.clone());
+                .push("", expression.position);
             }
 
             infered
@@ -45,7 +45,7 @@ impl hlir::Function {
             ast::RawExpression::Increment(expression) => {
                 let data_type = self.infere(ctx, types, expected_type, expression);
                 if !data_type.is_integer() {
-                    ctx.error(expression.location.clone(), "Can only increment integers");
+                    ctx.error(expression.position, "Can only increment integers");
                     return hlir::Type::Int(ctx.target.pointer_width());
                 }
                 data_type
@@ -53,7 +53,7 @@ impl hlir::Function {
             ast::RawExpression::Decrement(expression) => {
                 let data_type = self.infere(ctx, types, expected_type, expression);
                 if !data_type.is_integer() {
-                    ctx.error(expression.location.clone(), "Can only decrement integers");
+                    ctx.error(expression.position, "Can only decrement integers");
                     return hlir::Type::Int(ctx.target.pointer_width());
                 }
                 data_type
@@ -117,7 +117,7 @@ impl hlir::Function {
 
                 if first != second {
                     ctx.error(
-                        expression.location.clone(),
+                        expression.position,
                         format!("Expected {first} but got {second}"),
                     );
                 }
@@ -125,7 +125,7 @@ impl hlir::Function {
             }
             raw => {
                 ctx.error(
-                    expression.location.clone(),
+                    expression.position,
                     format!("Not yet implemented: {raw:#?}"),
                 );
                 hlir::Type::default()

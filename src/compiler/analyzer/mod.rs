@@ -73,7 +73,7 @@ fn handle_function(
             parameter.raw.name.raw,
             parameter.raw.mutable,
             data_type.clone(),
-            parameter.location,
+            parameter.position,
         ) {
             Ok(k) => k,
             Err(_) => todo!(),
@@ -106,7 +106,7 @@ fn handle_function(
                 .body
                 .push(hlir::Node::Return(hlir::Type::Void, None));
         } else {
-            ctx.error(function.location, "Missing return");
+            ctx.error(function.position, "Missing return");
         }
     }
 
@@ -117,14 +117,14 @@ fn handle_function(
 
         if !variable.used {
             ctx.warning(
-                variable.location.clone(),
+                variable.position.clone(),
                 format!("The value of '{name}' is assigned but never used!"),
             );
             continue;
         }
         if variable.mutable && !variable.modified {
             ctx.warning(
-                variable.location.clone(),
+                variable.position.clone(),
                 format!("The value of '{name}' is never modified!"),
             );
             continue;

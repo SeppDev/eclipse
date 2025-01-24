@@ -3,7 +3,11 @@ use crate::compiler::{errors::CompileResult, lexer::TokenInfo};
 use super::super::lexer::{Token, Tokens};
 
 impl Tokens {
-    pub fn expect_tokens(&mut self, mut expected: Vec<Token>, start: bool) -> CompileResult<TokenInfo> {
+    pub fn expect_tokens(
+        &mut self,
+        mut expected: Vec<Token>,
+        start: bool,
+    ) -> CompileResult<TokenInfo> {
         let info = if start {
             self.start()?
         } else {
@@ -16,10 +20,7 @@ impl Tokens {
             }
         }
 
-        self.error(
-            info.location.clone(),
-            format_expected(&mut expected, &info.token),
-        );
+        self.error(info.position, format_expected(&mut expected, &info.token));
 
         return Err(());
     }
@@ -54,9 +55,9 @@ fn format_expected(expected: &mut Vec<Token>, got: &Token) -> String {
             .map(|x| format!("'{}'", x))
             .collect::<Vec<String>>()
             .join(", ");
-        
+
         body.push_str(last.as_str());
-        
+
         format!("one of {body}")
     };
 

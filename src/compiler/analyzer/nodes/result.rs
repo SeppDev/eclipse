@@ -24,7 +24,7 @@ impl hlir::Function {
                     Some(return_type) => {
                         let converted = return_type.raw.convert();
                         if converted != hlir::Type::Void {
-                            ctx.error(return_type.location.clone(), "Missing expression");
+                            ctx.error(return_type.position, "Missing expression");
                         }
                         converted
                     }

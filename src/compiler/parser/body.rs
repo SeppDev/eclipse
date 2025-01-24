@@ -1,7 +1,7 @@
 use crate::compiler::{
     errors::CompileResult,
     lexer::{Token, Tokens},
-    nodes::ast::{Identifier, Node, RawNode}
+    nodes::ast::{Identifier, Node, RawNode},
 };
 
 impl Tokens {
@@ -13,14 +13,13 @@ impl Tokens {
                 .peek_expect_tokens(vec![Token::SemiColon], true)
                 .is_some()
             {}
-            
+
             if self
                 .peek_expect_tokens(vec![Token::EndScope], true)
                 .is_some()
             {
                 break;
             }
-
 
             let info = self.expect_tokens(
                 vec![
@@ -58,13 +57,13 @@ impl Tokens {
                 Token::Use => self.parse_namespace()?,
                 Token::Identifier(name) => {
                     let identifier = Identifier {
-                        location: info.location,
+                        position: info.position,
                         raw: name,
                     };
-                    
+
                     let path = self.parse_path_current(identifier.raw)?;
                     self.parse_after_path(path)?
-                },
+                }
                 Token::Loop => self.parse_loop()?,
                 Token::While => self.parse_while()?,
                 Token::Variable => self.parse_variable()?,

@@ -30,7 +30,7 @@ impl hlir::Function {
                     }
                     None => {
                         ctx.error(
-                            expression.location,
+                            expression.position,
                             format!("Cannot find value '{name}' in this scope"),
                         );
                         hlir::RawExpression::default()
@@ -69,7 +69,7 @@ impl hlir::Function {
                     hlir::Type::Tuple(types) => types,
                     _ => {
                         ctx.error(
-                            expression.location,
+                            expression.position,
                             format!("Expected tuple, found {data_type}"),
                         );
                         return hlir::Expression::default();
@@ -95,7 +95,7 @@ impl hlir::Function {
             }
             raw => {
                 ctx.error(
-                    expression.location,
+                    expression.position,
                     format!("Not yet implemented: {raw:#?}"),
                 );
                 hlir::RawExpression::default()
@@ -120,7 +120,7 @@ impl hlir::Function {
             } => {
                 if arguments.len() != parameters.len() {
                     ctx.error(
-                        invoke.location,
+                        invoke.position,
                         format!(
                             "Expected {} arguments, found {}",
                             parameters.len(),
@@ -157,22 +157,19 @@ impl hlir::Function {
                     return_type: &function.return_type,
                 },
                 None => {
-                    ctx.error(
-                        path.location.clone(),
-                        format!("Could not find: {}", path.raw),
-                    );
+                    ctx.error(path.position, format!("Could not find: {}", path.raw));
                     InvokeType::default()
                 }
             },
             raw => {
                 ctx.error(
-                    path.location.clone(),
+                    path.position,
                     format!("Path expression not yet implemented: {raw:#?}"),
                 );
                 InvokeType::default()
             }
         };
-        return Located::new(path.location.clone(), t);
+        return Located::new(path.position, t);
     }
 }
 

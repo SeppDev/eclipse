@@ -39,7 +39,7 @@ impl Tokens {
                 if required {
                     let info = self.peek().clone();
                     self.error(
-                        info.location,
+                        info.position,
                         format!("Expected expression, got '{}'", info.token),
                     );
                 }
@@ -182,13 +182,13 @@ impl Tokens {
 
         let second = self.parse_expression(true)?.unwrap();
 
-        let mut location = expression.location.clone();
-        location.set_end(&second.location);
+        let mut position = expression.position;
+        position.set_end(second.position.end);
 
         let new_raw_expression =
             RawExpression::CompareOperation(Box::new(expression), operator, Box::new(second));
 
-        return Ok(Some(Located::new(location, new_raw_expression)));
+        return Ok(Some(Located::new(position, new_raw_expression)));
     }
     fn parse_expression_after(
         &mut self,
@@ -283,11 +283,11 @@ impl Tokens {
             let second = solve_stack.pop().unwrap();
             let first = solve_stack.pop().unwrap();
 
-            let location = first.location.clone();
+            let position = first.position;
 
             let raw =
                 RawExpression::ArithmeticOperation(Box::new(first), operator, Box::new(second));
-            let located = Located::new(location, raw);
+            let located = Located::new(position, raw);
 
             solve_stack.push(located);
         }

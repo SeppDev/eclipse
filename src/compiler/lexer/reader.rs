@@ -1,22 +1,11 @@
-use core::panic;
-use std::ops::Range;
+use crate::compiler::errors::CompileResult;
 
-use crate::compiler::errors::{CompileResult, Location};
+use crate::common::location::{Position, PositionRange};
 
 #[derive(Debug, Clone)]
 pub struct Char {
     pub char: char,
-    pub line: usize,
-    pub columns: Range<usize>,
-}
-impl std::fmt::Display for Char {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{:?}, line: {}, colum: {}-{}",
-            self.char, self.line, self.columns.start, self.columns.end
-        )
-    }
+    pub position: PositionRange,
 }
 
 #[derive(Debug)]
@@ -24,8 +13,8 @@ pub struct Reader {
     pub lines: Vec<String>,
     chars: Vec<Char>,
 }
-impl Reader { 
-    pub fn new(source: String) -> Self {
+impl Reader {
+    pub fn new(source: String, tab_size: usize) -> Self {
         let mut output = Vec::with_capacity(source.len());
         let mut input: Vec<char> = source.chars().collect();
         input.reverse();
@@ -35,6 +24,7 @@ impl Reader {
 
         let mut line: usize = 1;
         let mut column: usize = 0;
+        let mut character: usize = 0;
 
         loop {
             let char = match input.pop() {
@@ -48,21 +38,27 @@ impl Reader {
                     lines.push(std::mem::take(&mut line_string));
                     line += 1;
                     column = 0;
+                    character = 0;
                 }
                 '\t' => {
-                    column += 4;
-                    line_string.push_str("    ");
+                    column += tab_size;
+                    line_string.push_str(" ".repeat(tab_size).as_str());
                 }
                 ch => {
                     line_string.push(ch);
                     column += 1
                 }
             }
+            character += 1;
+
+            let position = Position::new(line, column, character);
+            let mut range = position.to_range();
+            range.end.column += char.len_utf8();
+            range.end.character += 1;
 
             output.push(Char {
                 char,
-                line,
-                columns: column..column + char.len_utf16(),
+                position: range,
             });
         }
         lines.push(line_string);
@@ -92,7 +88,7 @@ impl Reader {
                     None => return Err(()),
                 };
                 return Ok(Some(TokenKind::String(
-                    Location::new(start.line..last.line, start.columns.start..last.columns.end),
+                    PositionRange::new(start.position.start, last.position.end),
                     string,
                 )));
             }
@@ -137,10 +133,7 @@ impl Reader {
             }
 
             return Ok(Some(TokenKind::Identifier(
-                Location::new(
-                    start.line..previous.line,
-                    start.columns.start..previous.columns.end,
-                ),
+                PositionRange::new(start.position.start, previous.position.end),
                 body,
             )));
         } else if start.char.is_ascii_punctuation() {
@@ -175,10 +168,7 @@ impl Reader {
                         previous = self.advance().unwrap();
                     }
                     return Ok(Some(TokenKind::Float(
-                        Location::new(
-                            start.line..previous.line,
-                            start.columns.start..previous.columns.end,
-                        ),
+                        PositionRange::new(start.position.start, previous.position.end),
                         body,
                         decimal,
                     )));
@@ -194,16 +184,13 @@ impl Reader {
             }
 
             return Ok(Some(TokenKind::Integer(
-                Location::new(
-                    start.line..previous.line,
-                    start.columns.start..previous.columns.end,
-                ),
+                PositionRange::new(start.position.start, previous.position.end),
                 body,
             )));
         } else if start.char.is_whitespace() {
             return self.next_string();
         } else {
-            panic!("Unkown character: {}", start)
+            panic!("Unkown character: {:?}", start.char)
         }
     }
     fn handle_multi_line_comment(&mut self) {
@@ -264,9 +251,9 @@ impl Reader {
 #[derive(Debug)]
 pub enum TokenKind {
     // Comment(String),
-    String(Location, String),
-    Identifier(Location, String),
-    Integer(Location, String),
-    Float(Location, String, String),
+    String(PositionRange, String),
+    Identifier(PositionRange, String),
+    Integer(PositionRange, String),
+    Float(PositionRange, String, String),
     Punctuation(Char),
 }

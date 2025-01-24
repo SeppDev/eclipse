@@ -48,12 +48,12 @@ impl Tokens {
         let relative_file_path = match found_paths.pop() {
             Some(p) => p,
             None => {
-                self.error(self.current().location.clone(), failed_to_find);
+                self.error(self.current().position, failed_to_find);
                 return Err(());
             }
         };
         if !found_paths.is_empty() {
-            self.error(self.current().location.clone(), failed_multiple);
+            self.error(self.current().position, failed_multiple);
             return Err(());
         }
 

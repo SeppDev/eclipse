@@ -1,6 +1,9 @@
-use crate::compiler::{
-    errors::{CompileCtx, CompileResult, Location},
-    lexer::reader::TokenKind,
+use crate::{
+    common::location::{Position, PositionRange},
+    compiler::{
+        errors::{CompileCtx, CompileResult},
+        lexer::reader::TokenKind,
+    },
 };
 
 use super::{
@@ -8,8 +11,10 @@ use super::{
     Token, TokenInfo, Tokens,
 };
 
+const TAB_SIZE: usize = 4;
+
 pub fn tokenize(ctx: &mut CompileCtx, source: String) -> CompileResult<Tokens> {
-    let mut reader = Reader::new(source);
+    let mut reader = Reader::new(source, TAB_SIZE);
     let mut tokens: Vec<TokenInfo> = Vec::new();
 
     loop {
@@ -22,7 +27,11 @@ pub fn tokenize(ctx: &mut CompileCtx, source: String) -> CompileResult<Tokens> {
     }
 
     let lines = reader.lines.len();
-    tokens.push(TokenInfo::new(Token::EndOfFile, lines..lines, 0..1));
+
+    tokens.push(TokenInfo::new(
+        Token::EndOfFile,
+        Position::new(lines, 0, 0).to_range(),
+    ));
     ctx.set_lines(reader.lines);
 
     return Ok(Tokens::new(tokens, ctx.current_file_path.clone()));
@@ -30,21 +39,21 @@ pub fn tokenize(ctx: &mut CompileCtx, source: String) -> CompileResult<Tokens> {
 
 fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo> {
     match kind {
-        TokenKind::Identifier(location, token) => {
+        TokenKind::Identifier(position, token) => {
             let token = match_token(&token).unwrap_or(Token::Identifier(token));
-            return Ok(TokenInfo { location, token });
+            return Ok(TokenInfo { position, token });
         }
-        TokenKind::Integer(location, integer) => {
+        TokenKind::Integer(position, integer) => {
             let token = Token::Integer(integer);
-            return Ok(TokenInfo { location, token });
+            return Ok(TokenInfo { position, token });
         }
-        TokenKind::String(location, string) => {
+        TokenKind::String(position, string) => {
             let token = Token::String(string);
-            return Ok(TokenInfo { location, token });
+            return Ok(TokenInfo { position, token });
         }
-        TokenKind::Float(location, base, decimal) => {
+        TokenKind::Float(position, base, decimal) => {
             let token = Token::Float(format!("{}.{}", base, decimal));
-            return Ok(TokenInfo { location, token });
+            return Ok(TokenInfo { position, token });
         }
         TokenKind::Punctuation(char) => {
             let second: Option<Char> = match reader.peek() {
@@ -61,10 +70,7 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                         reader.advance();
                         return Ok(TokenInfo {
                             token,
-                            location: Location::new(
-                                char.line..second.line,
-                                char.columns.start..second.columns.end,
-                            ),
+                            position: PositionRange::from(char.position, second.position),
                         });
                     }
                     None => {}
@@ -77,7 +83,7 @@ fn handle_token(reader: &mut Reader, kind: TokenKind) -> CompileResult<TokenInfo
                 Some(token) => {
                     return Ok(TokenInfo {
                         token,
-                        location: Location::new(char.line..char.line, char.columns),
+                        position: char.position,
                     })
                 }
                 None => return Err(()),

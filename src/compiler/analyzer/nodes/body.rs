@@ -34,14 +34,14 @@ impl hlir::Function {
                 } => self.handle_decl(
                     ctx,
                     types,
-                    node.location,
+                    node.position,
                     name,
                     mutable,
                     data_type,
                     expression,
                 ),
                 ast::RawNode::SetPath(path, expression) => {
-                    self.handle_set(ctx, types, node.location, path, expression)
+                    self.handle_set(ctx, types, node.position, path, expression)
                 }
                 ast::RawNode::Loop { condition, body } => {
                     self.handle_loop(ctx, types, condition, body)
@@ -50,7 +50,7 @@ impl hlir::Function {
                     hlir::Node::Scope(self.handle_body(ctx, types, return_type, body))
                 }
                 raw => {
-                    ctx.error(node.location, format!("Not yet implemented: {raw:#?}"));
+                    ctx.error(node.position, format!("Not yet implemented: {raw:#?}"));
                     continue;
                 }
             };

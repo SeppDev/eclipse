@@ -57,7 +57,7 @@ impl Tokens {
             }
             Token::OpenParen => todo!(),
             Token::Identifier(string) => Identifier {
-                location: info.location,
+                position: info.position,
                 raw: string,
             },
             _ => return Ok(self.create_located(RawType::default())),

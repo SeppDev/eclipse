@@ -1,5 +1,7 @@
 mod message;
 
+use crate::common::location::PositionRange;
+
 use super::{codegen::target::Target, counter::NameCounter, path::Path};
 pub use message::CompileMessage;
 use message::MessageVariant;
@@ -7,7 +9,6 @@ use std::{
     borrow::BorrowMut,
     collections::HashMap,
     io::Write,
-    ops::Range,
     path::PathBuf,
     process::exit,
     sync::mpsc::{self, Receiver, Sender},
@@ -15,41 +16,6 @@ use std::{
 };
 
 pub type CompileResult<T> = Result<T, ()>;
-
-#[derive(Debug, Clone, Default)]
-pub struct Location {
-    pub lines: Range<usize>,
-    pub columns: Range<usize>,
-}
-impl Location {
-    pub fn new(lines: Range<usize>, columns: Range<usize>) -> Self {
-        Self { lines, columns }
-    }
-    pub fn single(line: usize, column: usize) -> Self {
-        Self {
-            lines: line..line,
-            columns: column..column,
-        }
-    }
-    pub fn set_start(&mut self, location: &Location) {
-        self.columns.start = location.columns.start;
-        self.lines.start = location.lines.start;
-    }
-    pub fn set_end(&mut self, location: &Location) {
-        self.columns.end = location.columns.end;
-        self.lines.end = location.lines.end;
-    }
-}
-
-impl std::fmt::Display for Location {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "columns: {}-{}, lines: {}-{}",
-            self.columns.start, self.columns.end, self.lines.start, self.lines.end
-        )
-    }
-}
 
 type Map = Vec<(Path, CompileMessage)>;
 
@@ -62,7 +28,7 @@ type Status = Option<String>;
 
 #[derive(Default)]
 pub struct Options {
-    pub release: bool
+    pub release: bool,
 }
 
 pub struct CompileCtx {
@@ -170,17 +136,25 @@ impl CompileCtx {
         }
     }
 
-    pub fn error<T: ToString>(&mut self, location: Location, message: T) -> &mut CompileMessage {
+    pub fn error<T: ToString>(
+        &mut self,
+        position: PositionRange,
+        message: T,
+    ) -> &mut CompileMessage {
         let mut message = CompileMessage::error(message.to_string());
-        message.push("", location);
+        message.push("", position);
         self.debuginfo
             .errors
             .push((self.current_file_path.clone(), message));
         return self.debuginfo.errors.last_mut().unwrap().1.borrow_mut();
     }
-    pub fn warning<T: ToString>(&mut self, location: Location, message: T) -> &mut CompileMessage {
+    pub fn warning<T: ToString>(
+        &mut self,
+        position: PositionRange,
+        message: T,
+    ) -> &mut CompileMessage {
         let mut message = CompileMessage::warning(message.to_string());
-        message.push("", location);
+        message.push("", position);
         self.debuginfo
             .warnings
             .push((self.current_file_path.clone(), message));

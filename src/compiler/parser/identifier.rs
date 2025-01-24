@@ -15,7 +15,7 @@ impl Tokens {
             return Ok(self.create_located(name));
         } else {
             self.error(
-                info.location,
+                info.position,
                 format!("Expected identifier, found '{}'", info.token),
             );
         }
@@ -44,10 +44,7 @@ impl Tokens {
                 self.create_located(RawNode::Call(path, arguments))
             }
             Token::Increment | Token::Decrement => {
-                let variable = Expression {
-                    location: path.location.clone(),
-                    raw: RawExpression::GetPath(path.clone()),
-                };
+                let variable = Located::new(path.position, RawExpression::GetPath(path.clone()));
 
                 let operator = match info.token {
                     Token::Increment => ast::ArithmeticOperator::Add,
@@ -55,11 +52,11 @@ impl Tokens {
                     _ => panic!(),
                 };
 
-                let mut location = info.location.clone();
-                location.set_end(&info.location);
+                let mut position = info.position;
+                position.set_end(info.position.end);
 
                 let second_expression =
-                    Located::new(location.clone(), RawExpression::Integer("1".to_string()));
+                    Located::new(position, RawExpression::Integer("1".to_string()));
 
                 let binary_expression = RawExpression::ArithmeticOperation(
                     Box::new(variable),
@@ -67,10 +64,7 @@ impl Tokens {
                     Box::new(second_expression),
                 );
 
-                let binary_expression = Expression {
-                    location,
-                    raw: binary_expression,
-                };
+                let binary_expression = Located::new(position, binary_expression);
 
                 return Ok(self.create_located(RawNode::SetPath(path, binary_expression)));
             }
@@ -80,10 +74,7 @@ impl Tokens {
             | Token::MultiplyEquals
             | Token::DivideEquals
             | Token::PercentEquals => {
-                let variable = Expression {
-                    location: info.location.clone(),
-                    raw: RawExpression::GetPath(path.clone()),
-                };
+                let variable = Located::new(info.position, RawExpression::GetPath(path.clone()));
                 let expression = self.parse_expression(true)?.unwrap();
 
                 let operator = match info.token {
@@ -101,16 +92,13 @@ impl Tokens {
                     Box::new(expression),
                 );
 
-                let binary_expression = Expression {
-                    location: info.location.clone(),
-                    raw: binary_expression,
-                };
+                let binary_expression = Located::new(info.position, binary_expression);
 
                 return Ok(self.create_located(RawNode::SetPath(path, binary_expression)));
             }
             _ => {
                 let message = format!("Not yet implemented: {info:#?} {}", path.raw);
-                self.error(info.location, message);
+                self.error(info.position, message);
                 return Err(());
             }
         });
