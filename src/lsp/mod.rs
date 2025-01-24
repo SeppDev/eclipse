@@ -1,10 +1,13 @@
 use server::LSPServer;
 
-pub mod logger;
+mod errors;
+mod json;
+mod logger;
+mod message;
 mod server;
 
 pub fn init() -> ! {
     let server = LSPServer::new();
 
-    server.run()
+    server.start()
 }

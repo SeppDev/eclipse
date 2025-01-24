@@ -2,11 +2,10 @@ use std::{path::PathBuf, process::exit};
 
 mod run;
 use compiler::CompileCtx;
-use lsp::logger::Logger;
 use run::run;
 
-mod lsp;
 mod compiler;
+mod lsp;
 
 enum Action {
     Run,
@@ -14,7 +13,7 @@ enum Action {
 }
 
 fn main() {
-    let mut project_dir = std::env::current_dir().unwrap();
+    let project_dir = std::env::current_dir().unwrap();
     let mut args = std::env::args();
     args.next();
 

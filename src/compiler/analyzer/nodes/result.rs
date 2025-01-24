@@ -1,6 +1,6 @@
 use crate::compiler::{
     analyzer::types::ModuleTypes,
-    errors::{CompileCtx, Location},
+    errors::CompileCtx,
     nodes::{ast, hlir},
 };
 

@@ -109,7 +109,7 @@ impl hlir::Function {
         ctx: &mut CompileCtx,
         types: &ModuleTypes,
         invoke: Invoke,
-        mut arguments: Vec<ast::Expression>,
+        arguments: Vec<ast::Expression>,
     ) -> hlir::RawExpression {
         match invoke.raw {
             InvokeType::Unkown => hlir::RawExpression::default(),

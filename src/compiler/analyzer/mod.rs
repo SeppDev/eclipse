@@ -76,7 +76,7 @@ fn handle_function(
             parameter.location,
         ) {
             Ok(k) => k,
-            Err(old) => todo!(),
+            Err(_) => todo!(),
         };
 
         hlir_function.parameters.push(hlir::Parameter {

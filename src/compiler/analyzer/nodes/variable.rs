@@ -32,7 +32,7 @@ impl hlir::Function {
                 .insert(name.raw, mutable.is_some(), data_type.clone(), location)
             {
                 Ok(k) => k,
-                Err(old) => todo!(),
+                Err(_) => todo!(),
             };
 
         hlir::Node::DeclareVariable {
