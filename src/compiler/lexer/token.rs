@@ -1,4 +1,4 @@
-use crate::common::location::{Position, PositionRange};
+use crate::common::location::PositionRange;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {

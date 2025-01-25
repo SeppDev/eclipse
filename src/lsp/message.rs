@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
+use crate::json;
+
 use super::{
     errors::{self, LSPResult},
-    json::JSON,
+    json::{ToJson, JSON},
 };
 
 impl ClientMessage {
@@ -25,24 +27,29 @@ impl ClientMessage {
             .unwrap();
 
         Ok(Self {
-            sender: PhantomData,
+            marker: PhantomData,
             id,
             method,
         })
     }
 }
 
-type ClientMessage = Message<Client>;
-type ServerMessage = Message<Server>;
+pub type ClientMessage = Message<Client>;
+pub type ServerMessage = Message<Server>;
 
 pub struct Client;
 pub struct Server;
 
 pub struct Message<T> {
-    pub(super) sender: PhantomData<T>,
+    marker: PhantomData<T>,
     pub id: usize,
     pub method: Method,
     // params:
+}
+impl ToJson for ServerMessage {
+    fn to_json(self) -> super::json::JSONObject {
+        json! {}
+    }
 }
 
 pub enum Method {

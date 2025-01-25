@@ -4,14 +4,14 @@ use std::{
 };
 
 #[derive(Debug, Clone)]
-pub enum Value {
+pub(crate) enum JSONObject {
     Null,
     Literal(String),
     Bool(bool),
     Number(Number),
     String(String),
-    Array(Vec<Value>),
-    Object(HashMap<String, Value>),
+    Array(Vec<JSONObject>),
+    Object(HashMap<String, JSONObject>),
 }
 
 #[derive(Debug, Clone)]
@@ -34,23 +34,23 @@ impl Number {
     }
 }
 
-impl Value {
+impl JSONObject {
     pub fn as_literal(self) -> Result<String, ()> {
-        if let Value::Literal(string) = self {
+        if let JSONObject::Literal(string) = self {
             return Ok(string);
         } else {
             return Err(());
         }
     }
     pub fn as_string(self) -> Result<String, ()> {
-        if let Value::String(string) = self {
+        if let JSONObject::String(string) = self {
             return Ok(string);
         } else {
             return Err(());
         }
     }
     pub fn as_number(self) -> Result<Number, ()> {
-        if let Value::Number(number) = self {
+        if let JSONObject::Number(number) = self {
             return Ok(number);
         } else {
             return Err(());
@@ -58,40 +58,30 @@ impl Value {
     }
 }
 
-impl Value {
-    pub fn insert(&mut self, key: String, value: Value) {
-        if let Value::Object(map) = self {
+impl JSONObject {
+    pub fn insert(&mut self, key: String, value: JSONObject) {
+        if let JSONObject::Object(map) = self {
             map.insert(key, value);
         } else {
             panic!()
         }
     }
-    pub fn push(&mut self, value: Value) {
-        if let Value::Array(array) = self {
+    pub fn push(&mut self, value: JSONObject) {
+        if let JSONObject::Array(array) = self {
             array.push(value);
         } else {
             panic!()
         }
     }
-    pub fn rinsert(mut self, key: String, value: Value) -> Self {
-        self.insert(key, value);
-        return self;
-    }
-    pub fn rpush(mut self, value: Value) -> Self {
-        self.push(value);
-        return self;
-    }
-
     pub fn consume(&mut self, key: &str) -> Option<Self> {
-        if let Value::Object(map) = self {
+        if let JSONObject::Object(map) = self {
             map.remove(key)
         } else {
             panic!()
         }
     }
-
     pub fn consume_result(&mut self, key: &str) -> Result<Self, String> {
-        if let Value::Object(map) = self {
+        if let JSONObject::Object(map) = self {
             match map.remove(key) {
                 Some(v) => return Ok(v),
                 None => return Err(format!("Failed to get value of '{key}'")),
@@ -99,5 +89,8 @@ impl Value {
         } else {
             panic!()
         }
+    }
+    pub fn new() -> Self {
+        Self::Object(HashMap::new())
     }
 }

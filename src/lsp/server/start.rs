@@ -4,12 +4,12 @@ use std::io::{self, BufRead, Read};
 
 use crate::lsp::errors::LSPResult;
 use crate::lsp::json;
-use crate::lsp::message::Message;
+use crate::lsp::message::{ClientMessage, Message};
+use crate::lsp::types::RequestMessage;
 
 use super::LSPServer;
 
 impl LSPServer {
-    pub fn on_initialize() {}
     fn run(&mut self) -> LSPResult<()> {
         let input = io::stdin();
         // let ouput = io::stdout();
@@ -41,7 +41,7 @@ impl LSPServer {
             let json = object.clone().stringify();
             self.logger.write(json);
 
-            let message = Message::from_json(object)?;
+            let message = ClientMessage::from_json(object)?;
 
             self.logger.write(format!("id: {}", message.id));
         }

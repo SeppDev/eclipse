@@ -4,13 +4,17 @@ pub use value::*;
 
 mod stringify;
 
-pub type JSON = Value;
-
-pub fn new() -> Value {
-    Value::Object(HashMap::new())
+pub trait ToJson {
+    fn to_json(self) -> JSONObject;
 }
 
-pub fn from_str<Content: ToString>(content: Content) -> Value {
+pub type JSON = JSONObject;
+
+pub fn new() -> JSONObject {
+    JSONObject::new()
+}
+
+pub fn from_str<Content: ToString>(content: Content) -> JSONObject {
     let mut content = content.to_string().drain(..).collect::<Vec<char>>();
     content.reverse();
 
@@ -25,15 +29,15 @@ pub(super) struct Object {
 }
 
 impl Object {
-    pub(super) fn parse(&mut self) -> Value {
+    pub(super) fn parse(&mut self) -> JSONObject {
         self.trim();
         loop {
             let char: char = self.next().unwrap();
             return match char {
                 '{' => self.parse_map(),
                 '[' => self.parse_array(),
-                '"' => Value::String(self.parse_until_delimiter_string('"')),
-                '\'' => Value::String(self.parse_until_delimiter_string('\'')),
+                '"' => JSONObject::String(self.parse_until_delimiter_string('"')),
+                '\'' => JSONObject::String(self.parse_until_delimiter_string('\'')),
                 '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                     self.parse_number(Some(char))
                 }
@@ -50,7 +54,7 @@ impl Object {
 }
 
 impl Object {
-    pub(super) fn parse_literal(&mut self, start: Option<char>) -> Value {
+    pub(super) fn parse_literal(&mut self, start: Option<char>) -> JSONObject {
         let mut literal = String::new();
         if let Some(char) = start {
             self.body.push(char);
@@ -65,17 +69,17 @@ impl Object {
         }
 
         return match &literal[..] {
-            "true" => Value::Bool(true),
-            "false" => Value::Bool(false),
-            "null" => Value::Null,
-            _ if literal.len() == 0 => Value::Null,
-            _ => Value::Literal(literal),
+            "true" => JSONObject::Bool(true),
+            "false" => JSONObject::Bool(false),
+            "null" => JSONObject::Null,
+            _ if literal.len() == 0 => JSONObject::Null,
+            _ => JSONObject::Literal(literal),
         };
     }
 }
 
 impl Object {
-    pub(super) fn parse_number(&mut self, start: Option<char>) -> Value {
+    pub(super) fn parse_number(&mut self, start: Option<char>) -> JSONObject {
         let mut number = String::new();
         if let Some(char) = start {
             number.push(char);
@@ -91,12 +95,12 @@ impl Object {
             }
         }
 
-        return Value::Number(value::Number(number));
+        return JSONObject::Number(value::Number(number));
     }
 }
 
 impl Object {
-    pub(super) fn parse_map(&mut self) -> Value {
+    pub(super) fn parse_map(&mut self) -> JSONObject {
         let mut map = HashMap::new();
 
         loop {
@@ -123,12 +127,12 @@ impl Object {
             map.insert(key, value);
         }
 
-        return Value::Object(map);
+        return JSONObject::Object(map);
     }
 }
 
 impl Object {
-    pub(super) fn parse_array(&mut self) -> Value {
+    pub(super) fn parse_array(&mut self) -> JSONObject {
         let mut array = Vec::new();
 
         loop {
@@ -152,7 +156,7 @@ impl Object {
             self.trim();
         }
 
-        return Value::Array(array);
+        return JSONObject::Array(array);
     }
 }
 
@@ -199,5 +203,56 @@ impl Object {
         }
 
         return content;
+    }
+}
+
+
+#[macro_export]
+macro_rules! json {
+    ( $value:expr ) => {
+        {
+            $crate::lsp::json::to_json_trait($value)
+        }
+    };
+
+    ( $($k:ident : $v:expr),* ) => {
+        {
+            let mut obj = $crate::lsp::json::JSONObject::new();
+
+            $(
+                obj.insert(stringify!($k).to_string(), $crate::lsp::json::json!($v));
+            )*
+
+            obj
+        }
+    };
+}
+
+
+
+pub(crate) fn to_json_trait<T: ToJson>(value: T) -> JSONObject {
+    value.to_json()
+}
+
+
+impl ToJson for bool {
+    fn to_json(self) -> JSONObject {
+        JSONObject::Bool(self)
+    }
+}
+impl ToJson for String {
+    fn to_json(self) -> JSONObject {
+        JSONObject::String(self)
+    }
+}
+impl ToJson for &str {
+    fn to_json(self) -> JSONObject {
+        JSONObject::String(self.to_string())
+    }
+}
+
+impl ToJson for isize {
+    fn to_json(self) -> JSONObject {
+        JSONObject::Number(Number(self.to_string()))
     }
 }

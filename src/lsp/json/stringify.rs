@@ -1,6 +1,6 @@
-use super::Value;
+use super::JSONObject;
 
-impl Value {
+impl JSONObject {
     pub fn stringify(self) -> String {
         match self {
             Self::Null => "null".to_string(),
