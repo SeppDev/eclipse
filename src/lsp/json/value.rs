@@ -4,6 +4,10 @@ use std::{
     num::{ParseFloatError, ParseIntError},
 };
 
+use super::ToJson;
+
+pub struct JSONNull;
+
 #[derive(Debug, Clone)]
 pub(crate) enum JSONObject {
     Null,
@@ -13,6 +17,11 @@ pub(crate) enum JSONObject {
     String(String),
     Array(Vec<JSONObject>),
     Object(HashMap<String, JSONObject>),
+}
+impl ToJson for JSONNull {
+    fn to_json(self) -> JSONObject {
+        JSONObject::Null
+    }
 }
 
 impl Display for JSONObject {

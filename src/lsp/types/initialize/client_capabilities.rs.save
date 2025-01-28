@@ -26,7 +26,10 @@ impl ToJson for Workspace {
     fn to_json(self) -> JSONObject {
         json! {
             applyEdit: self.apply_edit,
-            workspaceEdit: json!(self.workspace_edit.unwrap_or(json!(JSONNull))).
+            workspaceEdit: match self.workspace_edit {
+		Some(s) => json!(s),
+None => JSONObject::Null
+		}.
         }
     }
 }
