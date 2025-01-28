@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt::Display,
     num::{ParseFloatError, ParseIntError},
 };
 
@@ -12,6 +13,35 @@ pub(crate) enum JSONObject {
     String(String),
     Array(Vec<JSONObject>),
     Object(HashMap<String, JSONObject>),
+}
+
+impl Display for JSONObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self {
+                Self::Null => "null".to_string(),
+                Self::Number(n) => n.to_string(),
+                Self::Literal(x) | Self::String(x) => x.to_string(),
+                Self::Bool(x) => x.to_string(),
+                Self::Array(vec) => vec.iter().map(|x| x.to_string()).collect::<String>(),
+                Self::Object(map) => format!(
+                    "{{ {} }}",
+                    map.iter()
+                        .map(|(k, v)| format!("{k}: {v}"))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                ),
+            }
+        )
+    }
+}
+
+impl From<isize> for JSONObject {
+    fn from(value: isize) -> Self {
+        Self::Number(Number::from(value))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +61,17 @@ impl Number {
     }
     pub fn as_string(self) -> String {
         self.0
+    }
+}
+impl Display for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.0)
+    }
+}
+
+impl From<isize> for Number {
+    fn from(value: isize) -> Self {
+        Self(value.to_string())
     }
 }
 

@@ -7,6 +7,8 @@ use super::{
     json::{ToJson, JSON},
 };
 
+use super::json::JSONObject;
+
 impl ClientMessage {
     pub fn from_json(mut object: JSON) -> LSPResult<Self> {
         let method = match object
@@ -40,6 +42,10 @@ pub type ServerMessage = Message<Server>;
 pub struct Client;
 pub struct Server;
 
+pub struct Notification {
+    pub method: Method,
+}
+
 pub struct Message<T> {
     marker: PhantomData<T>,
     pub id: usize,
@@ -47,11 +53,23 @@ pub struct Message<T> {
     // params:
 }
 impl ToJson for ServerMessage {
-    fn to_json(self) -> super::json::JSONObject {
-        json! {}
+    fn to_json(self) -> JSONObject {
+        json! {
+            id:  self.id,
+            method: self.method
+        }
     }
 }
 
 pub enum Method {
     Initialize,
+    Initialized,
+}
+impl ToJson for Method {
+    fn to_json(self) -> JSONObject {
+        return match self {
+            Self::Initialize => json!("initialize"),
+            Self::Initialized => json!("initialized"),
+        };
+    }
 }

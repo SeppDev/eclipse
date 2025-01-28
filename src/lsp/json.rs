@@ -206,7 +206,6 @@ impl Object {
     }
 }
 
-
 #[macro_export]
 macro_rules! json {
     ( $value:expr ) => {
@@ -220,7 +219,8 @@ macro_rules! json {
             let mut obj = $crate::lsp::json::JSONObject::new();
 
             $(
-                obj.insert(stringify!($k).to_string(), $crate::lsp::json::json!($v));
+                // obj.insert(stringify!($k).to_string(), $crate::lsp::json::json!($v));
+                obj.insert(stringify!($k).to_string(), $crate::lsp::json::to_json_trait($v));
             )*
 
             obj
@@ -228,12 +228,9 @@ macro_rules! json {
     };
 }
 
-
-
 pub(crate) fn to_json_trait<T: ToJson>(value: T) -> JSONObject {
     value.to_json()
 }
-
 
 impl ToJson for bool {
     fn to_json(self) -> JSONObject {
@@ -251,7 +248,7 @@ impl ToJson for &str {
     }
 }
 
-impl ToJson for isize {
+impl ToJson for usize {
     fn to_json(self) -> JSONObject {
         JSONObject::Number(Number(self.to_string()))
     }

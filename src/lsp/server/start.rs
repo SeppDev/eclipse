@@ -3,9 +3,8 @@ use std::process::exit;
 use std::io::{self, BufRead, Read};
 
 use crate::lsp::errors::LSPResult;
-use crate::lsp::json;
-use crate::lsp::message::{ClientMessage, Message};
-use crate::lsp::types::RequestMessage;
+use crate::lsp::json::{self, ToJson};
+use crate::lsp::message::ClientMessage;
 
 use super::LSPServer;
 
@@ -43,6 +42,8 @@ impl LSPServer {
 
             let message = ClientMessage::from_json(object)?;
 
+            self.logger
+                .write(format!("method: {}", message.method.to_json()));
             self.logger.write(format!("id: {}", message.id));
         }
     }
