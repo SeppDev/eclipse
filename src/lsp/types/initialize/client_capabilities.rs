@@ -1,6 +1,8 @@
+use std::fmt::Debug;
+
 use crate::{
     json,
-    lsp::json::{JSONNull, JSONObject, ToJson},
+    lsp::json::{self, JSONObject, ToJson},
 };
 
 #[derive(Default)]
@@ -11,7 +13,10 @@ pub struct ClientCapabilities {
 impl ToJson for ClientCapabilities {
     fn to_json(self) -> super::JSONObject {
         json! {
-            workspace: self.workspace.unwrap()
+            workspace: match self.workspace {
+                Some(w) => json!(w),
+                None => JSONObject::Null
+            }
         }
     }
 }
@@ -24,10 +29,9 @@ pub struct Workspace {
 
 impl ToJson for Workspace {
     fn to_json(self) -> JSONObject {
-        json! {
-            applyEdit: self.apply_edit,
-            workspaceEdit: json!(self.workspace_edit.unwrap_or(json!(JSONNull))).
-        }
+        JSONObject::new()
+            .rinsert("applyEdit", self.apply_edit)
+            .rinsert_option("workspaceEdit", self.workspace_edit)
     }
 }
 
@@ -41,7 +45,14 @@ pub struct WorkspaceEditClientCapabilities {
 }
 impl ToJson for WorkspaceEditClientCapabilities {
     fn to_json(self) -> JSONObject {
-        json! {}
+        JSONObject::new()
+            .rinsert("documentChanges", self.document_changes)
+            .rinsert_option("resourcesOperations", self.resources_operations)
+    }
+}
+impl ToJson for Vec<ResourceOperationKind> {
+    fn to_json(self) -> JSONObject {
+        JSONObject::Array(self.into_iter().map(|f| f.to_json()).collect())
     }
 }
 
@@ -56,6 +67,15 @@ pub enum ResourceOperationKind {
     Create,
     Rename,
     Delete,
+}
+impl ToJson for ResourceOperationKind {
+    fn to_json(self) -> JSONObject {
+        match self {
+            Self::Create => json!("create"),
+            Self::Rename => json!("rename"),
+            Self::Delete => json!("delete"),
+        }
+    }
 }
 
 #[derive(Default)]

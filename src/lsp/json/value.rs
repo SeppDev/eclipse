@@ -1,12 +1,13 @@
 use std::{
     collections::HashMap,
+    error::Error,
     fmt::Display,
     num::{ParseFloatError, ParseIntError},
 };
 
-use super::ToJson;
+use crate::lsp::types::FailureHandlingKind;
 
-pub struct JSONNull;
+use super::ToJson;
 
 #[derive(Debug, Clone)]
 pub(crate) enum JSONObject {
@@ -18,12 +19,11 @@ pub(crate) enum JSONObject {
     Array(Vec<JSONObject>),
     Object(HashMap<String, JSONObject>),
 }
-impl ToJson for JSONNull {
+impl ToJson for JSONObject {
     fn to_json(self) -> JSONObject {
         JSONObject::Null
     }
 }
-
 impl Display for JSONObject {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -116,12 +116,53 @@ impl JSONObject {
             panic!()
         }
     }
-    pub fn push(&mut self, value: JSONObject) {
+    pub fn insert_option<T: ToJson>(&mut self, key: String, value: Option<T>) {
+        let object = match value {
+            Some(t) => t.to_json(),
+            None => JSONObject::Null,
+        };
+        self.insert(key, object)
+    }
+    pub fn push_option<T: ToJson>(&mut self, value: Option<T>) {
+        let object = match value {
+            Some(t) => t.to_json(),
+            None => JSONObject::Null,
+        };
+        self.push(object)
+    }
+
+    pub fn push(&mut self, value: Self) {
         if let JSONObject::Array(array) = self {
             array.push(value);
         } else {
             panic!()
         }
+    }
+    pub fn rpush<Object: ToJson>(mut self, value: Object) -> Self {
+        self.push(value.to_json());
+        self
+    }
+    pub fn rinsert<T: ToString, Object: ToJson>(mut self, key: T, value: Object) -> Self {
+        self.insert(key.to_string(), value.to_json());
+        self
+    }
+    pub fn rinsert_option<T: ToString, Object: ToJson>(
+        mut self,
+        key: T,
+        value: Option<Object>,
+    ) -> Self {
+        match value {
+            Some(val) => self.insert(key.to_string(), val.to_json()),
+            None => {}
+        }
+        self
+    }
+    pub fn rpush_option<Object: ToJson>(mut self, value: Option<Object>) -> Self {
+        match value {
+            Some(val) => self.push(val.to_json()),
+            None => {}
+        }
+        self
     }
     pub fn consume(&mut self, key: &str) -> Option<Self> {
         if let JSONObject::Object(map) = self {
@@ -130,11 +171,15 @@ impl JSONObject {
             panic!()
         }
     }
-    pub fn consume_result(&mut self, key: &str) -> Result<Self, String> {
+    pub fn consume_result(&mut self, key: &str) -> Result<Self, JSONError> {
         if let JSONObject::Object(map) = self {
             match map.remove(key) {
                 Some(v) => return Ok(v),
-                None => return Err(format!("Failed to get value of '{key}'")),
+                None => {
+                    return Err(JSONError::FailedToGetKey {
+                        key: key.to_string(),
+                    })
+                }
             }
         } else {
             panic!()
@@ -142,5 +187,30 @@ impl JSONObject {
     }
     pub fn new() -> Self {
         Self::Object(HashMap::new())
+    }
+}
+
+#[derive(Debug)]
+pub enum JSONError {
+    FailedToGetKey { key: String },
+}
+
+impl Display for JSONError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::FailedToGetKey { key } => format!("Failed to get value of '{key}'"),
+            }
+        )
+    }
+}
+
+impl Error for JSONError {
+    fn description(&self) -> &str {
+        match self {
+            Self::FailedToGetKey { .. } => "Failed to get value",
+        }
     }
 }
