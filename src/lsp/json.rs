@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 mod value;
 pub use value::*;
-mod common;
+pub mod common;
 
 mod stringify;
 

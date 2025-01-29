@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use crate::{
     json,
     lsp::json::{self, JSONObject, ToJson},
@@ -26,7 +24,6 @@ pub struct Workspace {
     apply_edit: Option<bool>,
     workspace_edit: Option<WorkspaceEditClientCapabilities>,
 }
-
 impl ToJson for Workspace {
     fn to_json(self) -> JSONObject {
         JSONObject::new()
@@ -48,6 +45,9 @@ impl ToJson for WorkspaceEditClientCapabilities {
         JSONObject::new()
             .rinsert("documentChanges", self.document_changes)
             .rinsert_option("resourcesOperations", self.resources_operations)
+            .rinsert_option("failureHandling", self.failure_handling)
+            .rinsert_option("normalizesLineEndings", self.normalizes_line_endings)
+            .rinsert_option("changeAnnotationSupport", self.change_annotation_support)
     }
 }
 impl ToJson for Vec<ResourceOperationKind> {
@@ -59,6 +59,11 @@ impl ToJson for Vec<ResourceOperationKind> {
 #[derive(Default)]
 pub struct WorkspaceChangeAnnotationSupport {
     group_on_label: Option<bool>,
+}
+impl ToJson for WorkspaceChangeAnnotationSupport {
+    fn to_json(self) -> JSONObject {
+        JSONObject::new().rinsert_option("groupOnLabel", self.group_on_label)
+    }
 }
 
 #[derive(Default)]
@@ -85,4 +90,14 @@ pub enum FailureHandlingKind {
     Transactional,
     Undo,
     TextOnlyTransactional,
+}
+impl ToJson for FailureHandlingKind {
+    fn to_json(self) -> JSONObject {
+        match self {
+            Self::Abort => json!("abort"),
+            Self::Transactional => json!("transactional"),
+            Self::Undo => json!("undo"),
+            Self::TextOnlyTransactional => json!("textOnlyTransactional"),
+        }
+    }
 }

@@ -3,7 +3,9 @@ use crate::{json, lsp::json::ToJson};
 use super::{DocumentURI, JSONObject, LSPAny, ValidOrNull, URI};
 
 mod client_capabilities;
+mod server_capabilities;
 pub use client_capabilities::*;
+pub use server_capabilities::*;
 
 pub struct InitializeParams {
     process_id: ValidOrNull<isize>,
@@ -16,7 +18,9 @@ pub struct InitializeParams {
     workspace_folders: ValidOrNull<Vec<WorkspaceFolder>>,
 }
 
+#[derive(Default)]
 pub enum TraceValue {
+    #[default]
     Off,
     Messages,
     Verbose,
@@ -26,7 +30,7 @@ impl ToJson for TraceValue {
         match self {
             Self::Off => json!("off"),
             Self::Messages => json!("messages"),
-            Self::Verbose => json!("verbose")
+            Self::Verbose => json!("verbose"),
         }
     }
 }
