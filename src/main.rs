@@ -1,60 +1,53 @@
-use std::{path::PathBuf, process::exit};
-
-mod run;
-use compiler::CompileCtx;
-use run::run;
+use common::{errors::CompileResult, exit_code::ExitCode, path::Path};
+use compiler::context::CompileCtx;
 
 mod common;
 mod compiler;
 mod lsp;
 
-enum Action {
+enum Command {
+    LSP,
     Run,
     Build,
+    Check,
+    New,
 }
 
 fn main() {
-    let project_dir = std::env::current_dir().unwrap();
-    let mut args = std::env::args();
-    args.next();
-
-    let action = match args.next() {
-        Some(a) => match a.as_str() {
-            "lsp" => lsp::init(),
-            "run" => Action::Run,
-            "build" => Action::Build,
-            _ => {
-                println!("Could not find action named: {}", a);
-                exit(1)
-            }
-        },
-        None => {
-            println!("Argument required");
-            exit(1)
-        }
+    let error = match run() {
+        Ok(()) => return,
+        Err(err) => err,
     };
 
-    let mut ctx = CompileCtx::new(project_dir);
+    eprintln!("{error}");
+}
 
-    for arg in args {
-        match arg.as_str() {
-            "--release" => ctx.options.release = true,
-            other => {
-                let (key, value) = match other.split_once("=") {
-                    Some(a) => a,
-                    None => todo!(),
-                };
-                match key.to_lowercase().as_str() {
-                    "project_path" => ctx.project_dir = PathBuf::from(value),
-                    _ => todo!(),
-                }
-            }
-        }
-    }
+fn run() -> CompileResult<()> {
+    let mut arguments = common::arguments::Arguments::new();
 
-    let executable_path = compiler::build(ctx);
-    match action {
-        Action::Run => run(executable_path),
-        Action::Build => {}
+    let command = match arguments.next() {
+        Some(command) => match &command[..] {
+            "r" | "run" => Command::Run,
+            "b" | "build" => Command::Build,
+            "c" | "check" => Command::Check,
+            "new" => Command::New,
+            "lsp" => Command::LSP,
+            _ => common::exit(
+                format!("Could not find command named: '{command}'"),
+                ExitCode::MissingCommand,
+            ),
+        },
+        None => common::exit("Missing command argument", ExitCode::MissingCommand),
+    };
+
+    let ctx = CompileCtx::new(arguments)?;
+
+    match command {
+        Command::New => todo!(),
+        Command::LSP => todo!(),
+        Command::Run => todo!(),
+        Command::Build => todo!(),
+        Command::Check => todo!(),
     }
+    Ok(())
 }
