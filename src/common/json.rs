@@ -1,9 +1,11 @@
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     num::{ParseFloatError, ParseIntError},
 };
 
-#[derive(Clone)]
+pub mod from;
+
+#[derive(Debug, Clone)]
 pub(crate) enum JSON {
     Null,
     String(String),
@@ -11,11 +13,19 @@ pub(crate) enum JSON {
     Literal(String),
     Number(Number),
     Array(Vec<JSON>),
-    Object(HashMap<String, JSON>),
+    Object(BTreeMap<String, JSON>),
+}
+impl JSON {
+    pub fn new() -> JSON {
+        JSON::Object(BTreeMap::new())
+    }
+    pub fn array() -> JSON {
+        JSON::Array(Vec::new())
+    }
 }
 
-#[derive(Clone)]
-pub(crate) struct Number(pub String);
+#[derive(Debug, Clone)]
+pub(crate) struct Number(pub(super) String);
 impl Number {
     pub fn as_isize(&self) -> Result<isize, ParseIntError> {
         self.0.parse()
