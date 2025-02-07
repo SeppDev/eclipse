@@ -41,17 +41,20 @@ fn run() -> CompileResult<()> {
         None => common::exit("Missing command argument", ExitCode::MissingCommand),
     };
 
+    if let Command::New = command {
+        todo!()
+    }
+
+    let mut ctx = CompileCtx::new(arguments)?;
+
     match command {
-        Command::New => todo!(),
         Command::LSP => todo!(),
         Command::Run => todo!(),
         Command::Build => todo!(),
-        Command::Check => {
-            let ctx = CompileCtx::new(arguments)?;
-            let mut files = ProjectFiles::new(ctx.config.project_path);
-            files.pre_cache()?;
-        }
+        Command::Check => ctx.analyze()?,
+        _ => unreachable!(),
     }
 
+    ctx.finish();
     Ok(())
 }

@@ -5,6 +5,7 @@ use target::Target;
 use crate::common::{
     arguments::Arguments,
     errors::{CompileError, CompileResult},
+    files::ProjectFiles,
 };
 use std::path::PathBuf;
 
@@ -16,6 +17,7 @@ pub struct CompileCtx {
     pub status: Status,
     pub target: Target,
     pub config: Config,
+    pub(super) project_files: ProjectFiles,
 }
 impl CompileCtx {
     pub fn new(mut arguments: Arguments) -> CompileResult<Self> {
@@ -32,16 +34,20 @@ impl CompileCtx {
             }
         }
 
-        let config = match Config::open(project_dir) {
-            Ok(c) => c,
-            Err(e) => panic!("{e}"),
-        };
+        let config = Config::open(project_dir.clone())?;
+
+        let mut project_files = ProjectFiles::new(project_dir);
+        project_files.pre_cache()?;
 
         Ok(Self {
             status: Status::new(),
             target,
             config,
+            project_files,
         })
+    }
+    pub fn finish(self) {
+        self.status.quit();
     }
 }
 

@@ -1,20 +1,48 @@
-use std::fs;
+use std::{
+    fs::{self, DirEntry},
+    path::PathBuf,
+};
 
 use crate::common::errors::CompileResult;
 
-use super::{ProjectFiles, FILE_EXTENSION};
+use super::{File, Files, ProjectFiles, FILE_EXTENSION};
 
-impl ProjectFiles {
-    pub fn pre_cache(&mut self) -> CompileResult<()> {
-        let dir_path = self.project_path.join("src");
+impl Files {
+    pub fn pre_cache(&mut self, path: &PathBuf) -> CompileResult<()> {
+        let dir_path = path.join("src");
         let dir = fs::read_dir(dir_path)?;
 
-        let mut files = Vec::new();
+        self.files.clear();
 
-        loop {}
+        let mut entries = dir
+            .filter_map(|d| d.is_ok().then_some(d.unwrap()))
+            .collect::<Vec<DirEntry>>();
 
-        for entry in dir {
-            let entry = entry?;
+        loop {
+            let entry = match entries.pop() {
+                Some(e) => e,
+                None => break,
+            };
+            let path = entry.path();
+            if path.is_dir() {
+                entries.append(
+                    &mut fs::read_dir(path)?
+                        .filter_map(|d| d.is_ok().then_some(d.unwrap()))
+                        .collect::<Vec<DirEntry>>(),
+                );
+
+                continue;
+            }
+
+            if let Some(extension) = path.extension() {
+                if extension.to_str().unwrap_or_default() != FILE_EXTENSION {
+                    continue;
+                }
+            }
+
+            let source = fs::read_to_string(&path)?;
+            let file = File::from(source);
+            self.files.insert(path, file);
         }
 
         Ok(())

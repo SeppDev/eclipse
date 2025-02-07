@@ -1,17 +1,22 @@
 use std::path::PathBuf;
 
-use crate::common::{errors::CompileResult, files::FILE_EXTENSION, json::JSON};
+use crate::common::{errors::CompileResult, json::JSON};
 
 pub const CONFIG_NAME: &str = "eclipse";
 
 pub struct Config {
     pub project_path: PathBuf,
     pub package: Package,
+    pub editor: Editor,
 }
 
 pub struct Package {
     pub name: String,
     pub version: String,
+}
+
+pub struct Editor {
+    pub tab_size: usize,
 }
 
 impl Config {
@@ -28,6 +33,7 @@ impl Config {
                 name: "Application".to_string(),
                 version: "0.1.0".to_string(),
             },
+            editor: Editor { tab_size: 4 },
         })
     }
 }
