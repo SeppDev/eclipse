@@ -40,7 +40,7 @@ fn run() -> CompileResult<()> {
         None => common::exit("Missing command argument", ExitCode::MissingCommand),
     };
 
-    let ctx = CompileCtx::new(arguments)?;
+    // let ctx = CompileCtx::new(arguments)?;
 
     match command {
         Command::New => todo!(),
@@ -49,5 +49,6 @@ fn run() -> CompileResult<()> {
         Command::Build => todo!(),
         Command::Check => todo!(),
     }
+
     Ok(())
 }

@@ -17,7 +17,6 @@ pub struct CompileCtx {
     pub status: Status,
     pub target: Target,
     pub config: Config,
-    pub project_files: ProjectFiles,
 }
 impl CompileCtx {
     pub fn new(mut arguments: Arguments) -> CompileResult<Self> {
@@ -40,7 +39,6 @@ impl CompileCtx {
         };
 
         Ok(Self {
-            project_files: ProjectFiles::new(),
             status: Status::new(),
             target,
             config,
@@ -73,24 +71,3 @@ impl Arguments {
         }
     }
 }
-
-pub struct ProjectFiles {
-    files: HashMap<Path, File>,
-}
-impl ProjectFiles {
-    pub fn new() -> Self {
-        Self {
-            files: HashMap::new(),
-        }
-    }
-}
-
-pub struct File {
-    pub body: String,
-}
-impl From<String> for File {
-    fn from(value: String) -> Self {
-        Self { body: value }
-    }
-}
-impl File {}
