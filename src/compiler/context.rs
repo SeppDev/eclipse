@@ -5,9 +5,8 @@ use target::Target;
 use crate::common::{
     arguments::Arguments,
     errors::{CompileError, CompileResult},
-    path::Path,
 };
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 pub mod config;
 pub mod status;
@@ -33,7 +32,7 @@ impl CompileCtx {
             }
         }
 
-        let config = match Config::open(&project_dir) {
+        let config = match Config::open(project_dir) {
             Ok(c) => c,
             Err(e) => panic!("{e}"),
         };

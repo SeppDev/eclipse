@@ -1,6 +1,7 @@
-use common::{errors::CompileResult, exit_code::ExitCode, path::Path};
+use common::{errors::CompileResult, exit_code::ExitCode, files::ProjectFiles};
 use compiler::context::CompileCtx;
 
+mod commands;
 mod common;
 mod compiler;
 mod lsp;
@@ -40,14 +41,16 @@ fn run() -> CompileResult<()> {
         None => common::exit("Missing command argument", ExitCode::MissingCommand),
     };
 
-    // let ctx = CompileCtx::new(arguments)?;
-
     match command {
         Command::New => todo!(),
         Command::LSP => todo!(),
         Command::Run => todo!(),
         Command::Build => todo!(),
-        Command::Check => todo!(),
+        Command::Check => {
+            let ctx = CompileCtx::new(arguments)?;
+            let mut files = ProjectFiles::new(ctx.config.project_path);
+            files.pre_cache()?;
+        }
     }
 
     Ok(())
