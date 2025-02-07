@@ -1,3 +1,5 @@
+use std::{iter::Peekable, str::Chars};
+
 use crate::common::path::Path;
 
 use super::{
@@ -7,16 +9,44 @@ use super::{
 
 impl JSON {
     pub fn from_toml_source(mut source: String) -> CompileResult<Self> {
-        Self::from_toml(JSON::new(), &mut source)
+        let mut chars = source.chars().peekable();
+        Self::from_toml(&mut chars)
     }
-    fn from_toml(table: JSON, source: &mut String) -> CompileResult<JSON> {
-        let key = source;
+    fn from_toml(chars: &mut Peekable<Chars>) -> CompileResult<Self> {
+        let mut table = JSON::new();
 
-        println!("{key:?}");
+        // loop {
+        // if chars.peek() == &'[' {}
 
-        todo!();
+        // let key = collect_until(chars, |c| c != &'=')
+        // let key = key.trim();
+        // if key.len() == 0 {
+        //     break;
+        // }
+
+        // chars.next();
+        // chars.skip_while(|c| c != &'\n').next();
+
+        // table.insert(key, JSON::Null);
+        // }
+
+        return Ok(table);
     }
 }
+
+// fn collect_until(chars: &mut Peekable<Chars>, predicate: impl FnOnce(&char) -> bool) -> String
+// {
+//     let mut string = String::new();
+//     loop {
+//         let char = match chars.next_if(predicate) {
+//             Some(c) => c,
+//             None => break,
+//         };
+//         string.push(char);
+//     }
+//     return string;
+// }
+
 // loop {
 //     let line = match split.next() {
 //         Some(l) => l,

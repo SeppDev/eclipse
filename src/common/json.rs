@@ -5,6 +5,8 @@ use std::{
 
 pub mod from;
 
+type Object = BTreeMap<String, JSON>;
+
 #[derive(Debug, Clone)]
 pub(crate) enum JSON {
     Null,
@@ -13,14 +15,31 @@ pub(crate) enum JSON {
     Literal(String),
     Number(Number),
     Array(Vec<JSON>),
-    Object(BTreeMap<String, JSON>),
+    Object(Object),
 }
 impl JSON {
     pub fn new() -> JSON {
-        JSON::Object(BTreeMap::new())
+        JSON::Object(Object::new())
     }
     pub fn array() -> JSON {
         JSON::Array(Vec::new())
+    }
+}
+
+impl JSON {
+    pub fn as_mut_object(&mut self) -> &mut Object {
+        if let Self::Object(object) = self {
+            object
+        } else {
+            unreachable!()
+        }
+    }
+}
+
+impl JSON {
+    pub fn insert<T: ToString>(&mut self, key: T, value: Self) -> Option<JSON> {
+        let object = self.as_mut_object();
+        object.insert(key.to_string(), value)
     }
 }
 
@@ -39,7 +58,7 @@ impl Number {
     pub fn as_f32(&self) -> Result<f32, ParseFloatError> {
         self.0.parse()
     }
-    pub fn as_string(self) -> String {
-        self.0
+    pub fn as_string(&self) -> &String {
+        &self.0
     }
 }
