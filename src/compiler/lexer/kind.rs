@@ -1,12 +1,13 @@
-use crate::common::position::PositionRange;
+use crate::common::located::Located;
 
 use super::reader::Character;
 
+pub type LocatedString = Located<String>;
+
 #[derive(Debug)]
 pub enum TokenKind {
-    String(PositionRange, String),
-    Identifier(PositionRange, String),
-    Integer(PositionRange, String),
-    Float(PositionRange, String, String),
-    Punctuation(Character),
+    String(LocatedString),
+    Identifier(LocatedString),
+    Integer(LocatedString),
+    Operators(Vec<Character>),
 }

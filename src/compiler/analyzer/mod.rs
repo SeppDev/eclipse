@@ -8,7 +8,8 @@ impl CompileCtx {
     pub fn analyze(&mut self) -> CompileResult<()> {
         let mut main_path = PathBuf::from("src/main");
         main_path.set_extension(FILE_EXTENSION);
-        self.tokenize(&main_path)?;
+        let tokens = self.tokenize(&main_path)?;
+        // println!("{tokens:#?}");
 
         Ok(())
     }

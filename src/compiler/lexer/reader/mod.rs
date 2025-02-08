@@ -2,6 +2,7 @@ pub mod comments;
 pub mod identifier;
 pub mod next;
 pub mod number;
+pub mod operators;
 pub mod string;
 
 use crate::{
@@ -20,7 +21,7 @@ impl CompileCtx {
         let tab_size = self.config.editor.tab_size;
 
         let mut input: Vec<char> = source.chars().collect();
-        let mut output: Vec<Character> = Vec::new();
+        let mut output: Vec<Character> = Vec::with_capacity(input.len());
 
         let mut line: usize = 1;
         let mut column: usize = 0;

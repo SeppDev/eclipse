@@ -1,4 +1,7 @@
-use crate::{common::errors::CompileResult, compiler::lexer::kind::TokenKind};
+use crate::{
+    common::errors::CompileResult,
+    compiler::lexer::kind::{LocatedString, TokenKind},
+};
 
 use super::Reader;
 
@@ -17,6 +20,9 @@ impl Reader {
             body.push(char.raw);
         }
 
-        Ok(Some(TokenKind::String(delimiter.position, body)))
+        Ok(Some(TokenKind::String(LocatedString::new(
+            body,
+            delimiter.position,
+        ))))
     }
 }

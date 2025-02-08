@@ -28,7 +28,8 @@ impl Reader {
                     self.advance();
                     continue;
                 }
-                character => todo!("Unkown character {character}"),
+                character if character.is_ascii_punctuation() => self.parse_operators(),
+                character => todo!("Unkown character '{character}'"),
             };
         }
     }

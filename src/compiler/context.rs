@@ -34,13 +34,17 @@ impl CompileCtx {
             }
         }
 
+        let status = Status::new();
+        status.message("Reading config".to_string());
+
         let config = Config::open(project_dir.clone())?;
 
         let mut project_files = ProjectFiles::new(project_dir);
         project_files.pre_cache()?;
+        status.message("Caching files".to_string());
 
         Ok(Self {
-            status: Status::new(),
+            status,
             target,
             config,
             project_files,

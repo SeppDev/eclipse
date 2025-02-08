@@ -1,4 +1,4 @@
-use common::{errors::CompileResult, exit_code::ExitCode, files::ProjectFiles};
+use common::{errors::CompileResult, exit_code::ExitCode};
 use compiler::context::CompileCtx;
 
 mod commands;
