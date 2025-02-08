@@ -1,10 +1,11 @@
+pub mod comments;
+pub mod identifier;
+pub mod next;
+pub mod number;
 pub mod string;
 
 use crate::{
-    common::{
-        errors::CompileResult,
-        position::{Position, PositionRange},
-    },
+    common::{errors::CompileResult, located::Located, position::Position},
     compiler::context::CompileCtx,
 };
 
@@ -12,16 +13,13 @@ pub struct Reader {
     chars: Vec<Character>,
 }
 
-pub struct Character {
-    char: char,
-    position: PositionRange,
-}
+pub type Character = Located<char>;
 
 impl CompileCtx {
     pub(in super::super) fn new_reader(&self, source: &String) -> CompileResult<Reader> {
         let tab_size = self.config.editor.tab_size;
 
-        let mut input: Vec<char> = source.chars().rev().collect();
+        let mut input: Vec<char> = source.chars().collect();
         let mut output: Vec<Character> = Vec::new();
 
         let mut line: usize = 1;
@@ -58,7 +56,7 @@ impl CompileCtx {
             position.end.column += char.len_utf8();
             position.end.character += 1;
 
-            output.push(Character { char, position });
+            output.push(Character::new(char, position));
         }
 
         Ok(Reader { chars: output })
@@ -77,7 +75,7 @@ impl Reader {
             None => return None,
         };
 
-        if predicate(&peeked.char) {
+        if predicate(&peeked.raw) {
             return self.advance();
         }
         None

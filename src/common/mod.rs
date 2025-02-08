@@ -5,6 +5,7 @@ pub mod counter;
 pub mod errors;
 pub mod exit_code;
 pub mod files;
+pub mod located;
 pub mod path;
 pub mod position;
 

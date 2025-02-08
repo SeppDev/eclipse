@@ -9,10 +9,18 @@ use super::context::CompileCtx;
 
 impl CompileCtx {
     pub fn tokenize(&mut self, path: &PathBuf) -> CompileResult<()> {
-        let file = self.project_files.read(path).unwrap();
+        let file = self.project_files.read(path)?.unwrap();
         let mut reader = self.new_reader(&file.body)?;
 
-        reader.advance_if(|c| c == &'c');
+        loop {
+            let kind = match reader.next()? {
+                Some(k) => k,
+                None => break,
+            };
+            println!("{kind:#?}");
+        }
+
+        todo!();
 
         Ok(())
     }
