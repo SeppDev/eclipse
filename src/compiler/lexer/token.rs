@@ -1,5 +1,7 @@
 use crate::common::located::Located;
 
+pub const MAX_OPERATOR_WIDTH: usize = 2;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     EndOfFile,
@@ -63,7 +65,7 @@ pub enum Token {
     PercentEquals,
 
     Boolean(bool),
-    Char(String),
+    Character(String),
     String(String),
     Integer(String),
     Float(String),
@@ -77,7 +79,7 @@ impl Token {
             | (Self::Integer(_), Self::Integer(_))
             | (Self::Float(_), Self::Float(_))
             | (Self::Identifier(_), Self::Identifier(_))
-            | (Self::Char(_), Self::Char(_)) => true,
+            | (Self::Character(_), Self::Character(_)) => true,
             _ => self == other,
         }
     }
@@ -223,7 +225,7 @@ impl std::fmt::Display for Token {
                 Decrement => "--",
 
                 Boolean(_) => "bool",
-                Char(_) => "'character'",
+                Character(_) => "'character'",
                 String(_) => "\"string\"",
                 Integer(i) => i,
                 Float(f) => f,

@@ -3,11 +3,14 @@ pub(super) mod reader;
 pub mod token;
 
 use super::context::CompileCtx;
-use crate::common::{errors::CompileResult, position::PositionRange};
+use crate::common::{
+    errors::CompileResult,
+    position::{Position, PositionRange},
+};
 use kind::{LocatedString, TokenKind};
 use reader::Character;
 use std::{ops::Range, path::PathBuf};
-use token::{match_token, Token, TokenInfo};
+use token::{match_token, Token, TokenInfo, MAX_OPERATOR_WIDTH};
 
 impl CompileCtx {
     pub fn tokenize(&mut self, path: &PathBuf) -> CompileResult<Vec<TokenInfo>> {
@@ -39,7 +42,7 @@ impl CompileCtx {
                 }
                 TokenKind::Operators(mut chars) => {
                     while chars.len() > 0 {
-                        let len = chars.len();
+                        let len = chars.len().min(MAX_OPERATOR_WIDTH);
 
                         for i in 0..len {
                             let range = 0..len - i;
@@ -59,6 +62,11 @@ impl CompileCtx {
             };
             tokens.push(token);
         }
+
+        tokens.push(TokenInfo::new(
+            Token::EndOfFile,
+            Position::new(0, 0, 0).to_range(),
+        ));
 
         Ok(tokens)
     }

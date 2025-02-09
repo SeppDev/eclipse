@@ -20,15 +20,17 @@ impl CompileCtx {
     pub(in super::super) fn new_reader(&self, source: &String) -> CompileResult<Reader> {
         let tab_size = self.config.editor.tab_size;
 
-        let mut input: Vec<char> = source.chars().rev().collect();
-        let mut output: Vec<Character> = Vec::with_capacity(input.len());
+        let start = std::time::Instant::now();
+
+        let mut input = source.chars();
+        let mut output: Vec<Character> = Vec::with_capacity(source.len());
 
         let mut line: usize = 1;
         let mut column: usize = 0;
         let mut character: usize = 0;
 
         loop {
-            let char = match input.pop() {
+            let char = match input.next() {
                 Some(char) => char,
                 None => break,
             };
@@ -59,8 +61,9 @@ impl CompileCtx {
 
             output.push(Character::new(char, position));
         }
-
         output.reverse();
+
+        // println!("yes: {:?}", start.elapsed());
 
         Ok(Reader { chars: output })
     }

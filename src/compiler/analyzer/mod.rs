@@ -9,6 +9,7 @@ impl CompileCtx {
         let mut main_path = PathBuf::from("src/main");
         main_path.set_extension(FILE_EXTENSION);
         let tokens = self.tokenize(&main_path)?;
+        // println!("{tokens:#?}");
 
         Ok(())
     }
