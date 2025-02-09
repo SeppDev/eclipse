@@ -13,7 +13,7 @@ use std::{ops::Range, path::PathBuf};
 use token::{match_token, Token, TokenInfo, MAX_OPERATOR_WIDTH};
 
 impl CompileCtx {
-    pub fn tokenize(&mut self, path: &PathBuf) -> CompileResult<Vec<TokenInfo>> {
+    pub fn tokenize(&self, path: &PathBuf) -> CompileResult<Vec<TokenInfo>> {
         self.message(format!("Lexer: {:?}", path.clone().into_os_string()));
 
         let file = self.read(path)?.unwrap();
@@ -29,6 +29,9 @@ impl CompileCtx {
             let token = match kind {
                 TokenKind::String(located) => {
                     TokenInfo::new(Token::String(located.raw), located.position)
+                }
+                TokenKind::Character(located) => {
+                    TokenInfo::new(Token::Character(located.raw), located.position)
                 }
                 TokenKind::Identifier(located) => {
                     if let Some(token) = match_token(&located.raw) {

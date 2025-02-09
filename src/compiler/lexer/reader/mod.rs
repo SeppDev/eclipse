@@ -20,8 +20,6 @@ impl CompileCtx {
     pub(in super::super) fn new_reader(&self, source: &String) -> CompileResult<Reader> {
         let tab_size = self.config.editor.tab_size;
 
-        let start = std::time::Instant::now();
-
         let mut input = source.chars();
         let mut output: Vec<Character> = Vec::with_capacity(source.len());
 
@@ -62,8 +60,6 @@ impl CompileCtx {
             output.push(Character::new(char, position));
         }
         output.reverse();
-
-        // println!("yes: {:?}", start.elapsed());
 
         Ok(Reader { chars: output })
     }

@@ -20,9 +20,13 @@ impl Reader {
             body.push(char.raw);
         }
 
-        Ok(Some(TokenKind::String(LocatedString::new(
-            body,
-            delimiter.position,
-        ))))
+        let is_string = delimiter.raw == '"';
+        let string = LocatedString::new(body, delimiter.position);
+
+        Ok(Some(if is_string {
+            TokenKind::String(string)
+        } else {
+            TokenKind::Character(string)
+        }))
     }
 }

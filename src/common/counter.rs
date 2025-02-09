@@ -8,14 +8,10 @@ const CHARS_LEN: usize = CHARS.len();
 #[derive(Debug, Default)]
 pub struct NameCounter {
     count: usize,
-    prefix: String,
 }
 impl NameCounter {
-    pub fn new(prefix: Option<&str>) -> Self {
-        Self {
-            prefix: prefix.unwrap_or("_").to_string(),
-            count: 0,
-        }
+    pub fn new() -> Self {
+        Self { count: 0 }
     }
     pub fn increment(&mut self) -> String {
         let mut string = String::with_capacity(8);
@@ -32,6 +28,6 @@ impl NameCounter {
             }
         }
 
-        return format!("{}{string}", self.prefix);
+        string
     }
 }
