@@ -20,7 +20,7 @@ impl CompileCtx {
     pub(in super::super) fn new_reader(&self, source: &String) -> CompileResult<Reader> {
         let tab_size = self.config.editor.tab_size;
 
-        let mut input: Vec<char> = source.chars().collect();
+        let mut input: Vec<char> = source.chars().rev().collect();
         let mut output: Vec<Character> = Vec::with_capacity(input.len());
 
         let mut line: usize = 1;
@@ -59,6 +59,8 @@ impl CompileCtx {
 
             output.push(Character::new(char, position));
         }
+
+        output.reverse();
 
         Ok(Reader { chars: output })
     }

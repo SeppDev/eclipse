@@ -5,7 +5,7 @@ use std::{
 
 use crate::common::errors::CompileResult;
 
-use super::{File, Files, ProjectFiles, FILE_EXTENSION};
+use super::{File, Files, FILE_EXTENSION};
 
 impl Files {
     pub fn pre_cache(&mut self, path: &PathBuf) -> CompileResult<()> {

@@ -18,7 +18,7 @@ impl Status {
         std::thread::spawn(move || {
             let mut message = String::new();
             loop {
-                match receiver.recv_timeout(Duration::from_millis(100)) {
+                match receiver.recv_timeout(Duration::from_millis(200)) {
                     Ok(m) => match m {
                         Some(m) => message = m,
                         None => break,
@@ -33,6 +33,8 @@ impl Status {
             let _ = std::io::stdout().flush();
             let _ = done_sender.send(());
         });
+
+        let _ = sender.send(Some("".to_string()));
 
         Self {
             sender,

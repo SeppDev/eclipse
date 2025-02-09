@@ -47,6 +47,8 @@ fn run() -> CompileResult<()> {
 
     let mut ctx = CompileCtx::new(arguments)?;
 
+    let start = std::time::Instant::now();
+
     match command {
         Command::LSP => todo!(),
         Command::Run => todo!(),
@@ -54,7 +56,10 @@ fn run() -> CompileResult<()> {
         Command::Check => ctx.analyze()?,
         _ => unreachable!(),
     }
+    let elapsed = start.elapsed();
 
     ctx.finish();
+
+    println!("Elapsed: {:?}", elapsed);
     Ok(())
 }

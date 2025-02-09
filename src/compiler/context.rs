@@ -5,7 +5,7 @@ use target::Target;
 use crate::common::{
     arguments::Arguments,
     errors::{CompileError, CompileResult},
-    files::ProjectFiles,
+    files::{File, ProjectFiles},
 };
 use std::path::PathBuf;
 
@@ -14,14 +14,16 @@ pub mod status;
 pub mod target;
 
 pub struct CompileCtx {
-    pub status: Status,
     pub target: Target,
     pub config: Config,
-    pub(super) project_files: ProjectFiles,
+    project_files: ProjectFiles,
+    status: Option<Status>,
 }
 impl CompileCtx {
     pub fn new(mut arguments: Arguments) -> CompileResult<Self> {
         let mut project_dir = arguments.current_dir().clone();
+        let mut has_status = true;
+
         let target = Target::new();
 
         loop {
@@ -31,52 +33,64 @@ impl CompileCtx {
             };
             match option {
                 CommandOption::ProjectPath(path) => project_dir = path,
+                CommandOption::DisableStatus => has_status = false,
             }
         }
 
-        let status = Status::new();
-        status.message("Reading config".to_string());
-
-        let config = Config::open(project_dir.clone())?;
-
+        let config = Config::open(&project_dir)?;
         let mut project_files = ProjectFiles::new(project_dir);
         project_files.pre_cache()?;
-        status.message("Caching files".to_string());
 
         Ok(Self {
-            status,
+            status: has_status.then(|| Status::new()),
             target,
             config,
             project_files,
         })
     }
+    pub fn read(&self, relative_path: &PathBuf) -> CompileResult<Option<&File>> {
+        self.project_files.read(relative_path)
+    }
+    pub fn message(&self, message: String) {
+        if let Some(status) = &self.status {
+            status.message(message)
+        }
+    }
     pub fn finish(self) {
-        self.status.quit();
+        if let Some(status) = self.status {
+            status.quit()
+        }
     }
 }
 
 enum CommandOption {
     ProjectPath(PathBuf),
+    DisableStatus,
 }
 impl Arguments {
     fn next_option(&mut self) -> CompileResult<Option<CommandOption>> {
-        let (key, value) = match self.next() {
-            Some(string) => match string.split_once('=') {
-                Some((key, value)) => (key.trim().to_string(), value.to_string()),
-                None => panic!("Failed to parse option"),
-            },
+        let string = match self.next() {
+            Some(k) => k,
             None => return Ok(None),
         };
 
-        match key.to_lowercase().as_str() {
-            "--project_path" => {
-                let path = PathBuf::from(value);
-                if path.exists() {
-                    return Ok(Some(CommandOption::ProjectPath(path)));
-                }
-                return Err(Box::new(CompileError::PathNotFound(path)));
-            }
-            _ => todo!(),
+        match string.to_lowercase().as_str() {
+            "--disable-status" => return Ok(Some(CommandOption::DisableStatus)),
+            _ => {}
         }
+
+        if let Some((key, value)) = string.split_once('=') {
+            match key.to_lowercase().as_str() {
+                "--project_path" => {
+                    let path = PathBuf::from(value);
+                    if path.exists() {
+                        return Ok(Some(CommandOption::ProjectPath(path)));
+                    }
+                    return Err(Box::new(CompileError::PathNotFound(path)));
+                }
+                _ => todo!(),
+            }
+        }
+        todo!()
     }
 }

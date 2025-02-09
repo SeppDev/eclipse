@@ -1,14 +1,12 @@
 use std::{iter::Peekable, str::Chars};
 
-use crate::common::path::Path;
-
 use super::{
     errors::CompileResult,
     json::{self, JSON},
 };
 
 impl JSON {
-    pub fn from_toml_source(mut source: String) -> CompileResult<Self> {
+    pub fn from_toml_source(source: String) -> CompileResult<Self> {
         let mut chars = source.chars().peekable();
         Self::from_toml(&mut chars)
     }

@@ -83,7 +83,7 @@ impl Token {
     }
 }
 
-fn match_token(word: &String) -> Option<Token> {
+pub fn match_token(word: &String) -> Option<Token> {
     let token = match &word[..] {
         "func" => Token::Function,
         "if" => Token::If,
