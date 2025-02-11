@@ -13,10 +13,13 @@ use std::{ops::Range, path::PathBuf};
 use token::{match_token, Token, TokenInfo, MAX_OPERATOR_WIDTH};
 
 impl CompileCtx {
-    pub fn tokenize(&self, path: &PathBuf) -> CompileResult<Vec<TokenInfo>> {
-        self.message(format!("Lexer: {:?}", path.clone().into_os_string()));
+    pub fn tokenize(&self, relative_path: &PathBuf) -> CompileResult<Vec<TokenInfo>> {
+        self.message(format!(
+            "Lexer: {:?}",
+            relative_path.clone().into_os_string()
+        ));
 
-        let file = self.read(path)?.unwrap();
+        let file = self.read(relative_path)?.unwrap();
         let mut reader = self.new_reader(&file.body)?;
 
         let mut tokens = Vec::new();
