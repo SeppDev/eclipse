@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::common::{errors::CompileResult, json::JSON};
+use crate::common::errors::CompileResult;
 
 pub const CONFIG_NAME: &str = "eclipse";
 
@@ -24,7 +24,7 @@ impl Config {
         config_path.set_extension("toml");
 
         let source = std::fs::read_to_string(config_path)?;
-        let json = JSON::from_toml_source(source)?;
+        // let json = JSON::from_toml_source(source)?;
 
         Ok(Config {
             package: Package {

@@ -1,65 +1,66 @@
-use common::{errors::CompileResult, exit_code::ExitCode};
-use compiler::context::CompileCtx;
+use cli::{arguments::Arguments, CLI};
+// use common::errors::CompileResult;
+// use compiler::context::CompileCtx;
 
-mod commands;
+mod cli;
 mod common;
-mod compiler;
-mod lsp;
+// mod compiler;
+// mod lsp;
+// mod utils;
 
-enum Command {
-    LSP,
-    Run,
-    Build,
-    Check,
-    New,
+fn check(arguments: Arguments) {
+    println!("Checking!")
 }
 
 fn main() {
-    let error = match run() {
-        Ok(()) => return,
-        Err(err) => err,
-    };
-
-    eprintln!("{error}");
+    CLI::new()
+        .register("Analyzes current project", vec!["c", "check"], check)
+        .start();
 }
 
-fn run() -> CompileResult<()> {
-    let mut arguments = common::arguments::Arguments::new();
+// fn _main() {
+//     let error = match run() {
+//         Ok(()) => return,
+//         Err(err) => err,
+//     };
 
-    let command = match arguments.next() {
-        Some(command) => match &command[..] {
-            "r" | "run" => Command::Run,
-            "b" | "build" => Command::Build,
-            "c" | "check" => Command::Check,
-            "new" => Command::New,
-            "lsp" => Command::LSP,
-            _ => common::exit(
-                format!("Could not find command named: '{command}'"),
-                ExitCode::MissingCommand,
-            ),
-        },
-        None => common::exit("Missing command argument", ExitCode::MissingCommand),
-    };
+//     eprintln!("{error}");
+// }
 
-    if let Command::New = command {
-        todo!()
-    }
+// fn run() -> CompileResult<()> {
+//     let mut arguments = common::arguments::Arguments::new();
 
-    let mut ctx = CompileCtx::new(arguments)?;
+//     let command = match arguments.next() {
+//         Some(command) => match &command[..] {
+//             "r" | "run" => Command::Run,
+//             "b" | "build" => Command::Build,
+//             "c" | "check" => Command::Check,
+//             "new" => Command::New,
+//             "lsp" => Command::LSP,
+//             _ => common::exit(format!("Could not find command named: '{command}'")),
+//         },
+//         None => common::exit("Missing command argument"),
+//     };
 
-    let start = std::time::Instant::now();
+//     if let Command::New = command {
+//         todo!()
+//     }
 
-    match command {
-        Command::LSP => todo!(),
-        Command::Run => todo!(),
-        Command::Build => todo!(),
-        Command::Check => ctx.analyze()?,
-        _ => unreachable!(),
-    }
-    let elapsed = start.elapsed();
+//     let mut ctx = CompileCtx::new(arguments)?;
 
-    ctx.finish();
+//     let start = std::time::Instant::now();
 
-    println!("Elapsed: {:?}", elapsed);
-    Ok(())
-}
+//     match command {
+//         Command::LSP => todo!(),
+//         Command::Run => todo!(),
+//         Command::Build => todo!(),
+//         Command::Check => ctx.analyze()?,
+//         _ => unreachable!(),
+//     }
+//     let elapsed = start.elapsed();
+
+//     ctx.finish();
+
+//     println!("Elapsed: {:?}", elapsed);
+//     Ok(())
+// }

@@ -10,6 +10,7 @@ type Object = BTreeMap<String, JSON>;
 #[derive(Debug, Clone)]
 pub(crate) enum JSON {
     Null,
+    Boolean(bool),
     String(String),
     MultiLine(String),
     Literal(String),

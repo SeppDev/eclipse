@@ -3,7 +3,6 @@ use status::Status;
 use target::Target;
 
 use crate::common::{
-    arguments::Arguments,
     errors::{CompileError, CompileResult},
     files::{File, ProjectFiles},
 };

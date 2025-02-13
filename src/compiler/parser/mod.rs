@@ -38,8 +38,15 @@ impl CompileCtx {
         let mut tokens = TokenReader::new(self.tokenize(&current_path)?.into_iter().peekable());
 
         loop {
-            let token = tokens.expect(&vec![Token::Import])?;
-            println!("{token:#?}");
+            let token = tokens.expect(&vec![Token::Import, Token::Function, Token::EndOfFile])?;
+            match token.raw {
+                Token::Function => {
+                    let name = tokens.expect_identifier()?;
+                    todo!("{name:#?}");
+                }
+                Token::EndOfFile => break,
+                _ => {}
+            }
         }
 
         todo!()
