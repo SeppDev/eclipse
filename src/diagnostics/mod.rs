@@ -7,16 +7,16 @@ pub type DiagnosticResult<T> = Result<T, DiagnosticData>;
 
 #[derive(Default)]
 pub enum DiagnosticLevel {
+    #[default]
     Error,
     Warning,
     Info,
     Hint,
-    #[default]
     Note,
 }
 
 pub struct DiagnosticSpan {
-    file: PathBuf,
+    path: PathBuf,
     message: String,
     position: PositionRange,
 }
@@ -24,13 +24,9 @@ pub struct DiagnosticSpan {
 #[derive(Default)]
 pub struct DiagnosticData {
     level: DiagnosticLevel,
+    path: PathBuf,
     title: String,
     notes: Vec<DiagnosticSpan>,
-}
-impl DiagnosticData {
-    pub fn path(&self) -> &PathBuf {
-        &self.notes.first().unwrap().file
-    }
 }
 
 pub struct Diagnostics {}

@@ -4,15 +4,20 @@ use crate::diagnostics::DiagnosticResult;
 
 pub const CONFIG_NAME: &str = "eclipse";
 
+#[derive(Default)]
 pub struct Config {
     pub package: Package,
     pub editor: Editor,
 }
 
+#[derive(Default)]
+
 pub struct Package {
     pub name: String,
     pub version: String,
 }
+
+#[derive(Default)]
 
 pub struct Editor {
     pub tab_size: usize,

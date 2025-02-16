@@ -4,11 +4,11 @@ use crate::common::exit::exit;
 
 use super::arguments::{Argument, Arguments};
 
-pub struct BuildOptions {
+pub struct CommandLineOptions {
     pub status: bool,
     pub project_dir: PathBuf,
 }
-impl From<Arguments> for BuildOptions {
+impl From<Arguments> for CommandLineOptions {
     fn from(mut value: Arguments) -> Self {
         let mut options = Self {
             status: true,

@@ -1,5 +1,3 @@
-use std::str::Chars;
-
 use crate::{common::position::{Located, Position}, compiler::CompilerCtx, diagnostics::DiagnosticResult};
 
 pub mod comments;
@@ -16,11 +14,11 @@ pub struct Reader {
 pub type Character = Located<char>;
 
 impl CompilerCtx {
-    pub(in super::super) fn new_reader(&self, chars: Chars<'_>, size_hint: usize) -> DiagnosticResult<Reader> {
+    pub(in super::super) fn new_reader(&self, source: String) -> DiagnosticResult<Reader> {
         let tab_size = self.config.editor.tab_size;
 
-        let mut input = chars;
-        let mut output: Vec<Character> = Vec::with_capacity(size_hint);
+        let mut input = source.chars();
+        let mut output: Vec<Character> = Vec::with_capacity(source.len());
 
         let mut line: usize = 1;
         let mut column: usize = 0;

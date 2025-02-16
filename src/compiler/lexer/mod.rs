@@ -4,7 +4,7 @@ pub mod token;
 
 use crate::{
     common::position::{Position, PositionRange},
-    diagnostics::DiagnosticResult,
+    diagnostics::{DiagnosticData, DiagnosticResult},
 };
 use kind::{LocatedString, TokenKind};
 use reader::Character;
@@ -20,8 +20,12 @@ impl CompilerCtx {
             relative_path.clone().into_os_string()
         ));
 
-        let chars = self.read_or_cache(relative_path).unwrap().chars();
-        let mut reader = self.new_reader(chars, 0)?;
+        let source = match self.read_or_cache(relative_path) {
+            Some(s) => s.clone(),
+            None => return Err(DiagnosticData::basic(format!("'{relative_path:?}' does not exist"), relative_path.clone()))
+        };
+
+        let mut reader = self.new_reader(source)?;
 
         let mut tokens = Vec::new();
 

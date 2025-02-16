@@ -1,6 +1,6 @@
-use crate::cli::{arguments::Arguments, options::BuildOptions};
+use crate::cli::{arguments::Arguments, options::CommandLineOptions};
 
 pub fn run(arguments: Arguments) {
-    let options = BuildOptions::from(arguments);
+    let options = CommandLineOptions::from(arguments);
     println!("Running!")
 }

@@ -14,14 +14,16 @@ impl Files {
     pub fn from_cache(&self, full_path: &PathBuf) -> Option<&String> {
         self.files.get(full_path)
     }
-    pub fn read_or_cache(&mut self, full_path: &PathBuf) -> &String {
-        let source = fs::read_to_string(full_path).unwrap();
-
+    pub fn read_or_cache(&mut self, full_path: &PathBuf) -> Option<&String> {
         if self.files.contains_key(full_path) {
-            return self.from_cache(full_path).unwrap();
+            return self.from_cache(full_path);
         }
+        let source = match fs::read_to_string(full_path) {
+            Ok(s) => s,
+            Err(_) => return None
+        };
 
-        self.files.insert(full_path.clone(), source).unwrap();
-        self.from_cache(full_path).unwrap()
+        let _old = self.files.insert(full_path.clone(), source);
+        self.from_cache(full_path)
     }
 }

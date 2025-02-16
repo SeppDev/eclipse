@@ -1,10 +1,5 @@
 use super::{lexer::token::TokenInfo, CompilerCtx};
-use crate::{
-    common::errors::CompileError,
-    compiler::lexer::token::Token,
-    diagnostics::{DiagnosticResult, DiagnosticSpan},
-    FILE_EXTENSION,
-};
+use crate::{compiler::lexer::token::Token, diagnostics::DiagnosticResult, FILE_EXTENSION};
 use std::path::PathBuf;
 
 use reader::TokenReader;
@@ -25,7 +20,7 @@ impl CompilerCtx {
 
         todo!()
     }
-    pub fn parse_file(&self, mut relative_path: PathBuf) -> DiagnosticResult<Vec<TokenInfo>> {
+    pub fn parse_file(&mut self, mut relative_path: PathBuf) -> DiagnosticResult<Vec<TokenInfo>> {
         relative_path.set_extension(FILE_EXTENSION);
         self.tokenize(&relative_path)
     }
@@ -35,7 +30,9 @@ impl CompilerCtx {
         mut current_path: PathBuf,
     ) -> DiagnosticResult<()> {
         current_path.set_extension(FILE_EXTENSION);
-        let mut tokens = TokenReader::new(self.tokenize(&current_path)?.into_iter().peekable());
+        
+        let tokens = self.tokenize(&current_path)?.into_iter().peekable();
+        let mut tokens = TokenReader::new(tokens, current_path.clone());
 
         loop {
             let token = tokens.expect(&vec![Token::Import, Token::Function, Token::EndOfFile])?;

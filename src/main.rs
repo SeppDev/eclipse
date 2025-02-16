@@ -4,7 +4,6 @@ mod cli;
 mod commands;
 mod common;
 mod compiler;
-mod context;
 mod diagnostics;
 mod utils;
 
