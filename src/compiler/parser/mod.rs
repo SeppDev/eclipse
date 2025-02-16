@@ -1,17 +1,17 @@
-use reader::TokenReader;
-
-use super::{context::CompileCtx, lexer::token::TokenInfo};
+use super::{lexer::token::TokenInfo, CompilerCtx};
 use crate::{
-    common::{errors::CompileResult, files::FILE_EXTENSION},
+    common::errors::CompileError,
     compiler::lexer::token::Token,
+    diagnostics::{DiagnosticResult, DiagnosticSpan},
+    FILE_EXTENSION,
 };
 use std::path::PathBuf;
 
-mod handle;
+use reader::TokenReader;
 mod reader;
 
-impl CompileCtx {
-    pub fn parse(&mut self) -> CompileResult<()> {
+impl CompilerCtx {
+    pub fn parse(&mut self) -> DiagnosticResult<()> {
         let mut to_tokenize = Vec::new();
         to_tokenize.push(PathBuf::from("src/main"));
 
@@ -25,7 +25,7 @@ impl CompileCtx {
 
         todo!()
     }
-    pub fn parse_file(&self, mut relative_path: PathBuf) -> CompileResult<Vec<TokenInfo>> {
+    pub fn parse_file(&self, mut relative_path: PathBuf) -> DiagnosticResult<Vec<TokenInfo>> {
         relative_path.set_extension(FILE_EXTENSION);
         self.tokenize(&relative_path)
     }
@@ -33,7 +33,7 @@ impl CompileCtx {
         &mut self,
         paths: &mut Vec<PathBuf>,
         mut current_path: PathBuf,
-    ) -> CompileResult<()> {
+    ) -> DiagnosticResult<()> {
         current_path.set_extension(FILE_EXTENSION);
         let mut tokens = TokenReader::new(self.tokenize(&current_path)?.into_iter().peekable());
 

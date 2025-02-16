@@ -1,9 +1,9 @@
-use crate::{common::errors::CompileResult, compiler::lexer::kind::TokenKind};
+use crate::{compiler::lexer::kind::TokenKind, diagnostics::DiagnosticResult};
 
 use super::Reader;
 
 impl Reader {
-    pub fn next(&mut self) -> CompileResult<Option<TokenKind>> {
+    pub fn next(&mut self) -> DiagnosticResult<Option<TokenKind>> {
         loop {
             let start = match self.peek() {
                 Some(c) => c,

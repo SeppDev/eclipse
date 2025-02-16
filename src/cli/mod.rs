@@ -2,6 +2,7 @@ use arguments::{Argument, Arguments};
 
 use crate::common::exit::exit;
 pub mod arguments;
+pub mod options;
 
 type Handler = dyn FnOnce(Arguments) + 'static;
 
@@ -24,14 +25,14 @@ impl CLI {
     fn help(self) -> ! {
         let mut length: usize = 0;
         let mut commands = Vec::new();
-        
+
         for command in &self.commands {
             let name = command.aliases.join(", ");
             length = length.max(name.len());
             commands.push(name);
         }
         length += 2;
-        
+
         println!("Commands:");
         for (command, mut name) in self.commands.into_iter().zip(commands) {
             for _ in 0..length - name.len() {
@@ -39,7 +40,7 @@ impl CLI {
             }
             println!("\t{} {}", name, command.description);
         }
-        
+
         std::process::exit(0);
     }
     pub fn next_argument(&mut self) -> Option<Argument> {

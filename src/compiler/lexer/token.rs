@@ -1,4 +1,4 @@
-use crate::common::located::Located;
+use crate::common::position::Located;
 
 pub const MAX_OPERATOR_WIDTH: usize = 2;
 

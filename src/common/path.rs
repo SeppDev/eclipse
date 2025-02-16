@@ -32,6 +32,19 @@ impl From<&PathBuf> for Path {
         };
     }
 }
+impl Into<PathBuf> for Path {
+    fn into(self) -> PathBuf {
+        let mut buf = PathBuf::new();
+        for p in &self.components {
+            buf.push(p);
+        }
+        match &self.file_extension {
+            Some(ext) => buf.set_extension(ext.clone()),
+            None => false,
+        };
+        buf
+    }
+}
 
 impl Path {
     pub fn new() -> Self {
@@ -60,17 +73,6 @@ impl Path {
         let mut clone = self.clone();
         clone.pop();
         clone
-    }
-    pub fn into_path_buf(&self) -> PathBuf {
-        let mut buf = PathBuf::new();
-        for p in &self.components {
-            buf.push(p);
-        }
-        match &self.file_extension {
-            Some(ext) => buf.set_extension(ext.clone()),
-            None => false,
-        };
-        buf
     }
     pub fn len(&self) -> usize {
         return self.components.len();

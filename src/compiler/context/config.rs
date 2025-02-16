@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::common::errors::CompileResult;
+use crate::diagnostics::DiagnosticResult;
 
 pub const CONFIG_NAME: &str = "eclipse";
 
@@ -19,11 +19,11 @@ pub struct Editor {
 }
 
 impl Config {
-    pub fn open(project_path: &PathBuf) -> CompileResult<Self> {
+    pub fn open(project_path: &PathBuf) -> DiagnosticResult<Self> {
         let mut config_path = project_path.join(CONFIG_NAME);
         config_path.set_extension("toml");
 
-        let source = std::fs::read_to_string(config_path)?;
+        // let source = std::fs::read_to_string(config_path).unwrap();
         // let json = JSON::from_toml_source(source)?;
 
         Ok(Config {

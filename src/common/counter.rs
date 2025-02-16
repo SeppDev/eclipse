@@ -13,8 +13,12 @@ impl NameCounter {
     pub fn new() -> Self {
         Self { count: 0 }
     }
+    pub fn reset(&mut self) {
+        self.count = 0;
+    }
     pub fn increment(&mut self) -> String {
         let mut string = String::with_capacity(8);
+        
         let mut count = self.count;
         self.count += 1;
 

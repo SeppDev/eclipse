@@ -1,8 +1,18 @@
+use super::CompilerCtx;
+
 use std::{
     io::Write,
     sync::mpsc::{self, Receiver, Sender},
     time::Duration,
 };
+
+impl CompilerCtx {
+    pub fn message(&self, message: impl Into<String>) {
+        if let Some(status) = &self.status {
+            status.message(message.into());
+        }
+    }
+}
 
 pub struct Status {
     sender: Sender<Option<String>>,

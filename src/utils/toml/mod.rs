@@ -1,12 +1,4 @@
-pub struct TOML {
-    
-}
-impl TOML {
-    
-    pub fn to_json() {
-        
-    }
-}
+pub struct TOML {}
 
 // impl JSON {
 //     pub fn from_toml_source(source: String) -> CompileResult<Self> {

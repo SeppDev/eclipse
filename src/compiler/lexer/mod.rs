@@ -2,25 +2,26 @@ pub(super) mod kind;
 pub(super) mod reader;
 pub mod token;
 
-use super::context::CompileCtx;
-use crate::common::{
-    errors::CompileResult,
-    position::{Position, PositionRange},
+use crate::{
+    common::position::{Position, PositionRange},
+    diagnostics::DiagnosticResult,
 };
 use kind::{LocatedString, TokenKind};
 use reader::Character;
 use std::{ops::Range, path::PathBuf};
 use token::{match_token, Token, TokenInfo, MAX_OPERATOR_WIDTH};
 
-impl CompileCtx {
-    pub fn tokenize(&self, relative_path: &PathBuf) -> CompileResult<Vec<TokenInfo>> {
+use super::CompilerCtx;
+
+impl CompilerCtx {
+    pub fn tokenize(&mut self, relative_path: &PathBuf) -> DiagnosticResult<Vec<TokenInfo>> {
         self.message(format!(
             "Lexer: {:?}",
             relative_path.clone().into_os_string()
         ));
 
-        let file = self.read(relative_path)?.unwrap();
-        let mut reader = self.new_reader(&file.body)?;
+        let chars = self.read_or_cache(relative_path).unwrap().chars();
+        let mut reader = self.new_reader(chars, 0)?;
 
         let mut tokens = Vec::new();
 

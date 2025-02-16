@@ -1,8 +1,8 @@
 use std::{iter::Peekable, vec::IntoIter};
 
 use crate::{
-    common::{errors::CompileResult, located::Located},
-    compiler::lexer::token::{Token, TokenInfo},
+    common::position::Located,
+    compiler::lexer::token::{Token, TokenInfo}, diagnostics::DiagnosticResult,
 };
 
 type Tokens = Peekable<IntoIter<TokenInfo>>;
@@ -26,7 +26,7 @@ impl TokenReader {
     pub fn peek(&mut self) -> Option<&TokenInfo> {
         self.tokens.peek()
     }
-    pub fn expect(&mut self, expected: &Vec<Token>) -> CompileResult<TokenInfo> {
+    pub fn expect(&mut self, expected: &Vec<Token>) -> DiagnosticResult<TokenInfo> {
         let peeked = self.peek().unwrap();
         for t in expected {
             if t.better_eq(&peeked.raw) {
@@ -35,7 +35,7 @@ impl TokenReader {
         }
         todo!()
     }
-    pub fn expect_identifier(&mut self) -> CompileResult<Located<String>> {
+    pub fn expect_identifier(&mut self) -> DiagnosticResult<Located<String>> {
         let info = self.expect(&vec![Token::Identifier(String::new())])?;
         if let Token::Identifier(s) = info.raw {
             Ok(Located::new(s, info.position))

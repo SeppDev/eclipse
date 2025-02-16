@@ -1,66 +1,36 @@
-use cli::{arguments::Arguments, CLI};
-// use common::errors::CompileResult;
-// use compiler::context::CompileCtx;
+use cli::CLI;
 
 mod cli;
+mod commands;
 mod common;
-// mod compiler;
-// mod lsp;
-// mod utils;
+mod compiler;
+mod context;
+mod diagnostics;
+mod utils;
 
-fn check(arguments: Arguments) {
-    println!("Checking!")
-}
+pub const FILE_EXTENSION: &str = "ecl";
 
 fn main() {
     CLI::new()
-        .register("Analyzes current project", vec!["c", "check"], check)
+        .register(
+            "Analyzes current project",
+            vec!["c", "check"],
+            commands::check,
+        )
+        .register(
+            "Builds current project",
+            vec!["b", "build"],
+            commands::build,
+        )
+        .register(
+            "Build and runs current project",
+            vec!["r", "run"],
+            commands::run,
+        )
+        .register(
+            "Create a new project <path>",
+            vec!["n", "new"],
+            commands::new,
+        )
         .start();
 }
-
-// fn _main() {
-//     let error = match run() {
-//         Ok(()) => return,
-//         Err(err) => err,
-//     };
-
-//     eprintln!("{error}");
-// }
-
-// fn run() -> CompileResult<()> {
-//     let mut arguments = common::arguments::Arguments::new();
-
-//     let command = match arguments.next() {
-//         Some(command) => match &command[..] {
-//             "r" | "run" => Command::Run,
-//             "b" | "build" => Command::Build,
-//             "c" | "check" => Command::Check,
-//             "new" => Command::New,
-//             "lsp" => Command::LSP,
-//             _ => common::exit(format!("Could not find command named: '{command}'")),
-//         },
-//         None => common::exit("Missing command argument"),
-//     };
-
-//     if let Command::New = command {
-//         todo!()
-//     }
-
-//     let mut ctx = CompileCtx::new(arguments)?;
-
-//     let start = std::time::Instant::now();
-
-//     match command {
-//         Command::LSP => todo!(),
-//         Command::Run => todo!(),
-//         Command::Build => todo!(),
-//         Command::Check => ctx.analyze()?,
-//         _ => unreachable!(),
-//     }
-//     let elapsed = start.elapsed();
-
-//     ctx.finish();
-
-//     println!("Elapsed: {:?}", elapsed);
-//     Ok(())
-// }

@@ -1,9 +1,9 @@
-use crate::{common::errors::CompileResult, compiler::lexer::kind::TokenKind};
+use crate::{compiler::lexer::kind::TokenKind, diagnostics::DiagnosticResult};
 
 use super::Reader;
 
 impl Reader {
-    pub fn parse_operators(&mut self) -> CompileResult<Option<TokenKind>> {
+    pub fn parse_operators(&mut self) -> DiagnosticResult<Option<TokenKind>> {
         let mut operators = Vec::new();
         operators.push(self.advance().unwrap());
 

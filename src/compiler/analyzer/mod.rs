@@ -1,11 +1,9 @@
-use crate::common::errors::CompileResult;
+use crate::diagnostics::DiagnosticResult;
 
-use super::context::CompileCtx;
+use super::CompilerCtx;
 
-impl CompileCtx {
-    pub fn analyze(&mut self) -> CompileResult<()> {
-        self.parse()?;
-
+impl CompilerCtx {
+    pub fn analyze(&mut self) -> DiagnosticResult<()> {
         Ok(())
     }
 }
