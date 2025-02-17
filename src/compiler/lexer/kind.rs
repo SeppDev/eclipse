@@ -10,5 +10,6 @@ pub enum TokenKind {
     Character(LocatedString),
     Identifier(LocatedString),
     Integer(LocatedString),
+    Float(LocatedString),
     Operators(Vec<Character>),
 }

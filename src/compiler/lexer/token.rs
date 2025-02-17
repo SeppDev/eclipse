@@ -31,6 +31,8 @@ pub enum Token {
     Mutable,
     Variable,
     ExclamationMark,
+    Arrow,
+    FatArrow,
 
     If,
     ElseIf,
@@ -136,6 +138,9 @@ pub fn match_token(word: &String) -> Option<Token> {
         "++" => Token::Increment,
         "--" => Token::Decrement,
 
+        "->" => Token::Arrow,
+        "=>" => Token::FatArrow,
+
         "." => Token::Dot,
         "," => Token::Comma,
         ";" => Token::SemiColon,
@@ -223,9 +228,11 @@ impl std::fmt::Display for Token {
                 PercentEquals => "%=",
                 Increment => "++",
                 Decrement => "--",
+                Arrow => "->",
+                FatArrow => "=>",
 
                 Boolean(_) => "bool",
-                Character(_) => "'character'",
+                Character(_) => "'x'",
                 String(_) => "\"string\"",
                 Integer(i) => i,
                 Float(f) => f,

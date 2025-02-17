@@ -1,9 +1,15 @@
-use super::{lexer::token::TokenInfo, CompilerCtx};
+use super::{lexer::token::TokenInfo, nodes::ast::Expression, CompilerCtx};
 use crate::{compiler::lexer::token::Token, diagnostics::DiagnosticResult, FILE_EXTENSION};
 use std::path::PathBuf;
 
+mod expression;
+
 use reader::TokenReader;
 mod reader;
+
+pub struct ParsedModule {
+    expressions: Vec<Expression>,
+}
 
 impl CompilerCtx {
     pub fn parse(&mut self) -> DiagnosticResult<()> {
@@ -30,20 +36,27 @@ impl CompilerCtx {
         mut current_path: PathBuf,
     ) -> DiagnosticResult<()> {
         current_path.set_extension(FILE_EXTENSION);
-        
+
         let tokens = self.tokenize(&current_path)?.into_iter().peekable();
         let mut tokens = TokenReader::new(tokens, current_path.clone());
 
         loop {
-            let token = tokens.expect(&vec![Token::Import, Token::Function, Token::EndOfFile])?;
-            match token.raw {
-                Token::Function => {
-                    let name = tokens.expect_identifier()?;
-                    todo!("{name:#?}");
-                }
-                Token::EndOfFile => break,
-                _ => {}
-            }
+            let token = tokens.advance_if(&vec![Token::Import, Token::EndOfFile]);
+
+            let expression = match token {
+                Some(token) => match token.raw {
+                    Token::Import => {
+                        let name = tokens.expect_identifier()?.raw;
+
+                        continue;
+                    }
+                    Token::EndOfFile => break,
+                    _ => todo!(),
+                },
+                None => tokens.parse_expression()?,
+            };
+
+            println!("{expression:?}");
         }
 
         todo!()

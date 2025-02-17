@@ -6,13 +6,13 @@ use super::arguments::{Argument, Arguments};
 
 pub struct CommandLineOptions {
     pub status: bool,
-    pub project_dir: PathBuf,
+    pub project_path: PathBuf,
 }
 impl From<Arguments> for CommandLineOptions {
     fn from(mut value: Arguments) -> Self {
         let mut options = Self {
             status: true,
-            project_dir: value.current_dir().clone(),
+            project_path: value.current_dir().clone(),
         };
         while let Some(argument) = value.next_argument() {
             match argument {
@@ -21,16 +21,16 @@ impl From<Arguments> for CommandLineOptions {
                     _ => exit(format!("No option found for: '{value}'")),
                 },
                 Argument::KeyValue(key, value) => match key.as_str() {
-                    "--project-dir" => options.project_dir = PathBuf::from(value),
+                    "--project-dir" => options.project_path = PathBuf::from(value),
                     _ => exit(format!("No option found for key: '{value}'")),
                 },
             }
         }
 
-        if !options.project_dir.exists() {
+        if !options.project_path.exists() {
             exit(format!(
                 "Path to: '{:?}' doesn't exists",
-                options.project_dir
+                options.project_path
             ));
         }
 

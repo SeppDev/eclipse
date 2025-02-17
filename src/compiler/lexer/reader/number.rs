@@ -7,11 +7,27 @@ use super::Reader;
 
 impl Reader {
     pub fn parse_number(&mut self) -> DiagnosticResult<Option<TokenKind>> {
-        let integer = self.parse_integer();
+        let integer = self.parse_integer()?;
 
-        return integer;
+        let dot = self.advance_if_eq('.');
+        if !dot.is_some() {
+            return Ok(Some(TokenKind::Integer(integer)));
+        }
+
+        let char = match self.peek() {
+            Some(c) => c,
+            None => return Ok(None),
+        };
+
+        if char.raw.is_ascii_digit() {}
+
+        let second = self.parse_integer()?;
+
+        let position = integer.position.start.extend(second.position.end);
+        let string = format!("{}.{}", integer.raw, second.raw);
+        return Ok(Some(TokenKind::Float(LocatedString::new(string, position))));
     }
-    pub fn parse_integer(&mut self) -> DiagnosticResult<Option<TokenKind>> {
+    fn parse_integer(&mut self) -> DiagnosticResult<LocatedString> {
         let mut body = String::new();
         let mut start = self.advance().unwrap();
         body.push(start.raw);
@@ -25,9 +41,6 @@ impl Reader {
             body.push(char.raw);
         }
 
-        Ok(Some(TokenKind::Integer(LocatedString::new(
-            body,
-            start.position,
-        ))))
+        Ok(LocatedString::new(body, start.position))
     }
 }

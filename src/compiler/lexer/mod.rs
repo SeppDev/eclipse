@@ -4,7 +4,7 @@ pub mod token;
 
 use crate::{
     common::position::{Position, PositionRange},
-    diagnostics::{DiagnosticData, DiagnosticResult},
+    diagnostics::DiagnosticResult,
 };
 use kind::{LocatedString, TokenKind};
 use reader::Character;
@@ -15,16 +15,9 @@ use super::CompilerCtx;
 
 impl CompilerCtx {
     pub fn tokenize(&mut self, relative_path: &PathBuf) -> DiagnosticResult<Vec<TokenInfo>> {
-        self.message(format!(
-            "Lexer: {:?}",
-            relative_path.clone().into_os_string()
-        ));
+        self.message(format!("Lexer: {relative_path:?}"));
 
-        let source = match self.read_or_cache(relative_path) {
-            Some(s) => s.clone(),
-            None => return Err(DiagnosticData::basic(format!("'{relative_path:?}' does not exist"), relative_path.clone()))
-        };
-
+        let source = self.read_relative(relative_path)?;
         let mut reader = self.new_reader(source)?;
 
         let mut tokens = Vec::new();
@@ -50,6 +43,9 @@ impl CompilerCtx {
                 }
                 TokenKind::Integer(located) => {
                     TokenInfo::new(Token::Integer(located.raw), located.position)
+                }
+                TokenKind::Float(located) => {
+                    TokenInfo::new(Token::Float(located.raw), located.position)
                 }
                 TokenKind::Operators(mut chars) => {
                     while chars.len() > 0 {

@@ -1,4 +1,8 @@
-use crate::{common::position::{Located, Position}, compiler::CompilerCtx, diagnostics::DiagnosticResult};
+use crate::{
+    common::position::{Located, Position},
+    compiler::CompilerCtx,
+    diagnostics::DiagnosticResult,
+};
 
 pub mod comments;
 pub mod identifier;
@@ -33,19 +37,14 @@ impl CompilerCtx {
             match char {
                 '\r' => continue,
                 '\n' => {
-                    // lines.push(std::mem::take(&mut line_string));
                     line += 1;
                     column = 0;
                     character = 0;
                 }
                 '\t' => {
                     column += tab_size;
-                    // line_string.push_str(" ".repeat(tab_size).as_str());
                 }
-                _ => {
-                    // line_string.push(ch);
-                    column += 1
-                }
+                _ => column += 1,
             }
             character += 1;
 
@@ -78,6 +77,9 @@ impl Reader {
             return self.advance();
         }
         None
+    }
+    pub fn advance_if_eq(&mut self, char: char) -> Option<Character> {
+        self.advance_if(|c| &char == c)
     }
     pub fn peek(&self) -> Option<&Character> {
         self.chars.last()

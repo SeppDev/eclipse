@@ -1,9 +1,14 @@
-use crate::common::position::PositionRange;
+use crate::common::{
+    exit::{self, exit},
+    position::PositionRange,
+};
 use std::path::PathBuf;
+
+mod result;
+pub use result::DiagnosticResult;
+
 pub mod builder;
 mod display;
-
-pub type DiagnosticResult<T> = Result<T, DiagnosticData>;
 
 #[derive(Default)]
 pub enum DiagnosticLevel {
@@ -28,5 +33,28 @@ pub struct DiagnosticData {
     title: String,
     notes: Vec<DiagnosticSpan>,
 }
+impl DiagnosticData {
+    pub fn exit(self) -> ! {
+        exit(format!("{}", self))
+    }
+}
 
-pub struct Diagnostics {}
+pub struct Diagnostics {
+    diagnostics: Vec<DiagnosticData>,
+}
+impl Diagnostics {
+    pub fn new() -> Self {
+        Self {
+            diagnostics: Vec::new(),
+        }
+    }
+    pub fn consume_result<T>(&mut self, result: DiagnosticResult<T>) -> Option<T> {
+        let error = match result {
+            Ok(t) => return Some(t),
+            Err(err) => err,
+        };
+        self.diagnostics.push(error);
+
+        None
+    }
+}

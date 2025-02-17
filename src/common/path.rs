@@ -1,8 +1,5 @@
-use std::path::PathBuf;
-
 #[derive(Debug, Eq, Hash, Clone)]
 pub struct Path {
-    file_extension: Option<String>,
     components: Vec<String>,
 }
 impl std::fmt::Display for Path {
@@ -15,41 +12,10 @@ impl PartialEq for Path {
         self.to_string() == other.to_string()
     }
 }
-impl From<&PathBuf> for Path {
-    fn from(value: &PathBuf) -> Self {
-        let file_extension = match value.extension() {
-            Some(f) => Some(f.to_str().unwrap().to_string()),
-            None => None,
-        };
-        let components = value
-            .components()
-            .map(|c| c.as_os_str().to_str().unwrap().to_string())
-            .collect::<Vec<String>>();
-
-        return Path {
-            components,
-            file_extension,
-        };
-    }
-}
-impl Into<PathBuf> for Path {
-    fn into(self) -> PathBuf {
-        let mut buf = PathBuf::new();
-        for p in &self.components {
-            buf.push(p);
-        }
-        match &self.file_extension {
-            Some(ext) => buf.set_extension(ext.clone()),
-            None => false,
-        };
-        buf
-    }
-}
 
 impl Path {
     pub fn new() -> Self {
         Self {
-            file_extension: None,
             components: Vec::new(),
         }
     }
