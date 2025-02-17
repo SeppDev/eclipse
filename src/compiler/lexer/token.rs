@@ -176,7 +176,7 @@ impl std::fmt::Display for Token {
                 ExclamationMark => "!",
                 EndOfFile => "<eof>",
                 Ampersand => "&",
-                Function => "function",
+                Function => "func",
                 StartScope => "{",
                 EndScope => "}",
                 OpenParen => "(",

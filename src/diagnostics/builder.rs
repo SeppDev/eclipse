@@ -11,11 +11,18 @@ impl DiagnosticData {
         note: impl Into<String>,
         position: PositionRange,
     ) -> Self {
-        Self::basic(title, path.clone()).span(note, path, position)
+        Self::basic(title, path.clone())
+            .position(position)
+            .span(note, path, position)
+    }
+    fn position(mut self, position: PositionRange) -> Self {
+        self.position = Some(position);
+        self
     }
     pub fn basic(title: impl Into<String>, path: PathBuf) -> Self {
         Self {
             path,
+            position: None,
             level: super::DiagnosticLevel::default(),
             title: title.into(),
             notes: Vec::new(),

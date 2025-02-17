@@ -1,7 +1,4 @@
-use crate::common::{
-    exit::{self, exit},
-    position::PositionRange,
-};
+use crate::common::{exit::exit, position::PositionRange};
 use std::path::PathBuf;
 
 mod result;
@@ -30,6 +27,7 @@ pub struct DiagnosticSpan {
 pub struct DiagnosticData {
     level: DiagnosticLevel,
     path: PathBuf,
+    position: Option<PositionRange>,
     title: String,
     notes: Vec<DiagnosticSpan>,
 }

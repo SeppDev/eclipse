@@ -7,9 +7,22 @@ impl DiagnosticData {
         let path: String = self.path.clone().to_str().unwrap().into();
         let level = &self.level;
         let title = &self.title;
-        let span = String::new();
+        let position = match &self.position {
+            Some(p) => format!(
+                ":{}:{}-{}:{}",
+                p.start.line, p.start.column, p.end.line, p.end.column
+            ),
+            None => String::new(),
+        };
 
-        format!("{level}: {title}\n\t--> {path}\n{span}")
+        let span = self
+            .notes
+            .iter()
+            .map(|note| format!("{}", note.message))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        format!("{level}: {title}\n\t--> {path}{position}\n{span}")
     }
 }
 
