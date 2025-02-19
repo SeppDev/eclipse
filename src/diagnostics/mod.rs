@@ -46,13 +46,13 @@ impl Diagnostics {
             diagnostics: Vec::new(),
         }
     }
-    pub fn consume_result<T>(&mut self, result: DiagnosticResult<T>) -> Option<T> {
+    pub fn collect_error<T>(&mut self, result: DiagnosticResult<T>) -> Result<T, ()> {
         let error = match result {
-            Ok(t) => return Some(t),
+            Ok(t) => return Ok(t),
             Err(err) => err,
         };
         self.diagnostics.push(error);
 
-        None
+        Err(())
     }
 }

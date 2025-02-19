@@ -1,27 +1,41 @@
-use crate::common::{path::Path, position::Located};
+use crate::{
+    common::{path::Path, position::Located},
+    compiler::lexer::token::TokenInfo,
+};
 
 pub type Parameter = Located<RawParameter>;
 pub type Expression = Located<RawExpression>;
 pub type Type = Located<RawType>;
 
 pub type Identifier = Located<String>;
-pub type Keyword = Located<String>;
-pub type Operator = Located<String>;
 
 #[derive(Debug)]
 pub struct RawParameter {
-    pub reference: Operator,
-    pub mutable: Keyword,
+    pub reference: Option<TokenInfo>,
+    pub mutable: Option<TokenInfo>,
     pub name: Identifier,
     pub data_type: Type,
 }
 
 #[derive(Debug)]
 pub enum RawExpression {
-    Function(Identifier, Vec<Parameter>, Type, Box<Expression>),
-    SetPath(Located<Path>, Box<Expression>),
-    Declare(Identifier, Option<Keyword>, Option<Type>, Box<Expression>),
-    Scope(Vec<Expression>),
+    Function {
+        name: Identifier,
+        parameters: Vec<Parameter>,
+        return_type: Option<Type>,
+        body: Box<Expression>,
+    },
+    SetPath {
+        path: Located<Path>,
+        body: Box<Expression>,
+    },
+    Declare {
+        name: Identifier,
+        data_type: Option<Type>,
+        expression: Option<Box<Expression>>,
+    },
+    // DeclareConst {}
+    Block(Vec<Expression>),
     Return(Box<Expression>),
 }
 

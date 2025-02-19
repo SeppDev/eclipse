@@ -34,8 +34,8 @@ impl CompilerCtx {
             files: Files::new(),
         })
     }
-    fn consume_error<T>(&mut self, result: DiagnosticResult<T>) -> Option<T> {
-        self.diagnostics.consume_result(result)
+    fn collect_error<T>(&mut self, result: DiagnosticResult<T>) -> Result<T, ()> {
+        self.diagnostics.collect_error(result)
     }
     fn read_relative(&self, relative_path: &PathBuf) -> DiagnosticResult<String> {
         let path = self.project_path.join(relative_path);
