@@ -35,6 +35,7 @@ pub enum RawExpression {
         expression: Option<Box<Expression>>,
     },
     // DeclareConst {}
+    Integer(String),
     Block(Vec<Expression>),
     Return(Box<Expression>),
 }

@@ -2,8 +2,11 @@ use crate::{
     common::position::Located,
     compiler::{
         lexer::token::{Token, TokenInfo},
-        nodes::ast::{Expression, Parameter, RawParameter},
-        parser::{ParsingState, StartState},
+        nodes::{
+            ast::{Expression, Parameter, RawExpression, RawParameter},
+            parser::{ParsingDelimiter, ParsingNode},
+            shared::ArithmethicOperator,
+        },
     },
     diagnostics::{DiagnosticData, DiagnosticResult},
 };
@@ -17,8 +20,13 @@ impl Parser {
                 Token::Function,
                 Token::Variable,
                 Token::Return,
-                Token::StartBlock,
-                Token::EndBlock,
+                Token::OpenBlock,
+                Token::CloseBlock,
+                Token::Plus,
+                Token::Minus,
+                Token::Asterisk,
+                Token::ForwardSlash,
+                Token::Integer(String::new()),
             ])?;
 
             match token.raw {
@@ -32,21 +40,49 @@ impl Parser {
                     };
 
                     let position = name.position;
-                    self.states.push(StartState::new(
-                        ParsingState::Function {
+                    self.push_state(
+                        ParsingDelimiter::Function {
                             name,
                             parameters,
                             return_type,
                         },
-                        position.start,
-                    ));
+                        position,
+                    );
                 }
-                Token::StartBlock => {}
-                Token::EndBlock => {
+                Token::Return => {
+                    self.push_state(ParsingDelimiter::Return, token.position);
+                }
+                Token::OpenBlock => {
+                    self.push_state(ParsingDelimiter::StartBlock, token.position);
+                }
+                Token::CloseBlock => {
                     self.handle_delimiter(token)?;
                     if self.states.len() == 0 {
                         break;
                     }
+                }
+                Token::Integer(integer) => {
+                    self.push_state(
+                        ParsingNode::Expression(RawExpression::Integer(integer)),
+                        token.position,
+                    );
+                }
+                Token::Plus
+                | Token::Minus
+                | Token::ForwardSlash
+                | Token::Asterisk
+                | Token::Percent => {
+                    use ArithmethicOperator::*;
+                    let operator = match &token.raw {
+                        Token::Plus => Plus,
+                        Token::Minus => Minus,
+                        Token::Asterisk => Multiply,
+                        Token::ForwardSlash => Division,
+                        Token::Percent => Remainder,
+                        _ => unreachable!(),
+                    };
+
+                    self.push_state(ParsingNode::ArithmeticOperator(operator), token.position);
                 }
                 _ => todo!(),
             }
@@ -56,6 +92,8 @@ impl Parser {
         todo!()
     }
     pub fn handle_delimiter(&mut self, token: TokenInfo) -> DiagnosticResult<Expression> {
+        println!("{:#?}", self.states);
+
         let state = match self.states.pop() {
             Some(e) => e,
             None => {
@@ -66,17 +104,7 @@ impl Parser {
             }
         };
 
-        println!("{:#?}", self.states);
-
-        match state.state {
-            ParsingState::Function {
-                name,
-                parameters,
-                return_type,
-            } => {
-                todo!()
-            }
-            // } => Ok(Expression::new(RawExpression::Function { name, parameters, return_type, body }, position))
+        match state.raw {
             _ => todo!(),
         }
     }

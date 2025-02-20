@@ -1,9 +1,14 @@
 use super::{
-    nodes::ast::{Expression, Identifier, Parameter, Type},
+    nodes::{
+        ast::{Expression, Identifier, Parameter, RawExpression, Type},
+        parser::{IntoParsingState, ParsingState, StartState},
+    },
     CompilerCtx,
 };
 use crate::{
-    common::position::Position, compiler::lexer::token::Token, diagnostics::DiagnosticResult,
+    common::position::{Position, PositionRange},
+    compiler::lexer::token::Token,
+    diagnostics::DiagnosticResult,
     FILE_EXTENSION,
 };
 use std::path::PathBuf;
@@ -20,30 +25,6 @@ pub struct ParsedModule {
 }
 
 #[derive(Debug)]
-pub(super) struct StartState {
-    state: ParsingState,
-    position: Position,
-}
-impl StartState {
-    pub fn new(state: ParsingState, position: Position) -> Self {
-        StartState { state, position }
-    }
-}
-
-#[derive(Debug)]
-pub enum ParsingState {
-    Function {
-        name: Identifier,
-        parameters: Vec<Parameter>,
-        return_type: Option<Type>,
-    },
-    StartBlock,
-    OpenParen,
-    Block(Vec<Expression>),
-    Expression(Expression),
-}
-
-#[derive(Debug)]
 pub struct Parser {
     pub(super) tokens: TokenReader,
     pub(super) states: Vec<StartState>,
@@ -57,6 +38,10 @@ impl Parser {
     }
     pub fn path(&self) -> PathBuf {
         self.tokens.path()
+    }
+    pub fn push_state<T: IntoParsingState>(&mut self, state: T, position: PositionRange) {
+        self.states
+            .push(StartState::new(state.into_state(), position))
     }
 }
 impl CompilerCtx {

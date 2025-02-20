@@ -6,8 +6,8 @@ pub const MAX_OPERATOR_WIDTH: usize = 2;
 pub enum Token {
     EndOfFile,
     Function,
-    StartBlock,
-    EndBlock,
+    OpenBlock,
+    CloseBlock,
     OpenParen,
     CloseParen,
     OpenBracket,
@@ -117,8 +117,8 @@ pub fn match_token(word: &String) -> Option<Token> {
         "break" => Token::Break,
         "continue" => Token::Continue,
 
-        "{" => Token::StartBlock,
-        "}" => Token::EndBlock,
+        "{" => Token::OpenBlock,
+        "}" => Token::CloseBlock,
         "(" => Token::OpenParen,
         ")" => Token::CloseParen,
         "[" => Token::OpenBracket,
