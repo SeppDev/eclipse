@@ -1,14 +1,12 @@
 use super::{
     nodes::{
-        ast::{Expression, Identifier, Parameter, RawExpression, Type},
-        parser::{IntoParsingState, ParsingState, StartState},
+        ast::Expression,
+        parser::{IntoParsingState, StartState},
     },
     CompilerCtx,
 };
 use crate::{
-    common::position::{Position, PositionRange},
-    compiler::lexer::token::Token,
-    diagnostics::DiagnosticResult,
+    common::position::PositionRange, compiler::lexer::token::Token, diagnostics::DiagnosticResult,
     FILE_EXTENSION,
 };
 use std::path::PathBuf;
@@ -27,21 +25,14 @@ pub struct ParsedModule {
 #[derive(Debug)]
 pub struct Parser {
     pub(super) tokens: TokenReader,
-    pub(super) states: Vec<StartState>,
+    // pub(super) states: Vec<StartState>,
 }
 impl Parser {
     pub fn new(reader: TokenReader) -> Self {
-        Self {
-            tokens: reader,
-            states: Vec::new(),
-        }
+        Self { tokens: reader }
     }
     pub fn path(&self) -> PathBuf {
         self.tokens.path()
-    }
-    pub fn push_state<T: IntoParsingState>(&mut self, state: T, position: PositionRange) {
-        self.states
-            .push(StartState::new(state.into_state(), position))
     }
 }
 impl CompilerCtx {
@@ -82,9 +73,9 @@ impl CompilerCtx {
                 continue;
             }
 
-            let expression = parser.parse_expression()?;
+            let expression = parser.expect_expression()?;
 
-            // println!("{expression:?}");
+            println!("{expression:?}");
         }
 
         todo!()

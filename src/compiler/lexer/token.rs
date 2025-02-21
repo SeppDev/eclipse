@@ -177,8 +177,8 @@ impl std::fmt::Display for Token {
                 EndOfFile => "<eof>",
                 Ampersand => "&",
                 Function => "func",
-                StartBlock => "{",
-                EndBlock => "}",
+                OpenBlock => "{",
+                CloseBlock => "}",
                 OpenParen => "(",
                 CloseParen => ")",
                 OpenBracket => "[",
@@ -234,8 +234,8 @@ impl std::fmt::Display for Token {
                 Boolean(_) => "bool",
                 Character(_) => "'x'",
                 String(_) => "\"string\"",
-                Integer(i) => i,
-                Float(f) => f,
+                Integer(_) => "0-9",
+                Float(_) => "0.0",
                 Identifier(_) => "Identifier",
             }
         )

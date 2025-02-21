@@ -16,6 +16,12 @@ pub trait IntoParsingState {
     fn into_state(self) -> ParsingState;
 }
 
+impl IntoParsingState for RawExpression {
+    fn into_state(self) -> ParsingState {
+        ParsingState::Node(ParsingNode::Expression(self))
+    }
+}
+
 #[derive(Debug)]
 pub enum ParsingDelimiter {
     Function {

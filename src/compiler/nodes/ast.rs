@@ -37,7 +37,7 @@ pub enum RawExpression {
     // DeclareConst {}
     Integer(String),
     Block(Vec<Expression>),
-    Return(Box<Expression>),
+    Return(Box<Option<Expression>>),
 }
 
 #[derive(Debug, Default)]

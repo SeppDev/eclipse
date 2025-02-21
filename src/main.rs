@@ -1,5 +1,3 @@
-use cli::CLI;
-
 mod cli;
 mod commands;
 mod common;
@@ -10,9 +8,9 @@ mod utils;
 pub const FILE_EXTENSION: &str = "ecl";
 
 fn main() {
-    CLI::new()
+    cli::CLI::new()
         .register(
-            "Analyzes current project",
+            "analyzes current project",
             vec!["c", "check"],
             commands::check,
         )
