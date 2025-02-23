@@ -1,0 +1,20 @@
+use crate::{compiler::lexer::kind::TokenKind, diagnostics::DiagnosticResult};
+
+use super::Reader;
+
+impl Reader {
+    pub fn parse_operators(&mut self) -> DiagnosticResult<Option<TokenKind>> {
+        let mut operators = Vec::new();
+        operators.push(self.advance().unwrap());
+
+        loop {
+            let char = match self.advance_if(|c| c.is_ascii_punctuation()) {
+                Some(c) => c,
+                None => break,
+            };
+            operators.push(char);
+        }
+
+        Ok(Some(TokenKind::Operators(operators)))
+    }
+}
