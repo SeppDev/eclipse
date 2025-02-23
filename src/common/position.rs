@@ -64,4 +64,7 @@ impl<T> Located<T> {
     pub fn new(raw: T, position: PositionRange) -> Self {
         Self { raw, position }
     }
+    pub fn into_position(self) -> Located<()> {
+        Located::new((), self.position)
+    }
 }

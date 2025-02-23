@@ -1,51 +1,25 @@
-use crate::common::position::Located;
+use crate::compiler::lexer::token::TokenInfo;
 
 use super::{
-    ast::{Identifier, Parameter, RawExpression, Type},
+    ast::{Identifier, Node, Parameter, RawNode, Type},
     shared::ArithmethicOperator,
 };
 
-pub type StartState = Located<ParsingState>;
-
 #[derive(Debug)]
-pub enum ParsingState {
-    Delimiter(ParsingDelimiter),
-    Node(ParsingNode),
-}
-pub trait IntoParsingState {
-    fn into_state(self) -> ParsingState;
-}
-
-impl IntoParsingState for RawExpression {
-    fn into_state(self) -> ParsingState {
-        ParsingState::Node(ParsingNode::Expression(self))
-    }
-}
-
-#[derive(Debug)]
-pub enum ParsingDelimiter {
+pub enum ParserState {
     Function {
         name: Identifier,
         parameters: Vec<Parameter>,
         return_type: Option<Type>,
+        body: Vec<Node>,
     },
-    StartBlock,
-    OpenParen,
+    VarDecl {
+        mutable: Option<TokenInfo>,
+        name: Identifier,
+        data_type: Option<Type>,
+    },
+    Block(Vec<Node>),
     Return,
-}
-impl IntoParsingState for ParsingDelimiter {
-    fn into_state(self) -> ParsingState {
-        ParsingState::Delimiter(self)
-    }
-}
-
-#[derive(Debug)]
-pub enum ParsingNode {
-    Expression(RawExpression),
+    Expression(RawNode),
     ArithmeticOperator(ArithmethicOperator),
-}
-impl IntoParsingState for ParsingNode {
-    fn into_state(self) -> ParsingState {
-        ParsingState::Node(self)
-    }
 }

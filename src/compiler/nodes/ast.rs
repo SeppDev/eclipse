@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub type Parameter = Located<RawParameter>;
-pub type Expression = Located<RawExpression>;
+pub type Node = Located<RawNode>;
 pub type Type = Located<RawType>;
 
 pub type Identifier = Located<String>;
@@ -18,26 +18,25 @@ pub struct RawParameter {
 }
 
 #[derive(Debug)]
-pub enum RawExpression {
+pub enum RawNode {
     Function {
         name: Identifier,
         parameters: Vec<Parameter>,
         return_type: Option<Type>,
-        body: Box<Expression>,
+        body: Vec<Node>,
     },
     SetPath {
         path: Located<Path>,
-        body: Box<Expression>,
+        body: Box<Node>,
     },
     Declare {
         name: Identifier,
         data_type: Option<Type>,
-        expression: Option<Box<Expression>>,
+        expression: Option<Box<Node>>,
     },
-    // DeclareConst {}
     Integer(String),
-    Block(Vec<Expression>),
-    Return(Box<Option<Expression>>),
+    Block(Vec<Node>),
+    Return(Option<Box<Node>>),
 }
 
 #[derive(Debug, Default)]

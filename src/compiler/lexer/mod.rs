@@ -4,7 +4,7 @@ pub mod token;
 
 use crate::{
     common::position::{Position, PositionRange},
-    diagnostics::DiagnosticResult,
+    diagnostics::{DiagnosticData, DiagnosticResult},
 };
 use kind::{LocatedString, TokenKind};
 use reader::Character;
@@ -62,6 +62,20 @@ impl CompilerCtx {
                             chars.drain(range);
                             tokens.push(TokenInfo::new(token, string.position));
                             break;
+                        }
+
+                        if len == chars.len() {
+                            return Err(DiagnosticData::basic(
+                                format!(
+                                    "Unkown character: {}",
+                                    chars
+                                        .iter()
+                                        .map(|c| format!("'{}'", c.raw))
+                                        .collect::<Vec<String>>()
+                                        .join(", ")
+                                ),
+                                relative_path.clone(),
+                            ));
                         }
                     }
                     continue;
