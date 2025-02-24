@@ -48,9 +48,20 @@ impl CompilerCtx {
                     TokenInfo::new(Token::Float(located.raw), located.position)
                 }
                 TokenKind::Operators(mut chars) => {
+                    let mut unkown = false;
                     while chars.len() > 0 {
+                        if unkown {
+                            return Err(DiagnosticData::new(
+                                format!("Unkown character: {}", chars.first().unwrap().raw),
+                                relative_path.clone(),
+                                "",
+                                chars.first().unwrap().position,
+                            ));
+                        }
+
                         let len = chars.len().min(MAX_OPERATOR_WIDTH);
 
+                        let mut is_final = true;
                         for i in 0..len {
                             let range = 0..len - i;
                             let string = chars_to_string(&chars, range.clone());
@@ -61,22 +72,10 @@ impl CompilerCtx {
                             };
                             chars.drain(range);
                             tokens.push(TokenInfo::new(token, string.position));
+                            is_final = false;
                             break;
                         }
-
-                        if len == chars.len() {
-                            return Err(DiagnosticData::basic(
-                                format!(
-                                    "Unkown character: {}",
-                                    chars
-                                        .iter()
-                                        .map(|c| format!("'{}'", c.raw))
-                                        .collect::<Vec<String>>()
-                                        .join(", ")
-                                ),
-                                relative_path.clone(),
-                            ));
-                        }
+                        unkown = is_final;
                     }
                     continue;
                 }
@@ -88,7 +87,6 @@ impl CompilerCtx {
             Token::EndOfFile,
             Position::new(0, 0, 0).to_range(),
         ));
-
         Ok(tokens)
     }
 }

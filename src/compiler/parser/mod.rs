@@ -36,19 +36,22 @@ impl CompilerCtx {
                 None => break,
             };
             path.set_extension(FILE_EXTENSION);
-            self.parse_tokens(&mut to_tokenize, path)?;
+            let body = self.parse_tokens(&mut to_tokenize, path)?;
+            println!("{body:#?}");
         }
 
-        todo!()
+        Ok(())
     }
     pub(super) fn parse_tokens(
         &mut self,
         paths: &mut Vec<PathBuf>,
         current_path: PathBuf,
-    ) -> DiagnosticResult<()> {
+    ) -> DiagnosticResult<Vec<Node>> {
         let tokens = self.tokenize(&current_path)?;
         let reader = TokenReader::new(tokens, current_path.clone());
         let mut parser = Parser::new(reader);
+
+        let mut body = Vec::new();
 
         loop {
             if let Some(token) = parser.next_if_expected(vec![Token::Import, Token::EndOfFile]) {
@@ -65,9 +68,9 @@ impl CompilerCtx {
 
             let node = parser.parse_node()?;
 
-            println!("{node:#?}");
+            body.push(node);
         }
 
-        todo!()
+        Ok(body)
     }
 }

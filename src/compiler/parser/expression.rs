@@ -7,7 +7,7 @@ use crate::{
             parser::ParserState,
         },
     },
-    diagnostics::DiagnosticResult,
+    diagnostics::{DiagnosticData, DiagnosticResult},
 };
 
 use super::Parser;
@@ -17,18 +17,38 @@ impl Parser {
         let mut active_stack: Vec<Located<ParserState>> = Vec::new();
 
         let state = loop {
+            println!("{active_stack:#?}");
             if let Some(token) = self.next_if_eq(Token::CloseBlock) {
-                let state = active_stack.pop();
+                let state = match active_stack.pop() {
+                    Some(s) => s,
+                    None => return Err(DiagnosticData::basic("Missing delimiter", self.path())),
+                };
+
                 if active_stack.len() == 0 {
                     break state;
                 }
             }
+
             let node = self.handle_token()?;
             self.handle_node(&mut active_stack, node)?;
         };
 
-        todo!("{state:#?}");
-        // Ok(active_expression)
+        let raw = match state.raw {
+            ParserState::Function {
+                name,
+                parameters,
+                return_type,
+                body,
+            } => RawNode::Function {
+                name,
+                parameters,
+                return_type,
+                body,
+            },
+            _ => todo!(),
+        };
+
+        Ok(Node::new(raw, state.position))
     }
     pub fn handle_node(
         &mut self,
@@ -36,7 +56,7 @@ impl Parser {
         node: Located<ParserState>,
     ) -> DiagnosticResult<()> {
         match node.raw {
-            ParserState::Function { .. } => {
+            ParserState::Function { .. } | ParserState::Block(..) => {
                 stack.push(node);
                 return Ok(());
             }
