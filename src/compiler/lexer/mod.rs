@@ -52,7 +52,7 @@ impl CompilerCtx {
                     while chars.len() > 0 {
                         if unkown {
                             return Err(DiagnosticData::new(
-                                format!("Unkown character: {}", chars.first().unwrap().raw),
+                                format!("Unkown character: {:?}", chars.first().unwrap().raw),
                                 relative_path.clone(),
                                 "",
                                 chars.first().unwrap().position,

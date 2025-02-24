@@ -8,10 +8,11 @@ impl Reader {
         operators.push(self.advance().unwrap());
 
         loop {
-            let char = match self.advance_if(|c| c.is_ascii_punctuation()) {
-                Some(c) => c,
-                None => break,
-            };
+            let char =
+                match self.advance_if(|c| c.is_ascii_punctuation() && !(c == &'"' || c == &'\'')) {
+                    Some(c) => c,
+                    None => break,
+                };
             operators.push(char);
         }
 

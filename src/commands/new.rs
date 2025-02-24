@@ -28,5 +28,5 @@ pub fn new(mut arguments: Arguments) {
     fs::create_dir_all(project_path.join("src")).unwrap();
 
     fs::write(main_path, main).unwrap();
-    fs::write(project_path.join("config.toml"), config).unwrap();
+    fs::write(project_path.join("eclipse.toml"), config).unwrap();
 }

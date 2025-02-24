@@ -22,14 +22,14 @@ impl From<Arguments> for CommandLineOptions {
                 },
                 Argument::KeyValue(key, value) => match key.as_str() {
                     "--project-dir" => options.project_path = PathBuf::from(value),
-                    _ => exit(format!("No option found for key: '{value}'")),
+                    _ => exit(format!("No option found for key: '{key}'")),
                 },
             }
         }
 
         if !options.project_path.exists() {
             exit(format!(
-                "Path to: '{:?}' doesn't exists",
+                "Path to: '{:?}' does not exists",
                 options.project_path
             ));
         }
