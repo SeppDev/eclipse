@@ -1,7 +1,7 @@
 use crate::compiler::lexer::token::TokenInfo;
 
 use super::{
-    ast::{Identifier, Node, Parameter, RawNode, Type},
+    ast::{Identifier, Node, Parameter, Type},
     shared::ArithmethicOperator,
 };
 
@@ -20,6 +20,6 @@ pub enum ParserState {
     },
     Block(Vec<Node>),
     Return,
-    Expression(RawNode),
+    Expression(Node),
     ArithmeticOperator(ArithmethicOperator),
 }

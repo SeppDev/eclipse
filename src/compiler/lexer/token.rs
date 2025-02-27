@@ -29,7 +29,7 @@ pub enum Token {
     Equals,
     Comma,
     Mutable,
-    Variable,
+    VariableDecl,
     ExclamationMark,
     Arrow,
     FatArrow,
@@ -95,7 +95,7 @@ pub fn match_token(word: &String) -> Option<Token> {
         "elseif" => Token::ElseIf,
 
         "mut" => Token::Mutable,
-        "var" => Token::Variable,
+        "var" => Token::VariableDecl,
 
         "true" => Token::Boolean(true),
         "false" => Token::Boolean(false),

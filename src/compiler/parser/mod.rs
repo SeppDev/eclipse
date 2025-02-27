@@ -1,25 +1,32 @@
-use super::{nodes::ast::Node, CompilerCtx};
-use crate::{compiler::lexer::token::Token, diagnostics::DiagnosticResult, FILE_EXTENSION};
+use super::{
+    nodes::{ast::Node, parser::ParserState},
+    CompilerCtx,
+};
+use crate::{
+    common::position::Located, compiler::lexer::token::Token, diagnostics::DiagnosticResult,
+    FILE_EXTENSION,
+};
 use std::path::PathBuf;
 
 mod common;
 mod expression;
+mod start;
 mod types;
 
 use reader::TokenReader;
 mod reader;
 
-pub struct ParsedModule {
-    expressions: Vec<Node>,
-}
-
 #[derive(Debug)]
 pub struct Parser {
-    pub(super) tokens: TokenReader,
+    pub tokens: TokenReader,
+    pub stack: Vec<Located<ParserState>>,
 }
 impl Parser {
     pub fn new(reader: TokenReader) -> Self {
-        Self { tokens: reader }
+        Self {
+            tokens: reader,
+            stack: Vec::new(),
+        }
     }
     pub fn path(&self) -> PathBuf {
         self.tokens.path()
@@ -66,7 +73,7 @@ impl CompilerCtx {
                 continue;
             }
 
-            let node = parser.parse_node()?;
+            let node = parser.start_parse()?;
 
             body.push(node);
         }
