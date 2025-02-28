@@ -18,6 +18,7 @@ pub enum ParserState {
         name: Identifier,
         data_type: Option<Type>,
     },
+    Block(Vec<Node>),
     Return(Option<Node>),
     Expression(Vec<Node>),
     ArithmeticOperator(ArithmethicOperator),

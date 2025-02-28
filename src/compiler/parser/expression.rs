@@ -39,11 +39,12 @@ impl Parser {
 
         let raw = match token.raw {
             // Token::SemiColon => self.finish_statement()?,
-            Token::CloseBlock => self.finish_block(end)?,
-            Token::OpenBlock => ParserState::Block(Vec::new()),
-            Token::Return => ParserState::Return,
+            Token::OpenBlock => self.start_block()?,
+            Token::Return => self.start_return()?,
             Token::Function => self.start_function()?,
             Token::VariableDecl => self.start_var_decl()?,
+
+            Token::CloseBlock => self.finish_block(end)?,
             _ => self.start_expression(token.raw)?,
         };
 
@@ -85,6 +86,12 @@ impl Parser {
         self.stack.push(Node::new(raw, position));
         todo!()
     }
+    pub fn start_block(&mut self) -> DiagnosticResult<ParserState> {
+        Ok(ParserState::Block(Vec::new()))
+    }
+    pub fn start_return(&mut self) -> DiagnosticResult<ParserState> {
+        Ok(ParserState::Return(None))
+    }
     pub fn start_expression(&mut self, token: Token) -> DiagnosticResult<ParserState> {
         let raw = match token {
             Token::Integer(int) => RawNode::Integer(int),
@@ -93,7 +100,7 @@ impl Parser {
         Ok(ParserState::Expression(raw))
     }
 }
-// Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent => {
+// Token ::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent => {
 //     use ArithmethicOperator::*;
 //     let operator = match &token.raw {
 //         Token::Plus => Plus,
