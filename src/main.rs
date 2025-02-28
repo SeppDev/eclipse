@@ -29,5 +29,5 @@ fn main() {
             vec!["n", "new"],
             commands::new,
         )
-        .start();
+        .start()
 }

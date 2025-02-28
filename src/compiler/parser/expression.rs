@@ -13,71 +13,8 @@ use crate::{
 use super::Parser;
 
 impl Parser {
-    // pub fn _parse_node(&mut self) -> DiagnosticResult<Node> {
-    // let mut active_stack: Vec<Located<ParserState>> = Vec::new();
-
-    // let state = loop {
-    //     if let Some(token) = self.next_if_eq(Token::CloseBlock) {
-    //         let state = match active_stack.pop() {
-    //             Some(s) => s,
-    //             None => return Err(DiagnosticData::basic("Missing delimiter", self.path())),
-    //         };
-
-    //         if active_stack.len() == 0 {
-    //             break state;
-    //         }
-    //     }
-
-    //     let node = self.handle_token()?;
-    //     self.handle_node(&mut active_stack, node)?;
-    // };
-
-    // let raw = match state.raw {
-    //     ParserState::Function {
-    //         name,
-    //         parameters,
-    //         return_type,
-    //         body,
-    //     } => RawNode::Function {
-    //         name,
-    //         parameters,
-    //         return_type,
-    //         body,
-    //     },
-    //     _ => todo!(),
-    // };
-
-    // Ok(Node::new(raw, state.position))
-    // }
-    // pub fn handle_node(&mut self, node: Located<ParserState>) -> DiagnosticResult<()> {
-    //     match node.raw {
-    //         ParserState::Function { .. } | ParserState::Block(..) => {
-    //             stack.push(node);
-    //             return Ok(());
-    //         }
-    //         _ => {}
-    //     };
-
-    //     let active = stack.last_mut().unwrap();
-    //     let block = match &mut active.raw {
-    //         ParserState::Function { body, .. } | ParserState::Block(body) => body,
-    //         _ => todo!("{active:#?}"),
-    //     };
-
-    //     let expression = match node.raw {
-    //         ParserState::Expression(expr) => expr,
-    //         ParserState::Return => RawNode::Return(None),
-    //         ParserState::Block(body) => RawNode::Block(body),
-    //         _ => todo!("{node:#?}"),
-    //     };
-
-    //     block.push(Located::new(expression, node.position));
-    // Ok(())
-    // }
-
     pub fn start_parse(&mut self) -> DiagnosticResult<Node> {
-        self.stack.clear();
-
+        let stack = Vec::new();
         let node = loop {
             let state = self.next_state()?;
             todo!()
@@ -86,7 +23,7 @@ impl Parser {
         todo!()
     }
 
-    fn next_state(&mut self) -> DiagnosticResult<Located<ParserState>> {
+    fn next_state(&mut self) -> DiagnosticResult<()> {
         let token = self.expect(vec![
             Token::Function,
             Token::OpenBlock,
@@ -101,18 +38,19 @@ impl Parser {
         ])?;
 
         let raw = match token.raw {
-            Token::CloseBlock => self.finish_block(end),
+            // Token::SemiColon => self.finish_statement()?,
+            Token::CloseBlock => self.finish_block(end)?,
             Token::OpenBlock => ParserState::Block(Vec::new()),
             Token::Return => ParserState::Return,
             Token::Function => self.start_function()?,
             Token::VariableDecl => self.start_var_decl()?,
-            Token::Integer(_) => self.start_expression(token.raw)?,
-            _ => unreachable!("{token:#?}"),
+            _ => self.start_expression(token.raw)?,
         };
 
-        Ok(Located::new(raw, token.position))
+        self.stack.push(Located::new(raw, token.position));
+        Ok(())
     }
-    fn finish_block(&mut self) -> DiagnosticResult<()> {
+    fn finish_block(&mut self, end: TokenInfo) -> DiagnosticResult<ParserState> {
         let mut nodes = Vec::new();
         let start = loop {
             let state = match self.stack.pop() {
@@ -145,6 +83,7 @@ impl Parser {
         }
 
         self.stack.push(Node::new(raw, position));
+        todo!()
     }
     pub fn start_expression(&mut self, token: Token) -> DiagnosticResult<ParserState> {
         let raw = match token {
