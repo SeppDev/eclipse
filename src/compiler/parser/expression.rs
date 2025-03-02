@@ -1,11 +1,10 @@
+use std::ops::Index;
+
 use crate::{
     common::position::{Located, PositionRange},
     compiler::{
-        lexer::token::{Token, TokenInfo},
-        nodes::{
-            ast::{Node, Parameter, RawNode, RawParameter},
-            parser::ParserState,
-        },
+        lexer::token::Token,
+        nodes::{ast::Node, parser::ParserState},
     },
     diagnostics::{DiagnosticData, DiagnosticResult},
 };
@@ -14,16 +13,13 @@ use super::Parser;
 
 impl Parser {
     pub fn start_parse(&mut self) -> DiagnosticResult<Node> {
-        let stack = Vec::new();
-        let node = loop {
-            let state = self.next_state()?;
-            todo!()
-        };
-
-        todo!()
+        loop {
+            self.next_node()?;
+            println!("{:#?}", self.stack);
+        }
     }
 
-    fn next_state(&mut self) -> DiagnosticResult<()> {
+    fn next_node(&mut self) -> DiagnosticResult<()> {
         let token = self.expect(vec![
             Token::Function,
             Token::OpenBlock,
@@ -31,73 +27,105 @@ impl Parser {
             Token::VariableDecl,
             Token::Return,
             Token::Plus,
-            Token::Minus,
-            Token::Asterisk,
-            Token::ForwardSlash,
             Token::Integer(String::new()),
+            Token::Float(String::new()),
+            Token::Identifier(String::new()),
         ])?;
 
         let raw = match token.raw {
-            // Token::SemiColon => self.finish_statement()?,
             Token::OpenBlock => self.start_block()?,
             Token::Return => self.start_return()?,
             Token::Function => self.start_function()?,
             Token::VariableDecl => self.start_var_decl()?,
 
-            Token::CloseBlock => self.finish_block(end)?,
+            Token::CloseBlock => return self.finish_block(token.position),
             _ => self.start_expression(token.raw)?,
         };
 
-        self.stack.push(Located::new(raw, token.position));
-        Ok(())
-    }
-    fn finish_block(&mut self, end: TokenInfo) -> DiagnosticResult<ParserState> {
-        let mut nodes = Vec::new();
-        let start = loop {
-            let state = match self.stack.pop() {
-                Some(s) => s,
-                None => {
-                    return Err(DiagnosticData::new(
-                        "No node for closing delimiter",
-                        self.path(),
-                        "",
-                        end.position,
-                    ))
+        let is_expression = raw.is_expression();
+
+        let state = Located::new(raw, token.position);
+        if is_expression {
+            if let Some(node) = self.stack.last_mut() {
+                if let Some(body) = node.raw.expression_body() {
+                    body.push(state);
+                    return Ok(());
                 }
-            };
-
-            if let ParserState::Block(..) = state.raw {
-                break state;
             }
-            nodes.push(state);
-        };
-
-        let position = start.position.start.extend(end.position.end);
-
-        while let Some(state) = nodes.pop() {
-            let raw = match state.raw {
-                ParserState::Return => RawNode::Return(None),
-                _ => todo!(),
-            };
-            let node = Node::new(raw, state.position);
-            body.push(node);
+        } else {
+            self.finish_expression()?;
         }
 
-        self.stack.push(Node::new(raw, position));
-        todo!()
+        self.stack.push(state);
+
+        Ok(())
     }
+    fn finish_expression(&mut self) -> DiagnosticResult<()> {
+        let mut states = Vec::new();
+        while let Some(state) = self.stack.last() {
+            if state.raw.is_expression() {
+                states.push(self.stack.pop().unwrap());
+                continue;
+            }
+            break;
+        }
+        let node = self
+            .stack
+            .last_mut()
+            .unwrap()
+            .raw
+            .expression_body()
+            .unwrap();
+        for state in states {
+            node.push(state);
+        }
+
+        Ok(())
+    }
+    fn finish_block(&mut self, position: PositionRange) -> DiagnosticResult<()> {
+        let block = match self.stack.last_mut() {
+            Some(b) if b.raw.is_block() => b,
+            _ => {
+                return Err(DiagnosticData::new(
+                    "Expected block",
+                    self.path(),
+                    "",
+                    position,
+                ))
+            }
+        };
+
+        block.position.set_end(position.end);
+
+        Ok(())
+    }
+    // pub fn finish_statement(&mut self) -> DiagnosticResult<ParserState> {}
     pub fn start_block(&mut self) -> DiagnosticResult<ParserState> {
         Ok(ParserState::Block(Vec::new()))
     }
     pub fn start_return(&mut self) -> DiagnosticResult<ParserState> {
-        Ok(ParserState::Return(None))
+        Ok(ParserState::Return(Vec::new()))
     }
     pub fn start_expression(&mut self, token: Token) -> DiagnosticResult<ParserState> {
         let raw = match token {
-            Token::Integer(int) => RawNode::Integer(int),
+            Token::Integer(int) => ParserState::Integer(int),
+            Token::Float(float) => ParserState::Float(float),
+            Token::Identifier(identfier) => ParserState::Identifier(identfier),
+            Token::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent => {
+                use crate::compiler::nodes::shared::ArithmethicOperator::*;
+                let operator = match &token {
+                    Token::Plus => Plus,
+                    Token::Minus => Minus,
+                    Token::Asterisk => Multiply,
+                    Token::ForwardSlash => Division,
+                    Token::Percent => Remainder,
+                    _ => unreachable!(),
+                };
+                ParserState::ArithmeticOperator(operator)
+            }
             _ => todo!("{token:#?}"),
         };
-        Ok(ParserState::Expression(raw))
+        Ok(raw)
     }
 }
 // Token ::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent => {

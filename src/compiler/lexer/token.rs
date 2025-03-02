@@ -201,7 +201,7 @@ impl std::fmt::Display for Token {
                 Compare => "==",
                 Comma => ",",
                 Mutable => "mut",
-                Variable => "var",
+                VariableDecl => "var",
                 If => "if",
                 ElseIf => "elseif",
                 Else => "else",
@@ -235,7 +235,7 @@ impl std::fmt::Display for Token {
                 Character(_) => "'x'",
                 String(_) => "\"string\"",
                 Integer(_) => "0-9",
-                Float(_) => "0.0",
+                Float(_) => "0.0f",
                 Identifier(_) => "Identifier",
             }
         )

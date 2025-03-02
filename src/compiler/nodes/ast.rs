@@ -34,6 +34,7 @@ pub enum RawNode {
         data_type: Option<Type>,
         expression: Option<Box<Node>>,
     },
+    Identifier(String),
     Integer(String),
     Block(Vec<Node>),
     Return(Option<Box<Node>>),

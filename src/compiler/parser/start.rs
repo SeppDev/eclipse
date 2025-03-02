@@ -2,7 +2,10 @@ use crate::{
     common::position::Located,
     compiler::{
         lexer::token::Token,
-        nodes::{ast::RawParameter, parser::ParserState},
+        nodes::{
+            ast::{Parameter, RawParameter},
+            parser::ParserState,
+        },
     },
     diagnostics::DiagnosticResult,
 };
@@ -24,6 +27,7 @@ impl Parser {
             mutable,
             name,
             data_type,
+            value: Vec::new(),
         })
     }
     pub fn start_function(&mut self) -> DiagnosticResult<ParserState> {
@@ -40,6 +44,7 @@ impl Parser {
             name,
             parameters,
             return_type,
+            body: Vec::new(),
         })
     }
     pub fn parse_parmeters(&mut self) -> DiagnosticResult<Vec<Parameter>> {
