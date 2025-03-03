@@ -1,25 +1,28 @@
-use std::ops::Index;
-
 use crate::{
     common::position::{Located, PositionRange},
     compiler::{
         lexer::token::Token,
         nodes::{ast::Node, parser::ParserState},
     },
-    diagnostics::{DiagnosticData, DiagnosticResult},
+    diagnostics::{DiagnosticData, DiagnosticResult, Diagnostics},
 };
 
 use super::Parser;
 
 impl Parser {
     pub fn start_parse(&mut self) -> DiagnosticResult<Node> {
-        loop {
-            self.next_node()?;
-            println!("{:#?}", self.stack);
-        }
+        let state = loop {
+            match self.next_node()? {
+                Some(s) => break s,
+                None => continue,
+            }
+            // println!("{:#?}", self.stack);
+        };
+        println!("{:#?}", state.raw);
+        todo!()
     }
 
-    fn next_node(&mut self) -> DiagnosticResult<()> {
+    fn next_node(&mut self) -> DiagnosticResult<Option<Located<ParserState>>> {
         let token = self.expect(vec![
             Token::Function,
             Token::OpenBlock,
@@ -49,41 +52,25 @@ impl Parser {
             if let Some(node) = self.stack.last_mut() {
                 if let Some(body) = node.raw.expression_body() {
                     body.push(state);
-                    return Ok(());
+                    return Ok(None);
                 }
             }
-        } else {
-            self.finish_expression()?;
         }
 
         self.stack.push(state);
 
-        Ok(())
+        Ok(None)
     }
     fn finish_expression(&mut self) -> DiagnosticResult<()> {
-        let mut states = Vec::new();
-        while let Some(state) = self.stack.last() {
-            if state.raw.is_expression() {
-                states.push(self.stack.pop().unwrap());
-                continue;
-            }
-            break;
-        }
-        let node = self
-            .stack
-            .last_mut()
-            .unwrap()
-            .raw
-            .expression_body()
-            .unwrap();
-        for state in states {
-            node.push(state);
-        }
-
         Ok(())
     }
-    fn finish_block(&mut self, position: PositionRange) -> DiagnosticResult<()> {
-        let block = match self.stack.last_mut() {
+    fn finish_block(
+        &mut self,
+        position: PositionRange,
+    ) -> DiagnosticResult<Option<Located<ParserState>>> {
+        self.finish_expression()?;
+
+        let mut block = match self.stack.pop() {
             Some(b) if b.raw.is_block() => b,
             _ => {
                 return Err(DiagnosticData::new(
@@ -97,7 +84,15 @@ impl Parser {
 
         block.position.set_end(position.end);
 
-        Ok(())
+        let last = match self.stack.last_mut() {
+            Some(l) => l,
+            None => return Ok(Some(block)),
+        };
+
+        let body = last.raw.block().expect("Expected block");
+        body.push(block);
+
+        Ok(None)
     }
     // pub fn finish_statement(&mut self) -> DiagnosticResult<ParserState> {}
     pub fn start_block(&mut self) -> DiagnosticResult<ParserState> {
