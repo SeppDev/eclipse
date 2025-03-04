@@ -4,22 +4,21 @@ use crate::{
         lexer::token::Token,
         nodes::{ast::Node, parser::ParserState},
     },
-    diagnostics::{DiagnosticData, DiagnosticResult, Diagnostics},
+    diagnostics::{DiagnosticData, DiagnosticResult},
 };
 
 use super::Parser;
 
 impl Parser {
-    pub fn start_parse(&mut self) -> DiagnosticResult<Node> {
+    pub fn start_parse(&mut self) -> DiagnosticResult<Located<ParserState>> {
         let state = loop {
+            println!("{:#?}", self.stack);
             match self.next_node()? {
                 Some(s) => break s,
                 None => continue,
             }
-            // println!("{:#?}", self.stack);
         };
-        println!("{:#?}", state.raw);
-        todo!()
+        Ok(state)
     }
 
     fn next_node(&mut self) -> DiagnosticResult<Option<Located<ParserState>>> {
@@ -45,30 +44,43 @@ impl Parser {
             _ => self.start_expression(token.raw)?,
         };
 
-        let is_expression = raw.is_expression();
-
         let state = Located::new(raw, token.position);
-        if is_expression {
-            if let Some(node) = self.stack.last_mut() {
-                if let Some(body) = node.raw.expression_body() {
-                    body.push(state);
-                    return Ok(None);
-                }
+        self.handle_state(state)
+    }
+    fn handle_state(
+        &mut self,
+        state: Located<ParserState>,
+    ) -> DiagnosticResult<Option<Located<ParserState>>> {
+        let last = match self.stack.last_mut() {
+            Some(l) => l,
+            None => {
+                self.stack.push(state);
+                return Ok(None);
             }
+        };
+
+        if let Some(body) = last.raw.node_body() {
+            body.push(state);
+            return Ok(None);
         }
 
         self.stack.push(state);
 
         Ok(None)
     }
-    fn finish_expression(&mut self) -> DiagnosticResult<()> {
-        Ok(())
-    }
     fn finish_block(
         &mut self,
         position: PositionRange,
     ) -> DiagnosticResult<Option<Located<ParserState>>> {
-        self.finish_expression()?;
+        let node = if let Some(last) = self.stack.last() {
+            if !last.raw.is_block() {
+                self.stack.pop()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         let mut block = match self.stack.pop() {
             Some(b) if b.raw.is_block() => b,
@@ -90,6 +102,9 @@ impl Parser {
         };
 
         let body = last.raw.block().expect("Expected block");
+        if let Some(state) = node {
+            body.push(state);
+        }
         body.push(block);
 
         Ok(None)

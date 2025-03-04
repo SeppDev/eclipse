@@ -53,7 +53,7 @@ impl CompilerCtx {
         &mut self,
         paths: &mut Vec<PathBuf>,
         current_path: PathBuf,
-    ) -> DiagnosticResult<Vec<Node>> {
+    ) -> DiagnosticResult<Vec<Located<ParserState>>> {
         let tokens = self.tokenize(&current_path)?;
         let reader = TokenReader::new(tokens, current_path.clone());
         let mut parser = Parser::new(reader);
@@ -73,9 +73,9 @@ impl CompilerCtx {
                 continue;
             }
 
-            let node = parser.start_parse()?;
+            let state = parser.start_parse()?;
 
-            body.push(node);
+            body.push(state);
         }
 
         Ok(body)

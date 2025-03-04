@@ -39,12 +39,6 @@ impl ParserState {
             _ => false,
         }
     }
-    pub fn is_expression(&self) -> bool {
-        match self {
-            ParserState::Identifier(..) | ParserState::Integer(..) => true,
-            _ => false,
-        }
-    }
     pub fn block(&mut self) -> Option<&mut Expression> {
         Some(match self {
             ParserState::Block(block) => block,
@@ -52,10 +46,24 @@ impl ParserState {
             _ => return None,
         })
     }
-    pub fn expression_body(&mut self) -> Option<&mut Expression> {
+
+    pub fn is_node(&self) -> bool {
+        match self {
+            ParserState::Return(..) | ParserState::VarDecl { .. } => true,
+            _ => false,
+        }
+    }
+    pub fn node_body(&mut self) -> Option<&mut Expression> {
         Some(match self {
             ParserState::Return(value) | ParserState::VarDecl { value, .. } => value,
             _ => return None,
         })
+    }
+
+    pub fn is_expression(&self) -> bool {
+        match self {
+            ParserState::Identifier(..) | ParserState::Integer(..) => true,
+            _ => false,
+        }
     }
 }
