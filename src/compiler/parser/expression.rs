@@ -12,7 +12,7 @@ use super::Parser;
 impl Parser {
     pub fn start_parse(&mut self) -> DiagnosticResult<Located<ParserState>> {
         let state = loop {
-            println!("{:#?}", self.stack);
+            // println!("{:#?}", self.stack);
             match self.next_node()? {
                 Some(s) => break s,
                 None => continue,
@@ -29,6 +29,7 @@ impl Parser {
             Token::VariableDecl,
             Token::Return,
             Token::Plus,
+            Token::Minus,
             Token::Integer(String::new()),
             Token::Float(String::new()),
             Token::Identifier(String::new()),
@@ -51,9 +52,24 @@ impl Parser {
         &mut self,
         state: Located<ParserState>,
     ) -> DiagnosticResult<Option<Located<ParserState>>> {
+        if state.raw.is_node() {
+            match self.stack.last() {
+                Some(last) if last.raw.is_node() => {
+                    let last = self.stack.pop().unwrap();
+                    let block = self.stack.last_mut().unwrap();
+
+                    if let Some(block) = block.raw.block() {
+                        block.push(last);
+                    }
+                }
+                _ => {}
+            }
+        }
+
         let last = match self.stack.last_mut() {
-            Some(l) => l,
-            None => {
+            Some(l) if l.raw.expects_expression() && state.raw.is_expression() => l,
+            Some(l) if state.raw.is_operator() => l,
+            _ => {
                 self.stack.push(state);
                 return Ok(None);
             }
@@ -72,14 +88,9 @@ impl Parser {
         &mut self,
         position: PositionRange,
     ) -> DiagnosticResult<Option<Located<ParserState>>> {
-        let node = if let Some(last) = self.stack.last() {
-            if !last.raw.is_block() {
-                self.stack.pop()
-            } else {
-                None
-            }
-        } else {
-            None
+        let node = match self.stack.last() {
+            Some(last) if !last.raw.is_block() => self.stack.pop(),
+            _ => None,
         };
 
         let mut block = match self.stack.pop() {
@@ -97,11 +108,17 @@ impl Parser {
         block.position.set_end(position.end);
 
         let last = match self.stack.last_mut() {
-            Some(l) => l,
-            None => return Ok(Some(block)),
+            Some(l) if l.raw.is_block() => l,
+            _ => {
+                let body = block.raw.block().unwrap();
+                if let Some(state) = node {
+                    body.push(state);
+                }
+                return Ok(Some(block));
+            }
         };
 
-        let body = last.raw.block().expect("Expected block");
+        let body = last.raw.block().unwrap();
         if let Some(state) = node {
             body.push(state);
         }

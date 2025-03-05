@@ -1,10 +1,8 @@
-use std::borrow::BorrowMut;
-
 use crate::{common::position::Located, compiler::lexer::token::TokenInfo};
 
 use super::{
-    ast::{Identifier, Node, Parameter, Type},
-    shared::ArithmethicOperator,
+    ast::{Identifier, Parameter, Type},
+    shared::{ArithmethicOperator, Operator},
 };
 
 type Expression = Vec<Located<ParserState>>;
@@ -25,11 +23,11 @@ pub enum ParserState {
     },
     Block(Expression),
     Return(Expression),
-    Expression(Expression),
     Integer(String),
     Float(String),
     Identifier(String),
     ArithmeticOperator(ArithmethicOperator),
+    Operator(Operator),
 }
 
 impl ParserState {
@@ -41,28 +39,49 @@ impl ParserState {
     }
     pub fn block(&mut self) -> Option<&mut Expression> {
         Some(match self {
-            ParserState::Block(block) => block,
-            ParserState::Function { body, .. } => body,
+            ParserState::Function { body, .. } | ParserState::Block(body) => body,
             _ => return None,
         })
     }
 
-    pub fn is_node(&self) -> bool {
-        match self {
-            ParserState::Return(..) | ParserState::VarDecl { .. } => true,
-            _ => false,
-        }
-    }
     pub fn node_body(&mut self) -> Option<&mut Expression> {
         Some(match self {
             ParserState::Return(value) | ParserState::VarDecl { value, .. } => value,
             _ => return None,
         })
     }
+    pub fn expects_expression(&self) -> bool {
+        let expressions = match self {
+            ParserState::Return(value) | ParserState::VarDecl { value, .. } => value,
+            _ => return false,
+        };
+
+        let last = match expressions.last() {
+            Some(l) => l,
+            None => return true,
+        };
+
+        return last.raw.is_operator();
+    }
+    pub fn is_node(&self) -> bool {
+        match self {
+            ParserState::Return(..) | ParserState::VarDecl { .. } => true,
+            _ => false,
+        }
+    }
 
     pub fn is_expression(&self) -> bool {
         match self {
-            ParserState::Identifier(..) | ParserState::Integer(..) => true,
+            ParserState::Identifier(..)
+            | ParserState::Integer(..)
+            | ParserState::Float(..)
+            | ParserState::Block(..) => true,
+            _ => false,
+        }
+    }
+    pub fn is_operator(&self) -> bool {
+        match self {
+            ParserState::Operator(..) | ParserState::ArithmeticOperator(..) => true,
             _ => false,
         }
     }

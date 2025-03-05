@@ -1,6 +1,6 @@
 use crate::common::position::Located;
 
-pub const MAX_OPERATOR_WIDTH: usize = 2;
+pub const MAX_OPERATOR_WIDTH: usize = 3;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
@@ -53,6 +53,8 @@ pub enum Token {
     Continue,
     Break,
 
+    Range,
+    RangeEquals,
     Compare,
     NotEquals,
     LessThan,
@@ -128,6 +130,8 @@ pub fn match_token(word: &String) -> Option<Token> {
         "_" => Token::Underscore,
         "!" => Token::ExclamationMark,
 
+        ".." => Token::Range,
+        "..=" => Token::RangeEquals,
         "<<" => Token::LeftBitshift,
         ">>" => Token::RightBitshift,
         "+" => Token::Plus,
@@ -173,6 +177,8 @@ impl std::fmt::Display for Token {
             f,
             "{}",
             match self {
+                Range => "..",
+                RangeEquals => "..=",
                 ExclamationMark => "!",
                 EndOfFile => "<eof>",
                 Ampersand => "&",

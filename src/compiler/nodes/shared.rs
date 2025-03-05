@@ -6,3 +6,8 @@ pub enum ArithmethicOperator {
     Multiply,
     Remainder,
 }
+
+#[derive(Debug)]
+pub enum Operator {
+    Not,
+}
