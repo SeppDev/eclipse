@@ -23,6 +23,7 @@ pub enum ParserState {
         data_type: Option<Type>,
         value: Expression,
     },
+    Expression(Expression),
     Block(Expression),
     Return(Expression),
     Integer(String),
@@ -138,11 +139,17 @@ impl ParserState {
                     .collect::<Vec<String>>()
                     .join(" ")
             ),
-            ParserState::Identifier(string) => string.clone(),
-            ParserState::Integer(integer) => integer.to_string(),
+            ParserState::Identifier(string)
+            | ParserState::Float(string)
+            | ParserState::Integer(string) => string.clone(),
             ParserState::Return(expression) => {
                 format!("return{}", Self::to_string_vec(expression))
             }
+            ParserState::Expression(expression) => expression
+                .iter()
+                .map(|s| s.raw._to_string(0))
+                .collect::<Vec<String>>()
+                .join(" "),
             ParserState::ArithmeticOperator(operator) => {
                 return match operator {
                     ArithmethicOperator::Plus => "+",
@@ -153,7 +160,12 @@ impl ParserState {
                 }
                 .to_string()
             }
-            s => todo!("{s:?}"),
+            ParserState::Operator(operator) => {
+                return match operator {
+                    Operator::Not => "!",
+                }
+                .to_string()
+            }
         };
 
         format!("{spacing}{raw}")

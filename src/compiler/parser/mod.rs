@@ -13,7 +13,6 @@ mod types;
 use reader::TokenReader;
 mod reader;
 
-#[derive(Debug)]
 pub struct Parser {
     pub tokens: TokenReader,
     pub stack: Vec<Located<ParserState>>,
@@ -42,6 +41,7 @@ impl CompilerCtx {
             path.set_extension(FILE_EXTENSION);
             let body = self.parse_tokens(&mut to_tokenize, path)?;
             println!("{}", ParserState::to_string_vec(&body));
+            // println!("{:#?}", body);
         }
 
         Ok(())
@@ -58,15 +58,13 @@ impl CompilerCtx {
         let mut body = Vec::new();
 
         loop {
-            if let Some(token) = parser.next_if_expected(vec![Token::Import, Token::EndOfFile]) {
-                match token.raw {
-                    Token::Import => {
-                        let name = parser.expect_identifier()?;
-                        paths.push(current_path.join(name.raw))
-                    }
-                    Token::EndOfFile => break,
-                    _ => unreachable!(),
-                };
+            if parser.is_eof() {
+                break;
+            }
+
+            if parser.next_if_eq(Token::Import)?.is_some() {
+                let name = parser.expect_identifier()?;
+                paths.push(current_path.join(name.raw));
                 continue;
             }
 

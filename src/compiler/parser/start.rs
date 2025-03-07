@@ -1,12 +1,5 @@
 use crate::{
-    common::position::Located,
-    compiler::{
-        lexer::token::Token,
-        nodes::{
-            ast::{Parameter, RawParameter},
-            parser::ParserState,
-        },
-    },
+    compiler::{lexer::token::Token, nodes::parser::ParserState},
     diagnostics::DiagnosticResult,
 };
 
@@ -23,10 +16,10 @@ impl Parser {
     }
     pub fn start_var_decl(&mut self) -> DiagnosticResult<ParserState> {
         self.finish_statement()?;
-        let mutable = self.next_if_eq(Token::Mutable);
+        let mutable = self.next_if_eq(Token::Mutable)?;
 
         let name = self.expect_identifier()?;
-        let data_type = if self.next_if_eq(Token::Colon).is_some() {
+        let data_type = if self.next_if_eq(Token::Colon)?.is_some() {
             Some(self.parse_type()?)
         } else {
             None
@@ -44,7 +37,7 @@ impl Parser {
         let name = self.expect_identifier()?;
         self.expect(vec![Token::OpenParen])?;
         let parameters = self.parse_parmeters()?;
-        let return_type = match self.next_if_eq(Token::Colon).is_some() {
+        let return_type = match self.next_if_eq(Token::Colon)?.is_some() {
             true => Some(self.parse_type()?),
             false => None,
         };

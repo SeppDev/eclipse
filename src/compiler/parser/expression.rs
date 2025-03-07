@@ -26,18 +26,7 @@ impl Parser {
     }
 
     fn next_node(&mut self) -> DiagnosticResult<Option<Located<ParserState>>> {
-        let token = self.expect(vec![
-            Token::Function,
-            Token::OpenBlock,
-            Token::CloseBlock,
-            Token::VariableDecl,
-            Token::Return,
-            Token::Plus,
-            Token::Minus,
-            Token::Integer(String::new()),
-            Token::Float(String::new()),
-            Token::Identifier(String::new()),
-        ])?;
+        let token = self.next()?;
 
         let raw = match token.raw {
             Token::OpenBlock => self.start_block()?,
@@ -108,12 +97,13 @@ impl Parser {
 
         block.position.set_end(position.end);
 
-        let last = match self.stack.last_mut() {
-            Some(l) if l.raw.is_block() => l,
-            _ => return Ok(Some(block)),
+        let body = match self.stack.last_mut() {
+            Some(l) if l.raw.is_block() => l.raw.block().unwrap(),
+            Some(l) if l.raw.expects_expression() => l.raw.node_body().unwrap(),
+            None => return Ok(Some(block)),
+            _ => unreachable!(),
         };
 
-        let body = last.raw.block().unwrap();
         body.push(block);
 
         Ok(None)
@@ -126,7 +116,11 @@ impl Parser {
 
         let block = match self.stack.last_mut() {
             Some(state) if state.raw.is_block() => state.raw.block().unwrap(),
-            _ => unreachable!(),
+            // Some(state) if state.raw.expects_expression() => state.raw.node_body().unwrap(),
+            _ => {
+                self.stack.push(node);
+                return Ok(());
+            }
         };
 
         block.push(node);
@@ -150,6 +144,14 @@ impl Parser {
                 };
                 ParserState::ArithmeticOperator(operator)
             }
+            Token::ExclamationMark => {
+                use crate::compiler::nodes::shared::Operator::*;
+                let operator = match &token {
+                    Token::ExclamationMark => Not,
+                    _ => unreachable!(),
+                };
+                ParserState::Operator(operator)
+            }
             _ => todo!("{token:#?}"),
         };
         Ok(raw)
@@ -158,12 +160,12 @@ impl Parser {
         let mut parameters = Vec::new();
 
         loop {
-            if self.next_if_eq(Token::CloseParen).is_some() {
+            if self.next_if_eq(Token::CloseParen)?.is_some() {
                 break;
             }
 
-            let reference = self.next_if_eq(Token::Ampersand);
-            let mutable = self.next_if_eq(Token::Mutable);
+            let reference = self.next_if_eq(Token::Ampersand)?;
+            let mutable = self.next_if_eq(Token::Mutable)?;
             let name = self.expect_identifier()?;
             let data_type = self.parse_type()?;
 
