@@ -2,7 +2,10 @@ use crate::{
     common::position::{Located, PositionRange},
     compiler::{
         lexer::token::Token,
-        nodes::{ast::Node, parser::ParserState},
+        nodes::{
+            ast::{Parameter, RawParameter},
+            parser::ParserState,
+        },
     },
     diagnostics::{DiagnosticData, DiagnosticResult},
 };
@@ -12,7 +15,8 @@ use super::Parser;
 impl Parser {
     pub fn start_parse(&mut self) -> DiagnosticResult<Located<ParserState>> {
         let state = loop {
-            // println!("{:#?}", self.stack);
+            println!("{}", ParserState::to_string_vec(&self.stack));
+            println!("----");
             match self.next_node()? {
                 Some(s) => break s,
                 None => continue,
@@ -88,10 +92,7 @@ impl Parser {
         &mut self,
         position: PositionRange,
     ) -> DiagnosticResult<Option<Located<ParserState>>> {
-        let node = match self.stack.last() {
-            Some(last) if !last.raw.is_block() => self.stack.pop(),
-            _ => None,
-        };
+        self.finish_statement()?;
 
         let mut block = match self.stack.pop() {
             Some(b) if b.raw.is_block() => b,
@@ -109,29 +110,28 @@ impl Parser {
 
         let last = match self.stack.last_mut() {
             Some(l) if l.raw.is_block() => l,
-            _ => {
-                let body = block.raw.block().unwrap();
-                if let Some(state) = node {
-                    body.push(state);
-                }
-                return Ok(Some(block));
-            }
+            _ => return Ok(Some(block)),
         };
 
         let body = last.raw.block().unwrap();
-        if let Some(state) = node {
-            body.push(state);
-        }
         body.push(block);
 
         Ok(None)
     }
-    // pub fn finish_statement(&mut self) -> DiagnosticResult<ParserState> {}
-    pub fn start_block(&mut self) -> DiagnosticResult<ParserState> {
-        Ok(ParserState::Block(Vec::new()))
-    }
-    pub fn start_return(&mut self) -> DiagnosticResult<ParserState> {
-        Ok(ParserState::Return(Vec::new()))
+    pub fn finish_statement(&mut self) -> DiagnosticResult<()> {
+        let node = match self.stack.last() {
+            Some(last) if !last.raw.is_block() => self.stack.pop().unwrap(),
+            _ => return Ok(()),
+        };
+
+        let block = match self.stack.last_mut() {
+            Some(state) if state.raw.is_block() => state.raw.block().unwrap(),
+            _ => unreachable!(),
+        };
+
+        block.push(node);
+
+        Ok(())
     }
     pub fn start_expression(&mut self, token: Token) -> DiagnosticResult<ParserState> {
         let raw = match token {
@@ -153,6 +153,34 @@ impl Parser {
             _ => todo!("{token:#?}"),
         };
         Ok(raw)
+    }
+    pub fn parse_parmeters(&mut self) -> DiagnosticResult<Vec<Parameter>> {
+        let mut parameters = Vec::new();
+
+        loop {
+            if self.next_if_eq(Token::CloseParen).is_some() {
+                break;
+            }
+
+            let reference = self.next_if_eq(Token::Ampersand);
+            let mutable = self.next_if_eq(Token::Mutable);
+            let name = self.expect_identifier()?;
+            let data_type = self.parse_type()?;
+
+            let position = name.position;
+
+            let parameter = RawParameter {
+                reference,
+                mutable,
+                name,
+                data_type,
+            };
+
+            // TODO: accurate parameter position
+            parameters.push(Located::new(parameter, position));
+        }
+
+        Ok(parameters)
     }
 }
 // Token ::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent => {

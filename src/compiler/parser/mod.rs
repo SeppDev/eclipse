@@ -1,7 +1,4 @@
-use super::{
-    nodes::{ast::Node, parser::ParserState},
-    CompilerCtx,
-};
+use super::{nodes::parser::ParserState, CompilerCtx};
 use crate::{
     common::position::Located, compiler::lexer::token::Token, diagnostics::DiagnosticResult,
     FILE_EXTENSION,
@@ -44,7 +41,7 @@ impl CompilerCtx {
             };
             path.set_extension(FILE_EXTENSION);
             let body = self.parse_tokens(&mut to_tokenize, path)?;
-            println!("{body:#?}");
+            println!("{}", ParserState::to_string_vec(&body));
         }
 
         Ok(())

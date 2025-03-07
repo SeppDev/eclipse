@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{
     common::{path::Path, position::Located},
     compiler::lexer::token::TokenInfo,
@@ -60,4 +62,19 @@ pub enum RawType {
 
     Tuple(Vec<Type>),
     Array(Vec<Type>),
+}
+impl Display for RawType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Void => "void".to_string(),
+                Self::Never => "never".to_string(),
+                Self::UInt(int) => format!("u{int}"),
+                Self::Int(int) => format!("i{int}"),
+                _ => todo!(),
+            }
+        )
+    }
 }

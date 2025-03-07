@@ -13,7 +13,16 @@ use crate::{
 use super::Parser;
 
 impl Parser {
+    pub fn start_block(&mut self) -> DiagnosticResult<ParserState> {
+        self.finish_statement()?;
+        Ok(ParserState::Block(Vec::new()))
+    }
+    pub fn start_return(&mut self) -> DiagnosticResult<ParserState> {
+        self.finish_statement()?;
+        Ok(ParserState::Return(Vec::new()))
+    }
     pub fn start_var_decl(&mut self) -> DiagnosticResult<ParserState> {
+        self.finish_statement()?;
         let mutable = self.next_if_eq(Token::Mutable);
 
         let name = self.expect_identifier()?;
@@ -31,6 +40,7 @@ impl Parser {
         })
     }
     pub fn start_function(&mut self) -> DiagnosticResult<ParserState> {
+        self.finish_statement()?;
         let name = self.expect_identifier()?;
         self.expect(vec![Token::OpenParen])?;
         let parameters = self.parse_parmeters()?;
@@ -46,33 +56,5 @@ impl Parser {
             return_type,
             body: Vec::new(),
         })
-    }
-    pub fn parse_parmeters(&mut self) -> DiagnosticResult<Vec<Parameter>> {
-        let mut parameters = Vec::new();
-
-        loop {
-            if self.next_if_eq(Token::CloseParen).is_some() {
-                break;
-            }
-
-            let reference = self.next_if_eq(Token::Ampersand);
-            let mutable = self.next_if_eq(Token::Mutable);
-            let name = self.expect_identifier()?;
-            let data_type = self.parse_type()?;
-
-            let position = name.position;
-
-            let parameter = RawParameter {
-                reference,
-                mutable,
-                name,
-                data_type,
-            };
-
-            // TODO: accurate parameter position
-            parameters.push(Located::new(parameter, position));
-        }
-
-        Ok(parameters)
     }
 }
