@@ -77,12 +77,7 @@ impl Parser {
 
         Ok(None)
     }
-    fn finish_block(
-        &mut self,
-        position: PositionRange,
-    ) -> DiagnosticResult<Option<Located<ParserState>>> {
-        self.finish_statement()?;
-
+    fn close_block(&mut self, position: PositionRange) -> DiagnosticResult<Located<ParserState>> {
         let mut block = match self.stack.pop() {
             Some(b) if b.raw.is_block() => b,
             _ => {
@@ -97,16 +92,37 @@ impl Parser {
 
         block.position.set_end(position.end);
 
-        let body = match self.stack.last_mut() {
-            Some(l) if l.raw.is_block() => l.raw.block().unwrap(),
-            Some(l) if l.raw.expects_expression() => l.raw.node_body().unwrap(),
-            None => return Ok(Some(block)),
-            _ => unreachable!(),
-        };
+        return Ok(block);
+    }
+    fn finish_block(
+        &mut self,
+        position: PositionRange,
+    ) -> DiagnosticResult<Option<Located<ParserState>>> {
+        self.finish_statement()?;
 
-        body.push(block);
+        let block = self.close_block(position)?;
 
-        Ok(None)
+        if let Some(last) = self.stack.last_mut() {
+            if let Some(body) = last.raw.block() {
+                if let Some(node) = body.last_mut() {
+                    if node.raw.expects_expression() {
+                        if let Some(body) = node.raw.node_body() {
+                            body.push(block);
+                            return Ok(None);
+                        } else {
+                            unreachable!()
+                        }
+                    }
+                }
+            }
+        }
+
+        match self.stack.last_mut() {
+            Some(last) if last.raw.is_block() => last.raw.block().unwrap().push(block),
+            _ => return Ok(Some(block)),
+        }
+
+        return Ok(None);
     }
     pub fn finish_statement(&mut self) -> DiagnosticResult<()> {
         let node = match self.stack.last() {
@@ -116,7 +132,6 @@ impl Parser {
 
         let block = match self.stack.last_mut() {
             Some(state) if state.raw.is_block() => state.raw.block().unwrap(),
-            // Some(state) if state.raw.expects_expression() => state.raw.node_body().unwrap(),
             _ => {
                 self.stack.push(node);
                 return Ok(());
