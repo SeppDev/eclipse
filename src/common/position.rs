@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PositionRange {
     pub start: Position,
@@ -49,13 +51,13 @@ impl std::fmt::Display for PositionRange {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "columns: {}-{}, lines: {}-{}",
-            self.start.column, self.end.column, self.start.column, self.end.column
+            "col {}-{}, ln {}-{}",
+            self.start.column, self.end.column, self.start.line, self.end.line
         )
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Default, Clone)]
 pub struct Located<T> {
     pub position: PositionRange,
     pub raw: T,
@@ -63,5 +65,10 @@ pub struct Located<T> {
 impl<T> Located<T> {
     pub fn new(raw: T, position: PositionRange) -> Self {
         Self { raw, position }
+    }
+}
+impl<T: Debug> Debug for Located<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}) {:#?}", self.position, self.raw)
     }
 }

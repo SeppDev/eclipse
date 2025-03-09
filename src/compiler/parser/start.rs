@@ -7,12 +7,19 @@ use super::Parser;
 
 impl Parser {
     pub fn start_block(&mut self) -> DiagnosticResult<ParserState> {
-        self.finish_statement()?;
-        Ok(ParserState::Block(Vec::new()))
+        // self.finish_statement()?;
+        Ok(ParserState::Block { body: Vec::new() })
     }
     pub fn start_return(&mut self) -> DiagnosticResult<ParserState> {
         self.finish_statement()?;
         Ok(ParserState::Return(Vec::new()))
+    }
+    pub fn start_conditional(&mut self) -> DiagnosticResult<ParserState> {
+        // self.finish_statement()?;
+        Ok(ParserState::Conditional {
+            condition: Vec::new(),
+            body: Vec::new(),
+        })
     }
     pub fn start_var_decl(&mut self) -> DiagnosticResult<ParserState> {
         self.finish_statement()?;

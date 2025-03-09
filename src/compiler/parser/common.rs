@@ -1,7 +1,11 @@
 use crate::{
-    compiler::lexer::{
-        kind::LocatedString,
-        token::{Token, TokenInfo},
+    common::position::Located,
+    compiler::{
+        lexer::{
+            kind::LocatedString,
+            token::{Token, TokenInfo},
+        },
+        nodes::parser::ParserState,
     },
     diagnostics::{DiagnosticData, DiagnosticResult},
 };
@@ -89,3 +93,88 @@ impl Parser {
         unreachable!()
     }
 }
+
+impl Located<ParserState> {
+    pub fn is_block(&self) -> bool {
+        match self.raw {
+            ParserState::Block { .. }
+            | ParserState::OpenBlock { .. }
+            | ParserState::Function { .. } => true,
+            _ => false,
+        }
+    }
+    pub fn is_node(&self) -> bool {
+        match self.raw {
+            ParserState::Return(..)
+            | ParserState::Continue(..)
+            | ParserState::Break(..)
+            | ParserState::VarDecl { .. }
+            | ParserState::Conditional { .. } => true,
+            _ => false,
+        }
+    }
+    pub fn is_expression(&self) -> bool {
+        match self.raw {
+            ParserState::Identifier(..)
+            | ParserState::Integer(..)
+            | ParserState::Float(..)
+            | ParserState::Block { .. } => true,
+            _ => false,
+        }
+    }
+    pub fn is_operator(&self) -> bool {
+        match self.raw {
+            ParserState::Operator(..) | ParserState::ArithmeticOperator(..) => true,
+            _ => false,
+        }
+    }
+    pub fn insert(&mut self, state: Located<ParserState>) -> Result<(), Located<ParserState>> {
+        let body = match &mut self.raw {
+            ParserState::VarDecl { value, .. }
+            | ParserState::Return(value)
+            | ParserState::Continue(value)
+            | ParserState::Break(value)
+                if node_can_insert(&value, &state) =>
+            {
+                value
+            }
+            // ParserState::Conditional { condition, body } => {}
+            ParserState::Function { body, .. } | ParserState::OpenBlock { body, .. } => body,
+            _ => return Err(state),
+        };
+
+        body.push(state);
+
+        Ok(())
+    }
+}
+fn node_can_insert(body: &Vec<Located<ParserState>>, state: &Located<ParserState>) -> bool {
+    let last = match body.last() {
+        Some(l) => l,
+        _ if state.is_expression() | state.is_operator() => return true,
+        _ => return false,
+    };
+
+    if state.is_operator() {
+        return last.is_expression();
+    } else if state.is_expression() {
+        return last.is_operator();
+    }
+
+    return false;
+}
+
+// pub fn can_insert(&self, state: &ParserState) -> bool {
+//     let expressions = match self {
+//         ParserState::Return(value) | ParserState::VarDecl { value, .. } => value,
+//         ParserState::Conditional { condition, body } => {
+//             if Self::_can_insert(condition, state) {
+//                 return true;
+//             }
+//             return Self::_can_insert(body, state);
+//         }
+//         _ => return false,
+//     };
+
+//     Self::_can_insert(expressions, state)
+// }

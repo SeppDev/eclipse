@@ -40,8 +40,8 @@ impl CompilerCtx {
             };
             path.set_extension(FILE_EXTENSION);
             let body = self.parse_tokens(&mut to_tokenize, path)?;
-            println!("{}", ParserState::to_string_vec(&body));
-            // println!("{:#?}", body);
+            // println!("{}", ParserState::to_string_vec(&body));
+            println!("{:#?}", body);
         }
 
         Ok(())

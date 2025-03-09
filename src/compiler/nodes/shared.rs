@@ -10,4 +10,9 @@ pub enum ArithmethicOperator {
 #[derive(Debug)]
 pub enum Operator {
     Not,
+    Compare,
+    HigherThan,
+    HigherThanOrEquals,
+    LowerThan,
+    LowerThanOrEquals,
 }

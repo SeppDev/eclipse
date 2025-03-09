@@ -15,8 +15,8 @@ use super::Parser;
 impl Parser {
     pub fn start_parse(&mut self) -> DiagnosticResult<Located<ParserState>> {
         let state = loop {
-            println!("{}", ParserState::to_string_vec(&self.stack));
-            println!("----");
+            // println!("{:#?}", &self.stack);
+            // println!("----");
             match self.next_node()? {
                 Some(s) => break s,
                 None => continue,
@@ -33,6 +33,7 @@ impl Parser {
             Token::Return => self.start_return()?,
             Token::Function => self.start_function()?,
             Token::VariableDecl => self.start_var_decl()?,
+            Token::If => self.start_conditional()?,
 
             Token::CloseBlock => return self.finish_block(token.position),
             _ => self.start_expression(token.raw)?,
@@ -45,41 +46,23 @@ impl Parser {
         &mut self,
         state: Located<ParserState>,
     ) -> DiagnosticResult<Option<Located<ParserState>>> {
-        if state.raw.is_node() {
-            match self.stack.last() {
-                Some(last) if last.raw.is_node() => {
-                    let last = self.stack.pop().unwrap();
-                    let block = self.stack.last_mut().unwrap();
-
-                    if let Some(block) = block.raw.block() {
-                        block.push(last);
-                    }
-                }
-                _ => {}
-            }
-        }
-
         let last = match self.stack.last_mut() {
-            Some(l) if l.raw.expects_expression() && state.raw.is_expression() => l,
-            Some(l) if state.raw.is_operator() => l,
+            Some(l) if l.is_node() => l,
             _ => {
                 self.stack.push(state);
                 return Ok(None);
             }
         };
 
-        if let Some(body) = last.raw.node_body() {
-            body.push(state);
-            return Ok(None);
+        if let Err(state) = last.insert(state) {
+            self.stack.push(state);
         }
-
-        self.stack.push(state);
 
         Ok(None)
     }
     fn close_block(&mut self, position: PositionRange) -> DiagnosticResult<Located<ParserState>> {
         let mut block = match self.stack.pop() {
-            Some(b) if b.raw.is_block() => b,
+            Some(b) if b.is_block() => b,
             _ => {
                 return Err(DiagnosticData::new(
                     "Expected block",
@@ -89,8 +72,15 @@ impl Parser {
                 ))
             }
         };
-
         block.position.set_end(position.end);
+
+        let body = if let ParserState::OpenBlock { body } = block.raw {
+            body
+        } else {
+            unreachable!();
+        };
+
+        block.raw = ParserState::Block { body };
 
         return Ok(block);
     }
@@ -102,43 +92,28 @@ impl Parser {
 
         let block = self.close_block(position)?;
 
-        if let Some(last) = self.stack.last_mut() {
-            if let Some(body) = last.raw.block() {
-                if let Some(node) = body.last_mut() {
-                    if node.raw.expects_expression() {
-                        if let Some(body) = node.raw.node_body() {
-                            body.push(block);
-                            return Ok(None);
-                        } else {
-                            unreachable!()
-                        }
-                    }
-                }
-            }
-        }
+        let last_mut = match self.stack.last_mut() {
+            Some(l) => l,
+            None => return Ok(Some(block)),
+        };
 
-        match self.stack.last_mut() {
-            Some(last) if last.raw.is_block() => last.raw.block().unwrap().push(block),
-            _ => return Ok(Some(block)),
+        if let Err(state) = last_mut.insert(block) {
+            todo!("{state:?}");
         }
 
         return Ok(None);
     }
     pub fn finish_statement(&mut self) -> DiagnosticResult<()> {
-        let node = match self.stack.last() {
-            Some(last) if !last.raw.is_block() => self.stack.pop().unwrap(),
+        let last = match self.stack.last() {
+            Some(last) if !last.is_block() => self.stack.pop().unwrap(),
             _ => return Ok(()),
         };
+        // println!("~~~~~~~~~~~~~~~~~~~~");
+        // println!("{last:#?}");
+        // println!("{:#?}", self.stack);
 
-        let block = match self.stack.last_mut() {
-            Some(state) if state.raw.is_block() => state.raw.block().unwrap(),
-            _ => {
-                self.stack.push(node);
-                return Ok(());
-            }
-        };
-
-        block.push(node);
+        let node = self.stack.last_mut().unwrap();
+        node.insert(last).unwrap();
 
         Ok(())
     }
@@ -159,10 +134,11 @@ impl Parser {
                 };
                 ParserState::ArithmeticOperator(operator)
             }
-            Token::ExclamationMark => {
+            Token::ExclamationMark | Token::Compare => {
                 use crate::compiler::nodes::shared::Operator::*;
                 let operator = match &token {
                     Token::ExclamationMark => Not,
+                    Token::Compare => Compare,
                     _ => unreachable!(),
                 };
                 ParserState::Operator(operator)
@@ -200,6 +176,7 @@ impl Parser {
         Ok(parameters)
     }
 }
+
 // Token ::Plus | Token::Minus | Token::ForwardSlash | Token::Asterisk | Token::Percent => {
 //     use ArithmethicOperator::*;
 //     let operator = match &token.raw {

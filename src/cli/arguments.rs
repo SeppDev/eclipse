@@ -14,13 +14,13 @@ impl Argument {
             exit("Expected value got 'key:value'")
         }
     }
-    pub fn into_key_value(self) -> (String, String) {
-        if let Self::KeyValue(key, value) = self {
-            (key, value)
-        } else {
-            exit("Expected value got 'value'")
-        }
-    }
+    // pub fn into_key_value(self) -> (String, String) {
+    //     if let Self::KeyValue(key, value) = self {
+    //         (key, value)
+    //     } else {
+    //         exit("Expected value got 'value'")
+    //     }
+    // }
 }
 
 pub struct Arguments {
