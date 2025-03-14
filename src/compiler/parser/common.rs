@@ -164,17 +164,31 @@ fn node_can_insert(body: &Vec<Located<ParserState>>, state: &Located<ParserState
     return false;
 }
 
-// pub fn can_insert(&self, state: &ParserState) -> bool {
-//     let expressions = match self {
-//         ParserState::Return(value) | ParserState::VarDecl { value, .. } => value,
-//         ParserState::Conditional { condition, body } => {
-//             if Self::_can_insert(condition, state) {
-//                 return true;
-//             }
-//             return Self::_can_insert(body, state);
-//         }
-//         _ => return false,
-//     };
-
-//     Self::_can_insert(expressions, state)
-// }
+impl Token {
+    pub(super) fn is_arithmetic_operator(&self) -> bool {
+        match self {
+            Token::Plus | Token::Minus | Token::ForwardSlash | Token::Percent => true,
+            _ => false,
+        }
+    }
+    pub(super) fn is_compare_operator(&self) -> bool {
+        match self {
+            Token::Compare
+            | Token::NotEquals
+            | Token::LessThan
+            | Token::GreaterThan
+            | Token::LessThanOrEquals
+            | Token::GreaterThanOrEquals => true,
+            _ => false,
+        }
+    }
+    pub(super) fn is_operator(&self) -> bool {
+        match self {
+            _ if self.is_arithmetic_operator() | self.is_compare_operator() => true,
+            _ => false,
+        }
+    }
+    pub(super) fn is_expression(&self) -> bool {
+        match self {}
+    }
+}

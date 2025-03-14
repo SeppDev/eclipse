@@ -7,7 +7,6 @@ use super::{
 
 type Expression = Vec<Located<ParserState>>;
 
-// TODO functions should not expect a block
 #[derive(Debug)]
 pub enum ParserState {
     Function {

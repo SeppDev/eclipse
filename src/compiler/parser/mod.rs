@@ -1,4 +1,7 @@
-use super::{nodes::parser::ParserState, CompilerCtx};
+use super::{
+    nodes::{ast::Node, parser::ParserState},
+    CompilerCtx,
+};
 use crate::{
     common::position::Located, compiler::lexer::token::Token, diagnostics::DiagnosticResult,
     FILE_EXTENSION,

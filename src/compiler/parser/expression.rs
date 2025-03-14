@@ -15,8 +15,6 @@ use super::Parser;
 impl Parser {
     pub fn start_parse(&mut self) -> DiagnosticResult<Located<ParserState>> {
         let state = loop {
-            // println!("{:#?}", &self.stack);
-            // println!("----");
             match self.next_node()? {
                 Some(s) => break s,
                 None => continue,
@@ -24,7 +22,6 @@ impl Parser {
         };
         Ok(state)
     }
-
     fn next_node(&mut self) -> DiagnosticResult<Option<Located<ParserState>>> {
         let token = self.next()?;
 

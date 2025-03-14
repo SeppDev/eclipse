@@ -48,7 +48,6 @@ impl Parser {
             true => Some(self.parse_type()?),
             false => None,
         };
-        self.expect(vec![Token::OpenBlock])?;
 
         Ok(ParserState::Function {
             name,
