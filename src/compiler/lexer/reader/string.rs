@@ -11,8 +11,6 @@ impl Reader {
         let mut delimiter = self.advance().unwrap();
         body.push(delimiter.raw);
 
-        println!("{:?}", delimiter.raw);
-
         loop {
             let char = match self.advance_if(|c| c != &delimiter.raw) {
                 Some(c) => c,

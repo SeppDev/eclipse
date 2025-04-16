@@ -5,8 +5,9 @@ use crate::{
     compiler::lexer::token::TokenInfo,
 };
 
-pub type Parameter = Located<RawParameter>;
 pub type Node = Located<RawNode>;
+
+pub type Parameter = Located<RawParameter>;
 pub type Type = Located<RawType>;
 
 pub type Identifier = Located<String>;
@@ -36,10 +37,14 @@ pub enum RawNode {
         data_type: Option<Type>,
         expression: Option<Box<Node>>,
     },
+    Conditional {
+        condition: Expression,
+        body: Option<Expression>,
+    },
+    Return(Option<Box<Node>>),
     Identifier(String),
     Integer(String),
     Block(Vec<Node>),
-    Return(Option<Box<Node>>),
 }
 
 #[derive(Debug, Default)]

@@ -24,13 +24,13 @@ pub struct CompilerCtx {
 }
 impl CompilerCtx {
     pub fn new(options: CommandLineOptions) -> DiagnosticResult<Self> {
-        let config = Config::open(&options.project_path)?;
+        let config = Config::open(&options.active_path)?;
 
         Ok(Self {
             config,
             diagnostics: Diagnostics::new(),
             status: options.status.then(|| Status::new()),
-            project_path: options.project_path,
+            project_path: options.active_path,
             files: Files::new(),
         })
     }

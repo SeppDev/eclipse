@@ -34,6 +34,9 @@ pub enum Token {
     Arrow,
     FatArrow,
 
+    SelfType,
+    SelfKeyword,
+
     If,
     ElseIf,
     Else,
@@ -89,6 +92,40 @@ impl Token {
     }
 }
 
+pub enum NodeKind {
+    Keyword,
+    Expression,
+    Operator,
+    EOF,
+}
+
+impl TokenInfo {
+    pub fn kind(&self) -> NodeKind {
+        self.raw.kind()
+    }
+}
+
+impl Token {
+    pub fn kind(&self) -> NodeKind {
+        use Token::*;
+
+        match self {
+            EndOfFile => NodeKind::EOF,
+            Identifier(..) | Float(..) | Integer(..) | String(..) | Character(..) | Boolean(..) => {
+                NodeKind::Expression
+            }
+            Mutable | VariableDecl | Loop | While | Continue | Break | If | ElseIf | Else | Pub
+            | Import | Use | Unsafe | Enum | Struct | Return | Result => NodeKind::Keyword,
+
+            Plus | Minus | Asterisk | ForwardSlash | Percent | PlusEquals | SubtractEquals
+            | MultiplyEquals | PercentEquals | OpenParen | CloseParen | OpenBracket
+            | CloseBracket | Range | RangeEquals => NodeKind::Operator,
+
+            _ => todo!("{self}"),
+        }
+    }
+}
+
 pub fn match_token(word: &String) -> Option<Token> {
     let token = match &word[..] {
         "func" => Token::Function,
@@ -118,6 +155,9 @@ pub fn match_token(word: &String) -> Option<Token> {
         "while" => Token::While,
         "break" => Token::Break,
         "continue" => Token::Continue,
+
+        "Self" => Token::SelfType,
+        "self" => Token::SelfKeyword,
 
         "{" => Token::OpenBlock,
         "}" => Token::CloseBlock,
@@ -211,6 +251,8 @@ impl std::fmt::Display for Token {
                 If => "if",
                 ElseIf => "elseif",
                 Else => "else",
+                SelfType => "Self",
+                SelfKeyword => "self",
 
                 LeftBitshift => "<<",
                 RightBitshift => ">>",

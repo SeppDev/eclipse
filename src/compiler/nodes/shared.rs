@@ -8,7 +8,7 @@ pub enum ArithmethicOperator {
 }
 
 #[derive(Debug)]
-pub enum Operator {
+pub enum CompareOperator {
     Not,
     Compare,
     HigherThan,

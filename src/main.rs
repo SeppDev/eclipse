@@ -29,5 +29,6 @@ fn main() {
             vec!["n", "new"],
             commands::new,
         )
+        .register("Initialize project", vec!["init"], commands::init)
         .start()
 }
