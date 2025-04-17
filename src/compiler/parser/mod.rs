@@ -13,24 +13,43 @@ mod types;
 use reader::TokenReader;
 mod reader;
 
+const MAX_RECURSION: usize = 256;
+
 pub struct Parser {
     pub tokens: TokenReader,
     start: Vec<Position>,
-    last_position: Option<PositionRange>,
+    last_position: PositionRange,
 }
+impl Drop for Parser {
+    fn drop(&mut self) {
+        if self.start.len() > 0 {
+            let start = &self.start;
+            println!("Failed to use all start positions: {start:#?}")
+        };
+    }
+}
+
 impl Parser {
     pub fn new(reader: TokenReader) -> Self {
         Self {
             tokens: reader,
             start: Vec::new(),
-            last_position: None,
+            last_position: PositionRange::default(),
         }
     }
     pub fn path(&self) -> PathBuf {
         self.tokens.path()
     }
     pub fn start(&mut self) {
-        self.start.push(self.peek().position.start)
+        self.start.push(self.peek().position.start);
+        if self.start.len() >= MAX_RECURSION {
+            panic!("Exceeded recursion limit: {MAX_RECURSION}")
+        }
+    }
+    pub fn located<T>(&mut self, value: T) -> Located<T> {
+        let start = self.start.pop().expect("Failed to create located value");
+        let end = self.last_position.end;
+        return Located::new(value, PositionRange::new(start, end));
     }
     pub fn is_eof(&self) -> bool {
         self.peek().raw == Token::EndOfFile
@@ -46,7 +65,7 @@ impl Parser {
                 token.position,
             ));
         }
-        self.last_position = Some(token.position);
+        self.last_position = token.position;
 
         Ok(token)
     }
@@ -101,12 +120,21 @@ impl Parser {
             peeked.position.clone(),
         ))
     }
+    pub fn peek_found(&self, expected: Vec<Token>) -> Option<&TokenInfo> {
+        let peeked = self.peek();
+        for t in expected.iter() {
+            if t.better_eq(&peeked.raw) {
+                return Some(peeked);
+            }
+        }
+        None
+    }
     pub fn expect(&mut self, expected: Vec<Token>) -> DiagnosticResult<TokenInfo> {
         self.peek_expect(expected)?;
         self.next()
     }
     pub fn expect_single(&mut self, expected: Token) -> DiagnosticResult<TokenInfo> {
-        self.peek_expect(vec![expected]);
+        self.peek_expect(vec![expected])?;
         self.next()
     }
     pub fn peek_expect_single(&mut self, expected: Token) -> DiagnosticResult<&TokenInfo> {
@@ -121,3 +149,101 @@ impl Parser {
     }
 }
 
+impl CompilerCtx {
+    pub fn parse(&mut self) -> DiagnosticResult<()> {
+        let mut to_tokenize = Vec::new();
+        to_tokenize.push(PathBuf::from("src/main"));
+
+        loop {
+            let mut path = match to_tokenize.pop() {
+                Some(p) => p,
+                None => break,
+            };
+            path.set_extension(FILE_EXTENSION);
+            let body = self.parse_tokens(&mut to_tokenize, path)?;
+            println!("{:#?}", body);
+        }
+
+        Ok(())
+    }
+    pub(super) fn parse_tokens(
+        &mut self,
+        paths: &mut Vec<PathBuf>,
+        current_path: PathBuf,
+    ) -> DiagnosticResult<Vec<Node>> {
+        let file_name = current_path.file_name().unwrap().to_str().unwrap();
+        let is_module = file_name.starts_with("main") | file_name.starts_with("mod");
+
+        let tokens = self.tokenize(&current_path)?;
+        let reader = TokenReader::new(tokens, current_path.clone());
+        let mut parser = Parser::new(reader);
+        let mut body = Vec::new();
+
+        loop {
+            if parser.is_eof() {
+                break;
+            }
+
+            if parser.next_if_eq(Token::Import)?.is_some() {
+                let name = parser.expect_identifier()?;
+                let path = self.handle_import(&current_path, &is_module, file_name, &name.raw)?;
+                paths.push(path);
+                continue;
+            }
+
+            let expression = parser.expect_node()?;
+            body.push(expression);
+        }
+
+        Ok(body)
+    }
+
+    pub(super) fn handle_import(
+        &self,
+        current_path: &PathBuf,
+        is_module: &bool,
+        file_name: &str,
+        name: &String,
+    ) -> DiagnosticResult<PathBuf> {
+        let paths: [PathBuf; 2] = if *is_module {
+            [
+                current_path.parent().unwrap().join(&name),
+                current_path.parent().unwrap().join(&name).join("mod"),
+            ]
+        } else {
+            [
+                current_path.parent().unwrap().join(&file_name).join(&name),
+                current_path
+                    .parent()
+                    .unwrap()
+                    .join(&name)
+                    .join(&file_name)
+                    .join("mod"),
+            ]
+        };
+
+        let mut found_paths: Vec<PathBuf> = Vec::with_capacity(2);
+        for path in paths {
+            let mut full_path = self.project_path.join(&path);
+            full_path.set_extension(FILE_EXTENSION);
+
+            if full_path.exists() {
+                found_paths.push(path);
+            }
+        }
+
+        if found_paths.len() == 0 {
+            return Err(DiagnosticData::basic(
+                "No valid path found",
+                current_path.clone(),
+            ));
+        } else if found_paths.len() == 2 {
+            return Err(DiagnosticData::basic(
+                "Only one path can be active",
+                current_path.clone(),
+            ));
+        }
+
+        Ok(found_paths.pop().unwrap())
+    }
+}

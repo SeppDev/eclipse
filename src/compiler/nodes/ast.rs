@@ -26,24 +26,28 @@ pub enum RawNode {
         name: Identifier,
         parameters: Vec<Parameter>,
         return_type: Option<Type>,
-        body: Vec<Node>,
+        body: Box<Node>,
     },
     SetPath {
         path: Located<Path>,
         body: Box<Node>,
     },
     Declare {
+        mutable: Option<TokenInfo>,
         name: Identifier,
         data_type: Option<Type>,
-        expression: Option<Box<Node>>,
+        node: Box<Node>,
     },
     Conditional {
-        condition: Expression,
-        body: Option<Expression>,
+        condition: Box<Node>,
+        body: Box<Node>,
     },
     Return(Option<Box<Node>>),
+    Break(Option<Box<Node>>),
+    Continue(Option<Box<Node>>),
     Identifier(String),
     Integer(String),
+    Float(String),
     Block(Vec<Node>),
 }
 

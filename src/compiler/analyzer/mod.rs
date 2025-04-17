@@ -4,7 +4,7 @@ use super::CompilerCtx;
 
 impl CompilerCtx {
     pub fn analyze(&mut self) -> DiagnosticResult<()> {
-        self.parse()?;
+        let body = self.parse()?;
         Ok(())
     }
 }
