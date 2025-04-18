@@ -8,7 +8,7 @@ use crate::{
     diagnostics::{DiagnosticData, DiagnosticResult},
     FILE_EXTENSION,
 };
-use std::path::PathBuf;
+use std::{borrow::Borrow, path::PathBuf};
 
 mod node;
 mod types;
@@ -85,22 +85,25 @@ impl Parser {
         }
         Ok(None)
     }
-    pub fn next_if_eq(&mut self, kind: TokenKind) -> DiagnosticResult<Option<TokenInfo>> {
-        self.next_if(|t| t.kind == kind)
+    pub fn next_if_eq<K>(&mut self, kind: K) -> DiagnosticResult<Option<TokenInfo>>
+    where
+        K: Borrow<TokenKind>,
+    {
+        self.next_if(|t| &t.kind == kind.borrow())
     }
     pub fn next_if_expected(
         &mut self,
-        expected: Vec<TokenKind>,
+        expected: &Vec<TokenKind>,
     ) -> DiagnosticResult<Option<TokenInfo>> {
         let peeked = self.peek();
         for t in expected {
-            if peeked.kind == t {
+            if &peeked.kind == t {
                 return Ok(Some(self.next()?));
             }
         }
         Ok(None)
     }
-    pub fn peek_expect(&self, expected: Vec<TokenKind>) -> DiagnosticResult<&TokenInfo> {
+    pub fn peek_expect(&self, expected: &Vec<TokenKind>) -> DiagnosticResult<&TokenInfo> {
         let peeked = self.peek();
         for t in expected.iter() {
             if &peeked.kind == t {
@@ -123,7 +126,7 @@ impl Parser {
             peeked.position.clone(),
         ))
     }
-    pub fn peek_found(&self, expected: Vec<TokenKind>) -> Option<&TokenInfo> {
+    pub fn peek_found(&self, expected: &Vec<TokenKind>) -> Option<&TokenInfo> {
         let peeked = self.peek();
         for t in expected.iter() {
             if &peeked.kind == t {
@@ -132,16 +135,16 @@ impl Parser {
         }
         None
     }
-    pub fn expect(&mut self, expected: Vec<TokenKind>) -> DiagnosticResult<TokenInfo> {
-        self.peek_expect(expected)?;
+    pub fn expect(&mut self, expected: &Vec<TokenKind>) -> DiagnosticResult<TokenInfo> {
+        self.peek_expect(&expected)?;
         self.next()
     }
     pub fn expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<TokenInfo> {
-        self.peek_expect(vec![expected])?;
+        self.peek_expect(&vec![expected])?;
         self.next()
     }
     pub fn peek_expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<&TokenInfo> {
-        self.peek_expect(vec![expected])
+        self.peek_expect(&vec![expected])
     }
     pub fn expect_identifier(&mut self) -> DiagnosticResult<TokenInfo> {
         self.expect_single(TokenKind::Identifier)

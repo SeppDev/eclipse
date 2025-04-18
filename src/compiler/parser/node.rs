@@ -1,4 +1,5 @@
 use crate::{
+    common::position::{Located, PositionRange},
     compiler::{
         lexer::token::TokenKind,
         nodes::ast::{Node, RawNode},
@@ -7,6 +8,7 @@ use crate::{
 };
 
 mod block;
+mod expression;
 mod function;
 mod keyword;
 mod set;
@@ -16,33 +18,51 @@ use super::Parser;
 
 impl Parser {
     pub fn expect_node(&mut self) -> DiagnosticResult<Node> {
+        use TokenKind::*;
         self.start();
 
-        let token = self.next()?;
-        let raw: RawNode = match token.kind {
-            TokenKind::Function => self.parse_function()?,
-            TokenKind::OpenBlock => self.parse_block()?,
-            TokenKind::Return => self.parse_return()?,
-            TokenKind::Break => self.parse_break()?,
-            TokenKind::Continue => self.parse_continue()?,
-            TokenKind::Var => self.parse_variable_decl()?,
-            TokenKind::Identifier if self.peek().kind.is_equals_operator() => {
-                self.parse_after_identifier(token.string)?
+        let info = self.expect(&vec![
+            Function, OpenBlock, Return, Break, Continue, Var, Identifier, Integer, Float, Boolean,
+            String,
+        ])?;
+
+        let raw: RawNode = match info.kind {
+            Function => self.parse_function()?,
+            OpenBlock => self.parse_block()?,
+            Return => self.parse_return()?,
+            Break => self.parse_break()?,
+            Continue => self.parse_continue()?,
+            Var => self.parse_variable_decl()?,
+            Identifier if self.peek().kind.is_equals_operator() => {
+                self.parse_after_identifier(info.string)?
             }
-            TokenKind::Integer => RawNode::Integer(token.string),
-            TokenKind::Float => RawNode::Float(token.string),
-            _ => unreachable!("{token}"),
+            Identifier | Integer | Float | Boolean | String => self.parse_expression(info)?,
+            _ => unreachable!("{info}"),
         };
 
-        Ok(self.located(raw))
+        let mut node = self.located(raw);
+
+        if self.next_if_eq(TokenKind::OpenParen)?.is_some() {
+            let arguments = self.expect_arguments(TokenKind::CloseParen)?;
+            let position = PositionRange::new(node.position.start, self.last_position.end);
+            let raw = RawNode::Call(Box::new(node), arguments);
+            node = Located::new(raw, position)
+        } else if self.next_if_eq(TokenKind::Dot)?.is_some() {
+            let new = self.expect_node()?;
+            let position = PositionRange::new(node.position.start, self.last_position.end);
+            let raw = RawNode::Field(Box::new(node), Box::new(new));
+            node = Located::new(raw, position)
+        }
+
+        Ok(node)
     }
     pub fn expect_potential_node(&mut self) -> DiagnosticResult<Option<Node>> {
-        match self.peek_found(vec![
+        match self.peek_found(&vec![
             TokenKind::String,
             TokenKind::Integer,
+            TokenKind::Boolean,
             TokenKind::Float,
             TokenKind::Identifier,
-            TokenKind::Boolean,
             TokenKind::ExclamationMark,
             TokenKind::OpenBracket,
             TokenKind::OpenParen,

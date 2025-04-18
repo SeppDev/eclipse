@@ -18,7 +18,7 @@ impl TokenInfo {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenKind {
     EndOfFile,
     Function,
@@ -218,6 +218,6 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
 
 impl std::fmt::Display for TokenInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Token: {:?} : {}", self.kind, self.position)
+        write!(f, "Token: {:?}({:?}) : {}", self.kind, self.string, self.position)
     }
 }

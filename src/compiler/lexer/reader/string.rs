@@ -1,5 +1,5 @@
 use crate::{
-    compiler::lexer::kind::{LocatedString, LexerKind},
+    compiler::lexer::kind::{LexerKind, LocatedString},
     diagnostics::DiagnosticResult,
 };
 
@@ -9,7 +9,7 @@ impl Reader {
     pub fn parse_string(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let mut body = String::new();
         let mut delimiter = self.advance().unwrap();
-        body.push(delimiter.raw);
+        let is_string = delimiter.raw == '"';
 
         loop {
             let char = match self.advance_if(|c| c != &delimiter.raw) {
@@ -19,8 +19,8 @@ impl Reader {
             delimiter.position.set_end(char.position.end);
             body.push(char.raw);
         }
+        self.advance();
 
-        let is_string = delimiter.raw == '"';
         let string = LocatedString::new(body, delimiter.position);
 
         Ok(Some(if is_string {
