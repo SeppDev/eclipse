@@ -5,7 +5,7 @@ use super::reader::Character;
 pub type LocatedString = Located<String>;
 
 #[derive(Debug)]
-pub enum TokenKind {
+pub(super) enum LexerKind {
     String(LocatedString),
     Character(LocatedString),
     Identifier(LocatedString),

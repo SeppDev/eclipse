@@ -1,17 +1,17 @@
 use crate::{
-    compiler::lexer::kind::{LocatedString, TokenKind},
+    compiler::lexer::kind::{LocatedString, LexerKind},
     diagnostics::DiagnosticResult,
 };
 
 use super::Reader;
 
 impl Reader {
-    pub fn parse_number(&mut self) -> DiagnosticResult<Option<TokenKind>> {
+    pub fn parse_number(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let integer = self.parse_integer()?;
 
         let dot = self.advance_if_eq('.');
         if !dot.is_some() {
-            return Ok(Some(TokenKind::Integer(integer)));
+            return Ok(Some(LexerKind::Integer(integer)));
         }
 
         let char = match self.peek() {
@@ -25,7 +25,7 @@ impl Reader {
 
         let position = integer.position.start.extend(second.position.end);
         let string = format!("{}.{}", integer.raw, second.raw);
-        return Ok(Some(TokenKind::Float(LocatedString::new(string, position))));
+        return Ok(Some(LexerKind::Float(LocatedString::new(string, position))));
     }
     fn parse_integer(&mut self) -> DiagnosticResult<LocatedString> {
         let mut body = String::new();

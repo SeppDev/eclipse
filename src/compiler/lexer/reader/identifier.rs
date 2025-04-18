@@ -1,12 +1,12 @@
 use crate::{
-    compiler::lexer::kind::{LocatedString, TokenKind},
+    compiler::lexer::kind::{LocatedString, LexerKind},
     diagnostics::DiagnosticResult,
 };
 
 use super::Reader;
 
 impl Reader {
-    pub fn parse_identifer(&mut self) -> DiagnosticResult<Option<TokenKind>> {
+    pub fn parse_identifer(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let mut body = String::new();
         let mut start = self.advance().unwrap();
         body.push(start.raw);
@@ -22,7 +22,7 @@ impl Reader {
             body.push(char.raw);
         }
 
-        Ok(Some(TokenKind::Identifier(LocatedString::new(
+        Ok(Some(LexerKind::Identifier(LocatedString::new(
             body,
             start.position,
         ))))

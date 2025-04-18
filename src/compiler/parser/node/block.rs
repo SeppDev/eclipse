@@ -1,9 +1,5 @@
 use crate::{
-    compiler::{
-        lexer::token::Token,
-        nodes::ast::{Node, RawNode},
-        parser::Parser,
-    },
+    compiler::{lexer::token::TokenKind, nodes::ast::RawNode, parser::Parser},
     diagnostics::DiagnosticResult,
 };
 
@@ -12,7 +8,7 @@ impl Parser {
         let mut body = Vec::new();
 
         loop {
-            if self.next_if_eq(Token::CloseBlock)?.is_some() {
+            if self.next_if_eq(TokenKind::CloseBlock)?.is_some() {
                 break;
             }
 

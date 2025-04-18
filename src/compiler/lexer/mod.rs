@@ -6,10 +6,10 @@ use crate::{
     common::position::{Position, PositionRange},
     diagnostics::{DiagnosticData, DiagnosticResult},
 };
-use kind::{LocatedString, TokenKind};
+use kind::{LexerKind, LocatedString};
 use reader::Character;
 use std::{ops::Range, path::PathBuf};
-use token::{match_token, Token, TokenInfo, MAX_OPERATOR_WIDTH};
+use token::{match_token, TokenInfo, TokenKind, MAX_OPERATOR_WIDTH};
 
 use super::CompilerCtx;
 
@@ -28,26 +28,27 @@ impl CompilerCtx {
                 None => break,
             };
             let token = match kind {
-                TokenKind::String(located) => {
-                    TokenInfo::new(Token::String(located.raw), located.position)
+                LexerKind::String(located) => {
+                    TokenInfo::new(located.raw, TokenKind::String, located.position)
                 }
-                TokenKind::Character(located) => {
-                    TokenInfo::new(Token::Character(located.raw), located.position)
+                LexerKind::Character(located) => {
+                    TokenInfo::new(located.raw, TokenKind::Character, located.position)
                 }
-                TokenKind::Identifier(located) => {
-                    if let Some(token) = match_token(&located.raw) {
-                        TokenInfo::new(token, located.position)
+                LexerKind::Identifier(located) => {
+                    let kind = if let Some(kind) = match_token(&located.raw) {
+                        kind
                     } else {
-                        TokenInfo::new(Token::Identifier(located.raw), located.position)
-                    }
+                        TokenKind::Identifier
+                    };
+                    TokenInfo::new(located.raw, kind, located.position)
                 }
-                TokenKind::Integer(located) => {
-                    TokenInfo::new(Token::Integer(located.raw), located.position)
+                LexerKind::Integer(located) => {
+                    TokenInfo::new(located.raw, TokenKind::Integer, located.position)
                 }
-                TokenKind::Float(located) => {
-                    TokenInfo::new(Token::Float(located.raw), located.position)
+                LexerKind::Float(located) => {
+                    TokenInfo::new(located.raw, TokenKind::Float, located.position)
                 }
-                TokenKind::Operators(mut chars) => {
+                LexerKind::Operators(mut chars) => {
                     let mut unkown = false;
                     while chars.len() > 0 {
                         if unkown {
@@ -66,12 +67,13 @@ impl CompilerCtx {
                             let range = 0..len - i;
                             let string = chars_to_string(&chars, range.clone());
 
-                            let token = match match_token(&string.raw) {
+                            let kind = match match_token(&string.raw) {
                                 Some(t) => t,
                                 None => continue,
                             };
+
                             chars.drain(range);
-                            tokens.push(TokenInfo::new(token, string.position));
+                            tokens.push(TokenInfo::new(string.raw, kind, string.position));
                             is_final = false;
                             break;
                         }
@@ -84,7 +86,8 @@ impl CompilerCtx {
         }
 
         tokens.push(TokenInfo::new(
-            Token::EndOfFile,
+            "".into(),
+            TokenKind::EndOfFile,
             Position::new(0, 0, 0).to_range(),
         ));
         Ok(tokens)

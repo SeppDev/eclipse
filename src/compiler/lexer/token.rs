@@ -1,9 +1,25 @@
-use crate::common::position::Located;
+use crate::common::position::PositionRange;
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Token {
+#[derive(Debug)]
+pub struct TokenInfo {
+    pub kind: TokenKind,
+    pub position: PositionRange,
+    pub string: String,
+}
+impl TokenInfo {
+    pub fn new(string: String, kind: TokenKind, position: PositionRange) -> Self {
+        Self {
+            string,
+            kind,
+            position,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum TokenKind {
     EndOfFile,
     Function,
     OpenBlock,
@@ -29,7 +45,7 @@ pub enum Token {
     Equals,
     Comma,
     Mutable,
-    VariableDecl,
+    Var,
     ExclamationMark,
     Arrow,
     FatArrow,
@@ -71,228 +87,137 @@ pub enum Token {
     MultiplyEquals,
     PercentEquals,
 
-    Boolean(bool),
-    Character(String),
-    String(String),
-    Integer(String),
-    Float(String),
-    Identifier(String),
-}
-impl Token {
-    pub fn better_eq(&self, other: &Token) -> bool {
-        match (self, other) {
-            (Self::Boolean(_), Self::Boolean(_))
-            | (Self::String(_), Self::String(_))
-            | (Self::Integer(_), Self::Integer(_))
-            | (Self::Float(_), Self::Float(_))
-            | (Self::Identifier(_), Self::Identifier(_))
-            | (Self::Character(_), Self::Character(_)) => true,
-            _ => self == other,
-        }
-    }
+    Boolean,
+    Character,
+    String,
+    Integer,
+    Float,
+    Identifier,
 }
 
-pub enum NodeKind {
-    Keyword,
-    Expression,
-    Operator,
-    EOF,
-}
-
-impl TokenInfo {
-    pub fn kind(&self) -> NodeKind {
-        self.raw.kind()
-    }
-}
-
-impl Token {
-    pub fn kind(&self) -> NodeKind {
-        use Token::*;
+impl TokenKind {
+    pub fn is_expression(&self) -> bool {
+        use TokenKind::*;
 
         match self {
-            EndOfFile => NodeKind::EOF,
-            Identifier(..) | Float(..) | Integer(..) | String(..) | Character(..) | Boolean(..) => {
-                NodeKind::Expression
-            }
-            Mutable | VariableDecl | Loop | While | Continue | Break | If | ElseIf | Else | Pub
-            | Import | Use | Unsafe | Enum | Struct | Return | Result => NodeKind::Keyword,
-
-            Plus | Minus | Asterisk | ForwardSlash | Percent | PlusEquals | SubtractEquals
-            | MultiplyEquals | PercentEquals | OpenParen | CloseParen | OpenBracket
-            | CloseBracket | Range | RangeEquals => NodeKind::Operator,
-
-            _ => todo!("{self}"),
+            Identifier | Float | Integer | String | Character | Boolean => true,
+            _ => false,
         }
+    }
+    pub fn is_equals_operator(&self) -> bool {
+        use TokenKind::*;
+
+        match self {
+            Equals | PlusEquals | RangeEquals | PercentEquals | MultiplyEquals | SubtractEquals => true,
+            _ => false,
+        }
+    }
+    pub fn is_arithmetic_operator(&self) -> bool {
+        use TokenKind::*;
+
+        match self {
+            Plus | Minus | ForwardSlash | Asterisk | Percent => true,
+            _ => false,
+        }
+    }
+    pub fn is_compare_operator(&self) -> bool {
+        use TokenKind::*;
+
+        match self {
+            Compare | GreaterThan | GreaterThanOrEquals | LessThan | LessThanOrEquals | NotEquals => true,
+            _ => false,
+        }
+    }
+    pub fn is_operator(&self) -> bool {
+        return self.is_arithmetic_operator() | self.is_compare_operator();
     }
 }
 
-pub fn match_token(word: &String) -> Option<Token> {
+pub fn match_token(word: &String) -> Option<TokenKind> {
     let token = match &word[..] {
-        "func" => Token::Function,
-        "if" => Token::If,
-        "else" => Token::Else,
-        "elseif" => Token::ElseIf,
+        "func" => TokenKind::Function,
+        "if" => TokenKind::If,
+        "else" => TokenKind::Else,
+        "elseif" => TokenKind::ElseIf,
 
-        "mut" => Token::Mutable,
-        "var" => Token::VariableDecl,
+        "mut" => TokenKind::Mutable,
+        "var" => TokenKind::Var,
 
-        "true" => Token::Boolean(true),
-        "false" => Token::Boolean(false),
+        "true" | "false" => TokenKind::Boolean,
 
-        "pub" => Token::Pub,
-        "import" => Token::Import,
-        "use" => Token::Use,
+        "pub" => TokenKind::Pub,
+        "import" => TokenKind::Import,
+        "use" => TokenKind::Use,
 
-        "unsafe" => Token::Unsafe,
+        "unsafe" => TokenKind::Unsafe,
 
-        "enum" => Token::Enum,
-        "struct" => Token::Struct,
+        "enum" => TokenKind::Enum,
+        "struct" => TokenKind::Struct,
 
-        "return" => Token::Return,
-        "result" => Token::Result,
+        "return" => TokenKind::Return,
+        "result" => TokenKind::Result,
 
-        "loop" => Token::Loop,
-        "while" => Token::While,
-        "break" => Token::Break,
-        "continue" => Token::Continue,
+        "loop" => TokenKind::Loop,
+        "while" => TokenKind::While,
+        "break" => TokenKind::Break,
+        "continue" => TokenKind::Continue,
 
-        "Self" => Token::SelfType,
-        "self" => Token::SelfKeyword,
+        "Self" => TokenKind::SelfType,
+        "self" => TokenKind::SelfKeyword,
 
-        "{" => Token::OpenBlock,
-        "}" => Token::CloseBlock,
-        "(" => Token::OpenParen,
-        ")" => Token::CloseParen,
-        "[" => Token::OpenBracket,
-        "]" => Token::CloseBracket,
+        "{" => TokenKind::OpenBlock,
+        "}" => TokenKind::CloseBlock,
+        "(" => TokenKind::OpenParen,
+        ")" => TokenKind::CloseParen,
+        "[" => TokenKind::OpenBracket,
+        "]" => TokenKind::CloseBracket,
 
-        "&" => Token::Ampersand,
-        "_" => Token::Underscore,
-        "!" => Token::ExclamationMark,
+        "&" => TokenKind::Ampersand,
+        "_" => TokenKind::Underscore,
+        "!" => TokenKind::ExclamationMark,
 
-        ".." => Token::Range,
-        "..=" => Token::RangeEquals,
-        "<<" => Token::LeftBitshift,
-        ">>" => Token::RightBitshift,
-        "+" => Token::Plus,
-        "-" => Token::Minus,
-        "*" => Token::Asterisk,
-        "/" => Token::ForwardSlash,
-        "%" => Token::Percent,
-        "++" => Token::Increment,
-        "--" => Token::Decrement,
+        ".." => TokenKind::Range,
+        "..=" => TokenKind::RangeEquals,
+        "<<" => TokenKind::LeftBitshift,
+        ">>" => TokenKind::RightBitshift,
+        "+" => TokenKind::Plus,
+        "-" => TokenKind::Minus,
+        "*" => TokenKind::Asterisk,
+        "/" => TokenKind::ForwardSlash,
+        "%" => TokenKind::Percent,
+        "++" => TokenKind::Increment,
+        "--" => TokenKind::Decrement,
 
-        "->" => Token::Arrow,
-        "=>" => Token::FatArrow,
+        "->" => TokenKind::Arrow,
+        "=>" => TokenKind::FatArrow,
 
-        "." => Token::Dot,
-        "," => Token::Comma,
-        ";" => Token::SemiColon,
-        ":" => Token::Colon,
-        "::" => Token::DoubleColon,
+        "." => TokenKind::Dot,
+        "," => TokenKind::Comma,
+        ";" => TokenKind::SemiColon,
+        ":" => TokenKind::Colon,
+        "::" => TokenKind::DoubleColon,
 
-        "+=" => Token::PlusEquals,
-        "-=" => Token::SubtractEquals,
-        "/=" => Token::DivideEquals,
-        "*=" => Token::MultiplyEquals,
-        "%=" => Token::PercentEquals,
+        "+=" => TokenKind::PlusEquals,
+        "-=" => TokenKind::SubtractEquals,
+        "/=" => TokenKind::DivideEquals,
+        "*=" => TokenKind::MultiplyEquals,
+        "%=" => TokenKind::PercentEquals,
 
-        "<" => Token::LessThan,
-        ">" => Token::GreaterThan,
-        "<=" => Token::LessThanOrEquals,
-        ">=" => Token::GreaterThanOrEquals,
-        "!=" => Token::NotEquals,
-        "==" => Token::Compare,
-        "=" => Token::Equals,
+        "<" => TokenKind::LessThan,
+        ">" => TokenKind::GreaterThan,
+        "<=" => TokenKind::LessThanOrEquals,
+        ">=" => TokenKind::GreaterThanOrEquals,
+        "!=" => TokenKind::NotEquals,
+        "==" => TokenKind::Compare,
+        "=" => TokenKind::Equals,
         _ => return None,
     };
 
     return Some(token);
 }
 
-impl std::fmt::Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        use Token::*;
-        write!(
-            f,
-            "{}",
-            match self {
-                Range => "..",
-                RangeEquals => "..=",
-                ExclamationMark => "!",
-                EndOfFile => "<eof>",
-                Ampersand => "&",
-                Function => "func",
-                OpenBlock => "{",
-                CloseBlock => "}",
-                OpenParen => "(",
-                CloseParen => ")",
-                OpenBracket => "[",
-                CloseBracket => "]",
-                Break => "break",
-                Pub => "pub",
-                Import => "import",
-                Use => "use",
-                DoubleColon => "::",
-                Colon => ":",
-                Enum => "enum",
-                Struct => "struct",
-                Unsafe => "unsafe",
-                SemiColon => ";",
-                Return => "return",
-                Result => "result",
-                Dot => ".",
-                Underscore => "_",
-                Equals => "=",
-                Compare => "==",
-                Comma => ",",
-                Mutable => "mut",
-                VariableDecl => "var",
-                If => "if",
-                ElseIf => "elseif",
-                Else => "else",
-                SelfType => "Self",
-                SelfKeyword => "self",
-
-                LeftBitshift => "<<",
-                RightBitshift => ">>",
-                Plus => "+",
-                Minus => "-",
-                Asterisk => "*",
-                ForwardSlash => "/",
-                Percent => "%",
-                Loop => "loop",
-                While => "while",
-                Continue => "continue",
-                LessThan => "<",
-                LessThanOrEquals => "<=",
-                GreaterThan => ">",
-                GreaterThanOrEquals => ">=",
-                NotEquals => "!=",
-                PlusEquals => "+=",
-                SubtractEquals => "-=",
-                DivideEquals => "/=",
-                MultiplyEquals => "*=",
-                PercentEquals => "%=",
-                Increment => "++",
-                Decrement => "--",
-                Arrow => "->",
-                FatArrow => "=>",
-
-                Boolean(_) => "bool",
-                Character(_) => "'x'",
-                String(_) => "\"string\"",
-                Integer(_) => "0-9",
-                Float(_) => "0.0f",
-                Identifier(_) => "Identifier",
-            }
-        )
-    }
-}
-
-pub type TokenInfo = Located<Token>;
 impl std::fmt::Display for TokenInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Token: {} : {}", self.raw, self.position)
+        write!(f, "Token: {:?} : {}", self.kind, self.position)
     }
 }

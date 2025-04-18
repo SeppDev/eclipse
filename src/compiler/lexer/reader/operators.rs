@@ -1,9 +1,9 @@
-use crate::{compiler::lexer::kind::TokenKind, diagnostics::DiagnosticResult};
+use crate::{compiler::lexer::kind::LexerKind, diagnostics::DiagnosticResult};
 
 use super::Reader;
 
 impl Reader {
-    pub fn parse_operators(&mut self) -> DiagnosticResult<Option<TokenKind>> {
+    pub fn parse_operators(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let mut operators = Vec::new();
         operators.push(self.advance().unwrap());
 
@@ -16,6 +16,6 @@ impl Reader {
             operators.push(char);
         }
 
-        Ok(Some(TokenKind::Operators(operators)))
+        Ok(Some(LexerKind::Operators(operators)))
     }
 }

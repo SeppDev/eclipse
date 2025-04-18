@@ -1,7 +1,10 @@
-use super::{lexer::token::TokenInfo, nodes::ast::Node, CompilerCtx};
+use super::{
+    lexer::token::{TokenInfo, TokenKind},
+    nodes::ast::Node,
+    CompilerCtx,
+};
 use crate::{
     common::position::{Located, Position, PositionRange},
-    compiler::lexer::{kind::LocatedString, token::Token},
     diagnostics::{DiagnosticData, DiagnosticResult},
     FILE_EXTENSION,
 };
@@ -52,12 +55,12 @@ impl Parser {
         return Located::new(value, PositionRange::new(start, end));
     }
     pub fn is_eof(&self) -> bool {
-        self.peek().raw == Token::EndOfFile
+        self.peek().kind == TokenKind::EndOfFile
     }
     pub fn next(&mut self) -> DiagnosticResult<TokenInfo> {
         let token = self.tokens.pop().unwrap();
 
-        if token.raw == Token::EndOfFile {
+        if token.kind == TokenKind::EndOfFile {
             return Err(DiagnosticData::new(
                 "Expected token got <eof>",
                 self.path(),
@@ -82,70 +85,66 @@ impl Parser {
         }
         Ok(None)
     }
-    pub fn next_if_eq(&mut self, value: Token) -> DiagnosticResult<Option<TokenInfo>> {
-        self.next_if(|t| t.raw.better_eq(&value))
+    pub fn next_if_eq(&mut self, kind: TokenKind) -> DiagnosticResult<Option<TokenInfo>> {
+        self.next_if(|t| t.kind == kind)
     }
     pub fn next_if_expected(
         &mut self,
-        expected: Vec<Token>,
+        expected: Vec<TokenKind>,
     ) -> DiagnosticResult<Option<TokenInfo>> {
         let peeked = self.peek();
         for t in expected {
-            if t.better_eq(&peeked.raw) {
+            if peeked.kind == t {
                 return Ok(Some(self.next()?));
             }
         }
         Ok(None)
     }
-    pub fn peek_expect(&self, expected: Vec<Token>) -> DiagnosticResult<&TokenInfo> {
+    pub fn peek_expect(&self, expected: Vec<TokenKind>) -> DiagnosticResult<&TokenInfo> {
         let peeked = self.peek();
         for t in expected.iter() {
-            if t.better_eq(&peeked.raw) {
+            if &peeked.kind == t {
                 return Ok(peeked);
             }
         }
 
         Err(DiagnosticData::new(
             format!(
-                "Expected token(s): {}, got: '{}'",
+                "Expected token(s): {}, got: '{:?}'",
                 expected
                     .iter()
-                    .map(|e| format!("'{e}'"))
+                    .map(|e| format!("'{e:?}'"))
                     .collect::<Vec<String>>()
                     .join(", "),
-                peeked.raw
+                peeked.kind
             ),
             self.path(),
             "",
             peeked.position.clone(),
         ))
     }
-    pub fn peek_found(&self, expected: Vec<Token>) -> Option<&TokenInfo> {
+    pub fn peek_found(&self, expected: Vec<TokenKind>) -> Option<&TokenInfo> {
         let peeked = self.peek();
         for t in expected.iter() {
-            if t.better_eq(&peeked.raw) {
+            if &peeked.kind == t {
                 return Some(peeked);
             }
         }
         None
     }
-    pub fn expect(&mut self, expected: Vec<Token>) -> DiagnosticResult<TokenInfo> {
+    pub fn expect(&mut self, expected: Vec<TokenKind>) -> DiagnosticResult<TokenInfo> {
         self.peek_expect(expected)?;
         self.next()
     }
-    pub fn expect_single(&mut self, expected: Token) -> DiagnosticResult<TokenInfo> {
+    pub fn expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<TokenInfo> {
         self.peek_expect(vec![expected])?;
         self.next()
     }
-    pub fn peek_expect_single(&mut self, expected: Token) -> DiagnosticResult<&TokenInfo> {
+    pub fn peek_expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<&TokenInfo> {
         self.peek_expect(vec![expected])
     }
-    pub fn expect_identifier(&mut self) -> DiagnosticResult<LocatedString> {
-        let info = self.expect_single(Token::Identifier(String::new()))?;
-        if let Token::Identifier(s) = info.raw {
-            return Ok(LocatedString::new(s, info.position));
-        }
-        unreachable!();
+    pub fn expect_identifier(&mut self) -> DiagnosticResult<TokenInfo> {
+        self.expect_single(TokenKind::Identifier)
     }
 }
 
@@ -184,9 +183,10 @@ impl CompilerCtx {
                 break;
             }
 
-            if parser.next_if_eq(Token::Import)?.is_some() {
+            if parser.next_if_eq(TokenKind::Import)?.is_some() {
                 let name = parser.expect_identifier()?;
-                let path = self.handle_import(&current_path, &is_module, file_name, &name.raw)?;
+                let path =
+                    self.handle_import(&current_path, &is_module, file_name, &name.string)?;
                 paths.push(path);
                 continue;
             }

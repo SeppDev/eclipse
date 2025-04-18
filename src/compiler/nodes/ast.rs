@@ -11,6 +11,11 @@ pub type Parameter = Located<RawParameter>;
 pub type Type = Located<RawType>;
 
 pub type Identifier = Located<String>;
+impl From<TokenInfo> for Identifier {
+    fn from(value: TokenInfo) -> Self {
+        Located { position: value.position, raw: value.string }
+    }
+}
 
 #[derive(Debug)]
 pub struct RawParameter {
