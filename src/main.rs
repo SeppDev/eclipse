@@ -4,6 +4,7 @@ mod common;
 mod compiler;
 mod diagnostics;
 mod utils;
+mod test;
 
 pub const FILE_EXTENSION: &str = "ecl";
 
