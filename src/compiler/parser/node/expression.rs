@@ -9,7 +9,12 @@ use crate::{
 
 impl Parser {
     pub fn parse_expression(&mut self, info: TokenInfo) -> DiagnosticResult<RawNode> {
-        self.expect_base_expression(Some(info))
+        let mut stack: Vec<Node> = Vec::new();
+        let base = self.expect_base_expression(Some(info))?;
+        
+
+
+        Ok(base)
     }
     fn expect_base_expression(&mut self, info: Option<TokenInfo>) -> DiagnosticResult<RawNode> {
         let info = match info {
@@ -23,7 +28,7 @@ impl Parser {
             TokenKind::Boolean => RawNode::Bool(info.string == "true"),
             TokenKind::Identifier => RawNode::Identifier(info.string),
             TokenKind::String => RawNode::String(info.string),
-            _ => return Err(DiagnosticData::basic("Expected expression", self.path())),
+            _ => return Err(DiagnosticData::basic("Expected expression", self.path().clone())),
         };
 
         Ok(raw)

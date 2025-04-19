@@ -3,8 +3,10 @@ use std::path::PathBuf;
 use crate::diagnostics::{DiagnosticData, DiagnosticResult};
 
 pub const CONFIG_NAME: &str = "eclipse";
+pub mod config {
+    pub const TAB_SIZE: usize = 4;
+}
 
-#[derive(Default)]
 pub struct Config {
     pub package: Package,
     pub editor: Editor,
@@ -23,6 +25,17 @@ pub struct Editor {
     pub tab_size: usize,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            package: Package {
+                name: "Test".into(),
+                version: "0.0.0-test".into(),
+            },
+            editor: Editor { tab_size: 4 },
+        }
+    }
+}
 impl Config {
     pub fn open(path: &PathBuf) -> DiagnosticResult<Self> {
         let mut config_path = path.join(CONFIG_NAME);

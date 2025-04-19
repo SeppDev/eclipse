@@ -42,7 +42,7 @@ impl DiagnosticData {
 
         self
     }
-    pub fn warning(mut self) -> Self {
+    pub fn _to_warning(mut self) -> Self {
         self.level = DiagnosticLevel::Warning;
         self
     }

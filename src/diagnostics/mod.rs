@@ -37,6 +37,7 @@ impl DiagnosticData {
     }
 }
 
+#[derive(Default)]
 pub struct Diagnostics {
     diagnostics: Vec<DiagnosticData>,
 }

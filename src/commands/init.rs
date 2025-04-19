@@ -2,11 +2,11 @@ use std::{fs, path::PathBuf};
 
 use crate::{cli::arguments::Arguments, FILE_EXTENSION};
 
-pub fn init(arguments: Arguments) {
+pub fn init(_arguments: Arguments) {
     todo!()
 }
 
-pub(super) fn init_project(project_path: PathBuf, name: String) {
+pub(super) fn init_project(project_path: PathBuf, _name: String) {
     let (main, config) = {
         (
             include_str!("../static/main"),

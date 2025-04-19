@@ -1,10 +1,10 @@
-use super::CompilerCtx;
-
 use std::{
     io::Write,
     sync::mpsc::{self, Receiver, Sender},
     time::Duration,
 };
+
+use crate::compiler::CompilerCtx;
 
 impl CompilerCtx {
     pub fn message(&self, message: impl Into<String>) {

@@ -1,7 +1,6 @@
 use crate::{
     common::position::{Located, Position},
     compiler::CompilerCtx,
-    diagnostics::DiagnosticResult,
 };
 
 pub mod comments;
@@ -18,9 +17,8 @@ pub struct Reader {
 pub type Character = Located<char>;
 
 impl CompilerCtx {
-    pub(in super::super) fn new_reader(&self, source: String) -> DiagnosticResult<Reader> {
+    pub fn new_reader(&self, source: &str) -> Reader {
         let tab_size = self.config.editor.tab_size;
-
         let mut input = source.chars();
         let mut output: Vec<Character> = Vec::with_capacity(source.len());
 
@@ -57,16 +55,17 @@ impl CompilerCtx {
         }
         output.reverse();
 
-        Ok(Reader { chars: output })
+        Reader { chars: output }
     }
 }
+
 impl Reader {
     pub fn advance(&mut self) -> Option<Character> {
         self.chars.pop()
     }
-    pub fn advance_if<F>(&mut self, predicate: F) -> Option<Character>
+    pub fn advance_if<P>(&mut self, predicate: P) -> Option<Character>
     where
-        F: FnOnce(&char) -> bool,
+        P: FnOnce(&char) -> bool,
     {
         let peeked = match self.peek() {
             Some(p) => p,

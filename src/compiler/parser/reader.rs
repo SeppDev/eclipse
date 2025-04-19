@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::compiler::lexer::token::TokenInfo;
+use crate::compiler::{lexer::token::TokenInfo, CompilerCtx};
 
 type Tokens = Vec<TokenInfo>;
 

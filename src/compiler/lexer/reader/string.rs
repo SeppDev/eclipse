@@ -16,6 +16,7 @@ impl Reader {
                 Some(c) => c,
                 None => break,
             };
+
             delimiter.position.set_end(char.position.end);
             body.push(char.raw);
         }

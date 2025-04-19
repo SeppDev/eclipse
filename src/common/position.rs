@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PositionRange {
     pub start: Position,
     pub end: Position,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Position {
     pub line: usize,
     pub column: usize,
@@ -57,7 +57,7 @@ impl std::fmt::Display for PositionRange {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq, Eq)]
 pub struct Located<T> {
     pub position: PositionRange,
     pub raw: T,

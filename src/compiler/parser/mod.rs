@@ -1,5 +1,8 @@
 use super::{
-    lexer::token::{TokenInfo, TokenKind},
+    lexer::{
+        self,
+        token::{TokenInfo, TokenKind},
+    },
     nodes::ast::Node,
     CompilerCtx,
 };
@@ -19,7 +22,8 @@ mod reader;
 const MAX_RECURSION: usize = 256;
 
 pub struct Parser {
-    pub tokens: TokenReader,
+    tokens: Vec<TokenInfo>,
+    path: PathBuf,
     start: Vec<Position>,
     last_position: PositionRange,
 }
@@ -31,17 +35,20 @@ impl Drop for Parser {
         };
     }
 }
-
-impl Parser {
-    pub fn new(reader: TokenReader) -> Self {
-        Self {
-            tokens: reader,
+impl CompilerCtx {
+    pub fn new_parser(&self, mut tokens: Vec<TokenInfo>, path: PathBuf) -> Parser {
+        tokens.reverse();
+        Parser {
+            tokens,
+            path,
             start: Vec::new(),
             last_position: PositionRange::default(),
         }
     }
-    pub fn path(&self) -> PathBuf {
-        self.tokens.path()
+}
+impl Parser {
+    pub fn path(&self) -> &PathBuf {
+        &self.path
     }
     pub fn start(&mut self) {
         self.start.push(self.peek().position.start);
@@ -63,7 +70,7 @@ impl Parser {
         if token.kind == TokenKind::EndOfFile {
             return Err(DiagnosticData::new(
                 "Expected token got <eof>",
-                self.path(),
+                self.path.clone(),
                 "",
                 token.position,
             ));
@@ -85,10 +92,10 @@ impl Parser {
         }
         Ok(None)
     }
-    pub fn next_if_eq<K>(&mut self, kind: K) -> DiagnosticResult<Option<TokenInfo>>
-    where
-        K: Borrow<TokenKind>,
-    {
+    pub fn next_if_eq(
+        &mut self,
+        kind: impl Borrow<TokenKind>,
+    ) -> DiagnosticResult<Option<TokenInfo>> {
         self.next_if(|t| &t.kind == kind.borrow())
     }
     pub fn next_if_expected(
@@ -121,7 +128,7 @@ impl Parser {
                     .join(", "),
                 peeked.kind
             ),
-            self.path(),
+            self.path.clone(),
             "",
             peeked.position.clone(),
         ))
@@ -176,9 +183,11 @@ impl CompilerCtx {
         let file_name = current_path.file_name().unwrap().to_str().unwrap();
         let is_module = file_name.starts_with("main") | file_name.starts_with("mod");
 
-        let tokens = self.tokenize(&current_path)?;
-        let reader = TokenReader::new(tokens, current_path.clone());
-        let mut parser = Parser::new(reader);
+        self.message(format!("Lexer: {current_path:?}"));
+        let source = self.read_relative(&current_path)?;
+        let tokens = self.tokenize(source.as_str())?;
+
+        let mut parser = self.new_parser(tokens, current_path.clone());
         let mut body = Vec::new();
 
         loop {

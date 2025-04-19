@@ -1,8 +1,5 @@
 use crate::{
-    compiler::{
-        nodes::ast::{Node, RawNode},
-        parser::Parser,
-    },
+    compiler::{nodes::ast::RawNode, parser::Parser},
     diagnostics::DiagnosticResult,
 };
 

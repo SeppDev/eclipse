@@ -1,6 +1,6 @@
-use context::config::Config;
-use status::Status;
 use std::path::PathBuf;
+
+use context::{config::Config, status::Status};
 
 use crate::{
     cli::options::CommandLineOptions,
@@ -13,8 +13,8 @@ pub mod context;
 pub mod lexer;
 pub mod nodes;
 pub mod parser;
-pub mod status;
 
+#[derive(Default)]
 pub struct CompilerCtx {
     status: Option<Status>,
     config: Config,
@@ -33,6 +33,9 @@ impl CompilerCtx {
             project_path: options.active_path,
             files: Files::new(),
         })
+    }
+    pub fn test() -> Self {
+        Self::default()
     }
     fn collect_error<T>(&mut self, result: DiagnosticResult<T>) -> Result<T, ()> {
         self.diagnostics.collect_error(result)

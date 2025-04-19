@@ -1,7 +1,2 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        println!("It works!");
-    }
-}
+mod lexer;
+mod parser;

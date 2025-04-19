@@ -4,21 +4,18 @@ pub mod token;
 
 use crate::{
     common::position::{Position, PositionRange},
-    diagnostics::{DiagnosticData, DiagnosticResult},
+    diagnostics::DiagnosticResult,
 };
 use kind::{LexerKind, LocatedString};
 use reader::Character;
-use std::{ops::Range, path::PathBuf};
+use std::ops::Range;
 use token::{match_token, TokenInfo, TokenKind, MAX_OPERATOR_WIDTH};
 
 use super::CompilerCtx;
 
 impl CompilerCtx {
-    pub fn tokenize(&mut self, relative_path: &PathBuf) -> DiagnosticResult<Vec<TokenInfo>> {
-        self.message(format!("Lexer: {relative_path:?}"));
-
-        let source = self.read_relative(relative_path)?;
-        let mut reader = self.new_reader(source)?;
+    pub fn tokenize(&self, source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
+        let mut reader = self.new_reader(source);
 
         let mut tokens = Vec::new();
 
@@ -52,12 +49,13 @@ impl CompilerCtx {
                     let mut unkown = false;
                     while chars.len() > 0 {
                         if unkown {
-                            return Err(DiagnosticData::new(
-                                format!("Unkown character: {:?}", chars.first().unwrap().raw),
-                                relative_path.clone(),
-                                "",
-                                chars.first().unwrap().position,
+                            let char = chars.pop().unwrap();
+                            tokens.push(TokenInfo::new(
+                                char.raw.into(),
+                                TokenKind::Unkown,
+                                char.position,
                             ));
+                            continue;
                         }
 
                         let len = chars.len().min(MAX_OPERATOR_WIDTH);

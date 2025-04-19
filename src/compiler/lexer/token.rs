@@ -2,7 +2,7 @@ use crate::common::position::PositionRange;
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TokenInfo {
     pub kind: TokenKind,
     pub position: PositionRange,
@@ -18,9 +18,11 @@ impl TokenInfo {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenKind {
     EndOfFile,
+    Illegal,
+    Unkown,
     Function,
     OpenBlock,
     CloseBlock,

@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
 use crate::{
-    common::{path::Path, position::Located},
+    common::position::{Located, PositionRange},
     compiler::lexer::token::TokenInfo,
 };
+
+use super::shared::{ArithmethicOperator, CompareOperator};
 
 pub type Node = Located<RawNode>;
 
@@ -13,11 +15,14 @@ pub type Type = Located<RawType>;
 pub type Identifier = Located<String>;
 impl From<TokenInfo> for Identifier {
     fn from(value: TokenInfo) -> Self {
-        Located { position: value.position, raw: value.string }
+        Located {
+            position: value.position,
+            raw: value.string,
+        }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RawParameter {
     pub reference: Option<TokenInfo>,
     pub mutable: Option<TokenInfo>,
@@ -25,7 +30,7 @@ pub struct RawParameter {
     pub data_type: Type,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RawNode {
     Function {
         name: Identifier,
@@ -34,7 +39,7 @@ pub enum RawNode {
         body: Box<Node>,
     },
     SetPath {
-        path: Located<Path>,
+        path: Identifier,
         body: Box<Node>,
     },
     Declare {
@@ -46,6 +51,16 @@ pub enum RawNode {
     Conditional {
         condition: Box<Node>,
         body: Box<Node>,
+    },
+    ArithmethicOperation {
+        left: Box<Node>,
+        right: Box<Node>,
+        operator: ArithmethicOperator,
+    },
+    CompareOperation {
+        left: Box<Node>,
+        right: Box<Node>,
+        operator: CompareOperator,
     },
     Field(Box<Node>, Box<Node>),
     Call(Box<Node>, Vec<Node>),
@@ -59,8 +74,35 @@ pub enum RawNode {
     Float(String),
     Block(Vec<Node>),
 }
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use RawNode::*;
 
-#[derive(Debug, Default)]
+        let string = match &self.raw {
+            ArithmethicOperation {
+                left,
+                right,
+                operator,
+            } => &format!("{left} {operator} {right}"),
+            CompareOperation {
+                left,
+                right,
+                operator,
+            } => &format!("{left} {operator} {right}"),
+            Integer(s) | Identifier(s) => s,
+            s => &format!("{s:?}"),
+        };
+
+        write!(f, "{string}")
+    }
+}
+impl Into<Node> for RawNode {
+    fn into(self) -> Node {
+        Node::new(self, PositionRange::default())
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
 pub enum RawType {
     #[default]
     Void,
@@ -80,6 +122,11 @@ pub enum RawType {
 
     Tuple(Vec<Type>),
     Array(Vec<Type>),
+}
+impl Into<Type> for RawType {
+    fn into(self) -> Type {
+        Type::new(self, PositionRange::default())
+    }
 }
 impl Display for RawType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
