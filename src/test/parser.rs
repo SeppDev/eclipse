@@ -70,12 +70,7 @@ mod parser {
         let expected = expected.into();
         let node = parser.expect_node().unwrap();
 
-        assert!(
-            node_eq(&node, &expected),
-            "{} != ( {} )",
-            expected,
-            node
-        );
+        assert!(node_eq(&node, &expected), "{} != ( {} )", expected, node);
     }
 
     fn arithmetic(left: RawNode, right: RawNode, operator: ArithmethicOperator) -> RawNode {
@@ -98,6 +93,16 @@ mod parser {
         add,
         "1 + 2",
         arithmetic(Integer("1".into()), Integer("2".into()), Plus)
+    );
+
+    parser_test!(
+        order_of_operations,
+        "1 * 2 + 3",
+        arithmetic(
+            arithmetic(Integer("1".into()), Integer("2".into()), Multiply),
+            Integer("3".into()),
+            Plus
+        )
     );
 
     parser_test!(

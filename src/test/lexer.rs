@@ -1,6 +1,12 @@
 #[cfg(test)]
 mod lexer {
-    use crate::compiler::{lexer::token::{TokenInfo, TokenKind::{self, *}}, CompilerCtx};
+    use crate::compiler::{
+        lexer::token::{
+            TokenInfo,
+            TokenKind::{self, *},
+        },
+        CompilerCtx,
+    };
 
     fn test_lexer(input: &str, expected: Vec<TokenKind>) {
         let compiler = CompilerCtx::test();
@@ -35,7 +41,7 @@ mod lexer {
         };
     }
     lexer_test!(
-        block,
+        main_function,
         "func main() {}",
         [Function, Identifier, OpenParen, CloseParen, OpenBlock, CloseBlock]
     );
@@ -64,6 +70,8 @@ mod lexer {
         "var x = 1234",
         [Var, Identifier, Equals, Integer]
     );
+    lexer_test!(not_a_float, "1.b", [Integer, Dot, Identifier]);
+    lexer_test!(block, "{  }", [OpenBlock, CloseBlock]);
     lexer_test!(
         integer_after_string_literal,
         "\"hello\" 1234",

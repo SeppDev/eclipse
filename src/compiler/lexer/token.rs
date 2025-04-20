@@ -106,7 +106,7 @@ impl TokenKind {
             _ => false,
         }
     }
-    pub fn is_equals_operator(&self) -> bool {
+    pub fn is_equals_operation(&self) -> bool {
         use TokenKind::*;
 
         match self {

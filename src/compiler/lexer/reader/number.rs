@@ -1,5 +1,5 @@
 use crate::{
-    compiler::lexer::kind::{LocatedString, LexerKind},
+    compiler::lexer::kind::{LexerKind, LocatedString},
     diagnostics::DiagnosticResult,
 };
 
@@ -9,17 +9,15 @@ impl Reader {
     pub fn parse_number(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let integer = self.parse_integer()?;
 
-        let dot = self.advance_if_eq('.');
-        if !dot.is_some() {
+        if match self.peek() {
+            Some(char) if char.raw == '.' => match self.peek() {
+                Some(char) if char.raw.is_ascii_digit() => false,
+                _ => true,
+            },
+            _ => true,
+        } {
             return Ok(Some(LexerKind::Integer(integer)));
         }
-
-        let char = match self.peek() {
-            Some(c) => c,
-            None => return Ok(None),
-        };
-
-        if char.raw.is_ascii_digit() {}
 
         let second = self.parse_integer()?;
 

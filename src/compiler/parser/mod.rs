@@ -1,8 +1,5 @@
 use super::{
-    lexer::{
-        self,
-        token::{TokenInfo, TokenKind},
-    },
+    lexer::token::{TokenInfo, TokenKind},
     nodes::ast::Node,
     CompilerCtx,
 };
@@ -16,7 +13,6 @@ use std::{borrow::Borrow, path::PathBuf};
 mod node;
 mod types;
 
-use reader::TokenReader;
 mod reader;
 
 const MAX_RECURSION: usize = 256;

@@ -62,8 +62,8 @@ pub enum RawNode {
         right: Box<Node>,
         operator: CompareOperator,
     },
-    Field(Box<Node>, Box<Node>),
-    Call(Box<Node>, Vec<Node>),
+    Field(Box<Node>, String),
+    Call(String, Vec<Node>),
     Return(Option<Box<Node>>),
     Break(Option<Box<Node>>),
     Continue(Option<Box<Node>>),
@@ -71,6 +71,7 @@ pub enum RawNode {
     String(String),
     Bool(bool),
     Integer(String),
+    MinusInteger(Box<Node>),
     Float(String),
     Block(Vec<Node>),
 }
