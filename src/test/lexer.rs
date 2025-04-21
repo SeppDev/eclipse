@@ -47,6 +47,12 @@ mod lexer {
     );
 
     lexer_test!(
+        only_block,
+        "{}",
+        [OpenBlock, CloseBlock]
+    );
+
+    lexer_test!(
         add_one,
         "func add_one(x i32) { return x + 1 }",
         [

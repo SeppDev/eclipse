@@ -1,14 +1,12 @@
 use std::fmt::Display;
 
-use crate::{
-    common::position::{Located, PositionRange},
-    compiler::lexer::token::TokenInfo,
-};
+use crate::{common::position::Located, compiler::lexer::token::TokenInfo};
 
-use super::shared::{ArithmethicOperator, CompareOperator};
+use super::shared::{ArithmethicOperator, CompareOperator, EqualsOperation};
 
 pub type Node = Located<RawNode>;
 
+pub type Location = Located<()>;
 pub type Parameter = Located<RawParameter>;
 pub type Type = Located<RawType>;
 
@@ -22,7 +20,7 @@ impl From<TokenInfo> for Identifier {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct RawParameter {
     pub reference: Option<TokenInfo>,
     pub mutable: Option<TokenInfo>,
@@ -30,7 +28,7 @@ pub struct RawParameter {
     pub data_type: Type,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum RawNode {
     Function {
         name: Identifier,
@@ -40,10 +38,11 @@ pub enum RawNode {
     },
     SetPath {
         path: Identifier,
-        body: Box<Node>,
+        operation: EqualsOperation,
+        value: Box<Node>,
     },
     Declare {
-        mutable: Option<TokenInfo>,
+        mutable: Option<Location>,
         name: Identifier,
         data_type: Option<Type>,
         node: Box<Node>,
@@ -62,7 +61,7 @@ pub enum RawNode {
         right: Box<Node>,
         operator: CompareOperator,
     },
-    Field(Box<Node>, String),
+    Field(Box<Node>, Identifier),
     Call(String, Vec<Node>),
     Return(Option<Box<Node>>),
     Break(Option<Box<Node>>),
@@ -73,6 +72,8 @@ pub enum RawNode {
     Integer(String),
     MinusInteger(Box<Node>),
     Float(String),
+    Tuple(Vec<Node>),
+    Wrapped(Option<Box<Node>>),
     Block(Vec<Node>),
 }
 impl Display for Node {
@@ -84,26 +85,28 @@ impl Display for Node {
                 left,
                 right,
                 operator,
-            } => &format!("{left} {operator} {right}"),
+            } => format!("{left} {operator} {right}"),
             CompareOperation {
                 left,
                 right,
                 operator,
-            } => &format!("{left} {operator} {right}"),
-            Integer(s) | Identifier(s) => s,
-            s => &format!("{s:?}"),
+            } => format!("{left} {operator} {right}"),
+            Field(node, field) => format!("{node}.{}", field.raw),
+            Integer(s) | Identifier(s) | Float(s) => s.into(),
+            s => format!("{s:?}"),
         };
 
         write!(f, "{string}")
     }
 }
-impl Into<Node> for RawNode {
-    fn into(self) -> Node {
-        Node::new(self, PositionRange::default())
+impl Into<Box<Node>> for RawNode {
+    fn into(self) -> Box<Node> {
+        Box::new(self.into())
     }
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+
+#[derive(Debug, Default, PartialEq)]
 pub enum RawType {
     #[default]
     Void,
@@ -117,6 +120,8 @@ pub enum RawType {
     Float32,
     Float64,
 
+    SelfType,
+
     Boolean,
 
     Reference(Box<Type>),
@@ -124,9 +129,9 @@ pub enum RawType {
     Tuple(Vec<Type>),
     Array(Vec<Type>),
 }
-impl Into<Type> for RawType {
-    fn into(self) -> Type {
-        Type::new(self, PositionRange::default())
+impl Into<Box<Type>> for RawType {
+    fn into(self) -> Box<Type> {
+        Box::new(self.into())
     }
 }
 impl Display for RawType {

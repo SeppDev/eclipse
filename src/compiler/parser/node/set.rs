@@ -1,10 +1,39 @@
 use crate::{
-    compiler::{lexer::token::TokenInfo, nodes::ast::RawNode, parser::Parser},
+    compiler::{
+        lexer::token::{TokenInfo, TokenKind::*},
+        nodes::{ast::RawNode, shared::EqualsOperation},
+        parser::Parser,
+    },
     diagnostics::DiagnosticResult,
 };
 
 impl Parser {
     pub fn parse_after_identifier(&mut self, name: TokenInfo) -> DiagnosticResult<RawNode> {
-        todo!()
+        let name = name.into();
+        let info = self.expect(&vec![
+            Equals,
+            PlusEquals,
+            SubtractEquals,
+            MultiplyEquals,
+            DivideEquals,
+            RemainderEquals,
+        ])?;
+
+        let operation = match info.kind {
+            Equals => EqualsOperation::Equals,
+            PlusEquals => EqualsOperation::PlusEquals,
+            SubtractEquals => EqualsOperation::SubtractEquals,
+            DivideEquals => EqualsOperation::DivideEquals,
+            MultiplyEquals => EqualsOperation::MultiplyEquals,
+            RemainderEquals => EqualsOperation::RemainderEquals,
+            _ => unreachable!(),
+        };
+        let value = self.expect_expression()?.into();
+
+        Ok(RawNode::SetPath {
+            path: name,
+            operation,
+            value,
+        })
     }
 }

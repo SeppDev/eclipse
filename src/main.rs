@@ -3,8 +3,8 @@ mod commands;
 mod common;
 mod compiler;
 mod diagnostics;
-mod utils;
 mod test;
+mod utils;
 
 pub const FILE_EXTENSION: &str = "ecl";
 

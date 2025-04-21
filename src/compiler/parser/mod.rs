@@ -8,7 +8,7 @@ use crate::{
     diagnostics::{DiagnosticData, DiagnosticResult},
     FILE_EXTENSION,
 };
-use std::{borrow::Borrow, path::PathBuf};
+use std::{borrow::Borrow, fmt::Debug, path::PathBuf};
 
 mod node;
 mod types;
@@ -52,8 +52,11 @@ impl Parser {
             panic!("Exceeded recursion limit: {MAX_RECURSION}")
         }
     }
-    pub fn located<T>(&mut self, value: T) -> Located<T> {
-        let start = self.start.pop().expect("Failed to create located value");
+    pub fn located<T: Debug>(&mut self, value: T) -> Located<T> {
+        let start = self
+            .start
+            .pop()
+            .expect(format!("Failed to create located value: {value:?}").as_str());
         let end = self.last_position.end;
         return Located::new(value, PositionRange::new(start, end));
     }

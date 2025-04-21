@@ -20,6 +20,8 @@ impl Parser {
             "u8" => RawType::UInt(8),
 
             "bool" => RawType::Boolean,
+
+            "Self" => RawType::SelfType,
             _ => todo!(),
         };
         Ok(Type::new(raw, info.position))

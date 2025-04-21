@@ -52,7 +52,6 @@ pub enum TokenKind {
     Arrow,
     FatArrow,
 
-    SelfType,
     SelfKeyword,
 
     If,
@@ -87,7 +86,7 @@ pub enum TokenKind {
     SubtractEquals,
     DivideEquals,
     MultiplyEquals,
-    PercentEquals,
+    RemainderEquals,
 
     Boolean,
     Character,
@@ -96,13 +95,30 @@ pub enum TokenKind {
     Float,
     Identifier,
 }
-
 impl TokenKind {
     pub fn is_expression(&self) -> bool {
         use TokenKind::*;
 
         match self {
-            Identifier | Float | Integer | String | Character | Boolean => true,
+            Identifier | Float | Integer | String | Character | Boolean | SelfKeyword => true,
+            _ => false,
+        }
+    }
+    pub fn is_expression_start(&self) -> bool {
+        use TokenKind::*;
+
+        match self {
+            OpenParen | Minus | If | While | Loop => true,
+            _ if self.is_expression() => true,
+            _ => false,
+        }
+    }
+    pub fn is_keyword(&self) -> bool {
+        use TokenKind::*;
+
+        match self {
+            Loop | Continue | Break | While | If | ElseIf | Else | Function | Pub | Use | Enum
+            | Struct | Unsafe | Return | Result | Var | SelfKeyword => true,
             _ => false,
         }
     }
@@ -110,7 +126,8 @@ impl TokenKind {
         use TokenKind::*;
 
         match self {
-            Equals | PlusEquals | RangeEquals | PercentEquals | MultiplyEquals | SubtractEquals => true,
+            Equals | PlusEquals | RangeEquals | RemainderEquals | MultiplyEquals
+            | SubtractEquals => true,
             _ => false,
         }
     }
@@ -126,12 +143,22 @@ impl TokenKind {
         use TokenKind::*;
 
         match self {
-            Compare | GreaterThan | GreaterThanOrEquals | LessThan | LessThanOrEquals | NotEquals => true,
+            Compare | GreaterThan | GreaterThanOrEquals | LessThan | LessThanOrEquals
+            | NotEquals => true,
             _ => false,
         }
     }
     pub fn is_operator(&self) -> bool {
         return self.is_arithmetic_operator() | self.is_compare_operator();
+    }
+    pub fn precedence(&self) -> usize {
+        use TokenKind::*;
+        match self {
+            Percent => 3,
+            Asterisk | ForwardSlash => 2,
+            Plus | Minus => 1,
+            _ => 0,
+        }
     }
 }
 
@@ -164,7 +191,6 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
         "break" => TokenKind::Break,
         "continue" => TokenKind::Continue,
 
-        "Self" => TokenKind::SelfType,
         "self" => TokenKind::SelfKeyword,
 
         "{" => TokenKind::OpenBlock,
@@ -203,7 +229,7 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
         "-=" => TokenKind::SubtractEquals,
         "/=" => TokenKind::DivideEquals,
         "*=" => TokenKind::MultiplyEquals,
-        "%=" => TokenKind::PercentEquals,
+        "%=" => TokenKind::RemainderEquals,
 
         "<" => TokenKind::LessThan,
         ">" => TokenKind::GreaterThan,
@@ -220,6 +246,10 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
 
 impl std::fmt::Display for TokenInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Token: {:?}({:?}) : {}", self.kind, self.string, self.position)
+        write!(
+            f,
+            "Token: {:?}({:?}) : {}",
+            self.kind, self.string, self.position
+        )
     }
 }

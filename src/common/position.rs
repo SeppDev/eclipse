@@ -57,10 +57,25 @@ impl std::fmt::Display for PositionRange {
     }
 }
 
-#[derive(Default, Clone, PartialEq, Eq)]
+#[derive(Default, Clone)]
 pub struct Located<T> {
     pub position: PositionRange,
     pub raw: T,
+}
+impl<T> From<T> for Located<T> {
+    fn from(value: T) -> Self {
+        Located::new(value, PositionRange::default())
+    }
+}
+impl<T> Into<Option<T>> for Located<T> {
+    fn into(self) -> Option<T> {
+        Some(self.raw)
+    }
+}
+impl<T: PartialEq> PartialEq for Located<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.raw == other.raw
+    }
 }
 impl<T> Located<T> {
     pub fn new(raw: T, position: PositionRange) -> Self {

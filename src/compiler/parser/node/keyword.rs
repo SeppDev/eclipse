@@ -7,11 +7,12 @@ use crate::{
 };
 
 impl Parser {
-    pub fn expect_potential_value(&mut self) -> DiagnosticResult<Option<Box<Node>>> {
-        Ok(match self.expect_potential_node()? {
-            Some(n) => Some(Box::new(n)),
-            None => None,
-        })
+    fn expect_potential_value(&mut self) -> DiagnosticResult<Option<Box<Node>>> {
+        if !self.peek().kind.is_expression_start() {
+            return Ok(None);
+        }
+        let node = self.expect_expression()?;
+        Ok(Some(Box::new(node)))
     }
     pub fn parse_return(&mut self) -> DiagnosticResult<RawNode> {
         Ok(RawNode::Return(self.expect_potential_value()?))
