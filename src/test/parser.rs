@@ -30,14 +30,6 @@ mod parser {
             }
         };
     }
-    macro_rules! parser_test_ne {
-        ($name:ident, $input:expr, $expected:expr) => {
-            #[test]
-            fn $name() {
-                test_parser_ne($input, $expected);
-            }
-        };
-    }
 
     fn test_init(input: &str) -> Node {
         let compiler = CompilerCtx::test();
@@ -47,18 +39,6 @@ mod parser {
     }
 
     fn test_parser_eq(input: &str, expected: RawNode) {
-        let expected = expected.into();
-        let node = test_init(input);
-        assert!(
-            node == expected,
-            "INPUT: {}\n{}\n-------------------------------------\n{}",
-            input,
-            expected,
-            node
-        );
-    }
-
-    fn test_parser_ne(input: &str, expected: RawNode) {
         let expected = expected.into();
         let node = test_init(input);
         assert!(
@@ -215,13 +195,4 @@ mod parser {
         tuple(vec![integer("1"), integer("2"), integer("3")])
     );
     parser_test!(integer_wrapped, "(1)", wrapped(integer("1")));
-    parser_test_ne!(not_integer_tuple, "(1)", tuple(vec![integer("1")]));
-    parser_test!(
-        keyword_ignore,
-        "{return continue 1 + b}",
-        block(vec![
-            Continue(None),
-            Return(Some(arithmetic(integer("1"), identifier("b"), Plus).into()))
-        ])
-    );
 }

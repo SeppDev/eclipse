@@ -26,7 +26,7 @@ impl Parser {
 
         self.start();
         let info = self.expect(&vec![
-            Function, OpenBlock, Return, Break, Continue, Var, Identifier, Integer, Minus, Float,
+            Function, OpenBlock, Return, Break, Continue, Var, Integer, Minus, Float,
             Boolean, String,
         ])?;
 
@@ -34,18 +34,10 @@ impl Parser {
             Function => self.parse_function()?,
             OpenBlock => self.parse_block()?,
             Var => self.parse_variable_decl()?,
-            Identifier if self.peek().kind.is_equals_operation() => {
-                self.parse_after_identifier(info)?
-            }
+
             Return => self.parse_return()?,
             Break => self.parse_break()?,
             Continue => self.parse_continue()?,
-            // Identifier if self.peek().kind == TokenKind::OpenParen => {
-            //     self.next()?;
-            //     self.parse_call(info)?
-            // }
-            // Minus => self.parse_expression(info)?,
-            // _ if info.kind.is_expression() => self.parse_expression(info)?,
             _ => unreachable!(),
         };
         let node = self.located(raw);
