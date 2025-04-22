@@ -1,33 +1,16 @@
 use crate::{
     compiler::{
         lexer::token::{TokenInfo, TokenKind},
-        nodes::{
-            ast::{Node, RawNode},
-            shared::{ArithmethicOperator, CompareOperator},
-        },
+        nodes::ast::{Node, RawNode},
         parser::Parser,
     },
     diagnostics::{DiagnosticData, DiagnosticResult},
 };
 
-#[derive(Debug)]
-enum NodeKind {
-    Expression(Node),
-    Operator(TokenInfo),
-}
-impl Into<Node> for NodeKind {
-    fn into(self) -> Node {
-        match self {
-            NodeKind::Expression(node) => node,
-            _ => panic!("Invalid node kind"),
-        }
-    }
-}
-
 impl Parser {
     pub fn expect_expression(&mut self) -> DiagnosticResult<Node> {
         let mut node = self.expect_base_expression()?;
-        if !self.peek().kind.is_arithmetic_operator() {
+        if self.peek().kind.is_compare_operator() {
             node = self.handle_compare_operation(node)?;
             return Ok(node);
         }
@@ -58,19 +41,16 @@ impl Parser {
         )
     }
     pub fn expect_base_expression(&mut self) -> DiagnosticResult<Node> {
-        self.start();
+        let start = self.start();
         let info = self.next()?;
         let node = self.to_expression(info)?;
-        let mut node = self.located(node);
+        let mut node = self.located(node, start);
 
-        loop {
-            if self.next_if_eq(TokenKind::Dot)?.is_none() {
-                break;
-            }
-            self.start();
+        while self.next_if_eq(TokenKind::Dot)?.is_some() {
+            let start = self.start();
             use TokenKind::*;
             let field = self.expect(&vec![Identifier, Integer])?;
-            node = self.located(RawNode::Field(Box::new(node), field.into()));
+            node = self.located(RawNode::Field(Box::new(node), field.into()), start);
         }
         Ok(node)
     }
@@ -82,17 +62,22 @@ impl Parser {
             Integer => RawNode::Integer(info.string),
             Boolean => RawNode::Bool(info.string == "true"),
             String => RawNode::String(info.string),
-            Minus => RawNode::MinusInteger(Box::new(self.expect_base_expression()?)),
+            Minus => RawNode::Minus(Box::new(self.expect_base_expression()?)),
             Identifier if self.peek().kind == OpenParen => {
                 self.next()?;
                 RawNode::Call(info.string, self.expect_arguments(TokenKind::CloseParen)?)
             }
             Identifier => RawNode::Identifier(info.string),
-            Loop => RawNode::Loop(Box::new(self.expect_base_expression()?)),
+            Loop => RawNode::Loop(Box::new(self.expect_expression()?)),
             While => {
-                let condition = Box::new(self.expect_base_expression()?);
-                let body = Box::new(self.expect_base_expression()?);
+                let condition = Box::new(self.expect_expression()?);
+                let body = Box::new(self.expect_expression()?);
                 RawNode::While { condition, body }
+            }
+            If => {
+                let condition = Box::new(self.expect_expression()?);
+                let body = Box::new(self.expect_expression()?);
+                RawNode::If { condition, body }
             }
             OpenBlock => self.parse_block()?,
             OpenParen => {

@@ -15,29 +15,18 @@ mod types;
 
 mod reader;
 
-const MAX_RECURSION: usize = 256;
-
 pub struct Parser {
     tokens: Vec<TokenInfo>,
     path: PathBuf,
-    start: Vec<Position>,
     last_position: PositionRange,
 }
-impl Drop for Parser {
-    fn drop(&mut self) {
-        if self.start.len() > 0 {
-            let start = &self.start;
-            println!("Failed to use all start positions: {start:#?}")
-        };
-    }
-}
+
 impl CompilerCtx {
     pub fn new_parser(&self, mut tokens: Vec<TokenInfo>, path: PathBuf) -> Parser {
         tokens.reverse();
         Parser {
             tokens,
             path,
-            start: Vec::new(),
             last_position: PositionRange::default(),
         }
     }
@@ -46,17 +35,10 @@ impl Parser {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
-    pub fn start(&mut self) {
-        self.start.push(self.peek().position.start);
-        if self.start.len() >= MAX_RECURSION {
-            panic!("Exceeded recursion limit: {MAX_RECURSION}")
-        }
+    pub fn start(&self) -> Position {
+        self.peek().position.start
     }
-    pub fn located<T: Debug>(&mut self, value: T) -> Located<T> {
-        let start = self
-            .start
-            .pop()
-            .expect(format!("Failed to create located value: {value:?}").as_str());
+    pub fn located<T>(&mut self, value: T, start: Position) -> Located<T> {
         let end = self.last_position.end;
         return Located::new(value, PositionRange::new(start, end));
     }

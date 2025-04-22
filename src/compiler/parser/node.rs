@@ -11,8 +11,8 @@ mod call;
 mod expression;
 mod function;
 mod keyword;
-mod set;
 mod order_operations;
+mod set;
 mod variable;
 
 use super::Parser;
@@ -22,17 +22,17 @@ impl Parser {
         use TokenKind::*;
 
         if self.peek().kind == Identifier && self.peek_second().kind.is_equals_operation() {
-            self.start();
+            let start = self.start();
             let info = self.next()?;
             let raw = self.parse_set_operation(info)?;
-            return Ok(self.located(raw));
+            return Ok(self.located(raw, start));
         }
 
         if self.peek().kind.is_expression_start() {
             return self.expect_expression();
         }
 
-        self.start();
+        let start = self.start();
         let info = self.expect(&vec![
             Function, OpenBlock, Return, Break, Continue, Var, Integer, Minus, Float, Boolean,
             String,
@@ -42,13 +42,12 @@ impl Parser {
             Function => self.parse_function()?,
             OpenBlock => self.parse_block()?,
             Var => self.parse_variable_decl()?,
-
             Return => self.parse_return()?,
             Break => self.parse_break()?,
             Continue => self.parse_continue()?,
             _ => unreachable!(),
         };
 
-        Ok(self.located(raw))
+        Ok(self.located(raw, start))
     }
 }

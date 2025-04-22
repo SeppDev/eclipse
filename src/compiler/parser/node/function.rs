@@ -1,6 +1,8 @@
 use crate::{
     compiler::{
-        lexer::token::TokenKind, nodes::ast::{Parameter, RawNode, RawParameter}, parser::Parser
+        lexer::token::TokenKind,
+        nodes::ast::{Parameter, RawNode, RawParameter},
+        parser::Parser,
     },
     diagnostics::DiagnosticResult,
 };
@@ -34,7 +36,7 @@ impl Parser {
             if self.next_if_eq(TokenKind::CloseParen)?.is_some() {
                 break;
             }
-            self.start();
+            let start = self.start();
 
             let reference = self.next_if_eq(TokenKind::Ampersand)?;
             let mutable = self.next_if_eq(TokenKind::Mutable)?;
@@ -48,7 +50,7 @@ impl Parser {
                 data_type,
             };
 
-            params.push(self.located(parameter))
+            params.push(self.located(parameter, start))
         }
 
         return Ok(params);
