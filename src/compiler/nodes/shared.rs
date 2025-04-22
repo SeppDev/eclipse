@@ -35,28 +35,13 @@ impl Display for ArithmethicOperator {
 impl Into<ArithmethicOperator> for TokenInfo {
     fn into(self) -> ArithmethicOperator {
         use TokenKind::*;
-        
+
         match self.kind {
             Plus => ArithmethicOperator::Plus,
             Minus => ArithmethicOperator::Subtract,
             ForwardSlash => ArithmethicOperator::Division,
             Asterisk => ArithmethicOperator::Multiply,
             Percent => ArithmethicOperator::Remainder,
-            _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
-        }
-    }
-}
-impl Into<CompareOperator> for TokenInfo {
-    fn into(self) -> CompareOperator {
-        use TokenKind::*;
-
-        match self.kind {
-            Compare => CompareOperator::Compare,
-            GreaterThan => CompareOperator::GreaterThan,
-            GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
-            LessThan => CompareOperator::LessThan,
-            LessThanOrEquals => CompareOperator::LessThanOrEquals,
-            NotEquals => CompareOperator::Not,
             _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
         }
     }
@@ -98,6 +83,8 @@ pub enum CompareOperator {
     GreaterThanOrEquals,
     LessThan,
     LessThanOrEquals,
+    And,
+    Or,
 }
 impl Display for CompareOperator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -115,5 +102,22 @@ impl Display for CompareOperator {
                 LowerThanOrEquals => "<=",
             }
         )
+    }
+}
+impl Into<CompareOperator> for TokenInfo {
+    fn into(self) -> CompareOperator {
+        use TokenKind::*;
+
+        match self.kind {
+            Compare => CompareOperator::Compare,
+            GreaterThan => CompareOperator::GreaterThan,
+            GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
+            LessThan => CompareOperator::LessThan,
+            LessThanOrEquals => CompareOperator::LessThanOrEquals,
+            NotEquals => CompareOperator::Not,
+            And => CompareOperator::And,
+            Or => CompareOperator::Or,
+            _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
+        }
     }
 }

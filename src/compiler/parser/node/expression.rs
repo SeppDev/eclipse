@@ -26,8 +26,9 @@ impl Into<Node> for NodeKind {
 
 impl Parser {
     pub fn expect_expression(&mut self) -> DiagnosticResult<Node> {
-        let node = self.expect_base_expression()?;
+        let mut node = self.expect_base_expression()?;
         if !self.peek().kind.is_arithmetic_operator() {
+            node = self.handle_compare_operation(node)?;
             return Ok(node);
         }
 
@@ -97,9 +98,13 @@ impl Parser {
         }
 
         assert!(solve_stack.len() == 1);
-        let node: Node = solve_stack.pop().unwrap().into();
+        let mut node: Node = solve_stack.pop().unwrap().into();
+        node = self.handle_compare_operation(node)?;
 
-        if self.peek().kind.is_compare_operator() {
+        return Ok(node);
+    }
+    pub fn handle_compare_operation(&mut self, mut node: Node) -> DiagnosticResult<Node> {
+        while self.peek().kind.is_compare_operator() {
             let mut position = node.position;
             let operator: CompareOperator = self.next()?.into();
             let right: Box<Node> = self.expect_expression()?.into();
@@ -110,10 +115,9 @@ impl Parser {
                 right,
                 operator,
             };
-            return Ok(Node::new(raw, position));
+            node = Node::new(raw, position);
         }
-
-        return Ok(node);
+        Ok(node)
     }
     pub fn expect_base_expression(&mut self) -> DiagnosticResult<Node> {
         self.start();
@@ -130,7 +134,6 @@ impl Parser {
             let field = self.expect(&vec![Identifier, Integer])?;
             node = self.located(RawNode::Field(Box::new(node), field.into()));
         }
-
         Ok(node)
     }
     pub fn to_expression(&mut self, info: TokenInfo) -> DiagnosticResult<RawNode> {

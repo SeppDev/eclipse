@@ -81,6 +81,8 @@ pub enum TokenKind {
     LessThanOrEquals,
     GreaterThan,
     GreaterThanOrEquals,
+    And,
+    Or,
 
     PlusEquals,
     SubtractEquals,
@@ -144,7 +146,7 @@ impl TokenKind {
 
         match self {
             Compare | GreaterThan | GreaterThanOrEquals | LessThan | LessThanOrEquals
-            | NotEquals => true,
+            | NotEquals | And | Or => true,
             _ => false,
         }
     }
@@ -215,6 +217,8 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
         "%" => TokenKind::Percent,
         "++" => TokenKind::Increment,
         "--" => TokenKind::Decrement,
+        "&&" => TokenKind::And,
+        "||" => TokenKind::Or,
 
         "->" => TokenKind::Arrow,
         "=>" => TokenKind::FatArrow,
