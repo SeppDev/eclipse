@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::compiler::lexer::token::{TokenInfo, TokenKind};
+use crate::compiler::lexer::token::TokenKind;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ArithmethicOperator {
@@ -32,17 +32,17 @@ impl Display for ArithmethicOperator {
     }
 }
 
-impl Into<ArithmethicOperator> for TokenInfo {
+impl Into<ArithmethicOperator> for TokenKind {
     fn into(self) -> ArithmethicOperator {
         use TokenKind::*;
 
-        match self.kind {
+        match self {
             Plus => ArithmethicOperator::Plus,
             Minus => ArithmethicOperator::Subtract,
             ForwardSlash => ArithmethicOperator::Division,
             Asterisk => ArithmethicOperator::Multiply,
             Percent => ArithmethicOperator::Remainder,
-            _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
+            _ => panic!("Invalid token for operator conversion: {self:?}"),
         }
     }
 }
@@ -104,11 +104,11 @@ impl Display for CompareOperator {
         )
     }
 }
-impl Into<CompareOperator> for TokenInfo {
+impl Into<CompareOperator> for TokenKind {
     fn into(self) -> CompareOperator {
         use TokenKind::*;
 
-        match self.kind {
+        match self {
             Compare => CompareOperator::Compare,
             GreaterThan => CompareOperator::GreaterThan,
             GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
@@ -117,7 +117,7 @@ impl Into<CompareOperator> for TokenInfo {
             NotEquals => CompareOperator::Not,
             And => CompareOperator::And,
             Or => CompareOperator::Or,
-            _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
+            _ => panic!("Invalid token for operator conversion: {self:?}"),
         }
     }
 }

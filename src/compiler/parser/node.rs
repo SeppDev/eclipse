@@ -12,6 +12,7 @@ mod expression;
 mod function;
 mod keyword;
 mod set;
+mod order_operations;
 mod variable;
 
 use super::Parser;

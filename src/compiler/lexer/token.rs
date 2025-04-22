@@ -156,6 +156,10 @@ impl TokenKind {
     pub fn precedence(&self) -> usize {
         use TokenKind::*;
         match self {
+            Compare | NotEquals | GreaterThan | GreaterThanOrEquals | LessThan
+            | LessThanOrEquals => 2,
+            And | Or => 1,
+
             Percent => 3,
             Asterisk | ForwardSlash => 2,
             Plus | Minus => 1,

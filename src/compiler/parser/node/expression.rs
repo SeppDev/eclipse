@@ -32,92 +32,30 @@ impl Parser {
             return Ok(node);
         }
 
-        let mut stack = vec![NodeKind::Expression(node)];
-        while self.peek().kind.is_arithmetic_operator() {
-            let operator = self.next()?;
-            stack.push(NodeKind::Operator(operator));
-            let expression = self.expect_base_expression()?;
-            stack.push(NodeKind::Expression(expression));
-        }
-        let mut input = stack.into_iter();
-
-        let mut holding_stack: Vec<TokenInfo> = Vec::new();
-        let mut output: Vec<NodeKind> = Vec::new();
-
-        while let Some(node) = input.next() {
-            let operator = match node {
-                NodeKind::Expression(node) => {
-                    output.push(NodeKind::Expression(node));
-                    continue;
-                }
-                NodeKind::Operator(operator) => operator,
-            };
-
-            let precedence = operator.kind.precedence();
-            loop {
-                match holding_stack.last() {
-                    Some(l) if &l.kind.precedence() >= &precedence => {
-                        let last = holding_stack.pop().unwrap();
-                        output.push(NodeKind::Operator(last));
-                    }
-                    _ => {
-                        holding_stack.push(operator);
-                        break;
-                    }
-                }
-            }
-        }
-        output.extend(
-            holding_stack
-                .into_iter()
-                .map(|token| NodeKind::Operator(token)),
-        );
-
-        let mut output = output.into_iter();
-        let mut solve_stack: Vec<NodeKind> = Vec::new();
-        while let Some(node) = output.next() {
-            let operator: ArithmethicOperator = match node {
-                NodeKind::Expression(node) => {
-                    solve_stack.push(NodeKind::Expression(node));
-                    continue;
-                }
-                NodeKind::Operator(operator) => operator.into(),
-            };
-
-            let right: Box<Node> = Box::new(solve_stack.pop().unwrap().into());
-            let left: Box<Node> = Box::new(solve_stack.pop().unwrap().into());
-            let mut position = left.position;
-            position.set_end(right.position.end);
-            let result = RawNode::ArithmethicOperation {
+        node = self.order_operations(
+            node,
+            |k| k.is_arithmetic_operator(),
+            |kind, left, right| RawNode::ArithmethicOperation {
                 left,
                 right,
-                operator,
-            };
+                operator: kind.into(),
+            },
+        )?;
 
-            solve_stack.push(NodeKind::Expression(Node::new(result, position)));
-        }
-
-        assert!(solve_stack.len() == 1);
-        let mut node: Node = solve_stack.pop().unwrap().into();
         node = self.handle_compare_operation(node)?;
 
         return Ok(node);
     }
-    pub fn handle_compare_operation(&mut self, mut node: Node) -> DiagnosticResult<Node> {
-        while self.peek().kind.is_compare_operator() {
-            let mut position = node.position;
-            let operator: CompareOperator = self.next()?.into();
-            let right: Box<Node> = self.expect_expression()?.into();
-            position.set_end(right.position.end);
-
-            let raw = RawNode::CompareOperation {
-                left: node.into(),
+    pub fn handle_compare_operation(&mut self, node: Node) -> DiagnosticResult<Node> {
+        self.order_operations(
+            node,
+            |k| k.is_compare_operator(),
+            |kind, left, right| RawNode::CompareOperation {
+                left,
                 right,
-                operator,
-            };
-            node = Node::new(raw, position);
-        }
-        Ok(node)
+                operator: kind.into(),
+            },
+        )
     }
     pub fn expect_base_expression(&mut self) -> DiagnosticResult<Node> {
         self.start();
