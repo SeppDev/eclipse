@@ -1,5 +1,5 @@
 use crate::{
-    compiler::{lexer::token::TokenKind, nodes::ast::RawNode, parser::Parser},
+    compiler::{lexer::token::TokenKind, nodes::ast::{Node, RawNode}, parser::Parser},
     diagnostics::DiagnosticResult,
 };
 
@@ -17,5 +17,9 @@ impl Parser {
         }
 
         Ok(RawNode::Block(body))
+    }
+    pub fn expect_block(&mut self) -> DiagnosticResult<Node> {
+        self.peek_expect_single(TokenKind::OpenBlock)?;
+        self.expect_base_expression()
     }
 }

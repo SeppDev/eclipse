@@ -3,7 +3,7 @@ use crate::{
         lexer::token::{TokenInfo, TokenKind},
         nodes::{
             ast::{Node, RawNode},
-            shared::Operator,
+            shared::{ArithmethicOperator, CompareOperator},
         },
         parser::Parser,
     },
@@ -27,12 +27,12 @@ impl Into<Node> for NodeKind {
 impl Parser {
     pub fn expect_expression(&mut self) -> DiagnosticResult<Node> {
         let node = self.expect_base_expression()?;
-        if !self.peek().kind.is_operator() {
+        if !self.peek().kind.is_arithmetic_operator() {
             return Ok(node);
         }
 
         let mut stack = vec![NodeKind::Expression(node)];
-        while self.peek().kind.is_operator() {
+        while self.peek().kind.is_arithmetic_operator() {
             let operator = self.next()?;
             stack.push(NodeKind::Operator(operator));
             let expression = self.expect_base_expression()?;
@@ -75,7 +75,7 @@ impl Parser {
         let mut output = output.into_iter();
         let mut solve_stack: Vec<NodeKind> = Vec::new();
         while let Some(node) = output.next() {
-            let operator: Operator = match node {
+            let operator: ArithmethicOperator = match node {
                 NodeKind::Expression(node) => {
                     solve_stack.push(NodeKind::Expression(node));
                     continue;
@@ -87,24 +87,33 @@ impl Parser {
             let left: Box<Node> = Box::new(solve_stack.pop().unwrap().into());
             let mut position = left.position;
             position.set_end(right.position.end);
-            let result = match operator {
-                Operator::Arithmetic(operator) => RawNode::ArithmethicOperation {
-                    left,
-                    right,
-                    operator,
-                },
-                Operator::Comparison(operator) => RawNode::CompareOperation {
-                    left,
-                    right,
-                    operator,
-                },
+            let result = RawNode::ArithmethicOperation {
+                left,
+                right,
+                operator,
             };
 
             solve_stack.push(NodeKind::Expression(Node::new(result, position)));
         }
 
         assert!(solve_stack.len() == 1);
-        Ok(solve_stack.pop().unwrap().into())
+        let node: Node = solve_stack.pop().unwrap().into();
+
+        if self.peek().kind.is_compare_operator() {
+            let mut position = node.position;
+            let operator: CompareOperator = self.next()?.into();
+            let right: Box<Node> = self.expect_expression()?.into();
+            position.set_end(right.position.end);
+
+            let raw = RawNode::CompareOperation {
+                left: node.into(),
+                right,
+                operator,
+            };
+            return Ok(Node::new(raw, position));
+        }
+
+        return Ok(node);
     }
     pub fn expect_base_expression(&mut self) -> DiagnosticResult<Node> {
         self.start();
@@ -133,7 +142,18 @@ impl Parser {
             Boolean => RawNode::Bool(info.string == "true"),
             String => RawNode::String(info.string),
             Minus => RawNode::MinusInteger(Box::new(self.expect_base_expression()?)),
+            Identifier if self.peek().kind == OpenParen => {
+                self.next()?;
+                RawNode::Call(info.string, self.expect_arguments(TokenKind::CloseParen)?)
+            }
             Identifier => RawNode::Identifier(info.string),
+            Loop => RawNode::Loop(Box::new(self.expect_base_expression()?)),
+            While => {
+                let condition = Box::new(self.expect_base_expression()?);
+                let body = Box::new(self.expect_base_expression()?);
+                RawNode::While { condition, body }
+            }
+            OpenBlock => self.parse_block()?,
             OpenParen => {
                 let mut items = self.expect_arguments(TokenKind::CloseParen)?;
                 match items.len() {
@@ -143,9 +163,11 @@ impl Parser {
                 }
             }
             _ => {
-                return Err(DiagnosticData::basic(
+                return Err(DiagnosticData::new(
                     "Expected expression",
                     self.path().clone(),
+                    "",
+                    info.position,
                 ))
             }
         };

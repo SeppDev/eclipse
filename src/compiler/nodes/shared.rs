@@ -32,38 +32,32 @@ impl Display for ArithmethicOperator {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Operator {
-    Arithmetic(ArithmethicOperator),
-    Comparison(CompareOperator),
-}
-impl Into<Operator> for ArithmethicOperator {
-    fn into(self) -> Operator {
-        Operator::Arithmetic(self)
-    }
-}
-impl Into<Operator> for CompareOperator {
-    fn into(self) -> Operator {
-        Operator::Comparison(self)
-    }
-}
-impl Into<Operator> for TokenInfo {
-    fn into(self) -> Operator {
+impl Into<ArithmethicOperator> for TokenInfo {
+    fn into(self) -> ArithmethicOperator {
         use TokenKind::*;
-        use Operator::*;
         
         match self.kind {
-            Plus => Arithmetic(ArithmethicOperator::Plus),
-            Minus => Arithmetic(ArithmethicOperator::Subtract),
-            ForwardSlash => Operator::Arithmetic(ArithmethicOperator::Division),
-            Asterisk => Operator::Arithmetic(ArithmethicOperator::Multiply),
-            Percent => Operator::Arithmetic(ArithmethicOperator::Remainder),
-            // Greater => Operator::Comparison(CompareOperator::GreaterThan),
-            // Less => Operator::Comparison(CompareOperator::LessThan),
-            // GreaterEqual => Operator::Comparison(CompareOperator::GreaterEqual),
-            // LessEqual => Operator::Comparison(CompareOperator::LessEqual),
-            // NotEqual => Operator::Comparison(CompareOperator::NotEqual),
-            _ => panic!("Invalid token for operator conversion"),
+            Plus => ArithmethicOperator::Plus,
+            Minus => ArithmethicOperator::Subtract,
+            ForwardSlash => ArithmethicOperator::Division,
+            Asterisk => ArithmethicOperator::Multiply,
+            Percent => ArithmethicOperator::Remainder,
+            _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
+        }
+    }
+}
+impl Into<CompareOperator> for TokenInfo {
+    fn into(self) -> CompareOperator {
+        use TokenKind::*;
+
+        match self.kind {
+            Compare => CompareOperator::Compare,
+            GreaterThan => CompareOperator::GreaterThan,
+            GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
+            LessThan => CompareOperator::LessThan,
+            LessThanOrEquals => CompareOperator::LessThanOrEquals,
+            NotEquals => CompareOperator::Not,
+            _ => panic!("Invalid token for operator conversion: {:?}", self.kind),
         }
     }
 }
@@ -100,10 +94,10 @@ impl Display for EqualsOperation {
 pub enum CompareOperator {
     Not,
     Compare,
-    HigherThan,
-    HigherThanOrEquals,
-    LowerThan,
-    LowerThanOrEquals,
+    GreaterThan,
+    GreaterThanOrEquals,
+    LessThan,
+    LessThanOrEquals,
 }
 impl Display for CompareOperator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

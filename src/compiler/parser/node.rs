@@ -20,14 +20,21 @@ impl Parser {
     pub fn expect_node(&mut self) -> DiagnosticResult<Node> {
         use TokenKind::*;
 
+        if self.peek().kind == Identifier && self.peek_second().kind.is_equals_operation() {
+            self.start();
+            let info = self.next()?;
+            let raw = self.parse_set_operation(info)?;
+            return Ok(self.located(raw));
+        }
+
         if self.peek().kind.is_expression_start() {
             return self.expect_expression();
         }
 
         self.start();
         let info = self.expect(&vec![
-            Function, OpenBlock, Return, Break, Continue, Var, Integer, Minus, Float,
-            Boolean, String,
+            Function, OpenBlock, Return, Break, Continue, Var, Integer, Minus, Float, Boolean,
+            String,
         ])?;
 
         let raw: RawNode = match info.kind {
@@ -40,28 +47,7 @@ impl Parser {
             Continue => self.parse_continue()?,
             _ => unreachable!(),
         };
-        let node = self.located(raw);
 
-        Ok(node)
+        Ok(self.located(raw))
     }
-    // pub fn expect_potential_node(&mut self) -> DiagnosticResult<Option<Node>> {
-    //     let peek = self.peek();
-    //     let kind = &peek.kind;
-
-    //     if kind.is_expression() || kind.is_arithmetic_operator() {
-    //         return Ok(Some(self.expect_node()?));
-    //     }
-    //     return Ok(None);
-    // }
 }
-
-// let mut node = self.located(raw);
-// loop {
-//     if self.next_if_eq(TokenKind::Dot)?.is_some() {
-//         self.start();
-//         let field = self.expect(&vec![Identifier, Integer])?;
-//         node = self.located(RawNode::Field(Box::new(node), field.string));
-//         continue;
-//     }
-//     break;
-// }

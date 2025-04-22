@@ -81,6 +81,9 @@ impl Parser {
     pub fn peek(&self) -> &TokenInfo {
         self.tokens.last().unwrap()
     }
+    pub fn peek_second(&self) -> &TokenInfo {
+        self.tokens.get(self.tokens.len() - 2).unwrap()
+    }
     pub fn next_if(
         &mut self,
         func: impl FnOnce(&TokenInfo) -> bool,
@@ -182,7 +185,7 @@ impl CompilerCtx {
         let file_name = current_path.file_name().unwrap().to_str().unwrap();
         let is_module = file_name.starts_with("main") | file_name.starts_with("mod");
 
-        self.message(format!("Lexer: {current_path:?}"));
+        self.message(format!("{current_path:?}"));
         let source = self.read_relative(&current_path)?;
         let tokens = self.tokenize(source.as_str())?;
 

@@ -66,6 +66,11 @@ pub enum RawNode {
     Return(Option<Box<Node>>),
     Break(Option<Box<Node>>),
     Continue(Option<Box<Node>>),
+    Loop(Box<Node>),
+    While {
+        condition: Box<Node>,
+        body: Box<Node>,
+    },
     Identifier(String),
     String(String),
     Bool(bool),
@@ -75,6 +80,14 @@ pub enum RawNode {
     Tuple(Vec<Node>),
     Wrapped(Option<Box<Node>>),
     Block(Vec<Node>),
+    Enum {
+        name: Identifier,
+        items: Vec<Identifier>,
+    },
+    Struct {
+        name: Identifier,
+        fields: Vec<(Identifier, Type)>,
+    },
 }
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -105,12 +118,14 @@ impl Into<Box<Node>> for RawNode {
     }
 }
 
-
 #[derive(Debug, Default, PartialEq)]
 pub enum RawType {
     #[default]
     Void,
     Never,
+
+    String,
+    Char,
 
     USize,
     ISize,

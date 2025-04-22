@@ -9,7 +9,7 @@ mod parser {
                 ast::{
                     Node,
                     RawNode::{self, *},
-                    RawType::*,
+                    RawType::{self, *},
                     Type,
                 },
                 shared::{
@@ -107,6 +107,30 @@ mod parser {
             value: value.into(),
         }
     }
+    fn r#struct(name: impl ToString, fields: Vec<(impl ToString, RawType)>) -> RawNode {
+        Struct {
+            name: name.to_string().into(),
+            fields: fields
+                .into_iter()
+                .map(|(name, data_type)| (name.to_string().into(), data_type.into()))
+                .collect(),
+        }
+    }
+    fn r#enum(name: impl ToString, fields: Vec<impl ToString>) -> RawNode {
+        Enum {
+            name: name.to_string().into(),
+            items: fields
+                .into_iter()
+                .map(|name| name.to_string().into())
+                .collect(),
+        }
+    }
+
+    fn r#while(condition: RawNode, body: RawNode) -> RawNode {
+        let condition = condition.into();
+        let body = body.into();
+        While { condition, body }
+    }
 
     parser_test!(only_block, "{}", block(Vec::new()));
 
@@ -179,6 +203,26 @@ mod parser {
         compare_integer,
         "1 == 2",
         compare(integer("1"), integer("2"), Compare)
+    );
+
+    parser_test!(simple_loop, "loop {}", Loop(Block(vec![]).into()));
+
+    parser_test!(
+        simple_while,
+        "while true {}",
+        r#while(Bool(true), Block(vec![]))
+    );
+
+    parser_test!(
+        person_struct,
+        "struct Person { name String, age i16 }",
+        r#struct("Person", vec![("name", RawType::String), ("age", Int(32))])
+    );
+
+    parser_test!(
+        simple_enum,
+        "enum Fruits { Apple, Pear, Orange, Banana }",
+        r#enum("Person", vec!["Apple", "Pear", "Orange", "Banana"])
     );
 
     parser_test!(

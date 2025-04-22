@@ -8,7 +8,7 @@ use crate::{
 };
 
 impl Parser {
-    pub fn parse_after_identifier(&mut self, name: TokenInfo) -> DiagnosticResult<RawNode> {
+    pub fn parse_set_operation(&mut self, name: TokenInfo) -> DiagnosticResult<RawNode> {
         let name = name.into();
         let info = self.expect(&vec![
             Equals,

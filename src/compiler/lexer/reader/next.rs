@@ -11,11 +11,11 @@ impl Reader {
             };
 
             return match start.raw {
-                '/' if self.peek().unwrap().raw == '*' => {
+                '/' if self.peek_second().unwrap().raw == '*' => {
                     self.read_multi_line_comment();
                     continue;
                 }
-                '/' if self.peek().unwrap().raw == '/' => {
+                '/' if self.peek_second().unwrap().raw == '/' => {
                     self.read_line_comment();
                     continue;
                 }

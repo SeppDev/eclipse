@@ -126,7 +126,7 @@ impl TokenKind {
         use TokenKind::*;
 
         match self {
-            Equals | PlusEquals | RangeEquals | RemainderEquals | MultiplyEquals
+            Equals | PlusEquals | RangeEquals | DivideEquals | RemainderEquals | MultiplyEquals
             | SubtractEquals => true,
             _ => false,
         }

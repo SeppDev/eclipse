@@ -77,10 +77,13 @@ impl Reader {
         }
         None
     }
-    pub fn advance_if_eq(&mut self, char: char) -> Option<Character> {
+    pub fn _advance_if_eq(&mut self, char: char) -> Option<Character> {
         self.advance_if(|c| &char == c)
     }
     pub fn peek(&self) -> Option<&Character> {
         self.chars.last()
+    }
+    pub fn peek_second(&self) -> Option<&Character> {
+        self.chars.get(self.chars.len() - 2)
     }
 }
