@@ -1,8 +1,6 @@
-use std::path::PathBuf;
-
-use crate::common::exit::exit;
-
 use super::arguments::{Argument, Arguments};
+use crate::common::exit::exit;
+use std::path::PathBuf;
 
 pub struct CommandLineOptions {
     pub status: bool,
@@ -12,8 +10,9 @@ impl From<Arguments> for CommandLineOptions {
     fn from(mut value: Arguments) -> Self {
         let mut options = Self {
             status: true,
-            active_path: value.current_dir().clone(),
+            active_path: value.current_dir().to_owned(),
         };
+
         while let Some(argument) = value.next_argument() {
             match argument {
                 Argument::Value(value) => match value.as_str() {

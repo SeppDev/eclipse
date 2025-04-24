@@ -1,37 +1,22 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
+
+use crate::compiler::Path;
 
 #[derive(Default)]
 pub struct Files {
-    files: HashMap<PathBuf, String>,
+    files: HashMap<Path, String>,
 }
 impl Files {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn from_cache(&self, full_path: &PathBuf) -> Option<&String> {
+    pub fn cache(&mut self, full_path: Path, source: &str) {
+        self.files.insert(full_path, source.into());
+    }
+    pub fn from_cache(&self, full_path: &Path) -> Option<&String> {
         self.files.get(full_path)
     }
-    pub fn cache_or_read(&self, full_path: &PathBuf) -> Option<String> {
-        if self.files.contains_key(full_path) {
-            return Some(self.from_cache(full_path).unwrap().clone());
-        }
-        let source = match fs::read_to_string(full_path) {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
-
-        Some(source)
+    pub fn fs_read(&self, full_path: &PathBuf) -> std::io::Result<String> {
+        std::fs::read_to_string(full_path)
     }
-    // pub fn read_and_cache(&mut self, full_path: &PathBuf) -> Option<&String> {
-    //     if self.files.contains_key(full_path) {
-    //         return self.from_cache(full_path);
-    //     }
-    //     let source = match fs::read_to_string(full_path) {
-    //         Ok(s) => s,
-    //         Err(_) => return None,
-    //     };
-
-    //     let _old = self.files.insert(full_path.clone(), source);
-    //     self.from_cache(full_path)
-    // }
 }

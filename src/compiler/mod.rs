@@ -1,59 +1,53 @@
-use std::path::PathBuf;
+use context::status::Status;
+use diagnostics::{DiagnosticResult, Diagnostics};
 
-use context::{config::Config, status::Status};
+use crate::common::files::Files;
 
-use crate::{
-    cli::options::CommandLineOptions,
-    common::files::Files,
-    diagnostics::{DiagnosticData, DiagnosticResult, Diagnostics},
-};
+pub type Path = crate::common::path::Path;
 
 pub mod analyzer;
 pub mod context;
+pub mod diagnostics;
 pub mod lexer;
 pub mod nodes;
 pub mod parser;
 
-#[derive(Default)]
+pub struct CompilerBuilder {
+    status: bool,
+}
+impl CompilerBuilder {
+    pub fn new() -> Self {
+        Self { status: true }
+    }
+    pub fn status(mut self, enabled: bool) -> Self {
+        self.status = enabled;
+        self
+    }
+    pub fn build(self) -> CompilerCtx {
+        CompilerCtx {
+            diagnostics: Diagnostics::new(),
+            status: self.status.then(|| Status::new()),
+            files: Files::new(),
+        }
+    }
+}
+
 pub struct CompilerCtx {
-    status: Option<Status>,
-    config: Config,
-    project_path: PathBuf,
-    files: Files,
+    pub status: Option<Status>,
+    pub files: Files,
     diagnostics: Diagnostics,
 }
 impl CompilerCtx {
-    pub fn new(options: CommandLineOptions) -> DiagnosticResult<Self> {
-        let config = Config::open(&options.active_path)?;
-
-        Ok(Self {
-            config,
-            diagnostics: Diagnostics::new(),
-            status: options.status.then(|| Status::new()),
-            project_path: options.active_path,
-            files: Files::new(),
-        })
+    pub fn builder() -> CompilerBuilder {
+        CompilerBuilder::new()
     }
     pub fn test() -> Self {
-        Self::default()
+        Self::builder().status(false).build()
     }
-    fn collect_error<T>(&mut self, result: DiagnosticResult<T>) -> Result<T, ()> {
-        self.diagnostics.collect_error(result)
-    }
-    fn read_relative(&self, relative_path: &PathBuf) -> DiagnosticResult<String> {
-        let path = self.project_path.join(relative_path);
-        match self.files.cache_or_read(&path) {
-            Some(s) => Ok(s),
-            None => Err(DiagnosticData::basic(format!("Path not found"), path)),
-        }
-    }
-    fn read(&self, full_path: &PathBuf) -> DiagnosticResult<String> {
-        match self.files.cache_or_read(&full_path) {
-            Some(s) => Ok(s),
-            None => Err(DiagnosticData::basic(
-                format!("Path not found"),
-                full_path.clone(),
-            )),
-        }
+    pub fn then<F>(self, func: F) -> Self
+    where
+        F: FnOnce(Self) -> Self,
+    {
+        func(self)
     }
 }

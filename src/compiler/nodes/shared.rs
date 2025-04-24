@@ -94,12 +94,14 @@ impl Display for CompareOperator {
             f,
             "{}",
             match self {
+                Or => "||",
+                And => "&&",
                 Not => "!=",
                 Compare => "==",
-                HigherThan => ">",
-                HigherThanOrEquals => ">=",
-                LowerThan => "<",
-                LowerThanOrEquals => "<=",
+                GreaterThan => ">",
+                GreaterThanOrEquals => ">=",
+                LessThan => "<",
+                LessThanOrEquals => "<=",
             }
         )
     }

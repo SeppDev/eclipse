@@ -2,7 +2,6 @@ mod cli;
 mod commands;
 mod common;
 mod compiler;
-mod diagnostics;
 mod test;
 mod utils;
 

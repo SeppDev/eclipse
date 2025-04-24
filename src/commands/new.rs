@@ -17,3 +17,4 @@ pub fn new(mut arguments: Arguments) {
 
     super::init_project(project_path, name);
 }
+

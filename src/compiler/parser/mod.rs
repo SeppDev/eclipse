@@ -1,39 +1,32 @@
 use super::{
+    diagnostics::{DiagnosticResult, DiagnosticsFile},
     lexer::token::{TokenInfo, TokenKind},
     nodes::ast::Node,
     CompilerCtx,
 };
 use crate::{
     common::position::{Located, Position, PositionRange},
-    diagnostics::{DiagnosticData, DiagnosticResult},
     FILE_EXTENSION,
 };
-use std::{borrow::Borrow, fmt::Debug, path::PathBuf};
+use std::{borrow::Borrow, path::PathBuf};
 
 mod node;
+mod reader;
 mod types;
 
-mod reader;
-
-pub struct Parser {
+pub struct Parser<'a> {
+    diagnostics: &'a mut DiagnosticsFile,
     tokens: Vec<TokenInfo>,
-    path: PathBuf,
     last_position: PositionRange,
 }
-
-impl CompilerCtx {
-    pub fn new_parser(&self, mut tokens: Vec<TokenInfo>, path: PathBuf) -> Parser {
+impl<'a> Parser<'a> {
+    pub fn new(mut tokens: Vec<TokenInfo>, diagnostics: &'a mut DiagnosticsFile) -> Self {
         tokens.reverse();
-        Parser {
+        Self {
             tokens,
-            path,
+            diagnostics,
             last_position: PositionRange::default(),
         }
-    }
-}
-impl Parser {
-    pub fn path(&self) -> &PathBuf {
-        &self.path
     }
     pub fn start(&self) -> Position {
         self.peek().position.start
@@ -153,17 +146,13 @@ impl CompilerCtx {
                 None => break,
             };
             path.set_extension(FILE_EXTENSION);
-            let body = self.parse_tokens(&mut to_tokenize, path)?;
+            let nodes = self.parse_tokens(&mut to_tokenize, path)?;
             println!("{:#?}", body);
         }
 
         Ok(())
     }
-    pub(super) fn parse_tokens(
-        &mut self,
-        paths: &mut Vec<PathBuf>,
-        current_path: PathBuf,
-    ) -> DiagnosticResult<Vec<Node>> {
+    pub(super) fn parse_tokens(&mut self) -> DiagnosticResult<Vec<Node>> {
         let file_name = current_path.file_name().unwrap().to_str().unwrap();
         let is_module = file_name.starts_with("main") | file_name.starts_with("mod");
 

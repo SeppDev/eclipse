@@ -4,7 +4,7 @@ use super::{DiagnosticData, DiagnosticLevel};
 
 impl DiagnosticData {
     fn to_string(&self) -> String {
-        let path: String = self.path.clone().to_str().unwrap().into();
+        // let path: String = self.path.clone().to_str().unwrap().into();
         let level = &self.level;
         let title = &self.title;
         let position = match &self.position {
@@ -16,13 +16,13 @@ impl DiagnosticData {
         };
 
         let span = self
-            .notes
+            .spans
             .iter()
             .map(|note| format!("{}", note.message))
             .collect::<Vec<String>>()
             .join("\n");
 
-        format!("{level}: {title}\n\t--> {path}{position}\n{span}")
+        format!("{level}: {title}\n\t--> {position}\n{span}")
     }
 }
 

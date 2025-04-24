@@ -1,13 +1,13 @@
-use crate::{compiler::lexer::kind::LexerKind, diagnostics::DiagnosticResult};
+use crate::compiler::lexer::kind::LexerKind;
 
 use super::Reader;
 
 impl Reader {
-    pub fn next(&mut self) -> DiagnosticResult<Option<LexerKind>> {
+    pub fn next(&mut self) -> Option<LexerKind> {
         loop {
             let start = match self.peek() {
                 Some(c) => c,
-                None => return Ok(None),
+                None => return None,
             };
 
             return match start.raw {

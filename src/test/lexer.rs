@@ -9,7 +9,7 @@ mod lexer {
     };
 
     fn test_lexer(input: &str, expected: Vec<TokenKind>) {
-        let compiler = CompilerCtx::test();
+        let mut compiler = CompilerCtx::test();
         let tokens = compiler.tokenize(input).unwrap();
         token_stream_eq(tokens, expected);
     }
@@ -46,11 +46,7 @@ mod lexer {
         [Function, Identifier, OpenParen, CloseParen, OpenBlock, CloseBlock]
     );
 
-    lexer_test!(
-        only_block,
-        "{}",
-        [OpenBlock, CloseBlock]
-    );
+    lexer_test!(only_block, "{}", [OpenBlock, CloseBlock]);
 
     lexer_test!(
         add_one,

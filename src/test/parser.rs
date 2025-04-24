@@ -33,9 +33,7 @@ mod parser {
 
     fn test_init(input: &str) -> Node {
         let compiler = CompilerCtx::test();
-        let tokens = compiler.tokenize(input).unwrap();
-        let mut parser = compiler.new_parser(tokens, PathBuf::default());
-        parser.expect_node().unwrap()
+        compiler.parse();
     }
 
     fn test_parser_eq(input: &str, expected: RawNode) {

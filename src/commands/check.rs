@@ -4,7 +4,12 @@ use crate::{
 };
 
 pub fn check(arguments: Arguments) {
-    let options = CommandLineOptions::from(arguments);
-    let mut compiler = CompilerCtx::new(options).unwrap_or_else(|e| e.exit());
-    compiler.analyze().unwrap_or_else(|e| e.exit());
+    let compiler: CompilerCtx = CommandLineOptions::from(arguments).into();
+    compiler.analyze();
+}
+
+impl Into<CompilerCtx> for CommandLineOptions {
+    fn into(self) -> CompilerCtx {
+        CompilerCtx::builder().status(self.status).build()
+    }
 }

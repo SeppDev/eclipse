@@ -10,6 +10,8 @@ pub mod number;
 pub mod operators;
 pub mod string;
 
+pub const TAB_SIZE: usize = 4;
+
 pub struct Reader {
     chars: Vec<Character>,
 }
@@ -18,7 +20,6 @@ pub type Character = Located<char>;
 
 impl CompilerCtx {
     pub fn new_reader(&self, source: &str) -> Reader {
-        let tab_size = self.config.editor.tab_size;
         let mut input = source.chars();
         let mut output: Vec<Character> = Vec::with_capacity(source.len());
 
@@ -40,7 +41,7 @@ impl CompilerCtx {
                     character = 0;
                 }
                 '\t' => {
-                    column += tab_size;
+                    column += TAB_SIZE;
                 }
                 _ => column += 1,
             }

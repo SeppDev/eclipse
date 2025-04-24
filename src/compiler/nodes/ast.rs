@@ -28,6 +28,13 @@ pub struct RawParameter {
     pub data_type: Type,
 }
 
+pub type UsePath = Located<RawUsePath>;
+#[derive(Debug, PartialEq)]
+pub enum RawUsePath {
+    String(String),
+    List(Vec<UsePath>),
+}
+
 #[derive(Debug, PartialEq)]
 pub enum RawNode {
     Function {
@@ -61,12 +68,6 @@ pub enum RawNode {
         right: Box<Node>,
         operator: CompareOperator,
     },
-    Field(Box<Node>, Identifier),
-    Call(String, Vec<Node>),
-    Return(Option<Box<Node>>),
-    Break(Option<Box<Node>>),
-    Continue(Option<Box<Node>>),
-    Loop(Box<Node>),
     While {
         condition: Box<Node>,
         body: Box<Node>,
@@ -75,6 +76,14 @@ pub enum RawNode {
         condition: Box<Node>,
         body: Box<Node>,
     },
+    Field(Box<Node>, Identifier),
+    Call(String, Vec<Node>),
+    Return(Option<Box<Node>>),
+    Break(Option<Box<Node>>),
+    Continue(Option<Box<Node>>),
+    Loop(Box<Node>),
+    Use(UsePath),
+    Import(Identifier),
     Identifier(String),
     String(String),
     Bool(bool),

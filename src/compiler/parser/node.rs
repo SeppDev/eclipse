@@ -7,7 +7,6 @@ use crate::{
 };
 
 mod block;
-mod call;
 mod expression;
 mod function;
 mod keyword;
