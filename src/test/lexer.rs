@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod lexer {
-    use crate::compiler::{
-        lexer::token::{
+
+    use crate::compiler::lexer::{
+        token::{
             TokenInfo,
             TokenKind::{self, *},
         },
-        CompilerCtx,
+        tokenize,
     };
 
     fn test_lexer(input: &str, expected: Vec<TokenKind>) {
-        let mut compiler = CompilerCtx::test();
-        let tokens = compiler.tokenize(input).unwrap();
+        let tokens = tokenize(input).unwrap();
         token_stream_eq(tokens, expected);
     }
 

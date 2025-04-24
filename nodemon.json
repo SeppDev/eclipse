@@ -1,7 +1,5 @@
 {
-  "watch": [
-    "src", "./.env"
-  ],
+  "watch": ["src"],
   "ext": "rs,toml,json,env",
-  "exec": "cargo run"
+  "exec": "cargo test"
 }

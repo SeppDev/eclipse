@@ -1,14 +1,15 @@
 use crate::{
-    common::position::Located,
-    compiler::{lexer::token::TokenKind, nodes::ast::RawNode, parser::Parser},
-    diagnostics::DiagnosticResult,
+    common::position::LocatedAt,
+    compiler::{
+        diagnostics::DiagnosticResult, lexer::token::TokenKind, nodes::ast::RawNode, parser::Parser,
+    },
 };
 
 impl Parser {
     pub fn parse_variable_decl(&mut self) -> DiagnosticResult<RawNode> {
         let mutable = self
             .next_if_eq(TokenKind::Mutable)?
-            .and_then(|i| Some(Located::new((), i.position)));
+            .and_then(|i| Some(LocatedAt::new((), i.position)));
 
         let name = self.expect_identifier()?.into();
         let data_type = if self.next_if_eq(TokenKind::Colon)?.is_some() {

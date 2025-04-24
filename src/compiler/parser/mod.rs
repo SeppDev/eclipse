@@ -1,39 +1,92 @@
+use std::borrow::Borrow;
+
 use super::{
-    diagnostics::{DiagnosticResult, DiagnosticsFile},
-    lexer::token::{TokenInfo, TokenKind},
-    nodes::ast::Node,
+    diagnostics::{DiagnosticData, DiagnosticResult},
+    lexer::{
+        token::{TokenInfo, TokenKind},
+        tokenize,
+    },
+    nodes::ast::{Node, RawNode},
     CompilerCtx,
 };
 use crate::{
-    common::position::{Located, Position, PositionRange},
+    common::position::{LocatedAt, Position, PositionRange},
+    compiler::Path,
     FILE_EXTENSION,
 };
-use std::{borrow::Borrow, path::PathBuf};
 
 mod node;
 mod reader;
 mod types;
 
-pub struct Parser<'a> {
-    diagnostics: &'a mut DiagnosticsFile,
+impl CompilerCtx {
+    pub fn parse(&mut self) -> DiagnosticResult<Vec<Node>> {
+        self.parse_relative(Path::new().join("src").join("main"))
+    }
+    pub fn parse_relative(&mut self, mut relative_path: Path) -> DiagnosticResult<Vec<Node>> {
+        relative_path.set_extension(FILE_EXTENSION);
+
+        self.message(format!("Parsing: {relative_path}"));
+
+        let diagnostics = self.diagnostics.file(relative_path.clone());
+        let full_path = self.resolve_path(relative_path);
+
+        let msg = format!("Failed to find: {full_path}");
+        let source = match self.files.from_cache(&full_path) {
+            Some(s) => s,
+            None => &self.files.fs_read(&full_path.into()).expect(msg.as_str()),
+        };
+
+        let mut parser = Parser::new(source)?;
+        let nodes = parser.parse()?;
+
+        Ok(nodes)
+    }
+}
+
+pub struct Parser {
     tokens: Vec<TokenInfo>,
     last_position: PositionRange,
 }
-impl<'a> Parser<'a> {
-    pub fn new(mut tokens: Vec<TokenInfo>, diagnostics: &'a mut DiagnosticsFile) -> Self {
+impl Parser {
+    pub fn new(source: &String) -> DiagnosticResult<Self> {
+        let mut tokens = tokenize(source)?;
         tokens.reverse();
-        Self {
+
+        Ok(Self {
             tokens,
-            diagnostics,
             last_position: PositionRange::default(),
+        })
+    }
+    pub fn parse(&mut self) -> DiagnosticResult<Vec<Node>> {
+        let mut nodes = Vec::new();
+
+        loop {
+            if self.is_eof() {
+                break;
+            }
+
+            if let Some(node) = self.next_if_eq(TokenKind::Import)? {
+                let name = self.expect_identifier()?;
+                let mut position = node.position;
+                position.set_end(name.position.end);
+
+                nodes.push(Node::new(RawNode::Import(name.into()), position));
+                continue;
+            }
+
+            let expression = self.expect_node()?;
+            nodes.push(expression);
         }
+
+        Ok(nodes)
     }
     pub fn start(&self) -> Position {
         self.peek().position.start
     }
-    pub fn located<T>(&mut self, value: T, start: Position) -> Located<T> {
+    pub fn located<T>(&mut self, value: T, start: Position) -> LocatedAt<T> {
         let end = self.last_position.end;
-        return Located::new(value, PositionRange::new(start, end));
+        return LocatedAt::new(value, PositionRange::new(start, end));
     }
     pub fn is_eof(&self) -> bool {
         self.peek().kind == TokenKind::EndOfFile
@@ -42,12 +95,10 @@ impl<'a> Parser<'a> {
         let token = self.tokens.pop().unwrap();
 
         if token.kind == TokenKind::EndOfFile {
-            return Err(DiagnosticData::new(
-                "Expected token got <eof>",
-                self.path.clone(),
-                "",
-                token.position,
-            ));
+            return DiagnosticData::error()
+                .title("Expected token got <eof>")
+                .position(token.position)
+                .to_err();
         }
         self.last_position = token.position;
 
@@ -95,20 +146,20 @@ impl<'a> Parser<'a> {
             }
         }
 
-        Err(DiagnosticData::new(
-            format!(
-                "Expected token(s): {}, got: '{:?}'",
-                expected
-                    .iter()
-                    .map(|e| format!("'{e:?}'"))
-                    .collect::<Vec<String>>()
-                    .join(", "),
-                peeked.kind
-            ),
-            self.path.clone(),
-            "",
-            peeked.position.clone(),
-        ))
+        let title = format!(
+            "Expected token(s): {}, got: '{:?}'",
+            expected
+                .iter()
+                .map(|e| format!("'{e:?}'"))
+                .collect::<Vec<String>>()
+                .join(", "),
+            peeked.kind
+        );
+
+        DiagnosticData::error()
+            .title(title)
+            .position(peeked.position.clone())
+            .to_err()
     }
     pub fn peek_found(&self, expected: &Vec<TokenKind>) -> Option<&TokenInfo> {
         let peeked = self.peek();
@@ -135,100 +186,51 @@ impl<'a> Parser<'a> {
     }
 }
 
-impl CompilerCtx {
-    pub fn parse(&mut self) -> DiagnosticResult<()> {
-        let mut to_tokenize = Vec::new();
-        to_tokenize.push(PathBuf::from("src/main"));
+// pub(super) fn handle_import(
+//     &self,
+//     current_path: &PathBuf,
+//     is_module: &bool,
+//     file_name: &str,
+//     name: &String,
+// ) -> DiagnosticResult<PathBuf> {
+//     let paths: [PathBuf; 2] = if *is_module {
+//         [
+//             current_path.parent().unwrap().join(&name),
+//             current_path.parent().unwrap().join(&name).join("mod"),
+//         ]
+//     } else {
+//         [
+//             current_path.parent().unwrap().join(&file_name).join(&name),
+//             current_path
+//                 .parent()
+//                 .unwrap()
+//                 .join(&name)
+//                 .join(&file_name)
+//                 .join("mod"),
+//         ]
+//     };
 
-        loop {
-            let mut path = match to_tokenize.pop() {
-                Some(p) => p,
-                None => break,
-            };
-            path.set_extension(FILE_EXTENSION);
-            let nodes = self.parse_tokens(&mut to_tokenize, path)?;
-            println!("{:#?}", body);
-        }
+//     let mut found_paths: Vec<PathBuf> = Vec::with_capacity(2);
+//     for path in paths {
+//         let mut full_path = self.project_path.join(&path);
+//         full_path.set_extension(FILE_EXTENSION);
 
-        Ok(())
-    }
-    pub(super) fn parse_tokens(&mut self) -> DiagnosticResult<Vec<Node>> {
-        let file_name = current_path.file_name().unwrap().to_str().unwrap();
-        let is_module = file_name.starts_with("main") | file_name.starts_with("mod");
+//         if full_path.exists() {
+//             found_paths.push(path);
+//         }
+//     }
 
-        self.message(format!("{current_path:?}"));
-        let source = self.read_relative(&current_path)?;
-        let tokens = self.tokenize(source.as_str())?;
+//     if found_paths.len() == 0 {
+//         return Err(DiagnosticData::basic(
+//             "No valid path found",
+//             current_path.clone(),
+//         ));
+//     } else if found_paths.len() == 2 {
+//         return Err(DiagnosticData::basic(
+//             "Only one path can be active",
+//             current_path.clone(),
+//         ));
+//     }
 
-        let mut parser = self.new_parser(tokens, current_path.clone());
-        let mut body = Vec::new();
-
-        loop {
-            if parser.is_eof() {
-                break;
-            }
-
-            if parser.next_if_eq(TokenKind::Import)?.is_some() {
-                let name = parser.expect_identifier()?;
-                let path =
-                    self.handle_import(&current_path, &is_module, file_name, &name.string)?;
-                paths.push(path);
-                continue;
-            }
-
-            let expression = parser.expect_node()?;
-            body.push(expression);
-        }
-
-        Ok(body)
-    }
-
-    pub(super) fn handle_import(
-        &self,
-        current_path: &PathBuf,
-        is_module: &bool,
-        file_name: &str,
-        name: &String,
-    ) -> DiagnosticResult<PathBuf> {
-        let paths: [PathBuf; 2] = if *is_module {
-            [
-                current_path.parent().unwrap().join(&name),
-                current_path.parent().unwrap().join(&name).join("mod"),
-            ]
-        } else {
-            [
-                current_path.parent().unwrap().join(&file_name).join(&name),
-                current_path
-                    .parent()
-                    .unwrap()
-                    .join(&name)
-                    .join(&file_name)
-                    .join("mod"),
-            ]
-        };
-
-        let mut found_paths: Vec<PathBuf> = Vec::with_capacity(2);
-        for path in paths {
-            let mut full_path = self.project_path.join(&path);
-            full_path.set_extension(FILE_EXTENSION);
-
-            if full_path.exists() {
-                found_paths.push(path);
-            }
-        }
-
-        if found_paths.len() == 0 {
-            return Err(DiagnosticData::basic(
-                "No valid path found",
-                current_path.clone(),
-            ));
-        } else if found_paths.len() == 2 {
-            return Err(DiagnosticData::basic(
-                "Only one path can be active",
-                current_path.clone(),
-            ));
-        }
-
-        Ok(found_paths.pop().unwrap())
-    }
-}
+//     Ok(found_paths.pop().unwrap())
+// }

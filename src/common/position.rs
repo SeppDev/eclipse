@@ -39,7 +39,7 @@ impl PositionRange {
             end: end.end,
         }
     }
-    pub fn set_start(&mut self, position: Position) {
+    pub fn _set_start(&mut self, position: Position) {
         self.start = position;
     }
     pub fn set_end(&mut self, position: Position) {
@@ -58,31 +58,31 @@ impl std::fmt::Display for PositionRange {
 }
 
 #[derive(Default, Clone)]
-pub struct Located<T> {
+pub struct LocatedAt<T> {
     pub position: PositionRange,
     pub raw: T,
 }
-impl<T> From<T> for Located<T> {
+impl<T> From<T> for LocatedAt<T> {
     fn from(value: T) -> Self {
-        Located::new(value, PositionRange::default())
+        LocatedAt::new(value, PositionRange::default())
     }
 }
-impl<T> Into<Option<T>> for Located<T> {
+impl<T> Into<Option<T>> for LocatedAt<T> {
     fn into(self) -> Option<T> {
         Some(self.raw)
     }
 }
-impl<T: PartialEq> PartialEq for Located<T> {
+impl<T: PartialEq> PartialEq for LocatedAt<T> {
     fn eq(&self, other: &Self) -> bool {
         self.raw == other.raw
     }
 }
-impl<T> Located<T> {
+impl<T> LocatedAt<T> {
     pub fn new(raw: T, position: PositionRange) -> Self {
         Self { raw, position }
     }
 }
-impl<T: Debug> Debug for Located<T> {
+impl<T: Debug> Debug for LocatedAt<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}) {:#?}", self.position, self.raw)
     }

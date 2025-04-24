@@ -1,9 +1,7 @@
 #[cfg(test)]
 mod parser {
-    use std::path::PathBuf;
-
     use crate::{
-        common::position::Located,
+        common::position::LocatedAt,
         compiler::{
             nodes::{
                 ast::{
@@ -18,8 +16,9 @@ mod parser {
                     EqualsOperation::{self, *},
                 },
             },
-            CompilerCtx,
+            CompilerCtx, Path,
         },
+        FILE_EXTENSION,
     };
 
     macro_rules! parser_test {
@@ -32,13 +31,21 @@ mod parser {
     }
 
     fn test_init(input: &str) -> Node {
-        let compiler = CompilerCtx::test();
-        compiler.parse();
+        let mut compiler = CompilerCtx::test();
+
+        let mut main_path = Path::new().join("src").join("main");
+        main_path.set_extension(FILE_EXTENSION);
+
+        compiler.files.cache(compiler.resolve_path(main_path), input);
+        let mut nodes = compiler.parse().unwrap();
+        assert!(nodes.len() == 1, "Expected only 1 node and got more");
+        nodes.pop().unwrap()
     }
 
     fn test_parser_eq(input: &str, expected: RawNode) {
-        let expected = expected.into();
+        let expected: Node = expected.into();
         let node = test_init(input);
+
         assert!(
             node == expected,
             "INPUT: {}\n{}\n-------------------------------------\n{}",
@@ -92,7 +99,7 @@ mod parser {
         value: RawNode,
     ) -> RawNode {
         Declare {
-            mutable: mutable.then_some(Located::from(())),
+            mutable: mutable.then_some(LocatedAt::from(())),
             name: name.to_string().into(),
             data_type,
             node: value.into(),

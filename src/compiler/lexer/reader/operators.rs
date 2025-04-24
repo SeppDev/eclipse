@@ -1,8 +1,8 @@
-use crate::{compiler::lexer::kind::LexerKind, diagnostics::DiagnosticResult};
+use crate::compiler::{diagnostics::DiagnosticResult, lexer::kind::LexerKind};
 
-use super::Reader;
+use super::LexerReader;
 
-impl Reader {
+impl LexerReader {
     pub fn parse_operators(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let mut operators = Vec::new();
         operators.push(self.advance().unwrap());

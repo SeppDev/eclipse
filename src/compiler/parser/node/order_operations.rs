@@ -1,10 +1,8 @@
-use crate::{
-    compiler::{
-        lexer::token::{TokenInfo, TokenKind},
-        nodes::ast::{Node, RawNode},
-        parser::Parser,
-    },
+use crate::compiler::{
     diagnostics::DiagnosticResult,
+    lexer::token::{TokenInfo, TokenKind},
+    nodes::ast::{Node, RawNode},
+    parser::Parser,
 };
 
 #[derive(Debug)]

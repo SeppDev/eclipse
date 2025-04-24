@@ -1,9 +1,7 @@
-use crate::{
-    compiler::{
-        lexer::token::TokenKind,
-        nodes::ast::{Node, RawNode},
-    },
+use crate::compiler::{
     diagnostics::DiagnosticResult,
+    lexer::token::TokenKind,
+    nodes::ast::{Node, RawNode},
 };
 
 mod block;

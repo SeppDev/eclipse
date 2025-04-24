@@ -1,19 +1,19 @@
 use std::fmt::Display;
 
-use crate::{common::position::Located, compiler::lexer::token::TokenInfo};
+use crate::{common::position::LocatedAt, compiler::lexer::token::TokenInfo};
 
 use super::shared::{ArithmethicOperator, CompareOperator, EqualsOperation};
 
-pub type Node = Located<RawNode>;
+pub type Node = LocatedAt<RawNode>;
 
-pub type Location = Located<()>;
-pub type Parameter = Located<RawParameter>;
-pub type Type = Located<RawType>;
+pub type Location = LocatedAt<()>;
+pub type Parameter = LocatedAt<RawParameter>;
+pub type Type = LocatedAt<RawType>;
 
-pub type Identifier = Located<String>;
+pub type Identifier = LocatedAt<String>;
 impl From<TokenInfo> for Identifier {
     fn from(value: TokenInfo) -> Self {
-        Located {
+        LocatedAt {
             position: value.position,
             raw: value.string,
         }
@@ -28,7 +28,7 @@ pub struct RawParameter {
     pub data_type: Type,
 }
 
-pub type UsePath = Located<RawUsePath>;
+pub type UsePath = LocatedAt<RawUsePath>;
 #[derive(Debug, PartialEq)]
 pub enum RawUsePath {
     String(String),

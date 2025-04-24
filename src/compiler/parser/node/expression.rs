@@ -1,10 +1,8 @@
-use crate::{
-    compiler::{
-        lexer::token::{TokenInfo, TokenKind},
-        nodes::ast::{Node, RawNode},
-        parser::Parser,
-    },
+use crate::compiler::{
     diagnostics::{DiagnosticData, DiagnosticResult},
+    lexer::token::{TokenInfo, TokenKind},
+    nodes::ast::{Node, RawNode},
+    parser::Parser,
 };
 
 impl Parser {
@@ -89,12 +87,10 @@ impl Parser {
                 }
             }
             _ => {
-                return Err(DiagnosticData::new(
-                    "Expected expression",
-                    self.path().clone(),
-                    "",
-                    info.position,
-                ))
+                return DiagnosticData::error()
+                    .title("Expected expression")
+                    .position(info.position)
+                    .to_err();
             }
         };
 

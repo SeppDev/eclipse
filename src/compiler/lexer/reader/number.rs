@@ -1,11 +1,11 @@
-use crate::{
-    compiler::lexer::kind::{LexerKind, LocatedString},
+use crate::compiler::{
     diagnostics::DiagnosticResult,
+    lexer::kind::{LexerKind, LocatedString},
 };
 
-use super::Reader;
+use super::LexerReader;
 
-impl Reader {
+impl LexerReader {
     pub fn parse_number(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let integer = self.parse_integer()?;
 

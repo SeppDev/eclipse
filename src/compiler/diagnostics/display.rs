@@ -45,9 +45,8 @@ impl Display for DiagnosticLevel {
             match self {
                 Self::Error => "Error",
                 Self::Warning => "Warning",
-                Self::Hint => "Hint",
-                Self::Info => "Info",
                 Self::Note => "Note",
+                Self::Help => "Help",
             }
         )
     }

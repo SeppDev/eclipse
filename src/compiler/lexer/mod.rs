@@ -4,92 +4,87 @@ pub mod token;
 
 use crate::{
     common::position::{Position, PositionRange},
-    diagnostics::DiagnosticResult,
+    compiler::diagnostics::DiagnosticResult,
 };
 use kind::{LexerKind, LocatedString};
-use reader::Character;
+use reader::{Character, LexerReader};
 use std::ops::Range;
 use token::{match_token, TokenInfo, TokenKind, MAX_OPERATOR_WIDTH};
 
-use super::CompilerCtx;
+pub fn tokenize(source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
+    let mut reader = LexerReader::new(source);
+    let mut tokens = Vec::new();
 
-impl CompilerCtx {
-    pub fn tokenize(&self, source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
-        let mut reader = self.new_reader(source);
-
-        let mut tokens = Vec::new();
-
-        loop {
-            let kind = match reader.next()? {
-                Some(k) => k,
-                None => break,
-            };
-            let token = match kind {
-                LexerKind::String(located) => {
-                    TokenInfo::new(located.raw, TokenKind::String, located.position)
-                }
-                LexerKind::Character(located) => {
-                    TokenInfo::new(located.raw, TokenKind::Character, located.position)
-                }
-                LexerKind::Identifier(located) => {
-                    let kind = if let Some(kind) = match_token(&located.raw) {
-                        kind
-                    } else {
-                        TokenKind::Identifier
-                    };
-                    TokenInfo::new(located.raw, kind, located.position)
-                }
-                LexerKind::Integer(located) => {
-                    TokenInfo::new(located.raw, TokenKind::Integer, located.position)
-                }
-                LexerKind::Float(located) => {
-                    TokenInfo::new(located.raw, TokenKind::Float, located.position)
-                }
-                LexerKind::Operators(mut chars) => {
-                    let mut unkown = false;
-                    while chars.len() > 0 {
-                        if unkown {
-                            let char = chars.pop().unwrap();
-                            tokens.push(TokenInfo::new(
-                                char.raw.into(),
-                                TokenKind::Unkown,
-                                char.position,
-                            ));
-                            continue;
-                        }
-
-                        let len = chars.len().min(MAX_OPERATOR_WIDTH);
-
-                        let mut is_final = true;
-                        for i in 0..len {
-                            let range = 0..len - i;
-                            let string = chars_to_string(&chars, range.clone());
-
-                            let kind = match match_token(&string.raw) {
-                                Some(t) => t,
-                                None => continue,
-                            };
-
-                            chars.drain(range);
-                            tokens.push(TokenInfo::new(string.raw, kind, string.position));
-                            is_final = false;
-                            break;
-                        }
-                        unkown = is_final;
+    loop {
+        let kind = match reader.next()? {
+            Some(k) => k,
+            None => break,
+        };
+        let token = match kind {
+            LexerKind::String(position) => {
+                TokenInfo::new(position.raw, TokenKind::String, position.position)
+            }
+            LexerKind::Character(position) => {
+                TokenInfo::new(position.raw, TokenKind::Character, position.position)
+            }
+            LexerKind::Identifier(position) => {
+                let kind = if let Some(kind) = match_token(&position.raw) {
+                    kind
+                } else {
+                    TokenKind::Identifier
+                };
+                TokenInfo::new(position.raw, kind, position.position)
+            }
+            LexerKind::Integer(position) => {
+                TokenInfo::new(position.raw, TokenKind::Integer, position.position)
+            }
+            LexerKind::Float(position) => {
+                TokenInfo::new(position.raw, TokenKind::Float, position.position)
+            }
+            LexerKind::Operators(mut chars) => {
+                let mut unkown = false;
+                while chars.len() > 0 {
+                    if unkown {
+                        let char = chars.pop().unwrap();
+                        tokens.push(TokenInfo::new(
+                            char.raw.into(),
+                            TokenKind::Unkown,
+                            char.position,
+                        ));
+                        continue;
                     }
-                    continue;
-                }
-            };
-            tokens.push(token);
-        }
 
-        tokens.push(TokenInfo::new(
-            "".into(),
-            TokenKind::EndOfFile,
-            Position::new(0, 0, 0).to_range(),
-        ));
-        Ok(tokens)
+                    let len = chars.len().min(MAX_OPERATOR_WIDTH);
+
+                    let mut is_final = true;
+                    for i in 0..len {
+                        let range = 0..len - i;
+                        let string = chars_to_string(&chars, range.clone());
+
+                        let kind = match match_token(&string.raw) {
+                            Some(t) => t,
+                            None => continue,
+                        };
+
+                        chars.drain(range);
+                        tokens.push(TokenInfo::new(string.raw, kind, string.position));
+                        is_final = false;
+                        break;
+                    }
+                    unkown = is_final;
+                }
+                continue;
+            }
+        };
+        tokens.push(token);
     }
+
+    tokens.push(TokenInfo::new(
+        "".into(),
+        TokenKind::EndOfFile,
+        Position::new(0, 0, 0).to_range(),
+    ));
+    Ok(tokens)
 }
 
 fn chars_to_string(chars: &Vec<Character>, range: Range<usize>) -> LocatedString {

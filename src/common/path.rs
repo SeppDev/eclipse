@@ -8,12 +8,14 @@ pub struct Path {
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let body = self.components.join("/");
-        let extension: &str = match &self.extension {
-            Some(extension) => extension,
-            _ => "",
+        let mut extension: String = String::new();
+       
+        if let Some(ext) = &self.extension {
+            extension.push('.');
+            extension.push_str(ext.as_str());
         };
 
-        write!(f, "{body:?}.{extension}")
+        write!(f, "{body}{extension}")
     }
 }
 impl Into<PathBuf> for Path {
@@ -64,6 +66,9 @@ impl Path {
             self.extension = Some(extension.into())
         }
     }
+    pub fn extension(&self) -> &Option<String> {
+        &self.extension
+    }
     pub fn join(&self, name: &str) -> Self {
         let mut new = self.clone();
         new.push(name);
@@ -79,6 +84,9 @@ impl Path {
         let mut clone = self.clone();
         clone.pop();
         clone
+    }
+    pub fn extend(&mut self, path: Path) {
+        self.components.extend(path.components.into_iter());
     }
     pub fn len(&self) -> usize {
         return self.components.len();

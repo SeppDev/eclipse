@@ -1,6 +1,6 @@
-use crate::{
-    compiler::nodes::ast::{RawType, Type},
+use crate::compiler::{
     diagnostics::DiagnosticResult,
+    nodes::ast::{RawType, Type},
 };
 
 use super::Parser;

@@ -1,9 +1,7 @@
-use crate::{
-    compiler::{
-        nodes::ast::{Node, RawNode},
-        parser::Parser,
-    },
+use crate::compiler::{
     diagnostics::DiagnosticResult,
+    nodes::ast::{Node, RawNode},
+    parser::Parser,
 };
 
 impl Parser {
@@ -23,5 +21,4 @@ impl Parser {
     pub fn parse_continue(&mut self) -> DiagnosticResult<RawNode> {
         Ok(RawNode::Continue(self.expect_potential_value()?))
     }
-
 }

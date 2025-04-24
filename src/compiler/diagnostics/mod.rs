@@ -11,16 +11,15 @@ pub enum DiagnosticLevel {
     #[default]
     Error,
     Warning,
-    Info,
-    Hint,
+    Help,
     Note,
 }
 
 #[derive(Default)]
 pub struct DiagnosticSpan {
-    path: Path,
+    path: Option<Path>,
+    position: Option<PositionRange>,
     message: String,
-    position: PositionRange,
 }
 
 #[derive(Default)]

@@ -1,7 +1,4 @@
-use crate::{
-    common::position::{Located, Position},
-    compiler::CompilerCtx,
-};
+use crate::common::position::{LocatedAt, Position};
 
 pub mod comments;
 pub mod identifier;
@@ -12,14 +9,14 @@ pub mod string;
 
 pub const TAB_SIZE: usize = 4;
 
-pub struct Reader {
+pub struct LexerReader {
     chars: Vec<Character>,
 }
 
-pub type Character = Located<char>;
+pub type Character = LocatedAt<char>;
 
-impl CompilerCtx {
-    pub fn new_reader(&self, source: &str) -> Reader {
+impl LexerReader {
+    pub fn new(source: &str) -> Self {
         let mut input = source.chars();
         let mut output: Vec<Character> = Vec::with_capacity(source.len());
 
@@ -56,11 +53,9 @@ impl CompilerCtx {
         }
         output.reverse();
 
-        Reader { chars: output }
+        Self { chars: output }
     }
-}
 
-impl Reader {
     pub fn advance(&mut self) -> Option<Character> {
         self.chars.pop()
     }

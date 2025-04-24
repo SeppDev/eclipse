@@ -1,4 +1,16 @@
 mod lexer;
 mod parser;
 
-pub(super) const TEST_PATH: &str = "/test/src";
+#[cfg(test)]
+mod init {
+    use crate::{common::path::Path, compiler::CompilerCtx};
+
+    impl CompilerCtx {
+        pub fn test() -> Self {
+            Self::builder()
+                .status(false)
+                .project_path(Path::single("test"))
+                .build()
+        }
+    }
+}

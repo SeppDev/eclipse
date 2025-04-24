@@ -1,8 +1,8 @@
-use crate::common::position::Located;
+use crate::common::position::LocatedAt;
 
 use super::reader::Character;
 
-pub type LocatedString = Located<String>;
+pub type LocatedString = LocatedAt<String>;
 
 #[derive(Debug)]
 pub enum LexerKind {
