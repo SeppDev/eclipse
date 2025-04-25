@@ -10,7 +10,7 @@ impl Parser {
         let name = self.expect_identifier()?.into();
         let parameters = self.expect_parameters()?;
         let return_type = if self.next_if_eq(TokenKind::Colon)?.is_some() {
-            Some(self.parse_type()?)
+            Some(self.expect_type()?)
         } else {
             None
         };
@@ -39,7 +39,7 @@ impl Parser {
             let reference = self.next_if_eq(TokenKind::Ampersand)?;
             let mutable = self.next_if_eq(TokenKind::Mutable)?;
             let name = self.expect_identifier()?.into();
-            let data_type = self.parse_type()?;
+            let data_type = self.expect_type()?;
 
             let parameter = RawParameter {
                 reference,

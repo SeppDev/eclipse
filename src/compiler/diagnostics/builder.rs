@@ -1,6 +1,7 @@
 use super::{DiagnosticData, DiagnosticLevel, DiagnosticResult, DiagnosticSpan};
 use crate::{common::position::PositionRange, compiler::Path};
 
+#[allow(unused)]
 impl DiagnosticData {
     fn new(level: DiagnosticLevel) -> Self {
         Self {
@@ -46,6 +47,7 @@ impl<T> Into<DiagnosticResult<T>> for DiagnosticData {
     }
 }
 
+#[allow(unused)]
 impl DiagnosticSpan {
     pub fn new(message: &str) -> Self {
         Self {

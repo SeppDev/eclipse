@@ -1,9 +1,7 @@
-use std::f32::consts::PI;
-
 use context::status::Status;
 use diagnostics::Diagnostics;
 
-use crate::common::files::Files;
+use crate::{common::files::Files, FILE_EXTENSION};
 
 pub type Path = crate::common::path::Path;
 
@@ -29,36 +27,33 @@ impl CompilerBuilder {
         self.status = enabled;
         self
     }
-    pub fn disable_std(mut self) -> Self {
-        todo!()
-    }
     pub fn project_path(mut self, path: Path) -> Self {
         self.project_path = path;
         self
     }
     pub fn build(self) -> CompilerCtx {
         let project_path = self.project_path;
+        let mut files = Files::new();
+        let mut path = Path::single("std");
+        path.set_extension(FILE_EXTENSION);
+
+        files.cache(path, "import test");
+
         CompilerCtx {
             project_path,
+            files,
             diagnostics: Diagnostics::new(),
             status: self.status.then(|| Status::new()),
-            files: Files::new(),
         }
     }
 }
 
+#[allow(unused)]
 pub struct CompilerCtx {
-    pub status: Option<Status>,
     pub files: Files,
+    pub status: Option<Status>,
     project_path: Path,
     diagnostics: Diagnostics,
-}
-impl Drop for CompilerCtx {
-    fn drop(&mut self) {
-        if let Some(status) = &self.status {
-            status.quit();
-        }
-    }
 }
 impl CompilerCtx {
     pub fn builder() -> CompilerBuilder {
@@ -72,7 +67,7 @@ impl CompilerCtx {
         path.extend(relative_path);
         path
     }
-    pub fn then<F>(self, func: F) -> Self
+    pub fn _then<F>(self, func: F) -> Self
     where
         F: FnOnce(Self) -> Self,
     {

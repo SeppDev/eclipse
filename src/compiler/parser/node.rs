@@ -11,6 +11,7 @@ mod keyword;
 mod order_operations;
 mod set;
 mod variable;
+mod namespace;
 
 use super::Parser;
 
@@ -32,7 +33,7 @@ impl Parser {
         let start = self.start();
         let info = self.expect(&vec![
             Function, OpenBlock, Return, Break, Continue, Var, Integer, Minus, Float, Boolean,
-            String,
+            String, Use
         ])?;
 
         let raw: RawNode = match info.kind {
@@ -42,6 +43,7 @@ impl Parser {
             Return => self.parse_return()?,
             Break => self.parse_break()?,
             Continue => self.parse_continue()?,
+            Use => self.parse_use()?,
             _ => unreachable!(),
         };
 

@@ -28,10 +28,10 @@ pub struct RawParameter {
     pub data_type: Type,
 }
 
-pub type UsePath = LocatedAt<RawUsePath>;
 #[derive(Debug, PartialEq)]
-pub enum RawUsePath {
-    String(String),
+pub enum UsePath {
+    Ident(Identifier),
+    Extend(Identifier, Box<UsePath>),
     List(Vec<UsePath>),
 }
 
@@ -72,10 +72,6 @@ pub enum RawNode {
         condition: Box<Node>,
         body: Box<Node>,
     },
-    If {
-        condition: Box<Node>,
-        body: Box<Node>,
-    },
     Field(Box<Node>, Identifier),
     Call(String, Vec<Node>),
     Return(Option<Box<Node>>),
@@ -93,14 +89,14 @@ pub enum RawNode {
     Tuple(Vec<Node>),
     Wrapped(Option<Box<Node>>),
     Block(Vec<Node>),
-    Enum {
-        name: Identifier,
-        items: Vec<Identifier>,
-    },
-    Struct {
-        name: Identifier,
-        fields: Vec<(Identifier, Type)>,
-    },
+    // Enum {
+    //     name: Identifier,
+    //     items: Vec<Identifier>,
+    // },
+    // Struct {
+    //     name: Identifier,
+    //     fields: Vec<(Identifier, Type)>,
+    // },
 }
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -152,10 +148,13 @@ pub enum RawType {
 
     Boolean,
 
-    Reference(Box<Type>),
+    Reference(Option<Identifier>, Box<Type>),
 
     Tuple(Vec<Type>),
-    Array(Vec<Type>),
+    Array(Box<Type>, Identifier),
+    Slice(Box<Type>),
+
+    Other(Vec<Identifier>),
 }
 impl Into<Box<Type>> for RawType {
     fn into(self) -> Box<Type> {
@@ -164,16 +163,35 @@ impl Into<Box<Type>> for RawType {
 }
 impl Display for RawType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Void => "void".to_string(),
-                Self::Never => "never".to_string(),
-                Self::UInt(int) => format!("u{int}"),
-                Self::Int(int) => format!("i{int}"),
-                _ => todo!(),
-            }
-        )
+        use RawType::*;
+
+        let str: &str = match self {
+            Reference(lifetime, data_type) => match lifetime {
+                Some(l) => return write!(f, "&'{} {}", l.raw, data_type.raw),
+                None => return write!(f, "&{}", data_type.raw),
+            },
+
+            Void => "void",
+            Never => "never",
+
+            Float32 => "f32",
+            Float64 => "f64",
+
+            USize => "usize",
+            ISize => "isize",
+
+            UInt(int) if int.eq(&8) => "u8",
+            UInt(int) if int.eq(&16) => "u16",
+            UInt(int) if int.eq(&32) => "u32",
+            UInt(int) if int.eq(&64) => "u64",
+
+            Int(int) if int.eq(&8) => "i8",
+            Int(int) if int.eq(&16) => "i16",
+            Int(int) if int.eq(&32) => "i32",
+            Int(int) if int.eq(&64) => "i64",
+            _ => todo!(),
+        };
+
+        write!(f, "{str}")
     }
 }

@@ -1,5 +1,7 @@
+#[allow(unused)]
 pub const CONFIG_NAME: &str = "eclipse";
 
+#[allow(unused)]
 pub struct Config {
     pub package: Package,
     pub editor: Editor,
@@ -16,12 +18,14 @@ impl Default for Config {
     }
 }
 
+#[allow(unused)]
 #[derive(Default)]
 pub struct Package {
     pub name: String,
     pub version: String,
 }
 
+#[allow(unused)]
 #[derive(Default)]
 pub struct Editor {
     pub tab_size: usize,

@@ -16,7 +16,6 @@ use crate::{
 };
 
 mod node;
-mod reader;
 mod types;
 
 impl CompilerCtx {
@@ -28,7 +27,7 @@ impl CompilerCtx {
 
         self.message(format!("Parsing: {relative_path}"));
 
-        let diagnostics = self.diagnostics.file(relative_path.clone());
+        // let diagnostics = self.diagnostics.file(relative_path.clone());
         let full_path = self.resolve_path(relative_path);
 
         let msg = format!("Failed to find: {full_path}");
@@ -126,18 +125,6 @@ impl Parser {
     ) -> DiagnosticResult<Option<TokenInfo>> {
         self.next_if(|t| &t.kind == kind.borrow())
     }
-    pub fn next_if_expected(
-        &mut self,
-        expected: &Vec<TokenKind>,
-    ) -> DiagnosticResult<Option<TokenInfo>> {
-        let peeked = self.peek();
-        for t in expected {
-            if &peeked.kind == t {
-                return Ok(Some(self.next()?));
-            }
-        }
-        Ok(None)
-    }
     pub fn peek_expect(&self, expected: &Vec<TokenKind>) -> DiagnosticResult<&TokenInfo> {
         let peeked = self.peek();
         for t in expected.iter() {
@@ -161,15 +148,6 @@ impl Parser {
             .position(peeked.position.clone())
             .to_err()
     }
-    pub fn peek_found(&self, expected: &Vec<TokenKind>) -> Option<&TokenInfo> {
-        let peeked = self.peek();
-        for t in expected.iter() {
-            if &peeked.kind == t {
-                return Some(peeked);
-            }
-        }
-        None
-    }
     pub fn expect(&mut self, expected: &Vec<TokenKind>) -> DiagnosticResult<TokenInfo> {
         self.peek_expect(&expected)?;
         self.next()
@@ -178,7 +156,7 @@ impl Parser {
         self.peek_expect(&vec![expected])?;
         self.next()
     }
-    pub fn peek_expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<&TokenInfo> {
+    pub fn _peek_expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<&TokenInfo> {
         self.peek_expect(&vec![expected])
     }
     pub fn expect_identifier(&mut self) -> DiagnosticResult<TokenInfo> {

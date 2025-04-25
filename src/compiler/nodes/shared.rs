@@ -42,6 +42,8 @@ impl Into<ArithmethicOperator> for TokenKind {
             ForwardSlash => ArithmethicOperator::Division,
             Asterisk => ArithmethicOperator::Multiply,
             Percent => ArithmethicOperator::Remainder,
+            LeftBitshift => ArithmethicOperator::LeftBitshift,
+            RightBitshift => ArithmethicOperator::RightBitshift,
             _ => panic!("Invalid token for operator conversion: {self:?}"),
         }
     }

@@ -75,7 +75,7 @@ impl Parser {
             If => {
                 let condition = Box::new(self.expect_expression()?);
                 let body = Box::new(self.expect_expression()?);
-                RawNode::If { condition, body }
+                RawNode::Conditional { condition, body }
             }
             OpenBlock => self.parse_block()?,
             OpenParen => {

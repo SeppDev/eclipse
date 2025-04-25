@@ -7,7 +7,7 @@ mod parser {
                 ast::{
                     Node,
                     RawNode::{self, *},
-                    RawType::{self, *},
+                    RawType::*,
                     Type,
                 },
                 shared::{
@@ -36,7 +36,9 @@ mod parser {
         let mut main_path = Path::new().join("src").join("main");
         main_path.set_extension(FILE_EXTENSION);
 
-        compiler.files.cache(compiler.resolve_path(main_path), input);
+        compiler
+            .files
+            .cache(compiler.resolve_path(main_path), input);
         let mut nodes = compiler.parse().unwrap();
         assert!(nodes.len() == 1, "Expected only 1 node and got more");
         nodes.pop().unwrap()
@@ -112,24 +114,24 @@ mod parser {
             value: value.into(),
         }
     }
-    fn r#struct(name: impl ToString, fields: Vec<(impl ToString, RawType)>) -> RawNode {
-        Struct {
-            name: name.to_string().into(),
-            fields: fields
-                .into_iter()
-                .map(|(name, data_type)| (name.to_string().into(), data_type.into()))
-                .collect(),
-        }
-    }
-    fn r#enum(name: impl ToString, fields: Vec<impl ToString>) -> RawNode {
-        Enum {
-            name: name.to_string().into(),
-            items: fields
-                .into_iter()
-                .map(|name| name.to_string().into())
-                .collect(),
-        }
-    }
+    // fn r#struct(name: impl ToString, fields: Vec<(impl ToString, RawType)>) -> RawNode {
+    //     Struct {
+    //         name: name.to_string().into(),
+    //         fields: fields
+    //             .into_iter()
+    //             .map(|(name, data_type)| (name.to_string().into(), data_type.into()))
+    //             .collect(),
+    //     }
+    // }
+    // fn r#enum(name: impl ToString, fields: Vec<impl ToString>) -> RawNode {
+    //     Enum {
+    //         name: name.to_string().into(),
+    //         items: fields
+    //             .into_iter()
+    //             .map(|name| name.to_string().into())
+    //             .collect(),
+    //     }
+    // }
 
     fn r#while(condition: RawNode, body: RawNode) -> RawNode {
         let condition = condition.into();
@@ -218,17 +220,17 @@ mod parser {
         r#while(Bool(true), Block(vec![]))
     );
 
-    parser_test!(
-        person_struct,
-        "struct Person { name String, age i16 }",
-        r#struct("Person", vec![("name", RawType::String), ("age", Int(32))])
-    );
+    // parser_test!(
+    //     person_struct,
+    //     "struct Person { name String, age i16 }",
+    //     r#struct("Person", vec![("name", RawType::String), ("age", Int(32))])
+    // );
 
-    parser_test!(
-        simple_enum,
-        "enum Fruits { Apple, Pear, Orange, Banana }",
-        r#enum("Person", vec!["Apple", "Pear", "Orange", "Banana"])
-    );
+    // parser_test!(
+    //     simple_enum,
+    //     "enum Fruits { Apple, Pear, Orange, Banana }",
+    //     r#enum("Person", vec!["Apple", "Pear", "Orange", "Banana"])
+    // );
 
     parser_test!(
         keyword_expression,

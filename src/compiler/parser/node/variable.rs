@@ -13,7 +13,7 @@ impl Parser {
 
         let name = self.expect_identifier()?.into();
         let data_type = if self.next_if_eq(TokenKind::Colon)?.is_some() {
-            Some(self.parse_type()?)
+            Some(self.expect_type()?)
         } else {
             None
         };

@@ -21,7 +21,6 @@ impl TokenInfo {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenKind {
     EndOfFile,
-    Illegal,
     Unkown,
     Function,
     OpenBlock,
@@ -67,6 +66,7 @@ pub enum TokenKind {
     Percent,
     Increment,
     Decrement,
+    Apostrophe,
 
     Loop,
     While,
@@ -115,7 +115,7 @@ impl TokenKind {
             _ => false,
         }
     }
-    pub fn is_keyword(&self) -> bool {
+    pub fn _is_keyword(&self) -> bool {
         use TokenKind::*;
 
         match self {
@@ -149,9 +149,6 @@ impl TokenKind {
             | NotEquals | And | Or => true,
             _ => false,
         }
-    }
-    pub fn is_operator(&self) -> bool {
-        return self.is_arithmetic_operator() | self.is_compare_operator();
     }
     pub fn precedence(&self) -> usize {
         use TokenKind::*;
@@ -209,6 +206,7 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
         "&" => TokenKind::Ampersand,
         "_" => TokenKind::Underscore,
         "!" => TokenKind::ExclamationMark,
+        "'" => TokenKind::Apostrophe,
 
         ".." => TokenKind::Range,
         "..=" => TokenKind::RangeEquals,
