@@ -84,6 +84,6 @@ impl<T> LocatedAt<T> {
 }
 impl<T: Debug> Debug for LocatedAt<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}) {:#?}", self.position, self.raw)
+        write!(f, "{:#?} ({})", self.raw, self.position)
     }
 }

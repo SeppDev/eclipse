@@ -1,9 +1,10 @@
 use crate::compiler::{
     diagnostics::{DiagnosticData, DiagnosticResult},
     lexer::token::{TokenInfo, TokenKind},
-    nodes::ast::{Node, RawNode},
+    nodes::ast::{Identifier, Node, RawNode},
     parser::Parser,
 };
+use TokenKind::*;
 
 impl Parser {
     pub fn expect_expression(&mut self) -> DiagnosticResult<Node> {
@@ -44,26 +45,33 @@ impl Parser {
         let node = self.to_expression(info)?;
         let mut node = self.located(node, start);
 
-        while self.next_if_eq(TokenKind::Dot)?.is_some() {
+        while self.next_if_eq(Dot)?.is_some() {
             let start = self.start();
-            use TokenKind::*;
             let field = self.expect(&vec![Identifier, Integer])?;
             node = self.located(RawNode::Field(Box::new(node), field.into()), start);
+        }
+
+        while self.next_if_eq(OpenParen)?.is_some() {
+            let start = self.start();
+            let args = self.expect_arguments(CloseParen)?;
+            node = self.located(RawNode::Call(Box::new(node), args), start);
         }
         Ok(node)
     }
     pub fn to_expression(&mut self, info: TokenInfo) -> DiagnosticResult<RawNode> {
-        use TokenKind::*;
-
         let raw = match info.kind {
             Float => RawNode::Float(info.string),
             Integer => RawNode::Integer(info.string),
             Boolean => RawNode::Bool(info.string == "true"),
             String => RawNode::String(info.string),
             Minus => RawNode::Minus(Box::new(self.expect_base_expression()?)),
-            Identifier if self.peek().kind == OpenParen => {
-                self.next()?;
-                RawNode::Call(info.string, self.expect_arguments(TokenKind::CloseParen)?)
+            Identifier if self.peek().kind == DoubleColon => {
+                let mut path: Vec<Identifier> = vec![info.into()];
+                while self.next_if_eq(DoubleColon)?.is_some() {
+                    let ident = self.expect_identifier()?.into();
+                    path.push(ident);
+                }
+                RawNode::Path(path)
             }
             Identifier => RawNode::Identifier(info.string),
             Loop => RawNode::Loop(Box::new(self.expect_expression()?)),
@@ -79,7 +87,7 @@ impl Parser {
             }
             OpenBlock => self.parse_block()?,
             OpenParen => {
-                let mut items = self.expect_arguments(TokenKind::CloseParen)?;
+                let mut items = self.expect_arguments(CloseParen)?;
                 match items.len() {
                     1 => RawNode::Wrapped(Some(Box::new(items.pop().unwrap()))),
                     0 => RawNode::Wrapped(None),

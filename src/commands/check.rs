@@ -5,10 +5,10 @@ use crate::{
 
 pub fn check(arguments: Arguments) {
     let mut compiler: CompilerCtx = CommandLineOptions::from(arguments).into();
-    let nodes = compiler.parse().unwrap();
+    let parsed = compiler.parse().unwrap();
     drop(compiler);
 
-    println!("{nodes:#?}");
+    println!("{:#?}", parsed.files);
 }
 
 impl Into<CompilerCtx> for CommandLineOptions {

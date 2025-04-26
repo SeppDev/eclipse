@@ -5,16 +5,14 @@ use crate::compiler::{
     parser::Parser,
 };
 
+use TokenKind::*;
+
 impl Parser {
     pub fn parse_function(&mut self) -> DiagnosticResult<RawNode> {
+        let return_type = self.expect_type()?;
+        self.expect_single(DoubleColon)?;
         let name = self.expect_identifier()?.into();
         let parameters = self.expect_parameters()?;
-        let return_type = if self.next_if_eq(TokenKind::Colon)?.is_some() {
-            Some(self.expect_type()?)
-        } else {
-            None
-        };
-
         let body = Box::new(self.expect_node()?);
 
         let raw = RawNode::Function {
@@ -27,17 +25,17 @@ impl Parser {
         return Ok(raw);
     }
     pub fn expect_parameters(&mut self) -> DiagnosticResult<Vec<Parameter>> {
-        self.expect_single(TokenKind::OpenParen)?;
+        self.expect_single(OpenParen)?;
         let mut params = Vec::new();
 
         loop {
-            if self.next_if_eq(TokenKind::CloseParen)?.is_some() {
+            if self.next_if_eq(CloseParen)?.is_some() {
                 break;
             }
             let start = self.start();
 
-            let reference = self.next_if_eq(TokenKind::Ampersand)?;
-            let mutable = self.next_if_eq(TokenKind::Mutable)?;
+            let reference = self.next_if_eq(Ampersand)?;
+            let mutable = self.next_if_eq(Mutable)?;
             let name = self.expect_identifier()?.into();
             let data_type = self.expect_type()?;
 

@@ -38,8 +38,9 @@ mod parser {
 
         compiler
             .files
-            .cache(compiler.resolve_path(main_path), input);
-        let mut nodes = compiler.parse().unwrap();
+            .cache(compiler.resolve_path(main_path.clone()), input.to_string());
+
+        let mut nodes = compiler.parse_relative(main_path).unwrap();
         assert!(nodes.len() == 1, "Expected only 1 node and got more");
         nodes.pop().unwrap()
     }

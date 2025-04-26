@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{fmt::Debug, path::PathBuf};
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
+#[derive(PartialEq, Eq, Hash, Clone, Default)]
 pub struct Path {
     components: Vec<String>,
     extension: Option<String>,
@@ -9,7 +9,7 @@ impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let body = self.components.join("/");
         let mut extension: String = String::new();
-       
+
         if let Some(ext) = &self.extension {
             extension.push('.');
             extension.push_str(ext.as_str());
@@ -18,13 +18,15 @@ impl std::fmt::Display for Path {
         write!(f, "{body}{extension}")
     }
 }
+impl Debug for Path {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\"{}\"", self)
+    }
+}
+
 impl Into<PathBuf> for Path {
     fn into(self) -> PathBuf {
-        let mut path: PathBuf = self.components.iter().collect();
-        if let Some(extension) = self.extension {
-            path.set_extension(extension);
-        }
-        path
+        self.as_path_buf()
     }
 }
 impl Into<Path> for PathBuf {
@@ -66,6 +68,9 @@ impl Path {
             self.extension = Some(extension.into())
         }
     }
+    pub fn exists(&self) -> bool {
+        self.as_path_buf().exists()
+    }
     pub fn extension(&self) -> &Option<String> {
         &self.extension
     }
@@ -96,5 +101,12 @@ impl Path {
     }
     pub fn last(&self) -> Option<&String> {
         return self.components.last();
+    }
+    pub fn as_path_buf(&self) -> PathBuf {
+        let mut path: PathBuf = self.components.iter().collect();
+        if let Some(extension) = &self.extension {
+            path.set_extension(extension);
+        }
+        path
     }
 }

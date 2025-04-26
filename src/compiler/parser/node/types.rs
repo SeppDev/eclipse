@@ -43,6 +43,7 @@ impl Parser {
                 "f32" => RawType::Float32,
                 "f64" => RawType::Float64,
 
+                "void" => RawType::Void,
                 "bool" => RawType::Boolean,
                 "never" => RawType::Never,
                 "str" => RawType::String,

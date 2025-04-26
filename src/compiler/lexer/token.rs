@@ -22,7 +22,6 @@ impl TokenInfo {
 pub enum TokenKind {
     EndOfFile,
     Unkown,
-    Function,
     OpenBlock,
     CloseBlock,
     OpenParen,
@@ -119,8 +118,8 @@ impl TokenKind {
         use TokenKind::*;
 
         match self {
-            Loop | Continue | Break | While | If | ElseIf | Else | Function | Pub | Use | Enum
-            | Struct | Unsafe | Return | Result | Var | SelfKeyword => true,
+            Loop | Continue | Break | While | If | ElseIf | Else | Pub | Use | Enum | Struct
+            | Unsafe | Return | Result | Var | SelfKeyword => true,
             _ => false,
         }
     }
@@ -167,7 +166,6 @@ impl TokenKind {
 
 pub fn match_token(word: &String) -> Option<TokenKind> {
     let token = match &word[..] {
-        "func" => TokenKind::Function,
         "if" => TokenKind::If,
         "else" => TokenKind::Else,
         "elseif" => TokenKind::ElseIf,

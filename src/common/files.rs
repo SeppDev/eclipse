@@ -10,8 +10,8 @@ impl Files {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn cache(&mut self, full_path: Path, source: &str) {
-        self.files.insert(full_path, source.into());
+    pub fn cache(&mut self, full_path: Path, source: String) {
+        self.files.insert(full_path, source);
     }
     pub fn from_cache(&self, full_path: &Path) -> Option<&String> {
         self.files.get(full_path)

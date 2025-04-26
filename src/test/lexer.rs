@@ -43,7 +43,7 @@ mod lexer {
     lexer_test!(
         main_function,
         "func main() {}",
-        [Function, Identifier, OpenParen, CloseParen, OpenBlock, CloseBlock]
+        [Identifier, OpenParen, CloseParen, OpenBlock, CloseBlock]
     );
 
     lexer_test!(only_block, "{}", [OpenBlock, CloseBlock]);
@@ -52,7 +52,7 @@ mod lexer {
         add_one,
         "func add_one(x i32) { return x + 1 }",
         [
-            Function, Identifier, OpenParen, Identifier, Identifier, CloseParen, OpenBlock, Return,
+            Identifier, OpenParen, Identifier, Identifier, CloseParen, OpenBlock, Return,
             Identifier, Plus, Integer, CloseBlock
         ]
     );

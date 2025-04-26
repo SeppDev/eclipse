@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{common::position::LocatedAt, compiler::lexer::token::TokenInfo};
 
@@ -40,7 +40,7 @@ pub enum RawNode {
     Function {
         name: Identifier,
         parameters: Vec<Parameter>,
-        return_type: Option<Type>,
+        return_type: Type,
         body: Box<Node>,
     },
     SetPath {
@@ -73,7 +73,7 @@ pub enum RawNode {
         body: Box<Node>,
     },
     Field(Box<Node>, Identifier),
-    Call(String, Vec<Node>),
+    Call(Box<Node>, Vec<Node>),
     Return(Option<Box<Node>>),
     Break(Option<Box<Node>>),
     Continue(Option<Box<Node>>),
@@ -81,6 +81,7 @@ pub enum RawNode {
     Use(UsePath),
     Import(Identifier),
     Identifier(String),
+    Path(Vec<Identifier>),
     String(String),
     Bool(bool),
     Integer(String),
@@ -127,7 +128,7 @@ impl Into<Box<Node>> for RawNode {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Default, PartialEq)]
 pub enum RawType {
     #[default]
     Void,
@@ -161,6 +162,11 @@ impl Into<Box<Type>> for RawType {
         Box::new(self.into())
     }
 }
+impl Debug for RawType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
 impl Display for RawType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use RawType::*;
@@ -170,9 +176,35 @@ impl Display for RawType {
                 Some(l) => return write!(f, "&'{} {}", l.raw, data_type.raw),
                 None => return write!(f, "&{}", data_type.raw),
             },
+            Tuple(list) => {
+                return write!(
+                    f,
+                    "({})",
+                    list.iter()
+                        .map(|dt| format!("{}", dt.raw))
+                        .collect::<Vec<std::string::String>>()
+                        .join(", ")
+                )
+            }
+            Other(path) => {
+                return write!(
+                    f,
+                    "({})",
+                    path.iter()
+                        .map(|dt| format!("{}", dt.raw))
+                        .collect::<Vec<std::string::String>>()
+                        .join("::")
+                )
+            }
+            Array(data_type, amount) => return write!(f, "[{};{}]", data_type.raw, amount.raw),
+            Slice(data_type) => return write!(f, "[{}]", data_type.raw),
 
+            SelfType => "self",
             Void => "void",
             Never => "never",
+            Boolean => "bool",
+            Char => "char",
+            String => "str",
 
             Float32 => "f32",
             Float64 => "f64",
@@ -180,16 +212,8 @@ impl Display for RawType {
             USize => "usize",
             ISize => "isize",
 
-            UInt(int) if int.eq(&8) => "u8",
-            UInt(int) if int.eq(&16) => "u16",
-            UInt(int) if int.eq(&32) => "u32",
-            UInt(int) if int.eq(&64) => "u64",
-
-            Int(int) if int.eq(&8) => "i8",
-            Int(int) if int.eq(&16) => "i16",
-            Int(int) if int.eq(&32) => "i32",
-            Int(int) if int.eq(&64) => "i64",
-            _ => todo!(),
+            UInt(int) => return write!(f, "u{int}"),
+            Int(int) => return write!(f, "i{int}"),
         };
 
         write!(f, "{str}")

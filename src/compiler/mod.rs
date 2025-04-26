@@ -37,7 +37,7 @@ impl CompilerBuilder {
         let mut path = Path::single("std");
         path.set_extension(FILE_EXTENSION);
 
-        files.cache(path, "import test");
+        files.cache(path, "import test".to_string());
 
         CompilerCtx {
             project_path,
