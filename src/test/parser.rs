@@ -7,7 +7,8 @@ mod parser {
                 ast::{
                     Node,
                     RawNode::{self, *},
-                    RawType::*,
+                    RawParameter,
+                    RawType::{self, *},
                     Type,
                 },
                 shared::{
@@ -40,7 +41,10 @@ mod parser {
             .files
             .cache(compiler.resolve_path(main_path.clone()), input.to_string());
 
-        let mut nodes = compiler.parse_relative(main_path).unwrap();
+        let mut nodes = match compiler.parse_relative(main_path) {
+            Ok(n) => n,
+            Err(_) => panic!("INPUT: {input}"),
+        };
         assert!(nodes.len() == 1, "Expected only 1 node and got more");
         nodes.pop().unwrap()
     }
@@ -51,13 +55,23 @@ mod parser {
 
         assert!(
             node == expected,
-            "INPUT: {}\n{}\n-------------------------------------\n{}",
-            input,
-            expected,
-            node
+            "INPUT: {input}\n{expected}\n-------------------------------------\n{node}",
         );
     }
 
+    fn _function(
+        name: &str,
+        parameters: Vec<RawParameter>,
+        return_type: RawType,
+        body: RawNode,
+    ) -> RawNode {
+        RawNode::Function {
+            name: name.to_string().into(),
+            parameters: parameters.into_iter().map(|param| param.into()).collect(),
+            return_type: return_type.into(),
+            body: Box::new(body.into()),
+        }
+    }
     fn identifier(string: impl ToString) -> RawNode {
         Identifier(string.to_string())
     }

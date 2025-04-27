@@ -15,6 +15,7 @@ use crate::{
     FILE_EXTENSION,
 };
 
+mod common;
 mod node;
 
 #[derive(Debug)]
@@ -29,12 +30,14 @@ pub struct ParsedFiles {
 }
 
 impl CompilerCtx {
-    pub fn parse(&mut self) -> DiagnosticResult<ParsedFiles> {
+    pub fn parse(&mut self) -> ParsedFiles {
         let mut parsed = ParsedFiles::default();
         let mut paths = Vec::new();
         paths.push(Path::new().join("src").join("main"));
 
         while let Some(path) = paths.pop() {
+            let diagnostics = self.diagnostics.file(path.clone());
+
             let nodes = self.parse_relative(path.clone())?;
             let mut body = Vec::with_capacity(nodes.len());
             let mut imports = HashMap::new();
@@ -42,6 +45,10 @@ impl CompilerCtx {
             for node in nodes {
                 if let RawNode::Import(import) = node.raw {
                     let path = self.handle_import(&path, &import.raw)?;
+                    let full_path = self.resolve_path(path.clone());
+                    let source = self.files.fs_read(&full_path.as_path_buf()).unwrap();
+
+                    self.files.cache(path.clone(), source);
                     imports.insert(import.raw, path.clone());
                     paths.push(path);
                     continue;
@@ -53,24 +60,15 @@ impl CompilerCtx {
             parsed.files.insert(path, file);
         }
 
-        Ok(parsed)
+        parsed
     }
     pub fn parse_relative(&mut self, mut relative_path: Path) -> DiagnosticResult<Vec<Node>> {
         relative_path.set_extension(FILE_EXTENSION);
 
         self.message(format!("Parsing: {relative_path}"));
 
-        // let diagnostics = self.diagnostics.file(relative_path.clone());
-        let full_path = self.resolve_path(relative_path);
-
-        let msg = format!("Failed to find: {full_path}");
-        let source = match self.files.from_cache(&full_path) {
-            Some(s) => s,
-            None => &self
-                .files
-                .fs_read(&full_path.as_path_buf())
-                .expect(msg.as_str()),
-        };
+        let full_path = self.resolve_path(relative_path.clone());
+        let source = self.files.from_cache(&full_path).unwrap();
 
         let mut parser = Parser::new(source)?;
         let nodes = parser.parse()?;
@@ -79,6 +77,7 @@ impl CompilerCtx {
     }
 }
 
+#[derive(Default)]
 pub struct Parser {
     tokens: Vec<TokenInfo>,
     last_position: PositionRange,
@@ -90,102 +89,8 @@ impl Parser {
 
         Ok(Self {
             tokens,
-            last_position: PositionRange::default(),
+            ..Default::default()
         })
-    }
-    pub fn parse(&mut self) -> DiagnosticResult<Vec<Node>> {
-        let mut nodes = Vec::new();
-
-        loop {
-            if self.is_eof() {
-                break;
-            }
-
-            let node = self.top_level_expect()?;
-            nodes.push(node);
-        }
-
-        Ok(nodes)
-    }
-    pub fn start(&self) -> Position {
-        self.peek().position.start
-    }
-    pub fn located<T>(&mut self, value: T, start: Position) -> LocatedAt<T> {
-        let end = self.last_position.end;
-        return LocatedAt::new(value, PositionRange::new(start, end));
-    }
-    pub fn is_eof(&self) -> bool {
-        self.peek().kind == TokenKind::EndOfFile
-    }
-    pub fn next(&mut self) -> DiagnosticResult<TokenInfo> {
-        let token = self.tokens.pop().unwrap();
-
-        if token.kind == TokenKind::EndOfFile {
-            return DiagnosticData::error()
-                .title("Expected token got <eof>")
-                .position(token.position)
-                .to_err();
-        }
-        self.last_position = token.position;
-
-        Ok(token)
-    }
-    pub fn peek(&self) -> &TokenInfo {
-        self.tokens.last().unwrap()
-    }
-    pub fn peek_second(&self) -> &TokenInfo {
-        self.tokens.get(self.tokens.len() - 2).unwrap()
-    }
-    pub fn next_if(
-        &mut self,
-        func: impl FnOnce(&TokenInfo) -> bool,
-    ) -> DiagnosticResult<Option<TokenInfo>> {
-        let peeked = self.peek();
-        if func(peeked) {
-            return Ok(Some(self.next()?));
-        }
-        Ok(None)
-    }
-    pub fn next_if_eq(
-        &mut self,
-        kind: impl Borrow<TokenKind>,
-    ) -> DiagnosticResult<Option<TokenInfo>> {
-        self.next_if(|t| &t.kind == kind.borrow())
-    }
-    pub fn peek_expect(&self, expected: &Vec<TokenKind>) -> DiagnosticResult<&TokenInfo> {
-        let peeked = self.peek();
-        for t in expected.iter() {
-            if &peeked.kind == t {
-                return Ok(peeked);
-            }
-        }
-
-        let title = format!(
-            "Expected token(s): {}, got: '{:?}'",
-            expected
-                .iter()
-                .map(|e| format!("'{e:?}'"))
-                .collect::<Vec<String>>()
-                .join(", "),
-            peeked.kind
-        );
-
-        DiagnosticData::error()
-            .title(title)
-            .position(peeked.position.clone())
-            .to_err()
-    }
-    pub fn expect(&mut self, expected: &Vec<TokenKind>) -> DiagnosticResult<TokenInfo> {
-        self.peek_expect(&expected)?;
-        self.next()
-    }
-    pub fn expect_single(&mut self, expected: TokenKind) -> DiagnosticResult<TokenInfo> {
-        self.peek_expect(&vec![expected])?;
-        self.next()
-    }
-
-    pub fn expect_identifier(&mut self) -> DiagnosticResult<TokenInfo> {
-        self.expect_single(TokenKind::Identifier)
     }
 }
 
@@ -206,11 +111,12 @@ impl CompilerCtx {
 
         let mut found: Vec<Path> = Vec::with_capacity(2);
         for relative_path in &expected_paths {
-            let mut full_path = self.resolve_path(relative_path.clone());
-            full_path.set_extension(FILE_EXTENSION);
+            let mut relative_path = relative_path.to_owned();
+            relative_path.set_extension(FILE_EXTENSION);
 
+            let full_path = self.resolve_path(relative_path.clone());
             if full_path.exists() {
-                found.push(relative_path.to_owned());
+                found.push(relative_path);
             }
         }
 

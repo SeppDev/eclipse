@@ -9,10 +9,9 @@ use TokenKind::*;
 
 impl Parser {
     pub fn parse_function(&mut self) -> DiagnosticResult<RawNode> {
-        let return_type = self.expect_type()?;
-        self.expect_single(DoubleColon)?;
         let name = self.expect_identifier()?.into();
         let parameters = self.expect_parameters()?;
+        let return_type = self.expect_type()?;
         let body = Box::new(self.expect_node()?);
 
         let raw = RawNode::Function {

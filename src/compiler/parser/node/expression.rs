@@ -8,6 +8,12 @@ use TokenKind::*;
 
 impl Parser {
     pub fn expect_expression(&mut self) -> DiagnosticResult<Node> {
+        if self.peek().kind.is_modifier() {
+            let start = self.start();
+            let value = self.expect_modifiers_expression()?;
+            return Ok(self.located(value, start));
+        }
+
         let mut node = self.expect_base_expression()?;
         if self.peek().kind.is_compare_operator() {
             node = self.handle_compare_operation(node)?;
@@ -73,6 +79,7 @@ impl Parser {
                 }
                 RawNode::Path(path)
             }
+            Function => self.parse_function()?,
             Identifier => RawNode::Identifier(info.string),
             Loop => RawNode::Loop(Box::new(self.expect_expression()?)),
             While => {
@@ -85,7 +92,7 @@ impl Parser {
                 let body = Box::new(self.expect_expression()?);
                 RawNode::Conditional { condition, body }
             }
-            OpenBlock => self.parse_block()?,
+            OpenCurlyBracket => self.parse_block()?,
             OpenParen => {
                 let mut items = self.expect_arguments(CloseParen)?;
                 match items.len() {

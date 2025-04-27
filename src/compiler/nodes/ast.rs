@@ -7,8 +7,9 @@ use super::shared::{ArithmethicOperator, CompareOperator, EqualsOperation};
 pub type Node = LocatedAt<RawNode>;
 
 pub type Location = LocatedAt<()>;
-pub type Parameter = LocatedAt<RawParameter>;
 pub type Type = LocatedAt<RawType>;
+pub type Parameter = LocatedAt<RawParameter>;
+pub type Modifier = LocatedAt<RawModifier>;
 
 pub type Identifier = LocatedAt<String>;
 impl From<TokenInfo> for Identifier {
@@ -36,7 +37,17 @@ pub enum UsePath {
 }
 
 #[derive(Debug, PartialEq)]
+#[repr(u8)]
+pub enum RawModifier {
+    Pub = 1,
+    Static = 2,
+    Unsafe = 3,
+    Extern(Identifier) = 4,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum RawNode {
+    Modifiers(Vec<Modifier>, Box<Node>),
     Function {
         name: Identifier,
         parameters: Vec<Parameter>,

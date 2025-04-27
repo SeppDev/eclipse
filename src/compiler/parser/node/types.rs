@@ -1,5 +1,5 @@
 use crate::compiler::{
-    diagnostics::DiagnosticResult,
+    diagnostics::{DiagnosticData, DiagnosticResult},
     lexer::token::TokenKind::*,
     nodes::ast::{Identifier, RawType, Type},
 };
@@ -8,7 +8,19 @@ use super::Parser;
 
 impl Parser {
     pub fn expect_type(&mut self) -> DiagnosticResult<Type> {
-        let info = self.expect(&vec![Identifier, OpenBracket, OpenParen])?;
+        let info = match self.expect(&vec![Identifier, OpenBracket, OpenParen]) {
+            Ok(i) => i,
+            Err(_) => {
+                let peeked = self.peek();
+                return DiagnosticData::error()
+                    .title(format!(
+                        "Expected type but{}",
+                        Self::generate_error_title(&peeked.kind)
+                    ))
+                    .position(peeked.position)
+                    .to_err();
+            }
+        };
         let raw: RawType = if info.kind == OpenParen {
             let mut list = Vec::new();
 

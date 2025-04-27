@@ -1,10 +1,30 @@
 use std::fmt::{Debug, Display};
 
-use super::{DiagnosticData, DiagnosticLevel};
+use crate::compiler::Path;
+
+use super::{DiagnosticData, DiagnosticLevel, DiagnosticsFile};
+
+impl Display for DiagnosticsFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.to_string(&self.path))
+                .collect::<Vec<String>>()
+                .join("\n")
+        )
+    }
+}
+impl Debug for DiagnosticsFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
 
 impl DiagnosticData {
-    fn to_string(&self) -> String {
-        // let path: String = self.path.clone().to_str().unwrap().into();
+    fn to_string(&self, path: &Path) -> String {
         let level = &self.level;
         let title = &self.title;
         let position = match &self.position {
@@ -22,18 +42,7 @@ impl DiagnosticData {
             .collect::<Vec<String>>()
             .join("\n");
 
-        format!("{level}: {title}\n\t--> {position}\n{span}")
-    }
-}
-
-impl Debug for DiagnosticData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
-    }
-}
-impl Display for DiagnosticData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        format!("{level}: {title}\n\t--> {path}{position}\n{span}")
     }
 }
 

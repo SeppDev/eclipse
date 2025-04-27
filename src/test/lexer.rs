@@ -10,7 +10,11 @@ mod lexer {
     };
 
     fn test_lexer(input: &str, expected: Vec<TokenKind>) {
-        let tokens = tokenize(input).unwrap();
+        let tokens = match tokenize(input) {
+            Ok(t) => t,
+            Err(_) => panic!("Failed to tokenize"),
+        };
+
         token_stream_eq(tokens, expected);
     }
 
@@ -42,18 +46,37 @@ mod lexer {
     }
     lexer_test!(
         main_function,
-        "func main() {}",
-        [Identifier, OpenParen, CloseParen, OpenBlock, CloseBlock]
+        "void :: main() {}",
+        [
+            Identifier,
+            DoubleColon,
+            Identifier,
+            OpenParen,
+            CloseParen,
+            OpenCurlyBracket,
+            CloseCurlyBracket
+        ]
     );
 
-    lexer_test!(only_block, "{}", [OpenBlock, CloseBlock]);
+    lexer_test!(only_block, "{}", [OpenCurlyBracket, CloseCurlyBracket]);
 
     lexer_test!(
         add_one,
-        "func add_one(x i32) { return x + 1 }",
+        "i32 :: add_one(x i32) { return x + 1 }",
         [
-            Identifier, OpenParen, Identifier, Identifier, CloseParen, OpenBlock, Return,
-            Identifier, Plus, Integer, CloseBlock
+            Identifier,
+            DoubleColon,
+            Identifier,
+            OpenParen,
+            Identifier,
+            Identifier,
+            CloseParen,
+            Return,
+            Identifier,
+            Plus,
+            Integer,
+            OpenCurlyBracket,
+            CloseCurlyBracket
         ]
     );
 
@@ -73,7 +96,7 @@ mod lexer {
         [Var, Identifier, Equals, Integer]
     );
     lexer_test!(not_a_float, "1.b", [Integer, Dot, Identifier]);
-    lexer_test!(block, "{  }", [OpenBlock, CloseBlock]);
+    lexer_test!(block, "{  }", [OpenCurlyBracket, CloseCurlyBracket]);
     lexer_test!(
         integer_after_string_literal,
         "\"hello\" 1234",

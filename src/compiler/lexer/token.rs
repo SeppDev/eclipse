@@ -20,81 +20,92 @@ impl TokenInfo {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenKind {
-    EndOfFile,
-    Unkown,
-    OpenBlock,
-    CloseBlock,
-    OpenParen,
-    CloseParen,
-    OpenBracket,
-    CloseBracket,
-    Pub,
-    Import,
-    Use,
-    DoubleColon,
-    Enum,
-    Struct,
-    Unsafe,
-    Ampersand,
-    SemiColon,
-    Return,
-    Result,
-    Dot,
-    Underscore,
-    Colon,
-    Equals,
-    Comma,
-    Mutable,
-    Var,
-    ExclamationMark,
-    Arrow,
-    FatArrow,
+    EndOfFile, // <eof>
+    Unkown,    // <unkown>
 
-    SelfKeyword,
+    OpenCurlyBracket,  // {
+    CloseCurlyBracket, // }
+    CloseParen,        // )
+    CloseBracket,      // ]
+    OpenBracket,       // [
+    OpenParen,         // (
 
-    If,
-    ElseIf,
-    Else,
+    Pub,    // pub
+    Extern, // extern
+    Unsafe, // unsafe
+    Static, // Static
 
-    LeftBitshift,
-    RightBitshift,
-    Plus,
-    Minus,
-    ForwardSlash,
-    Asterisk,
-    Percent,
-    Increment,
-    Decrement,
-    Apostrophe,
+    Import,  // import
+    Use,     // use
+    Mutable, // mut
+    Var,     // var
+    Enum,    // enum
+    Struct,  // struct
 
-    Loop,
-    While,
-    Continue,
-    Break,
+    Return, // return
+    Result, // result
 
-    Range,
-    RangeEquals,
-    Compare,
-    NotEquals,
-    LessThan,
-    LessThanOrEquals,
-    GreaterThan,
-    GreaterThanOrEquals,
-    And,
-    Or,
+    Ampersand,       // &
+    CommercialAt,    // @
+    NumberSign,      // #
+    SemiColon,       // ;
+    DoubleColon,     // ::
+    Dot,             // .
+    Underscore,      // _
+    Colon,           // :
+    Equals,          // =
+    Comma,           // ,
+    ExclamationMark, // !
+    Arrow,           // ->
+    FatArrow,        // =>
 
-    PlusEquals,
-    SubtractEquals,
-    DivideEquals,
-    MultiplyEquals,
-    RemainderEquals,
+    SelfKeyword, // self
+    Super, // super
 
-    Boolean,
-    Character,
-    String,
-    Integer,
-    Float,
-    Identifier,
+    If,     // if
+    ElseIf, // else if
+    Else,   // else
+
+    LeftBitshift,  // <<
+    RightBitshift, // >>
+    Plus,          // +
+    Minus,         // -
+    ForwardSlash,  // /
+    Asterisk,      // *
+    Percent,       // %
+    Increment,     // ++
+    Decrement,     // --
+    Apostrophe,    // '
+
+    Loop,     // loop
+    While,    // while
+    Continue, // continue
+    Break,    // break
+    Function, // func
+
+    Range,               // ..
+    RangeEquals,         // ..=
+    Compare,             // ==
+    NotEquals,           // !=
+    LessThan,            // <
+    LessThanOrEquals,    // <=
+    GreaterThan,         // >
+    GreaterThanOrEquals, // >=
+    And,                 // &&
+    Or,                  // ||
+
+    PlusEquals,      // +=
+    SubtractEquals,  // -=
+    DivideEquals,    // /=
+    MultiplyEquals,  // *=
+    RemainderEquals, // %=
+
+    Boolean,    // boolean
+    Character,  // char
+    String,     // string
+    Integer,    // int
+    Float,      // float
+    Identifier, // identifier
 }
 impl TokenKind {
     pub fn is_expression(&self) -> bool {
@@ -119,7 +130,7 @@ impl TokenKind {
 
         match self {
             Loop | Continue | Break | While | If | ElseIf | Else | Pub | Use | Enum | Struct
-            | Unsafe | Return | Result | Var | SelfKeyword => true,
+            | Function | Unsafe | Return | Result | Var | SelfKeyword => true,
             _ => false,
         }
     }
@@ -149,6 +160,13 @@ impl TokenKind {
             _ => false,
         }
     }
+    pub fn is_modifier(&self) -> bool {
+        use TokenKind::*;
+        match self {
+            Unsafe | Pub | Extern => true,
+            _ => false,
+        }
+    }
     pub fn precedence(&self) -> usize {
         use TokenKind::*;
         match self {
@@ -165,83 +183,87 @@ impl TokenKind {
 }
 
 pub fn match_token(word: &String) -> Option<TokenKind> {
+    use TokenKind::*;
     let token = match &word[..] {
-        "if" => TokenKind::If,
-        "else" => TokenKind::Else,
-        "elseif" => TokenKind::ElseIf,
+        "if" => If,
+        "else" => Else,
+        "elseif" => ElseIf,
+        
 
-        "mut" => TokenKind::Mutable,
-        "var" => TokenKind::Var,
+        "mut" => Mutable,
+        "var" => Var,
 
-        "true" | "false" => TokenKind::Boolean,
+        "true" | "false" => Boolean,
+        
+        "super" => Super,
 
-        "pub" => TokenKind::Pub,
-        "import" => TokenKind::Import,
-        "use" => TokenKind::Use,
+        "pub" => Pub,
+        "static" => Static,
+        "unsafe" => Unsafe,
+        "extern" => Extern,
 
-        "unsafe" => TokenKind::Unsafe,
+        "enum" => Enum,
+        "struct" => Struct,
 
-        "enum" => TokenKind::Enum,
-        "struct" => TokenKind::Struct,
+        "func" => Function,
+        "import" => Import,
+        "use" => Use,
+        "return" => Return,
+        "result" => Result,
+        "loop" => Loop,
+        "while" => While,
+        "break" => Break,
+        "continue" => Continue,
+        "self" => SelfKeyword,
 
-        "return" => TokenKind::Return,
-        "result" => TokenKind::Result,
+        "{" => OpenCurlyBracket,
+        "}" => CloseCurlyBracket,
+        "(" => OpenParen,
+        ")" => CloseParen,
+        "[" => OpenBracket,
+        "]" => CloseBracket,
 
-        "loop" => TokenKind::Loop,
-        "while" => TokenKind::While,
-        "break" => TokenKind::Break,
-        "continue" => TokenKind::Continue,
+        "&" => Ampersand,
+        "_" => Underscore,
+        "!" => ExclamationMark,
+        "'" => Apostrophe,
+        "@" => CommercialAt,
+        "#" => NumberSign,
+        ".." => Range,
+        "..=" => RangeEquals,
+        "<<" => LeftBitshift,
+        ">>" => RightBitshift,
+        "+" => Plus,
+        "-" => Minus,
+        "*" => Asterisk,
+        "/" => ForwardSlash,
+        "%" => Percent,
+        "++" => Increment,
+        "--" => Decrement,
+        "&&" => And,
+        "||" => Or,
+        "->" => Arrow,
+        "=>" => FatArrow,
 
-        "self" => TokenKind::SelfKeyword,
+        "." => Dot,
+        "," => Comma,
+        ";" => SemiColon,
+        ":" => Colon,
+        "::" => DoubleColon,
 
-        "{" => TokenKind::OpenBlock,
-        "}" => TokenKind::CloseBlock,
-        "(" => TokenKind::OpenParen,
-        ")" => TokenKind::CloseParen,
-        "[" => TokenKind::OpenBracket,
-        "]" => TokenKind::CloseBracket,
+        "+=" => PlusEquals,
+        "-=" => SubtractEquals,
+        "/=" => DivideEquals,
+        "*=" => MultiplyEquals,
+        "%=" => RemainderEquals,
 
-        "&" => TokenKind::Ampersand,
-        "_" => TokenKind::Underscore,
-        "!" => TokenKind::ExclamationMark,
-        "'" => TokenKind::Apostrophe,
-
-        ".." => TokenKind::Range,
-        "..=" => TokenKind::RangeEquals,
-        "<<" => TokenKind::LeftBitshift,
-        ">>" => TokenKind::RightBitshift,
-        "+" => TokenKind::Plus,
-        "-" => TokenKind::Minus,
-        "*" => TokenKind::Asterisk,
-        "/" => TokenKind::ForwardSlash,
-        "%" => TokenKind::Percent,
-        "++" => TokenKind::Increment,
-        "--" => TokenKind::Decrement,
-        "&&" => TokenKind::And,
-        "||" => TokenKind::Or,
-
-        "->" => TokenKind::Arrow,
-        "=>" => TokenKind::FatArrow,
-
-        "." => TokenKind::Dot,
-        "," => TokenKind::Comma,
-        ";" => TokenKind::SemiColon,
-        ":" => TokenKind::Colon,
-        "::" => TokenKind::DoubleColon,
-
-        "+=" => TokenKind::PlusEquals,
-        "-=" => TokenKind::SubtractEquals,
-        "/=" => TokenKind::DivideEquals,
-        "*=" => TokenKind::MultiplyEquals,
-        "%=" => TokenKind::RemainderEquals,
-
-        "<" => TokenKind::LessThan,
-        ">" => TokenKind::GreaterThan,
-        "<=" => TokenKind::LessThanOrEquals,
-        ">=" => TokenKind::GreaterThanOrEquals,
-        "!=" => TokenKind::NotEquals,
-        "==" => TokenKind::Compare,
-        "=" => TokenKind::Equals,
+        "<" => LessThan,
+        ">" => GreaterThan,
+        "<=" => LessThanOrEquals,
+        ">=" => GreaterThanOrEquals,
+        "!=" => NotEquals,
+        "==" => Compare,
+        "=" => Equals,
         _ => return None,
     };
 

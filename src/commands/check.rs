@@ -5,9 +5,10 @@ use crate::{
 
 pub fn check(arguments: Arguments) {
     let mut compiler: CompilerCtx = CommandLineOptions::from(arguments).into();
-    let parsed = compiler.parse().unwrap();
+    let result = compiler.parse();
     drop(compiler);
 
+    let parsed = result;
     println!("{:#?}", parsed.files);
 }
 

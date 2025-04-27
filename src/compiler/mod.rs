@@ -67,6 +67,9 @@ impl CompilerCtx {
         path.extend(relative_path);
         path
     }
+    pub fn check_diagnostics(&self)  {
+        self.diagnostics.check();
+    }
     pub fn _then<F>(self, func: F) -> Self
     where
         F: FnOnce(Self) -> Self,

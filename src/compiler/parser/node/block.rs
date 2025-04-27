@@ -6,11 +6,7 @@ impl Parser {
     pub fn parse_block(&mut self) -> DiagnosticResult<RawNode> {
         let mut body = Vec::new();
 
-        loop {
-            if self.next_if_eq(TokenKind::CloseBlock)?.is_some() {
-                break;
-            }
-
+        while self.next_if_eq(TokenKind::CloseCurlyBracket)?.is_none() {
             let node = self.expect_node()?;
             body.push(node);
         }
