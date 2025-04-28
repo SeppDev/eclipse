@@ -17,6 +17,7 @@ impl Parser {
                 Pub => RawModifier::Pub,
                 Unsafe => RawModifier::Unsafe,
                 Static => RawModifier::Static,
+                Async => RawModifier::Async,
                 Extern => RawModifier::Extern(self.expect_single(String)?.into()),
                 _ => unreachable!(),
             };

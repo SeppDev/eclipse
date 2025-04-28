@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use context::status::Status;
 use diagnostics::Diagnostics;
 
@@ -51,7 +53,7 @@ impl CompilerBuilder {
 #[allow(unused)]
 pub struct CompilerCtx {
     pub files: Files,
-    pub status: Option<Status>,
+    status: Option<Status>,
     project_path: Path,
     diagnostics: Diagnostics,
 }
@@ -60,20 +62,19 @@ impl CompilerCtx {
         CompilerBuilder::new()
     }
     pub fn resolve_path(&self, relative_path: Path) -> Path {
-        let mut path = self.project_path.clone();
-        if let Some(ext) = relative_path.extension() {
-            path.set_extension(ext);
+        self.project_path.clone().extend(relative_path)
+    }
+    pub fn check_diagnostics(&self) {
+        if !self.diagnostics.has_errors() {
+            return;
         }
-        path.extend(relative_path);
-        path
+        self.diagnostics.display();
+        std::process::exit(0)
     }
-    pub fn check_diagnostics(&self)  {
-        self.diagnostics.check();
-    }
-    pub fn _then<F>(self, func: F) -> Self
-    where
-        F: FnOnce(Self) -> Self,
-    {
-        func(self)
+    pub fn finish(self) {
+        self.check_diagnostics();
+        if let Some(status) = self.status {
+            status.quit();
+        }
     }
 }

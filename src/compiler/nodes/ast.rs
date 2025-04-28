@@ -41,8 +41,9 @@ pub enum UsePath {
 pub enum RawModifier {
     Pub = 1,
     Static = 2,
-    Unsafe = 3,
-    Extern(Identifier) = 4,
+    Async = 3,
+    Unsafe = 4,
+    Extern(Identifier) = 5,
 }
 
 #[derive(Debug, PartialEq)]

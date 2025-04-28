@@ -61,6 +61,10 @@ impl Path {
         path.push(root);
         return path;
     }
+    pub fn extension(mut self, extension: &str) -> Self {
+        self.set_extension(extension);
+        self
+    }
     pub fn set_extension(&mut self, extension: &str) {
         if extension.len() == 0 {
             self.extension = None
@@ -70,9 +74,6 @@ impl Path {
     }
     pub fn exists(&self) -> bool {
         self.as_path_buf().exists()
-    }
-    pub fn extension(&self) -> &Option<String> {
-        &self.extension
     }
     pub fn join(&self, name: &str) -> Self {
         let mut new = self.clone();
@@ -90,8 +91,13 @@ impl Path {
         clone.pop();
         clone
     }
-    pub fn extend(&mut self, path: Path) {
-        self.components.extend(path.components.into_iter());
+    pub fn extend(mut self, other: Path) -> Path {
+        if let Some(ext) = &other.extension {
+            self.set_extension(ext);
+        }
+        self.components.extend(other.components.into_iter());
+
+        self
     }
     pub fn len(&self) -> usize {
         return self.components.len();

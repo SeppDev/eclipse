@@ -37,14 +37,16 @@ mod parser {
         let mut main_path = Path::new().join("src").join("main");
         main_path.set_extension(FILE_EXTENSION);
 
-        compiler
-            .files
-            .cache(compiler.resolve_path(main_path.clone()), input.to_string());
+        let full_path = compiler.resolve_path(main_path.clone());
 
-        let mut nodes = match compiler.parse_relative(main_path) {
+        compiler.files.cache(full_path, input.to_string());
+
+        let file = match compiler.parse_relative(main_path) {
             Ok(n) => n,
             Err(_) => panic!("INPUT: {input}"),
         };
+        let mut nodes = file.body;
+
         assert!(nodes.len() == 1, "Expected only 1 node and got more");
         nodes.pop().unwrap()
     }

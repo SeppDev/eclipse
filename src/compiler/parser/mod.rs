@@ -1,7 +1,7 @@
 use std::{borrow::Borrow, collections::HashMap};
 
 use super::{
-    diagnostics::{DiagnosticData, DiagnosticResult},
+    diagnostics::{DiagnosticData, DiagnosticResult, DiagnosticsFile},
     lexer::{
         token::{TokenInfo, TokenKind},
         tokenize,
@@ -16,11 +16,12 @@ use crate::{
 };
 
 mod common;
+mod imports;
 mod node;
 
 #[derive(Debug)]
 pub struct ParsedFile {
-    pub imports: HashMap<String, Path>,
+    pub imports: Vec<Path>,
     pub body: Vec<Node>,
 }
 
@@ -33,47 +34,58 @@ impl CompilerCtx {
     pub fn parse(&mut self) -> ParsedFiles {
         let mut parsed = ParsedFiles::default();
         let mut paths = Vec::new();
-        paths.push(Path::new().join("src").join("main"));
+        let main_path = Path::new()
+            .join("src")
+            .join("main")
+            .extension(FILE_EXTENSION);
 
-        while let Some(path) = paths.pop() {
-            let diagnostics = self.diagnostics.file(path.clone());
+        paths.push(main_path);
 
-            let nodes = self.parse_relative(path.clone())?;
-            let mut body = Vec::with_capacity(nodes.len());
-            let mut imports = HashMap::new();
+        while let Some(relative_path) = paths.pop() {
+            let full_path = self.resolve_path(relative_path.clone());
+            let mut diagnostics = DiagnosticsFile::new(relative_path.clone());
 
-            for node in nodes {
-                if let RawNode::Import(import) = node.raw {
-                    let path = self.handle_import(&path, &import.raw)?;
-                    let full_path = self.resolve_path(path.clone());
-                    let source = self.files.fs_read(&full_path.as_path_buf()).unwrap();
+            diagnostics.then(|| -> DiagnosticResult {
+                let source = match self.files.fs_read(&full_path.as_path_buf()) {
+                    Ok(s) => s,
+                    Err(_) => todo!(),
+                };
+                self.files.cache(full_path, source);
 
-                    self.files.cache(path.clone(), source);
-                    imports.insert(import.raw, path.clone());
-                    paths.push(path);
-                    continue;
-                }
-                body.push(node);
-            }
+                let file = self.parse_relative(relative_path.clone())?;
+                parsed.files.insert(relative_path, file);
+                Ok(())
+            });
 
-            let file = ParsedFile { imports, body };
-            parsed.files.insert(path, file);
+            self.diagnostics.insert(diagnostics);
         }
 
         parsed
     }
-    pub fn parse_relative(&mut self, mut relative_path: Path) -> DiagnosticResult<Vec<Node>> {
-        relative_path.set_extension(FILE_EXTENSION);
 
+    pub fn parse_relative(&self, relative_path: Path) -> DiagnosticResult<ParsedFile> {
         self.message(format!("Parsing: {relative_path}"));
 
-        let full_path = self.resolve_path(relative_path.clone());
+        let full_path = self
+            .resolve_path(relative_path.clone())
+            .extension(FILE_EXTENSION);
+
         let source = self.files.from_cache(&full_path).unwrap();
 
         let mut parser = Parser::new(source)?;
-        let nodes = parser.parse()?;
+        let body = parser.parse()?;
 
-        Ok(nodes)
+        let imports: Vec<Path> = Vec::new();
+        for node in &body {
+            let name = match &node.raw {
+                RawNode::Import(name) => &name.raw,
+                _ => continue,
+            };
+            let _path = self.handle_import(&relative_path, name)?;
+            todo!()
+        }
+
+        Ok(ParsedFile { imports, body })
     }
 }
 
@@ -94,48 +106,29 @@ impl Parser {
     }
 }
 
-impl CompilerCtx {
-    fn handle_import(&self, current_relative_path: &Path, name: &str) -> DiagnosticResult<Path> {
-        let file_name = current_relative_path.last().unwrap();
-        let is_module = file_name == "mod" || file_name == "main";
+// fn parse_file(
+//     &mut self,
+//     relative_path: Path,
+//     paths: &mut Vec<Path>,
+// ) -> DiagnosticData<ParsedFile> {
+//     let nodes = self.parse_relative(path.)?;
+//     let mut body = Vec::with_capacity(nodes.len());
+//     let mut imports = HashMap::new();
 
-        let parent = current_relative_path.parent();
-        let expected_paths: [Path; 2] = if is_module {
-            [parent.join(&name), parent.join(&name).join("mod")]
-        } else {
-            [
-                parent.join(&file_name).join(&name),
-                parent.join(&name).join(&file_name).join("mod"),
-            ]
-        };
+//     for node in nodes {
+//         if let RawNode::Import(import) = node.raw {
+//             let path = self.handle_import(&path, &import.raw)?;
+//             let full_path = self.resolve_path(path.clone());
+//             let source = self.files.fs_read(&full_path.as_path_buf()).unwrap();
 
-        let mut found: Vec<Path> = Vec::with_capacity(2);
-        for relative_path in &expected_paths {
-            let mut relative_path = relative_path.to_owned();
-            relative_path.set_extension(FILE_EXTENSION);
+//             self.files.cache(path.clone(), source);
+//             imports.insert(import.raw, path.clone());
+//             paths.push(path);
+//             continue;
+//         }
+//         body.push(node);
+//     }
 
-            let full_path = self.resolve_path(relative_path.clone());
-            if full_path.exists() {
-                found.push(relative_path);
-            }
-        }
-
-        if found.len() > 1 {
-            return DiagnosticData::error()
-                .title(format!(
-                    "Unresolved module, found two modules {expected_paths:?}"
-                ))
-                .to_err();
-        }
-
-        if let Some(path) = found.pop() {
-            return Ok(path);
-        }
-
-        DiagnosticData::error()
-            .title(format!(
-                "Unresolved module, can't find module {expected_paths:?}"
-            ))
-            .to_err()
-    }
-}
+//     let file = ParsedFile { imports, body };
+//     parsed.files.insert(path, file);
+// }

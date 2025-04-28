@@ -1,31 +1,6 @@
 use crate::{common::position::PositionRange, compiler::Path};
 
 pub type DiagnosticResult<T = ()> = Result<T, Option<DiagnosticData>>;
-pub enum BaseDiagnosticResult<T> {
-    Ok(T),
-    Err(Option<DiagnosticData>),
-}
-impl<T> Into<BaseDiagnosticResult<T>> for DiagnosticResult<T> {
-    fn into(self) -> BaseDiagnosticResult<T> {
-        match self {
-            Ok(k) => BaseDiagnosticResult::Ok(k),
-            Err(e) => BaseDiagnosticResult::Err(e),
-        }
-    }
-}
-impl<T> BaseDiagnosticResult<T> {
-    pub fn capture(self, diagnostics: &mut DiagnosticsFile) -> DiagnosticResult<T> {
-        let mut error = match self {
-            BaseDiagnosticResult::Ok(r) => return Ok(r),
-            BaseDiagnosticResult::Err(error) => error,
-        };
-        match error.take() {
-            Some(err) => diagnostics.diagnostics.push(err),
-            None => panic!("Already took the diagnostics data!"),
-        };
-        Err(None)
-    }
-}
 impl DiagnosticsFile {
     pub fn capture<T>(&mut self, result: DiagnosticResult<T>) -> DiagnosticResult<T> {
         let mut error = match result {
@@ -71,13 +46,26 @@ pub struct DiagnosticsFile {
     path: Path,
     diagnostics: Vec<DiagnosticData>,
 }
+impl DiagnosticsFile {
+    pub fn new(relative_path: Path) -> Self {
+        Self {
+            path: relative_path,
+            diagnostics: Vec::new(),
+        }
+    }
+    pub fn then<T, F>(&mut self, func: F) -> DiagnosticResult<T>
+    where
+        F: FnOnce() -> DiagnosticResult<T>,
+    {
+        self.capture(func())
+    }
+}
 
 #[derive(Default)]
 pub struct Diagnostics {
     files: Vec<DiagnosticsFile>,
 }
 
-#[allow(unused)]
 impl Diagnostics {
     pub fn new() -> Self {
         Self::default()
@@ -89,13 +77,20 @@ impl Diagnostics {
         });
         self.files.last_mut().unwrap()
     }
-    pub fn check(&self) {
-        let has_errors = self.has_errors();
-        if has_errors {
-            todo!()
-        }
+    pub fn insert(&mut self, diagnostics: DiagnosticsFile) {
+        self.files.push(diagnostics)
     }
-    fn has_errors(&self) -> bool {
+    pub fn display(&self) {
+        println!(
+            "{}",
+            self.files
+                .iter()
+                .map(|f| format!("{f}\n"))
+                .collect::<Vec<String>>()
+                .join("\n")
+        );
+    }
+    pub fn has_errors(&self) -> bool {
         for file in &self.files {
             for diagnostic in &file.diagnostics {
                 if diagnostic.level == DiagnosticLevel::Error {

@@ -32,6 +32,7 @@ pub enum TokenKind {
 
     Pub,    // pub
     Extern, // extern
+    Async,  // async
     Unsafe, // unsafe
     Static, // Static
 
@@ -60,7 +61,7 @@ pub enum TokenKind {
     FatArrow,        // =>
 
     SelfKeyword, // self
-    Super, // super
+    Super,       // super
 
     If,     // if
     ElseIf, // else if
@@ -188,17 +189,17 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
         "if" => If,
         "else" => Else,
         "elseif" => ElseIf,
-        
 
         "mut" => Mutable,
         "var" => Var,
 
         "true" | "false" => Boolean,
-        
+
         "super" => Super,
 
         "pub" => Pub,
         "static" => Static,
+        "async" => Async,
         "unsafe" => Unsafe,
         "extern" => Extern,
 
