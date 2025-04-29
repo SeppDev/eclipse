@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
 use context::status::Status;
 use diagnostics::Diagnostics;
 
-use crate::{common::files::Files, FILE_EXTENSION};
+use crate::FILE_EXTENSION;
 
 pub type Path = crate::common::path::Path;
 
@@ -35,33 +33,31 @@ impl CompilerBuilder {
     }
     pub fn build(self) -> CompilerCtx {
         let project_path = self.project_path;
-        let mut files = Files::new();
         let mut path = Path::single("std");
         path.set_extension(FILE_EXTENSION);
 
-        files.cache(path, "import test".to_string());
-
         CompilerCtx {
             project_path,
-            files,
+            logs: Vec::new(),
             diagnostics: Diagnostics::new(),
             status: self.status.then(|| Status::new()),
         }
     }
 }
 
-#[allow(unused)]
 pub struct CompilerCtx {
-    pub files: Files,
     status: Option<Status>,
     project_path: Path,
     diagnostics: Diagnostics,
+    logs: Vec<String>,
 }
 impl CompilerCtx {
     pub fn builder() -> CompilerBuilder {
-        CompilerBuilder::new()
+        CompilerBuilder::new()}
+    pub fn log(&mut self, message: impl ToString) {
+        self.logs.push(message.to_string());
     }
-    pub fn resolve_path(&self, relative_path: Path) -> Path {
+    pub fn resolve_path(&self, relative_path: &Path) -> Path {
         self.project_path.clone().extend(relative_path)
     }
     pub fn check_diagnostics(&self) {
@@ -72,9 +68,18 @@ impl CompilerCtx {
         std::process::exit(0)
     }
     pub fn finish(self) {
-        self.check_diagnostics();
-        if let Some(status) = self.status {
+        if let Some(status) = &self.status {
             status.quit();
         }
+        self.check_diagnostics();
+
+        println!(
+            "{}",
+            self.logs
+                .into_iter()
+                .map(|msg| format!("[LOG]: {msg}"))
+                .collect::<Vec<String>>()
+                .join("\n")
+        )
     }
 }

@@ -56,6 +56,9 @@ impl Path {
             extension: None,
         }
     }
+    pub fn stringify(&self, sep: &str) -> String {
+        self.components.join(sep)
+    }
     pub fn single(root: &str) -> Self {
         let mut path = Self::new();
         path.push(root);
@@ -75,11 +78,7 @@ impl Path {
     pub fn exists(&self) -> bool {
         self.as_path_buf().exists()
     }
-    pub fn join(&self, name: &str) -> Self {
-        let mut new = self.clone();
-        new.push(name);
-        return new;
-    }
+
     pub fn push(&mut self, name: &str) {
         self.components.push(name.into());
     }
@@ -91,12 +90,20 @@ impl Path {
         clone.pop();
         clone
     }
-    pub fn extend(mut self, other: Path) -> Path {
+    pub fn join(&self, name: &str) -> Self {
+        self.clone().extend_single(name)
+    }
+    pub fn extend_single(mut self, name: &str) -> Self {
+        self.components.push(name.to_string());
+        self
+    }
+    pub fn extend(mut self, other: &Path) -> Path {
+        for name in other.components.iter() {
+            self.push(name);
+        }
         if let Some(ext) = &other.extension {
             self.set_extension(ext);
         }
-        self.components.extend(other.components.into_iter());
-
         self
     }
     pub fn len(&self) -> usize {

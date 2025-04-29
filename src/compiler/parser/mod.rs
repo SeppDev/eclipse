@@ -1,91 +1,83 @@
-use std::{borrow::Borrow, collections::HashMap};
+use std::collections::HashMap;
 
 use super::{
-    diagnostics::{DiagnosticData, DiagnosticResult, DiagnosticsFile},
-    lexer::{
-        token::{TokenInfo, TokenKind},
-        tokenize,
-    },
+    diagnostics::DiagnosticResult,
+    lexer::{token::TokenInfo, tokenize},
     nodes::ast::{Node, RawNode},
     CompilerCtx,
 };
-use crate::{
-    common::position::{LocatedAt, Position, PositionRange},
-    compiler::Path,
-    FILE_EXTENSION,
-};
+use crate::{common::position::PositionRange, compiler::Path, FILE_EXTENSION};
 
 mod common;
 mod imports;
+mod modules;
 mod node;
 
 #[derive(Debug)]
-pub struct ParsedFile {
+pub struct ParsedModule {
     pub imports: Vec<Path>,
     pub body: Vec<Node>,
 }
 
 #[derive(Debug, Default)]
-pub struct ParsedFiles {
-    pub files: HashMap<Path, ParsedFile>,
+pub struct ParsedModules {
+    pub files: HashMap<Path, ParsedModule>,
 }
 
 impl CompilerCtx {
-    pub fn parse(&mut self) -> ParsedFiles {
-        let mut parsed = ParsedFiles::default();
+    pub fn parse(&mut self) -> ParsedModules {
+        let mut parsed = ParsedModules::default();
         let mut paths = Vec::new();
         let main_path = Path::new()
-            .join("src")
-            .join("main")
+            .extend_single("src")
+            .extend_single("main")
             .extension(FILE_EXTENSION);
 
         paths.push(main_path);
 
         while let Some(relative_path) = paths.pop() {
-            let full_path = self.resolve_path(relative_path.clone());
-            let mut diagnostics = DiagnosticsFile::new(relative_path.clone());
+            let result = self.parse_relative(relative_path.clone());
+            let diagnostics = self.diagnostics.file(relative_path.clone());
 
-            diagnostics.then(|| -> DiagnosticResult {
-                let source = match self.files.fs_read(&full_path.as_path_buf()) {
-                    Ok(s) => s,
-                    Err(_) => todo!(),
-                };
-                self.files.cache(full_path, source);
+            let file = match result {
+                Ok(f) => f,
+                Err(err) => {
+                    diagnostics.extract_error(err);
+                    continue;
+                }
+            };
 
-                let file = self.parse_relative(relative_path.clone())?;
-                parsed.files.insert(relative_path, file);
-                Ok(())
-            });
+            for import in &file.imports {
+                paths.push(import.clone());
+            }
 
-            self.diagnostics.insert(diagnostics);
+            parsed.files.insert(relative_path, file);
         }
 
         parsed
     }
-
-    pub fn parse_relative(&self, relative_path: Path) -> DiagnosticResult<ParsedFile> {
+    pub fn parse_relative(&self, relative_path: Path) -> DiagnosticResult<ParsedModule> {
         self.message(format!("Parsing: {relative_path}"));
 
-        let full_path = self
-            .resolve_path(relative_path.clone())
-            .extension(FILE_EXTENSION);
-
-        let source = self.files.from_cache(&full_path).unwrap();
-
-        let mut parser = Parser::new(source)?;
+        let source = self.fs_read(&relative_path).unwrap();
+        let mut parser = Parser::new(&source)?;
         let body = parser.parse()?;
 
-        let imports: Vec<Path> = Vec::new();
+        let mut imports: Vec<Path> = Vec::new();
+
         for node in &body {
             let name = match &node.raw {
                 RawNode::Import(name) => &name.raw,
+                // RawNode::Modifiers(_, node) => todo!(),
                 _ => continue,
             };
-            let _path = self.handle_import(&relative_path, name)?;
-            todo!()
+            let path = self.resolve_import(&relative_path, name)?;
+            imports.push(path);
         }
 
-        Ok(ParsedFile { imports, body })
+        let file = ParsedModule { body, imports };
+
+        Ok(file)
     }
 }
 

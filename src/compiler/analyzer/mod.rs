@@ -1,7 +1,13 @@
-use super::CompilerCtx;
+use super::{
+    parser::{ParsedModule, ParsedModules},
+    CompilerCtx,
+};
+
+mod types;
 
 impl CompilerCtx {
-    pub fn _analyze(&mut self) {
-        todo!()
+    pub fn analyze(&mut self, modules: ParsedModules) {
+        let entry = modules.entry();
+        self.log(format!("{entry:#?}"));
     }
 }

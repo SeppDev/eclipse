@@ -2,7 +2,6 @@ mod cli;
 mod commands;
 mod common;
 mod compiler;
-mod test;
 mod utils;
 
 pub const FILE_EXTENSION: &str = "ecl";
@@ -15,20 +14,20 @@ fn main() {
             commands::check,
         )
         .register(
-            "Builds current project",
+            "builds current project",
             vec!["b", "build"],
             commands::build,
         )
         .register(
-            "Build and runs current project",
+            "build and runs current project",
             vec!["r", "run"],
             commands::run,
         )
         .register(
-            "Create a new project <path>",
+            "create a new project <path>",
             vec!["n", "new"],
             commands::new,
         )
-        .register("Initialize project", vec!["init"], commands::init)
+        .register("initialize project", vec!["init"], commands::init)
         .start()
 }

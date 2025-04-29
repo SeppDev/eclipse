@@ -1,22 +1,11 @@
 use crate::{common::position::PositionRange, compiler::Path};
 
 pub type DiagnosticResult<T = ()> = Result<T, Option<DiagnosticData>>;
-impl DiagnosticsFile {
-    pub fn capture<T>(&mut self, result: DiagnosticResult<T>) -> DiagnosticResult<T> {
-        let mut error = match result {
-            Ok(r) => return Ok(r),
-            Err(error) => error,
-        };
-        match error.take() {
-            Some(err) => self.diagnostics.push(err),
-            None => panic!("Already took the diagnostics data!"),
-        };
-        Err(None)
-    }
-}
+
 
 pub mod builder;
 mod display;
+mod file;
 
 #[derive(Default, PartialEq)]
 pub enum DiagnosticLevel {
@@ -46,20 +35,7 @@ pub struct DiagnosticsFile {
     path: Path,
     diagnostics: Vec<DiagnosticData>,
 }
-impl DiagnosticsFile {
-    pub fn new(relative_path: Path) -> Self {
-        Self {
-            path: relative_path,
-            diagnostics: Vec::new(),
-        }
-    }
-    pub fn then<T, F>(&mut self, func: F) -> DiagnosticResult<T>
-    where
-        F: FnOnce() -> DiagnosticResult<T>,
-    {
-        self.capture(func())
-    }
-}
+
 
 #[derive(Default)]
 pub struct Diagnostics {

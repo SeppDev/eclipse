@@ -8,7 +8,11 @@ use crate::{
 };
 
 impl CompilerCtx {
-    pub fn handle_import(&self, current_relative_path: &Path, name: &str) -> DiagnosticResult<Path> {
+    pub fn resolve_import(
+        &self,
+        current_relative_path: &Path,
+        name: &str,
+    ) -> DiagnosticResult<Path> {
         let file_name = current_relative_path.last().unwrap();
         let is_module = file_name == "mod" || file_name == "main";
 
@@ -27,7 +31,7 @@ impl CompilerCtx {
             let mut relative_path = relative_path.to_owned();
             relative_path.set_extension(FILE_EXTENSION);
 
-            let full_path = self.resolve_path(relative_path.clone());
+            let full_path = self.resolve_path(&relative_path);
             if full_path.exists() {
                 found.push(relative_path);
             }

@@ -52,15 +52,10 @@ impl Status {
         }
     }
     pub fn message(&self, message: String) {
-        let _ = self.sender.send(Some(message));
+        self.sender.send(Some(message)).unwrap();
     }
     pub fn quit(&self) {
         let _ = self.sender.send(None);
-        let _ = self.done_receiver.recv_timeout(Duration::from_secs(1));
-    }
-}
-impl Drop for Status {
-    fn drop(&mut self) {
-        self.quit();
+        let _ = self.done_receiver.recv_timeout(Duration::from_secs(2));
     }
 }
