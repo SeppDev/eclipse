@@ -1,5 +1,5 @@
 use crate::compiler::{
-    diagnostics::DiagnosticResult, lexer::token::TokenKind, nodes::ast::RawNode, parser::Parser,
+    ast::RawNode, diagnostics::DiagnosticResult, lexer::token::TokenKind, parser::Parser,
 };
 
 impl Parser {

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, hash::Hash};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PositionRange {
@@ -61,6 +61,11 @@ impl std::fmt::Display for PositionRange {
 pub struct LocatedAt<T> {
     pub position: PositionRange,
     pub raw: T,
+}
+impl<T: Hash> Hash for LocatedAt<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.raw.hash(state);
+    }
 }
 impl<T> From<T> for LocatedAt<T> {
     fn from(value: T) -> Self {

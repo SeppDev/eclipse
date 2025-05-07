@@ -5,14 +5,13 @@ use crate::{
     compiler::{
         diagnostics::{DiagnosticData, DiagnosticResult},
         lexer::token::{TokenInfo, TokenKind},
-        nodes::ast::Node,
     },
 };
 
-use super::Parser;
+use super::{Parser, ast};
 
 impl Parser {
-    pub fn parse(&mut self) -> DiagnosticResult<Vec<Node>> {
+    pub fn parse(&mut self) -> DiagnosticResult<Vec<ast::Node>> {
         let mut nodes = Vec::new();
 
         loop {

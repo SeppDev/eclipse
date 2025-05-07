@@ -1,5 +1,5 @@
 use crate::{
-    common::path::Path,
+    common::{path::Path, position::PositionRange},
     compiler::{
         diagnostics::{DiagnosticData, DiagnosticResult},
         CompilerCtx,
@@ -8,8 +8,9 @@ use crate::{
 };
 
 impl CompilerCtx {
-    pub fn resolve_import(
+    pub(super) fn resolve_import(
         &self,
+        position: PositionRange,
         current_relative_path: &Path,
         name: &str,
     ) -> DiagnosticResult<Path> {
@@ -42,6 +43,7 @@ impl CompilerCtx {
                 .title(format!(
                     "Unresolved module, found two modules {expected_paths:?}"
                 ))
+                .position(position)
                 .to_err();
         }
 
@@ -53,6 +55,7 @@ impl CompilerCtx {
             .title(format!(
                 "Unresolved module, can't find module {expected_paths:?}"
             ))
+            .position(position)
             .to_err()
     }
 }

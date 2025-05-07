@@ -1,8 +1,8 @@
 use crate::compiler::{
     diagnostics::DiagnosticResult,
     lexer::token::{TokenInfo, TokenKind::*},
-    nodes::{ast::RawNode, shared::EqualsOperation},
     parser::Parser,
+    {ast::RawNode, common::operators::EqualsOperation},
 };
 
 impl Parser {

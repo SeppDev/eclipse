@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::{common::position::LocatedAt, compiler::lexer::token::TokenInfo};
 
-use super::shared::{ArithmethicOperator, CompareOperator, EqualsOperation};
+use super::common::operators::{ArithmethicOperator, CompareOperator, EqualsOperation};
 
 pub type Node = LocatedAt<RawNode>;
 
@@ -163,6 +163,7 @@ pub enum RawType {
 
     Reference(Option<Identifier>, Box<Type>),
 
+    // Box(Box<Type>),
     Tuple(Vec<Type>),
     Array(Box<Type>, Identifier),
     Slice(Box<Type>),
@@ -208,9 +209,9 @@ impl Display for RawType {
                         .join("::")
                 )
             }
-            Array(data_type, amount) => return write!(f, "[{};{}]", data_type.raw, amount.raw),
+            Array(data_type, amount) => return write!(f, "[{}; {}]", data_type.raw, amount.raw),
             Slice(data_type) => return write!(f, "[{}]", data_type.raw),
-
+            // Box(data_type) => return write!(f, "Box<{}>", data_type.raw),
             SelfType => "self",
             Void => "void",
             Never => "never",

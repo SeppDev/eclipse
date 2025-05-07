@@ -1,7 +1,6 @@
 use crate::compiler::{
     diagnostics::DiagnosticResult,
     lexer::token::TokenKind,
-    nodes::ast::{Node, RawNode},
 };
 
 mod block;
@@ -17,11 +16,11 @@ mod set;
 mod types;
 mod variable;
 
-use super::Parser;
+use super::{ast, Parser};
 use TokenKind::*;
 
 impl Parser {
-    pub fn top_level_expect(&mut self) -> DiagnosticResult<Node> {
+    pub fn top_level_expect(&mut self) -> DiagnosticResult<ast::Node> {
         let peeked = self.peek();
 
         Ok(match &peeked.kind {
@@ -29,12 +28,12 @@ impl Parser {
                 let start = self.next()?.position.start;
                 let name = self.expect_identifier()?;
 
-                self.located(RawNode::Import(name.into()), start)
+                self.located(ast::RawNode::Import(name.into()), start)
             }
             _ => return self.expect_node(),
         })
     }
-    pub fn expect_node(&mut self) -> DiagnosticResult<Node> {
+    pub fn expect_node(&mut self) -> DiagnosticResult<ast::Node> {
         self.skip_semicolons()?;
 
         let peeked = self.peek();
@@ -70,7 +69,7 @@ impl Parser {
             Function,
         ])?;
 
-        let raw: RawNode = match info.kind {
+        let raw: ast::RawNode = match info.kind {
             Function => self.parse_function()?,
             OpenCurlyBracket => self.parse_block()?,
             Var => self.parse_variable_decl()?,

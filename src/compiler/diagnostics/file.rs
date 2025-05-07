@@ -1,5 +1,3 @@
-use crate::compiler::Path;
-
 use super::{DiagnosticData, DiagnosticResult, DiagnosticsFile};
 
 impl DiagnosticsFile {
@@ -11,13 +9,11 @@ impl DiagnosticsFile {
         self.extract_error(error);
         Err(None)
     }
-    pub fn new(relative_path: Path) -> Self {
+    pub fn new() -> Self {
         Self {
-            path: relative_path,
             diagnostics: Vec::new(),
         }
     }
-
     pub fn extract_error(&mut self, mut option: Option<DiagnosticData>) {
         match option.take() {
             Some(err) => self.diagnostics.push(err),

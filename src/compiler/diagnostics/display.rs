@@ -4,27 +4,18 @@ use crate::compiler::Path;
 
 use super::{DiagnosticData, DiagnosticLevel, DiagnosticsFile};
 
-impl Display for DiagnosticsFile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.diagnostics
-                .iter()
-                .map(|diagnostic| diagnostic.to_string(&self.path))
-                .collect::<Vec<String>>()
-                .join("\n")
-        )
-    }
-}
-impl Debug for DiagnosticsFile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+impl DiagnosticsFile {
+    pub fn display(&self, path: &Path) -> String {
+        self.diagnostics
+            .iter()
+            .map(|d| d.display(path))
+            .collect::<Vec<String>>()
+            .join("\n")
     }
 }
 
 impl DiagnosticData {
-    fn to_string(&self, path: &Path) -> String {
+    fn display(&self, path: &Path) -> String {
         let level = &self.level;
         let title = &self.title;
         let position = match &self.position {
@@ -43,6 +34,11 @@ impl DiagnosticData {
             .join("\n");
 
         format!("{level}: {title}\n\t--> {path}{position}\n{span}")
+    }
+}
+impl Debug for DiagnosticData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display(&Path::single("?")))
     }
 }
 

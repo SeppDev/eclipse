@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use crate::{common::position::PositionRange, compiler::Path};
 
 pub type DiagnosticResult<T = ()> = Result<T, Option<DiagnosticData>>;
-
 
 pub mod builder;
 mod display;
@@ -32,42 +33,34 @@ pub struct DiagnosticData {
 }
 
 pub struct DiagnosticsFile {
-    path: Path,
     diagnostics: Vec<DiagnosticData>,
 }
 
-
 #[derive(Default)]
 pub struct Diagnostics {
-    files: Vec<DiagnosticsFile>,
+    files: HashMap<Path, DiagnosticsFile>,
 }
 
 impl Diagnostics {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn file(&mut self, relative_path: Path) -> &mut DiagnosticsFile {
-        self.files.push(DiagnosticsFile {
-            path: relative_path,
-            diagnostics: Vec::new(),
-        });
-        self.files.last_mut().unwrap()
-    }
-    pub fn insert(&mut self, diagnostics: DiagnosticsFile) {
-        self.files.push(diagnostics)
+    pub fn file(&mut self, relative_path: &Path) -> &mut DiagnosticsFile {
+        self.files.insert(relative_path.clone(), DiagnosticsFile::new());
+        self.files.get_mut(relative_path).unwrap()
     }
     pub fn display(&self) {
         println!(
             "{}",
             self.files
                 .iter()
-                .map(|f| format!("{f}\n"))
+                .map(|(p, f)| f.display(p))
                 .collect::<Vec<String>>()
                 .join("\n")
         );
     }
     pub fn has_errors(&self) -> bool {
-        for file in &self.files {
+        for (_, file) in &self.files {
             for diagnostic in &file.diagnostics {
                 if diagnostic.level == DiagnosticLevel::Error {
                     return true;

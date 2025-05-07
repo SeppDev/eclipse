@@ -1,6 +1,6 @@
 use crate::compiler::{
+    ast::{Node, RawNode},
     diagnostics::DiagnosticResult,
-    nodes::ast::{Node, RawNode},
     parser::Parser,
 };
 

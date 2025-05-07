@@ -6,10 +6,11 @@ use crate::FILE_EXTENSION;
 pub type Path = crate::common::path::Path;
 
 pub mod analyzer;
+pub mod ast;
+pub mod common;
 pub mod context;
 pub mod diagnostics;
 pub mod lexer;
-pub mod nodes;
 pub mod parser;
 
 pub struct CompilerBuilder {
@@ -53,7 +54,8 @@ pub struct CompilerCtx {
 }
 impl CompilerCtx {
     pub fn builder() -> CompilerBuilder {
-        CompilerBuilder::new()}
+        CompilerBuilder::new()
+    }
     pub fn log(&mut self, message: impl ToString) {
         self.logs.push(message.to_string());
     }

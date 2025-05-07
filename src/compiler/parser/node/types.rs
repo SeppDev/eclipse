@@ -1,7 +1,7 @@
 use crate::compiler::{
     diagnostics::{DiagnosticData, DiagnosticResult},
     lexer::token::TokenKind::*,
-    nodes::ast::{Identifier, RawType, Type},
+    ast::{Identifier, RawType, Type},
 };
 
 use super::Parser;

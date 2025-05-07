@@ -1,13 +1,11 @@
-use super::{
-    parser::{ParsedModule, ParsedModules},
-    CompilerCtx,
-};
+use super::{parser::ParsedModules, CompilerCtx};
 
 mod types;
 
 impl CompilerCtx {
-    pub fn analyze(&mut self, modules: ParsedModules) {
-        let entry = modules.entry();
-        self.log(format!("{entry:#?}"));
+    pub(super) fn check_name_collision(&self) {}
+    pub fn analyze(&mut self, modules: &ParsedModules) {
+        let types = self.get_types(modules);
+        println!("{types:#?}");
     }
 }

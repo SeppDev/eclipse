@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use super::{
+    ast,
     diagnostics::DiagnosticResult,
     lexer::{token::TokenInfo, tokenize},
-    nodes::ast::{Node, RawNode},
     CompilerCtx,
 };
 use crate::{common::position::PositionRange, compiler::Path, FILE_EXTENSION};
@@ -16,7 +16,7 @@ mod node;
 #[derive(Debug)]
 pub struct ParsedModule {
     pub imports: Vec<Path>,
-    pub body: Vec<Node>,
+    pub body: Vec<ast::Node>,
 }
 
 #[derive(Debug, Default)]
@@ -36,8 +36,8 @@ impl CompilerCtx {
         paths.push(main_path);
 
         while let Some(relative_path) = paths.pop() {
-            let result = self.parse_relative(relative_path.clone());
-            let diagnostics = self.diagnostics.file(relative_path.clone());
+            let result = self.parse_relative(&relative_path);
+            let diagnostics = self.diagnostics.file(&relative_path);
 
             let file = match result {
                 Ok(f) => f,
@@ -56,22 +56,25 @@ impl CompilerCtx {
 
         parsed
     }
-    pub fn parse_relative(&self, relative_path: Path) -> DiagnosticResult<ParsedModule> {
+    pub fn parse_relative(&self, relative_path: &Path) -> DiagnosticResult<ParsedModule> {
         self.message(format!("Parsing: {relative_path}"));
 
         let source = self.fs_read(&relative_path).unwrap();
         let mut parser = Parser::new(&source)?;
-        let body = parser.parse()?;
+        let nodes = parser.parse()?;
 
         let mut imports: Vec<Path> = Vec::new();
+        let mut body = Vec::with_capacity(nodes.len());
 
-        for node in &body {
-            let name = match &node.raw {
-                RawNode::Import(name) => &name.raw,
-                // RawNode::Modifiers(_, node) => todo!(),
-                _ => continue,
+        for node in nodes {
+            let name = match node.raw {
+                ast::RawNode::Import(name) => name.raw,
+                _ => {
+                    body.push(node);
+                    continue;
+                }
             };
-            let path = self.resolve_import(&relative_path, name)?;
+            let path = self.resolve_import(node.position, &relative_path, &name)?;
             imports.push(path);
         }
 
@@ -97,30 +100,3 @@ impl Parser {
         })
     }
 }
-
-// fn parse_file(
-//     &mut self,
-//     relative_path: Path,
-//     paths: &mut Vec<Path>,
-// ) -> DiagnosticData<ParsedFile> {
-//     let nodes = self.parse_relative(path.)?;
-//     let mut body = Vec::with_capacity(nodes.len());
-//     let mut imports = HashMap::new();
-
-//     for node in nodes {
-//         if let RawNode::Import(import) = node.raw {
-//             let path = self.handle_import(&path, &import.raw)?;
-//             let full_path = self.resolve_path(path.clone());
-//             let source = self.files.fs_read(&full_path.as_path_buf()).unwrap();
-
-//             self.files.cache(path.clone(), source);
-//             imports.insert(import.raw, path.clone());
-//             paths.push(path);
-//             continue;
-//         }
-//         body.push(node);
-//     }
-
-//     let file = ParsedFile { imports, body };
-//     parsed.files.insert(path, file);
-// }

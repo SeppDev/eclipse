@@ -37,7 +37,7 @@ impl Into<Path> for PathBuf {
             .and_then(|o| Some(o.into()));
 
         let components: Vec<String> = self
-            .into_iter()
+            .iter()
             .map(|o| o.to_str().unwrap())
             .map(|o| o.to_string())
             .collect();
