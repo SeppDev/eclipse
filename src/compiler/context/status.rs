@@ -59,3 +59,9 @@ impl Status {
         let _ = self.done_receiver.recv_timeout(Duration::from_secs(2));
     }
 }
+
+impl Drop for Status {
+    fn drop(&mut self) {
+        self.quit();
+    }
+}

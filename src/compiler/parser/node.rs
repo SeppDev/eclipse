@@ -10,7 +10,6 @@ mod function;
 mod keyword;
 mod modifiers;
 mod namespace;
-mod order_operations;
 mod semicolon;
 mod set;
 mod types;

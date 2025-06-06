@@ -84,7 +84,7 @@ pub enum RawNode {
         condition: Box<Node>,
         body: Box<Node>,
     },
-    Field(Box<Node>, Identifier),
+    Field(Box<Node>, Box<Node>),
     Call(Box<Node>, Vec<Node>),
     Return(Option<Box<Node>>),
     Break(Option<Box<Node>>),
@@ -126,7 +126,7 @@ impl Display for Node {
                 right,
                 operator,
             } => format!("{left} {operator} {right}"),
-            Field(node, field) => format!("{node}.{}", field.raw),
+            Field(node, field) => format!("{node}.{field}"),
             Integer(s) | Identifier(s) | Float(s) => s.into(),
             s => format!("{s:?}"),
         };

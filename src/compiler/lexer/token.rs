@@ -1,4 +1,7 @@
-use crate::common::position::PositionRange;
+use crate::{
+    common::position::PositionRange,
+    compiler::common::operators::{ArithmethicOperator, CompareOperator},
+};
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 
@@ -18,10 +21,11 @@ impl TokenInfo {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TokenKind {
-    EndOfFile, // <eof>
-    Unkown,    // <unkown>
+    StartOfFile, // <sof>
+    EndOfFile,   // <eof>
+    Unkown,      // <unkown>
 
     OpenCurlyBracket,  // {
     CloseCurlyBracket, // }
@@ -126,7 +130,7 @@ impl TokenKind {
             _ => false,
         }
     }
-    pub fn _is_keyword(&self) -> bool {
+    pub fn is_keyword(&self) -> bool {
         use TokenKind::*;
 
         match self {
@@ -145,40 +149,19 @@ impl TokenKind {
         }
     }
     pub fn is_arithmetic_operator(&self) -> bool {
-        use TokenKind::*;
-
-        match self {
-            Plus | Minus | ForwardSlash | Asterisk | Percent => true,
-            _ => false,
-        }
+        ArithmethicOperator::try_from(self).is_ok()
     }
     pub fn is_compare_operator(&self) -> bool {
-        use TokenKind::*;
-
-        match self {
-            Compare | GreaterThan | GreaterThanOrEquals | LessThan | LessThanOrEquals
-            | NotEquals | And | Or => true,
-            _ => false,
-        }
+        CompareOperator::try_from(self).is_ok()
+    }
+    pub fn is_operator(&self) -> bool {
+        self.is_compare_operator() | self.is_arithmetic_operator()
     }
     pub fn is_modifier(&self) -> bool {
         use TokenKind::*;
         match self {
             Unsafe | Pub | Extern => true,
             _ => false,
-        }
-    }
-    pub fn precedence(&self) -> usize {
-        use TokenKind::*;
-        match self {
-            Compare | NotEquals | GreaterThan | GreaterThanOrEquals | LessThan
-            | LessThanOrEquals => 2,
-            And | Or => 1,
-
-            Percent => 3,
-            Asterisk | ForwardSlash => 2,
-            Plus | Minus => 1,
-            _ => 0,
         }
     }
 }

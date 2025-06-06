@@ -2,6 +2,9 @@ use std::fmt::Display;
 
 use crate::compiler::lexer::token::TokenKind;
 
+#[derive(Debug)]
+pub struct ConversionError;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum ArithmethicOperator {
     Plus,
@@ -32,11 +35,13 @@ impl Display for ArithmethicOperator {
     }
 }
 
-impl Into<ArithmethicOperator> for TokenKind {
-    fn into(self) -> ArithmethicOperator {
+impl TryFrom<&TokenKind> for ArithmethicOperator {
+    type Error = ConversionError;
+
+    fn try_from(value: &TokenKind) -> Result<Self, Self::Error> {
         use TokenKind::*;
 
-        match self {
+        Ok(match value {
             Plus => ArithmethicOperator::Plus,
             Minus => ArithmethicOperator::Subtract,
             ForwardSlash => ArithmethicOperator::Division,
@@ -44,8 +49,15 @@ impl Into<ArithmethicOperator> for TokenKind {
             Percent => ArithmethicOperator::Remainder,
             LeftBitshift => ArithmethicOperator::LeftBitshift,
             RightBitshift => ArithmethicOperator::RightBitshift,
-            _ => panic!("Invalid token for operator conversion: {self:?}"),
-        }
+            _ => return Err(ConversionError),
+        })
+    }
+}
+impl TryFrom<TokenKind> for ArithmethicOperator {
+    type Error = ConversionError;
+
+    fn try_from(value: TokenKind) -> Result<Self, Self::Error> {
+        (&value).try_into()
     }
 }
 
@@ -108,11 +120,13 @@ impl Display for CompareOperator {
         )
     }
 }
-impl Into<CompareOperator> for TokenKind {
-    fn into(self) -> CompareOperator {
+impl TryFrom<&TokenKind> for CompareOperator {
+    type Error = ConversionError;
+
+    fn try_from(value: &TokenKind) -> Result<Self, Self::Error> {
         use TokenKind::*;
 
-        match self {
+        Ok(match value {
             Compare => CompareOperator::Compare,
             GreaterThan => CompareOperator::GreaterThan,
             GreaterThanOrEquals => CompareOperator::GreaterThanOrEquals,
@@ -121,7 +135,14 @@ impl Into<CompareOperator> for TokenKind {
             NotEquals => CompareOperator::Not,
             And => CompareOperator::And,
             Or => CompareOperator::Or,
-            _ => panic!("Invalid token for operator conversion: {self:?}"),
-        }
+            _ => return Err(ConversionError),
+        })
+    }
+}
+impl TryFrom<TokenKind> for CompareOperator {
+    type Error = ConversionError;
+
+    fn try_from(value: TokenKind) -> Result<Self, Self::Error> {
+        (&value).try_into()
     }
 }
