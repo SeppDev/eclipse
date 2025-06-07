@@ -6,9 +6,7 @@ use crate::{
 pub fn check(arguments: Arguments) {
     let mut compiler: CompilerCtx = CommandLineOptions::from(arguments).into();
     let modules = compiler.parse();
-    compiler.log(format!("{modules:#?}"));
-
-    // let _modules = compiler.analyze(&modules);
+    let _modules = compiler.analyze(&modules);
 
     compiler.finish();
 }

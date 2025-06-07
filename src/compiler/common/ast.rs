@@ -1,8 +1,6 @@
-use std::fmt::{Debug, Display};
-
+use super::operators::{ArithmethicOperator, CompareOperator, EqualsOperation};
 use crate::{common::position::LocatedAt, compiler::lexer::token::TokenInfo};
-
-use super::common::operators::{ArithmethicOperator, CompareOperator, EqualsOperation};
+use std::fmt::{Debug, Display};
 
 pub type Node = LocatedAt<RawNode>;
 
@@ -21,7 +19,7 @@ impl From<TokenInfo> for Identifier {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct RawParameter {
     pub reference: Option<TokenInfo>,
     pub mutable: Option<TokenInfo>,
@@ -69,6 +67,8 @@ pub enum RawNode {
     Conditional {
         condition: Box<Node>,
         body: Box<Node>,
+        conditions: Vec<(Node, Node)>,
+        else_condition: Option<(Box<Node>, Box<Node>)>,
     },
     ArithmethicOperation {
         left: Box<Node>,
@@ -140,7 +140,7 @@ impl Into<Box<Node>> for RawNode {
     }
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Default, PartialEq, Clone)]
 pub enum RawType {
     #[default]
     Void,

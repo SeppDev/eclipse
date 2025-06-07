@@ -1,9 +1,7 @@
-use crate::compiler::{
-    diagnostics::DiagnosticResult,
-    lexer::token::TokenKind,
-};
+use crate::compiler::{diagnostics::DiagnosticResult, lexer::token::TokenKind};
 
 mod block;
+mod condition;
 mod error_message;
 mod expression;
 mod function;
@@ -55,6 +53,8 @@ impl Parser {
 
         let info = self.expect(&vec![
             OpenCurlyBracket,
+            Loop,
+            While,
             Return,
             Break,
             Continue,
@@ -76,6 +76,10 @@ impl Parser {
             Break => self.parse_break()?,
             Continue => self.parse_continue()?,
             Use => self.parse_use()?,
+            While => self.parse_while()?,
+            Loop => self.parse_loop()?,
+            If => self.parse_condition()?,
+
             _ => unreachable!(),
         };
 

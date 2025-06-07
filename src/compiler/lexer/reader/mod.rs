@@ -73,9 +73,6 @@ impl LexerReader {
         }
         None
     }
-    pub fn advance_if_eq(&mut self, char: char) -> Option<Character> {
-        self.advance_if(|c| &char == c)
-    }
     pub fn peek(&self) -> Option<&Character> {
         self.chars.last()
     }

@@ -5,7 +5,7 @@ use crate::{
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TokenInfo {
     pub kind: TokenKind,
     pub position: PositionRange,
@@ -23,9 +23,8 @@ impl TokenInfo {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TokenKind {
-    StartOfFile, // <sof>
-    EndOfFile,   // <eof>
-    Unkown,      // <unkown>
+    EndOfFile, // <eof>
+    Unkown,    // <unkown>
 
     OpenCurlyBracket,  // {
     CloseCurlyBracket, // }
@@ -130,15 +129,15 @@ impl TokenKind {
             _ => false,
         }
     }
-    pub fn is_keyword(&self) -> bool {
-        use TokenKind::*;
+    // pub fn is_keyword(&self) -> bool {
+    //     use TokenKind::*;
 
-        match self {
-            Loop | Continue | Break | While | If | ElseIf | Else | Pub | Use | Enum | Struct
-            | Function | Unsafe | Return | Result | Var | SelfKeyword => true,
-            _ => false,
-        }
-    }
+    //     match self {
+    //         Loop | Continue | Break | While | If | ElseIf | Else | Pub | Use | Enum | Struct
+    //         | Function | Unsafe | Return | Result | Var | SelfKeyword => true,
+    //         _ => false,
+    //     }
+    // }
     pub fn is_equals_operation(&self) -> bool {
         use TokenKind::*;
 

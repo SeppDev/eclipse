@@ -1,5 +1,5 @@
 use crate::compiler::{
-    ast::{Modifier, RawModifier, RawNode},
+    common::ast::{Modifier, RawModifier, RawNode},
     diagnostics::{DiagnosticData, DiagnosticResult},
     lexer::token::TokenKind,
     parser::Parser,
@@ -52,10 +52,10 @@ impl Parser {
             Box::new(self.expect_node()?),
         ))
     }
-    pub fn expect_modifiers_expression(&mut self) -> DiagnosticResult<RawNode> {
-        Ok(RawNode::Modifiers(
-            self.expect_modifiers_list()?,
-            Box::new(self.expect_expression()?),
-        ))
-    }
+    // pub fn expect_modifiers_expression(&mut self) -> DiagnosticResult<RawNode> {
+    //     Ok(RawNode::Modifiers(
+    //         self.expect_modifiers_list()?,
+    //         Box::new(self.expect_expression()?),
+    //     ))
+    // }
 }

@@ -1,7 +1,8 @@
 use crate::{
     common::position::LocatedAt,
     compiler::{
-        ast::RawNode, diagnostics::DiagnosticResult, lexer::token::TokenKind, parser::Parser,
+        common::ast::RawNode, diagnostics::DiagnosticResult, lexer::token::TokenKind,
+        parser::Parser,
     },
 };
 

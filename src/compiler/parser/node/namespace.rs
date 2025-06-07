@@ -1,5 +1,5 @@
 use crate::compiler::{
-    ast::{RawNode, UsePath},
+    common::ast::{RawNode, UsePath},
     diagnostics::DiagnosticResult,
     lexer::token::TokenKind::*,
     parser::Parser,

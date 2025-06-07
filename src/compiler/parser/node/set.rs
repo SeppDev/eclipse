@@ -2,7 +2,7 @@ use crate::compiler::{
     diagnostics::DiagnosticResult,
     lexer::token::{TokenInfo, TokenKind::*},
     parser::Parser,
-    {ast::RawNode, common::operators::EqualsOperation},
+    {common::ast::RawNode, common::operators::EqualsOperation},
 };
 
 impl Parser {

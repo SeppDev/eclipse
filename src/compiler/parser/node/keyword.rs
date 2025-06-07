@@ -1,16 +1,15 @@
 use crate::compiler::{
-    ast::{Node, RawNode},
+    common::ast::{Node, RawNode},
     diagnostics::DiagnosticResult,
     parser::Parser,
 };
 
 impl Parser {
     fn expect_potential_value(&mut self) -> DiagnosticResult<Option<Box<Node>>> {
-        if !self.peek().kind.is_expression_start() {
-            return Ok(None);
+        match self.get_expression()? {
+            Some(e) => Ok(Some(Box::new(e))),
+            None => Ok(None),
         }
-        let node = self.expect_expression()?;
-        Ok(Some(Box::new(node)))
     }
     pub fn parse_return(&mut self) -> DiagnosticResult<RawNode> {
         Ok(RawNode::Return(self.expect_potential_value()?))

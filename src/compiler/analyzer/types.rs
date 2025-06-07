@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::{
     common::path::Path,
     compiler::{
+        common::ast::{Parameter, RawNode, Type},
         diagnostics::DiagnosticResult,
         parser::{ParsedModule, ParsedModules},
         CompilerCtx,
@@ -10,27 +11,15 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub enum Type {
-    Void,
-    Int(usize),
-    Generic(String),
-}
-// impl Into<Type> for &nodes::ast::Type {
-//     fn into(self) -> Type {
-//         todo!()
-//     }
-// }
-
-#[derive(Debug)]
 pub struct FunctionType {
     // generics: Vec<String>,
-    // parameters: Vec<LocatedAt<(Identifier, LocatedAt<Type>)>>,
-    // return_type: LocatedAt<Type>,
+    parameters: Vec<Parameter>,
+    return_type: Type,
 }
 
 #[derive(Debug, Default)]
 pub struct ModuleTypes {
-    pub types: HashMap<String, Type>,
+    // pub types: HashMap<String, Type>,
     pub functions: HashMap<String, FunctionType>,
 }
 
@@ -48,25 +37,23 @@ impl CompilerCtx {
     fn get_module_types(&self, module: &ParsedModule) -> DiagnosticResult<ModuleTypes> {
         let mut module_types = ModuleTypes::default();
         let functions = &mut module_types.functions;
-        let types = &mut module_types.types;
+        // let types = &mut module_types.types;
 
         for node in &module.body {
             match &node.raw {
-                // RawNode::Function {
-                //     name,
-                //     parameters,
-                //     return_type,
-                //     ..
-                // } => {
-                //     let parameters = parameters.iter().map(|t| );
-                //     let return_type = return_type.raw.into();
-                //     functions.insert(
-                //         name.raw.clone(),
-                //         FunctionType {
-                //             parameters,
-                //             return_type,
-                //         })},
-                _ => todo!(),
+                RawNode::Function {
+                    name,
+                    parameters,
+                    return_type,
+                    ..
+                } => functions.insert(
+                    name.raw.clone(),
+                    FunctionType {
+                        parameters: parameters.clone(),
+                        return_type: return_type.clone(),
+                    },
+                ),
+                raw => todo!("{raw:#?}"),
             };
         }
 
@@ -76,6 +63,9 @@ impl CompilerCtx {
         let mut types = Types::new();
 
         for (path, module) in &modules.files {
+            let mut path = path.clone();
+            path.set_extension("");
+
             types
                 .modules
                 .insert(path.clone(), self.get_module_types(module)?);

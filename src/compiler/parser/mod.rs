@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::{
-    ast,
+    common::ast,
     diagnostics::DiagnosticResult,
     lexer::{token::TokenInfo, tokenize},
     CompilerCtx,
