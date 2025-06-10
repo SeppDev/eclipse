@@ -1,8 +1,20 @@
-use super::{ParsedModule, ParsedModules};
-use crate::{compiler::Path, FILE_EXTENSION};
+use std::collections::HashMap;
 
-impl ParsedModules {
-    pub fn _entry(&self) -> &ParsedModule {
+use crate::{compiler::{common::ast, Path}, FILE_EXTENSION};
+
+#[derive(Debug, Default)]
+pub struct ASTModule {
+    pub imports: Vec<Path>,
+    pub body: Vec<ast::Node>,
+}
+
+#[derive(Debug, Default)]
+pub struct ASTModules {
+    pub files: HashMap<Path, ASTModule>,
+}
+
+impl ASTModules {
+    pub fn entry(&self) -> &ASTModule {
         let path = Path::single("src").join("main").extension(FILE_EXTENSION);
         self.files.get(&path).unwrap()
     }

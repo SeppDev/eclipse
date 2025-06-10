@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use crate::{
     common::path::Path,
     compiler::{
-        common::ast::{Parameter, RawNode, Type},
-        diagnostics::DiagnosticResult,
-        parser::{ParsedModule, ParsedModules},
-        CompilerCtx,
+        common::ast::{Parameter, RawNode, Type}, diagnostics::DiagnosticResult, parser::{ASTModule, ASTModules}, CompilerCtx
     },
 };
 
@@ -34,7 +31,7 @@ impl Types {
 }
 
 impl CompilerCtx {
-    fn get_module_types(&self, module: &ParsedModule) -> DiagnosticResult<ModuleTypes> {
+    fn get_module_types(&self, module: &ASTModule) -> DiagnosticResult<ModuleTypes> {
         let mut module_types = ModuleTypes::default();
         let functions = &mut module_types.functions;
         // let types = &mut module_types.types;
@@ -59,7 +56,7 @@ impl CompilerCtx {
 
         Ok(module_types)
     }
-    pub(super) fn get_types(&mut self, modules: &ParsedModules) -> DiagnosticResult<Types> {
+    pub(super) fn get_types(&mut self, modules: &ASTModules) -> DiagnosticResult<Types> {
         let mut types = Types::new();
 
         for (path, module) in &modules.files {

@@ -2,7 +2,6 @@ use crate::compiler::{diagnostics::DiagnosticResult, lexer::token::TokenKind};
 
 mod block;
 mod condition;
-mod error_message;
 mod expression;
 mod function;
 mod keyword;

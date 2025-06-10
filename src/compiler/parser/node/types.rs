@@ -8,40 +8,52 @@ use super::Parser;
 
 impl Parser {
     pub fn expect_type(&mut self) -> DiagnosticResult<Type> {
-        let info = match self.expect(&vec![Identifier, OpenBracket, OpenParen]) {
+        let info = match self.expect(&vec![Identifier, Ampersand, OpenBracket, OpenParen]) {
             Ok(i) => i,
             Err(_) => {
                 let peeked = self.peek();
                 return DiagnosticData::error()
-                    .title(format!(
-                        "Expected type but{}",
-                        Self::generate_error_title(&peeked.kind)
-                    ))
+                    .title(format!("Expected type but, got: {:?}", &peeked.kind))
                     .position(peeked.position)
                     .to_err();
             }
         };
-        let raw: RawType = if info.kind == OpenParen {
-            let mut list = Vec::new();
 
-            while self.next_if_eq(CloseParen)?.is_none() {
+        let raw: RawType = match info.kind {
+            OpenParen => {
+                let mut list = Vec::new();
+
+                while self.next_if_eq(CloseParen)?.is_none() {
+                    let data_type = self.expect_type()?;
+                    list.push(data_type);
+                }
+
+                RawType::Tuple(list)
+            }
+            OpenBracket => {
                 let data_type = self.expect_type()?;
-                list.push(data_type);
+                if self.next_if_eq(SemiColon)?.is_some() {
+                    let amount = self.expect_identifier()?.into();
+                    self.expect_single(CloseBracket)?;
+                    RawType::Array(Box::new(data_type), amount)
+                } else {
+                    self.expect_single(CloseBracket)?;
+                    RawType::Slice(Box::new(data_type))
+                }
             }
+            Ampersand if self.peek().kind == Apostrophe => {
+                self.next()?;
+                let lifetime = Some(self.expect_identifier()?.into());
+                let data_type = self.expect_type()?;
+                RawType::Ref(lifetime, Box::new(data_type))
+            }
+            Ampersand if self.peek().kind == Mutable => {
+                self.next()?;
+                RawType::RefMut(None, Box::new(self.expect_type()?))
+            }
+            Ampersand => RawType::Ref(None, Box::new(self.expect_type()?)),
 
-            RawType::Tuple(list)
-        } else if info.kind == OpenBracket {
-            let data_type = self.expect_type()?;
-            if self.next_if_eq(SemiColon)?.is_some() {
-                let amount = self.expect_identifier()?.into();
-                self.expect_single(CloseBracket)?;
-                RawType::Array(Box::new(data_type), amount)
-            } else {
-                self.expect_single(CloseBracket)?;
-                RawType::Slice(Box::new(data_type))
-            }
-        } else {
-            match info.string.as_str() {
+            _ => match info.string.as_str() {
                 "i64" => RawType::Int(64),
                 "i32" => RawType::Int(32),
                 "i16" => RawType::Int(16),
@@ -64,13 +76,6 @@ impl Parser {
                 "usize" => RawType::USize,
 
                 "Self" => RawType::SelfType,
-                "&" if self.peek().kind == Apostrophe => {
-                    self.next()?;
-                    let lifetime = Some(self.expect_identifier()?.into());
-                    let data_type = self.expect_type()?;
-                    RawType::Reference(lifetime, Box::new(data_type))
-                }
-                "&" => RawType::Reference(None, Box::new(self.expect_type()?)),
                 _ if self.peek().kind == DoubleColon => {
                     let mut path = Vec::new();
                     while self.next_if_eq(DoubleColon)?.is_some() {
@@ -80,7 +85,7 @@ impl Parser {
                     RawType::Other(path)
                 }
                 _ => RawType::Other(vec![Identifier::new(info.string, info.position)]),
-            }
+            },
         };
         Ok(Type::new(raw, info.position))
     }

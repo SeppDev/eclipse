@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+pub use modules::{ASTModule, ASTModules};
 
 use super::{
     common::ast,
@@ -13,20 +13,9 @@ mod imports;
 mod modules;
 mod node;
 
-#[derive(Debug)]
-pub struct ParsedModule {
-    pub imports: Vec<Path>,
-    pub body: Vec<ast::Node>,
-}
-
-#[derive(Debug, Default)]
-pub struct ParsedModules {
-    pub files: HashMap<Path, ParsedModule>,
-}
-
 impl CompilerCtx {
-    pub fn parse(&mut self) -> ParsedModules {
-        let mut parsed = ParsedModules::default();
+    pub fn parse(&mut self) -> ASTModules {
+        let mut parsed = ASTModules::default();
         let mut paths = Vec::new();
         let main_path = Path::new()
             .extend_single("src")
@@ -56,7 +45,7 @@ impl CompilerCtx {
 
         parsed
     }
-    pub fn parse_relative(&self, relative_path: &Path) -> DiagnosticResult<ParsedModule> {
+    pub fn parse_relative(&self, relative_path: &Path) -> DiagnosticResult<ASTModule> {
         self.message(format!("Parsing: {relative_path}"));
 
         let source = self.fs_read(&relative_path).unwrap();
@@ -78,7 +67,7 @@ impl CompilerCtx {
             imports.push(path);
         }
 
-        let file = ParsedModule { body, imports };
+        let file = ASTModule { body, imports };
 
         Ok(file)
     }

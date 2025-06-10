@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{Parser, ast};
+use super::{ast, Parser};
 
 impl Parser {
     pub fn parse(&mut self) -> DiagnosticResult<Vec<ast::Node>> {
@@ -79,13 +79,13 @@ impl Parser {
         }
 
         let title = format!(
-            "Expected token(s): {}{}",
+            "Expected token(s): {}, got: {:?}",
             expected
                 .iter()
                 .map(|e| format!("'{e:?}'"))
                 .collect::<Vec<String>>()
                 .join(", "),
-            Self::generate_error_title(&peeked.kind),
+            &peeked.kind,
         );
 
         DiagnosticData::error()
