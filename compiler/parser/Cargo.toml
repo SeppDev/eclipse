@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+syntax = { path = "../syntax" }
 common = { path = "../../common" }
+lexer = { path = "../lexer" }
 diagnostics = { path = "../../diagnostics" }

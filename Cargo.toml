@@ -10,13 +10,13 @@ members = [
     "compiler/lexer",
     "compiler/parser",
     "compiler/analyzer",
-
+    "compiler/syntax",
     "cli",
     "lsp",
     "common",
     "diagnostics",
 ]
 
-# default-members = ["compiler", "cli"]
+default-members = ["compiler", "cli"]
 
 [dependencies]

@@ -1,9 +1,10 @@
-use crate::compiler::{
-    common::ast::{Identifier, Node, RawNode},
-    diagnostics::{DiagnosticData, DiagnosticResult},
-    lexer::token::{TokenInfo, TokenKind},
-    parser::Parser,
+use common::{
+    layout::ast::{Node, RawNode},
+    lexer::token::{Token, TokenKind},
 };
+use diagnostics::DiagnosticResult;
+
+use crate::Parser;
 
 use TokenKind::*;
 
@@ -80,7 +81,7 @@ impl Parser {
 
         Ok(node)
     }
-    fn make_expression(&mut self, left: Node, right: Node, info: TokenInfo) -> RawNode {
+    fn make_expression(&mut self, left: Node, right: Node, info: Token) -> RawNode {
         let kind = info.kind;
         let raw = match kind {
             _ if kind.is_arithmetic_operator() => RawNode::ArithmethicOperation {
@@ -113,7 +114,7 @@ impl Parser {
             let start = self.start();
             let info = self.next()?;
 
-            let bp = info.kind.binding_power();
+            let bp = binding_power(&info.kind);
             if bp.left < min_bp {
                 break;
             }
@@ -156,21 +157,19 @@ impl BindingPower {
     }
 }
 
-impl TokenKind {
-    pub fn binding_power(&self) -> BindingPower {
-        use TokenKind::*;
+pub fn binding_power(value: &TokenKind) -> BindingPower {
+    use TokenKind::*;
 
-        match self {
-            Dot => BindingPower::new(101, 100),
-            Asterisk | ForwardSlash => BindingPower::new(70, 71),
-            Plus | Minus => BindingPower::new(60, 61),
+    match self {
+        Dot => BindingPower::new(101, 100),
+        Asterisk | ForwardSlash => BindingPower::new(70, 71),
+        Plus | Minus => BindingPower::new(60, 61),
 
-            LessThan | LessThanOrEquals | GreaterThan | GreaterThanOrEquals => {
-                BindingPower::new(40, 41)
-            }
-            Compare | NotEquals => BindingPower::new(39, 40),
-
-            t => panic!("Unkown operator: {:?}", t),
+        LessThan | LessThanOrEquals | GreaterThan | GreaterThanOrEquals => {
+            BindingPower::new(40, 41)
         }
+        Compare | NotEquals => BindingPower::new(39, 40),
+
+        t => panic!("Unkown operator: {:?}", t),
     }
 }

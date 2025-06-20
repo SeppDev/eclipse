@@ -1,10 +1,11 @@
-use crate::{
-    common::position::LocatedAt,
-    compiler::{
-        common::ast::RawNode, diagnostics::DiagnosticResult, lexer::token::TokenKind,
-        parser::Parser,
-    },
+use common::{
+    layout::ast::{RawNode, UsePath},
+    lexer::token::TokenKind,
+    path::Path,
 };
+use diagnostics::DiagnosticResult;
+
+use crate::Parser;
 
 impl Parser {
     pub fn parse_variable_decl(&mut self) -> DiagnosticResult<RawNode> {

@@ -1,10 +1,10 @@
-use crate::{lexer::token::Token, position::LocatedAt};
-
 mod node;
 mod types;
 
 pub use node::*;
 pub use types::*;
+
+use common::position::LocatedAt;
 
 pub type Node = LocatedAt<RawNode>;
 
@@ -14,19 +14,11 @@ pub type Parameter = LocatedAt<RawParameter>;
 pub type Modifier = LocatedAt<RawModifier>;
 
 pub type Identifier = LocatedAt<String>;
-impl From<Token> for Identifier {
-    fn from(value: Token) -> Self {
-        LocatedAt {
-            position: value.position,
-            raw: value.string,
-        }
-    }
-}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct RawParameter {
-    pub reference: Option<Token>,
-    pub mutable: Option<Token>,
+    pub reference: Option<LocatedAt>,
+    pub mutable: Option<LocatedAt>,
     pub name: Identifier,
     pub data_type: Type,
 }

@@ -1,4 +1,4 @@
-use crate::common::position::{LocatedAt, Position};
+use common::position::{LocatedAt, Position};
 
 pub mod comments;
 pub mod identifier;
@@ -9,13 +9,13 @@ pub mod string;
 
 pub const TAB_SIZE: usize = 4;
 
-pub struct LexerReader {
+pub struct Reader {
     chars: Vec<Character>,
 }
 
 pub type Character = LocatedAt<char>;
 
-impl LexerReader {
+impl Reader {
     pub fn new(source: &str) -> Self {
         let mut input = source.chars();
         let mut output: Vec<Character> = Vec::with_capacity(source.len());

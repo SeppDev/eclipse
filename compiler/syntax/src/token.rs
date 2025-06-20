@@ -1,3 +1,7 @@
+use common::position::PositionRange;
+
+use crate::operators::{ArithmeticOperator, CompareOperator};
+
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -6,7 +10,7 @@ pub struct Token {
     pub position: PositionRange,
     pub string: String,
 }
-impl TokenInfo {
+impl Token {
     pub fn new(string: String, kind: TokenKind, position: PositionRange) -> Self {
         Self {
             string,
@@ -143,7 +147,7 @@ impl TokenKind {
         }
     }
     pub fn is_arithmetic_operator(&self) -> bool {
-        ArithmethicOperator::try_from(self).is_ok()
+        ArithmeticOperator::try_from(self).is_ok()
     }
     pub fn is_compare_operator(&self) -> bool {
         CompareOperator::try_from(self).is_ok()
@@ -248,7 +252,7 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
     return Some(token);
 }
 
-impl std::fmt::Display for TokenInfo {
+impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,

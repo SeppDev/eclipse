@@ -1,9 +1,7 @@
 [package]
-name = "lexer"
+name = "syntax"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-syntax = { path = "../syntax" }
 common = { path = "../../common" }
-diagnostics = { path = "../../diagnostics" }

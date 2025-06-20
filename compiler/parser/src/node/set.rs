@@ -1,9 +1,13 @@
-use crate::compiler::{
-    diagnostics::DiagnosticResult,
-    lexer::token::{TokenInfo, TokenKind::*},
-    parser::Parser,
-    {common::ast::RawNode, common::operators::EqualsOperation},
+use common::{
+    layout::ast::{RawNode, UsePath},
+    lexer::token::TokenKind,
+    path::Path,
 };
+use diagnostics::DiagnosticResult;
+
+use crate::Parser;
+
+use TokenKind::*;
 
 impl Parser {
     pub fn parse_set_operation(&mut self, name: TokenInfo) -> DiagnosticResult<RawNode> {

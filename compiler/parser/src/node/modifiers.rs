@@ -1,9 +1,10 @@
-use crate::compiler::{
-    common::ast::{Modifier, RawModifier, RawNode},
-    diagnostics::{DiagnosticData, DiagnosticResult},
+use common::{
+    layout::ast::{Modifier, RawModifier, RawNode},
     lexer::token::TokenKind,
-    parser::Parser,
 };
+use diagnostics::{DiagnosticData, DiagnosticResult};
+
+use crate::Parser;
 
 use TokenKind::*;
 

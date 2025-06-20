@@ -1,10 +1,12 @@
-use crate::compiler::{
-    common::ast::{Identifier, RawType, Type},
-    diagnostics::{DiagnosticData, DiagnosticResult},
-    lexer::token::TokenKind::*,
+use common::{
+    layout::ast::{RawNode, UsePath},
+    lexer::token::TokenKind,
+    path::Path,
 };
+use diagnostics::DiagnosticResult;
 
-use super::Parser;
+use crate::Parser;
+use TokenKind::*;
 
 impl Parser {
     pub fn expect_type(&mut self) -> DiagnosticResult<Type> {

@@ -1,5 +1,8 @@
-use common::lexer::token::TokenKind;
+use TokenKind::*;
+use common::{layout::ast, lexer::token::TokenKind};
 use diagnostics::DiagnosticResult;
+
+use crate::Parser;
 
 mod block;
 mod condition;
@@ -12,9 +15,6 @@ mod semicolon;
 mod set;
 mod types;
 mod variable;
-
-use super::{Parser, ast};
-use TokenKind::*;
 
 impl Parser {
     pub fn top_level_expect(&mut self) -> DiagnosticResult<ast::Node> {

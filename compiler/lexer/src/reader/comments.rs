@@ -1,6 +1,6 @@
-use super::LexerReader;
+use super::Reader;
 
-impl LexerReader {
+impl Reader {
     pub fn read_line_comment(&mut self) {
         loop {
             match self.advance_if(|c| c != &'\n') {

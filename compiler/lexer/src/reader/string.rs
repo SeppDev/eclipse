@@ -1,11 +1,10 @@
-use crate::compiler::{
-    diagnostics::DiagnosticResult,
-    lexer::kind::{LexerKind, LocatedString},
-};
+use diagnostics::DiagnosticResult;
 
-use super::LexerReader;
+use crate::kind::{LexerKind, LocatedString};
 
-impl LexerReader {
+use super::Reader;
+
+impl Reader {
     pub fn parse_string(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         let mut body = String::new();
         let mut delimiter = self.advance().unwrap();

@@ -1,8 +1,7 @@
-use crate::compiler::{
-    common::ast::{Node, RawNode},
-    diagnostics::DiagnosticResult,
-    parser::Parser,
-};
+use common::layout::ast::{Node, RawNode};
+use diagnostics::DiagnosticResult;
+
+use crate::Parser;
 
 impl Parser {
     fn expect_potential_value(&mut self) -> DiagnosticResult<Option<Box<Node>>> {

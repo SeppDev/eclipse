@@ -1,4 +1,4 @@
-use crate::common::position::LocatedAt;
+use common::position::LocatedAt;
 
 use super::reader::Character;
 

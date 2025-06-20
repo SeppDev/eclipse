@@ -7,6 +7,5 @@ edition = "2024"
 lexer = { path = "./lexer" }
 parser = { path = "./parser" }
 analyzer = { path = "./analyzer" }
-
 diagnostics = { path = "../diagnostics" }
 common = { path = "../common" }

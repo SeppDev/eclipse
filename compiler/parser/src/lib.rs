@@ -1,13 +1,12 @@
+use ::common::{constants::FILE_EXTENSION, path::Path};
 use diagnostics::DiagnosticResult;
 pub use modules::{ASTModule, ASTModules};
-
 
 mod common;
 mod imports;
 mod modules;
-mod node;
 
-impl CompilerCtx {
+impl Parser {
     pub fn parse(&mut self) -> ASTModules {
         let mut parsed = ASTModules::default();
         let mut paths = Vec::new();
@@ -28,6 +27,7 @@ impl CompilerCtx {
                     diagnostics.extract_error(err);
                     continue;
                 }
+                
             };
 
             for import in &file.imports {

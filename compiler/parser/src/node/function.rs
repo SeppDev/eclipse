@@ -1,9 +1,8 @@
-use crate::compiler::{
-    common::ast::{Parameter, RawNode, RawParameter},
-    diagnostics::DiagnosticResult,
-    lexer::token::TokenKind,
-    parser::Parser,
-};
+use common::{layout::ast::{Parameter, RawNode, RawParameter}, lexer::token::TokenKind};
+use diagnostics::DiagnosticResult;
+
+use crate::Parser;
+
 
 use TokenKind::*;
 

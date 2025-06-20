@@ -30,12 +30,7 @@ pub enum RawNode {
         conditions: Vec<(Node, Node)>,
         else_condition: Option<(Box<Node>, Box<Node>)>,
     },
-    ArithmethicOperation {
-        left: Box<Node>,
-        right: Box<Node>,
-        operator: Operator,
-    },
-    CompareOperation {
+    Operation {
         left: Box<Node>,
         right: Box<Node>,
         operator: Operator,
@@ -71,17 +66,13 @@ pub enum RawNode {
     //     fields: Vec<(Identifier, Type)>,
     // },
 }
-impl Display for Node {
+
+impl Display for RawNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use RawNode::*;
 
-        let string = match &self.raw {
-            ArithmethicOperation {
-                left,
-                right,
-                operator,
-            } => format!("{left} {operator} {right}"),
-            CompareOperation {
+        let string = match &self {
+            Operation {
                 left,
                 right,
                 operator,
@@ -94,6 +85,7 @@ impl Display for Node {
         write!(f, "{string}")
     }
 }
+
 impl Into<Box<Node>> for RawNode {
     fn into(self) -> Box<Node> {
         Box::new(self.into())

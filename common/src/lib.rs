@@ -1,8 +1,7 @@
 pub mod constants;
+
+#[allow(unused)]
 pub mod json;
-pub mod layout;
-pub mod lexer;
-pub mod operators;
 pub mod path;
 pub mod position;
 pub mod resolver;

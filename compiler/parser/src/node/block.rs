@@ -1,6 +1,9 @@
-use crate::compiler::{
-    common::ast::RawNode, diagnostics::DiagnosticResult, lexer::token::TokenKind, parser::Parser,
-};
+use common::{layout::ast::RawNode, lexer::token::TokenKind};
+use diagnostics::DiagnosticResult;
+
+use crate::Parser;
+
+
 
 impl Parser {
     pub fn parse_block(&mut self) -> DiagnosticResult<RawNode> {

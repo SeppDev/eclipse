@@ -1,14 +1,14 @@
-use crate::{
-    common::{path::Path, position::PositionRange},
-    compiler::{
-        diagnostics::{DiagnosticData, DiagnosticResult},
-        CompilerCtx,
-    },
-    FILE_EXTENSION,
-};
+use common::constants::FILE_EXTENSION;
+use common::layout::ast;
+use common::lexer::token::{Token, TokenKind};
+use common::path::Path;
+use common::position::{LocatedAt, Position, PositionRange};
+use diagnostics::{DiagnosticData, DiagnosticResult};
 
-impl CompilerCtx {
-    pub(super) fn resolve_import(
+use crate::Parser;
+
+impl Parser {
+    pub fn resolve_import(
         &self,
         position: PositionRange,
         current_relative_path: &Path,

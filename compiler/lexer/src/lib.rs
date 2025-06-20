@@ -1,18 +1,16 @@
-pub(super) mod kind;
-pub(super) mod reader;
-pub mod token;
-
-use crate::{
-    common::position::{Position, PositionRange},
-    compiler::diagnostics::DiagnosticResult,
-};
-use kind::{LexerKind, LocatedString};
-use reader::{Character, LexerReader};
 use std::ops::Range;
-use token::{match_token, TokenInfo, TokenKind, MAX_OPERATOR_WIDTH};
 
-pub fn tokenize(source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
-    let mut reader = LexerReader::new(source);
+use common::position::{Position, PositionRange};
+use diagnostics::DiagnosticResult;
+use kind::{LexerKind, LocatedString};
+use reader::{Character, Reader};
+use syntax::token::{MAX_OPERATOR_WIDTH, Token, TokenKind, match_token};
+
+mod kind;
+mod reader;
+
+pub fn tokenize(source: &str) -> DiagnosticResult<Vec<Token>> {
+    let mut reader = Reader::new(source);
     let mut tokens = Vec::new();
 
     loop {
@@ -22,10 +20,10 @@ pub fn tokenize(source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
         };
         let token = match kind {
             LexerKind::String(position) => {
-                TokenInfo::new(position.raw, TokenKind::String, position.position)
+                Token::new(position.raw, TokenKind::String, position.position)
             }
             LexerKind::Character(position) => {
-                TokenInfo::new(position.raw, TokenKind::Character, position.position)
+                Token::new(position.raw, TokenKind::Character, position.position)
             }
             LexerKind::Identifier(position) => {
                 let kind = if let Some(kind) = match_token(&position.raw) {
@@ -33,20 +31,20 @@ pub fn tokenize(source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
                 } else {
                     TokenKind::Identifier
                 };
-                TokenInfo::new(position.raw, kind, position.position)
+                Token::new(position.raw, kind, position.position)
             }
             LexerKind::Integer(position) => {
-                TokenInfo::new(position.raw, TokenKind::Integer, position.position)
+                Token::new(position.raw, TokenKind::Integer, position.position)
             }
             LexerKind::Float(position) => {
-                TokenInfo::new(position.raw, TokenKind::Float, position.position)
+                Token::new(position.raw, TokenKind::Float, position.position)
             }
             LexerKind::Operators(mut chars) => {
                 let mut unkown = false;
                 while chars.len() > 0 {
                     if unkown {
                         let char = chars.pop().unwrap();
-                        tokens.push(TokenInfo::new(
+                        tokens.push(Token::new(
                             char.raw.into(),
                             TokenKind::Unkown,
                             char.position,
@@ -67,7 +65,7 @@ pub fn tokenize(source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
                         };
 
                         chars.drain(range);
-                        tokens.push(TokenInfo::new(string.raw, kind, string.position));
+                        tokens.push(Token::new(string.raw, kind, string.position));
                         is_final = false;
                         break;
                     }
@@ -79,7 +77,7 @@ pub fn tokenize(source: &str) -> DiagnosticResult<Vec<TokenInfo>> {
         tokens.push(token);
     }
 
-    tokens.push(TokenInfo::new(
+    tokens.push(Token::new(
         "".into(),
         TokenKind::EndOfFile,
         Position::new(0, 0, 0).to_range(),

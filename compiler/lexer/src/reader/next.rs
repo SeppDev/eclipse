@@ -1,8 +1,10 @@
-use crate::compiler::{diagnostics::DiagnosticResult, lexer::kind::LexerKind};
+use diagnostics::DiagnosticResult;
 
-use super::LexerReader;
+use crate::kind::LexerKind;
 
-impl LexerReader {
+use super::Reader;
+
+impl Reader {
     pub fn next(&mut self) -> DiagnosticResult<Option<LexerKind>> {
         loop {
             let start = match self.peek() {

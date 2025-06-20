@@ -1,4 +1,7 @@
-use std::{fmt::Debug, hash::Hash};
+use std::{
+    fmt::{Debug, Display},
+    hash::Hash,
+};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PositionRange {
@@ -58,7 +61,7 @@ impl std::fmt::Display for PositionRange {
 }
 
 #[derive(Default, Clone)]
-pub struct LocatedAt<T> {
+pub struct LocatedAt<T = ()> {
     pub position: PositionRange,
     pub raw: T,
 }
@@ -90,5 +93,10 @@ impl<T> LocatedAt<T> {
 impl<T: Debug> Debug for LocatedAt<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#?} ({})", self.raw, self.position)
+    }
+}
+impl<T: Display> Display for LocatedAt<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", self.raw, self.position)
     }
 }
