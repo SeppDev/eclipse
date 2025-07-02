@@ -1,4 +1,4 @@
-use diagnostics::DiagnosticResult;
+use diagnostics::{DiagnosticData, DiagnosticResult};
 use syntax::ast;
 
 use super::Analyzer;

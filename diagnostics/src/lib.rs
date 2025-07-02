@@ -37,17 +37,18 @@ pub struct DiagnosticsFile {
 }
 
 #[derive(Default)]
-pub struct Diagnostics<'a> {
-    files: HashMap<&'a Path, DiagnosticsFile>,
+pub struct Diagnostics {
+    files: HashMap<Path, DiagnosticsFile>,
 }
 
-impl<'a> Diagnostics<'a> {
+impl Diagnostics {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn file(&mut self, relative_path: &'a Path) -> &mut DiagnosticsFile {
-        self.files.insert(relative_path, DiagnosticsFile::new());
-        self.files.get_mut(relative_path).unwrap()
+    pub fn file(&mut self, relative_path: Path) -> &mut DiagnosticsFile {
+        self.files
+            .insert(relative_path.clone(), DiagnosticsFile::new());
+        self.files.get_mut(&relative_path).unwrap()
     }
     pub fn display(&self) {
         println!(

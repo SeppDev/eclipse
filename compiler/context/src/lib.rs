@@ -1,42 +1,42 @@
 use common::status::Status;
 use diagnostics::Diagnostics;
+use resolver::{FileSystemResolver, ModuleResolver};
 
-use crate::FILE_EXTENSION;
+pub type Path = common::path::Path;
 
-pub type Path = crate::common::path::Path;
+mod resolver;
 
-pub mod common;
-pub mod diagnostics;
-pub mod pipeline;
-
-pub struct CompilerBuilder {
+pub struct CompilerBuilder<Resolver: ModuleResolver = FileSystemResolver> {
     status: bool,
-    project_path: Path,
-    // module_resolver:
+    project_path: Option<Path>,
+    module_resolver: Option<Resolver>,
 }
-impl CompilerBuilder {
+impl<Resolver: ModuleResolver> CompilerBuilder<Resolver> {
     pub fn new() -> Self {
         Self {
-            status: true,
-            project_path: Path::default(),
+            status: false,
+            module_resolver: None,
+            project_path: None,
         }
+    }
+    pub fn resolver(mut self, resolver: Resolver) -> Self {
+        self.module_resolver = Some(resolver);
+        self
     }
     pub fn status(mut self, enabled: bool) -> Self {
         self.status = enabled;
         self
     }
     pub fn project_path(mut self, path: Path) -> Self {
-        self.project_path = path;
+        self.project_path = Some(path);
         self
     }
     pub fn build(self) -> CompilerCtx {
-        let project_path = self.project_path;
-        let mut path = Path::single("std");
-        path.set_extension(FILE_EXTENSION);
+        let project_path = self.project_path.expect("Expected a project path");
 
         CompilerCtx {
-            project_path,
             logs: Vec::new(),
+            project_path,
             diagnostics: Diagnostics::new(),
             status: self.status.then(|| Status::new()),
         }
@@ -45,11 +45,12 @@ impl CompilerBuilder {
 
 pub struct CompilerCtx {
     status: Option<Status>,
+    project_path: Path,
     diagnostics: Diagnostics,
     logs: Vec<String>,
 }
 impl CompilerCtx {
-    pub fn builder() -> CompilerBuilder {
+    pub fn builder<T: ModuleResolver>() -> CompilerBuilder<T> {
         CompilerBuilder::new()
     }
     pub fn log(&mut self, message: impl ToString) {

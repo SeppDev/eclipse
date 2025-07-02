@@ -24,12 +24,18 @@ impl Debug for Path {
     }
 }
 
+impl Into<PathBuf> for &Path {
+    fn into(self) -> PathBuf {
+        self.as_path_buf()
+    }
+}
 impl Into<PathBuf> for Path {
     fn into(self) -> PathBuf {
         self.as_path_buf()
     }
 }
-impl Into<Path> for PathBuf {
+
+impl Into<Path> for &PathBuf {
     fn into(self) -> Path {
         let extension: Option<String> = self
             .extension()
@@ -46,6 +52,11 @@ impl Into<Path> for PathBuf {
             components,
             extension,
         }
+    }
+}
+impl Into<Path> for PathBuf {
+    fn into(self) -> Path {
+        (&self).into()
     }
 }
 

@@ -4,5 +4,4 @@ pub mod constants;
 pub mod json;
 pub mod path;
 pub mod position;
-pub mod resolver;
 pub mod status;
