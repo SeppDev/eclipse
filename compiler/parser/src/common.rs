@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 
 use common::position::{LocatedAt, Position, PositionRange};
 use diagnostics::{DiagnosticData, DiagnosticResult};
-use syntax::token::{Token, TokenKind};
+use lexer::token::{Token, TokenKind};
 use syntax::ast;
 
 use crate::Parser;

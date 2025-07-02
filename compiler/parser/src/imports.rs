@@ -1,8 +1,6 @@
 use common::constants::FILE_EXTENSION;
-use common::layout::ast;
-use common::lexer::token::{Token, TokenKind};
 use common::path::Path;
-use common::position::{LocatedAt, Position, PositionRange};
+use common::position::PositionRange;
 use diagnostics::{DiagnosticData, DiagnosticResult};
 
 use crate::Parser;

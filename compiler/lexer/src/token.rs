@@ -1,6 +1,6 @@
 use common::position::PositionRange;
+use syntax::operators::{ArithmeticOperator, CompareOperator};
 
-use crate::operators::{ArithmeticOperator, CompareOperator};
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 

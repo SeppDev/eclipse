@@ -12,6 +12,7 @@ pub mod pipeline;
 pub struct CompilerBuilder {
     status: bool,
     project_path: Path,
+    // module_resolver:
 }
 impl CompilerBuilder {
     pub fn new() -> Self {
@@ -44,7 +45,6 @@ impl CompilerBuilder {
 
 pub struct CompilerCtx {
     status: Option<Status>,
-    project_path: Path,
     diagnostics: Diagnostics,
     logs: Vec<String>,
 }
@@ -52,7 +52,6 @@ impl CompilerCtx {
     pub fn builder() -> CompilerBuilder {
         CompilerBuilder::new()
     }
-    #[allow(unused)]
     pub fn log(&mut self, message: impl ToString) {
         self.logs.push(message.to_string());
     }

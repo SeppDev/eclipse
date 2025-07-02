@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use common::{constants::FILE_EXTENSION, layout::ast, path::Path};
-
+use common::{constants::FILE_EXTENSION, path::Path};
+use syntax::ast;
 
 #[derive(Debug, Default)]
 pub struct ASTModule {

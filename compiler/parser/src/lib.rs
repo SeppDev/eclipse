@@ -1,44 +1,50 @@
-use ::common::{constants::FILE_EXTENSION, path::Path};
+use std::arch::x86_64;
+
+use ::common::{constants::FILE_EXTENSION, path::Path, position::PositionRange};
+use context::CompilerCtx;
 use diagnostics::DiagnosticResult;
-pub use modules::{ASTModule, ASTModules};
+use lexer::token::Token;
+use lexer::tokenize;
+use modules::{ASTModule, ASTModules};
+use syntax::ast;
 
 mod common;
 mod imports;
 mod modules;
 
-impl Parser {
-    pub fn parse(&mut self) -> ASTModules {
-        let mut parsed = ASTModules::default();
-        let mut paths = Vec::new();
-        let main_path = Path::new()
-            .extend_single("src")
-            .extend_single("main")
-            .extension(FILE_EXTENSION);
+pub fn parse() -> ASTModules {
+    let mut parsed = ASTModules::default();
+    let mut paths = Vec::new();
+    let main_path = Path::new()
+        .extend_single("src")
+        .extend_single("main")
+        .extension(FILE_EXTENSION);
 
-        paths.push(main_path);
+    paths.push(main_path);
 
-        while let Some(relative_path) = paths.pop() {
-            let result = self.parse_relative(&relative_path);
-            let diagnostics = self.diagnostics.file(&relative_path);
+    while let Some(relative_path) = paths.pop() {
+        let result = self.parse_relative(&relative_path);
+        let diagnostics = self.diagnostics.file(&relative_path);
 
-            let file = match result {
-                Ok(f) => f,
-                Err(err) => {
-                    diagnostics.extract_error(err);
-                    continue;
-                }
-                
-            };
-
-            for import in &file.imports {
-                paths.push(import.clone());
+        let file = match result {
+            Ok(f) => f,
+            Err(err) => {
+                diagnostics.extract_error(err);
+                continue;
             }
+        };
 
-            parsed.files.insert(relative_path, file);
+        for import in &file.imports {
+            paths.push(import.clone());
         }
 
-        parsed
+        parsed.files.insert(relative_path, file);
     }
+
+    parsed
+}
+
+impl Parser {
     pub fn parse_relative(&self, relative_path: &Path) -> DiagnosticResult<ASTModule> {
         self.message(format!("Parsing: {relative_path}"));
 
@@ -69,7 +75,8 @@ impl Parser {
 
 #[derive(Default)]
 pub struct Parser {
-    tokens: Vec<TokenInfo>,
+    compiler: CompilerCtx,
+    tokens: Vec<Token>,
     last_position: PositionRange,
 }
 impl Parser {

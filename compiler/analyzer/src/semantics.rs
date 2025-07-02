@@ -1,7 +1,5 @@
-use crate::compiler::{
-    common::ast,
-    diagnostics::{DiagnosticData, DiagnosticResult},
-};
+use diagnostics::DiagnosticResult;
+use syntax::ast;
 
 use super::Analyzer;
 
@@ -27,7 +25,7 @@ impl Analyzer {
             _ => {
                 return DiagnosticData::error()
                     .title("Expected expression")
-                    .to_err()
+                    .to_err();
             }
         }
     }
