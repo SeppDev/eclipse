@@ -1,5 +1,3 @@
-use std::arch::x86_64;
-
 use ::common::{constants::FILE_EXTENSION, path::Path, position::PositionRange};
 use context::CompilerCtx;
 use diagnostics::DiagnosticResult;
@@ -44,9 +42,9 @@ pub fn parse() -> ASTModules {
     parsed
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     pub fn parse_relative(&self, relative_path: &Path) -> DiagnosticResult<ASTModule> {
-        self.message(format!("Parsing: {relative_path}"));
+        // self.message(format!("Parsing: {relative_path}"));
 
         let source = self.fs_read(&relative_path).unwrap();
         let mut parser = Parser::new(&source)?;
@@ -55,7 +53,7 @@ impl Parser {
         let mut imports: Vec<Path> = Vec::new();
         let mut body = Vec::with_capacity(nodes.len());
 
-        for node in nodes {
+        for nod in nodes {
             let name = match node.raw {
                 ast::RawNode::Import(name) => name.raw,
                 _ => {
@@ -73,20 +71,19 @@ impl Parser {
     }
 }
 
-#[derive(Default)]
-pub struct Parser {
-    compiler: CompilerCtx,
+pub struct Parser<'a> {
+    compiler: &'a mut CompilerCtx,
     tokens: Vec<Token>,
     last_position: PositionRange,
 }
-impl Parser {
-    pub fn new(source: &String) -> DiagnosticResult<Self> {
+impl<'a> Parser<'a> {
+    pub fn new(compiler: &mut CompilerCtx, source: &String) -> DiagnosticResult<Self> {
         let mut tokens = tokenize(source)?;
         tokens.reverse();
 
         Ok(Self {
             tokens,
-            ..Default::default()
+            last_position: PositionRange::default(),
         })
     }
 }

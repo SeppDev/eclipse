@@ -7,7 +7,7 @@ use syntax::ast;
 
 use crate::Parser;
 
-impl Parser {
+impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> DiagnosticResult<Vec<ast::Node>> {
         let mut nodes = Vec::new();
 

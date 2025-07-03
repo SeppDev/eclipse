@@ -14,11 +14,11 @@ pub struct Parser<'a> {
     tokens: Tokens,
     last_position: PositionRange,
 }
-impl<'a> Parser<'a> {
+impl Parser<'_> {
     pub fn new(tokens: Tokens, root_path: Path, compiler: &'a mut CompilerCtx) -> Parser<'a> {
         Self {
             compiler,
-            
+
             root_path,
             tokens,
             last_position: PositionRange::default(),

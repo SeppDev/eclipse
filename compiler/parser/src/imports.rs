@@ -5,7 +5,7 @@ use diagnostics::{DiagnosticData, DiagnosticResult};
 
 use crate::Parser;
 
-impl Parser {
+impl Parser<'_> {
     pub fn resolve_import(
         &self,
         position: PositionRange,

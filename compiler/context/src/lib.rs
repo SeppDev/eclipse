@@ -1,17 +1,17 @@
 use common::status::Status;
 use diagnostics::Diagnostics;
-use resolver::{FileSystemResolver, ModuleResolver};
+use resolver::{ModuleResolver, Resolver};
 
 pub type Path = common::path::Path;
 
 mod resolver;
 
-pub struct CompilerBuilder<Resolver: ModuleResolver = FileSystemResolver> {
+pub struct CompilerBuilder {
     status: bool,
     project_path: Option<Path>,
     module_resolver: Option<Resolver>,
 }
-impl<Resolver: ModuleResolver> CompilerBuilder<Resolver> {
+impl CompilerBuilder {
     pub fn new() -> Self {
         Self {
             status: false,
@@ -19,8 +19,8 @@ impl<Resolver: ModuleResolver> CompilerBuilder<Resolver> {
             project_path: None,
         }
     }
-    pub fn resolver(mut self, resolver: Resolver) -> Self {
-        self.module_resolver = Some(resolver);
+    pub fn resolver(mut self, resolver: impl Into<Resolver>) -> Self {
+        self.module_resolver = Some(resolver.into());
         self
     }
     pub fn status(mut self, enabled: bool) -> Self {
@@ -33,9 +33,11 @@ impl<Resolver: ModuleResolver> CompilerBuilder<Resolver> {
     }
     pub fn build(self) -> CompilerCtx {
         let project_path = self.project_path.expect("Expected a project path");
+        let module_resolver = self.module_resolver.expect("Expected a module resolver");
 
         CompilerCtx {
             logs: Vec::new(),
+            module_resolver,
             project_path,
             diagnostics: Diagnostics::new(),
             status: self.status.then(|| Status::new()),
@@ -45,13 +47,19 @@ impl<Resolver: ModuleResolver> CompilerBuilder<Resolver> {
 
 pub struct CompilerCtx {
     status: Option<Status>,
+    module_resolver: Resolver,
     project_path: Path,
     diagnostics: Diagnostics,
     logs: Vec<String>,
 }
 impl CompilerCtx {
-    pub fn builder<T: ModuleResolver>() -> CompilerBuilder<T> {
+    pub fn builder() -> CompilerBuilder {
         CompilerBuilder::new()
+    }
+    pub fn read(&self, relative_path: &Path) -> Option<String> {
+        let path = self.project_path.clone().extend(&relative_path);
+        let pathbuf = path.as_path_buf();
+        self.module_resolver.resolve_module(&pathbuf)
     }
     pub fn log(&mut self, message: impl ToString) {
         self.logs.push(message.to_string());
