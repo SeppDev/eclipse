@@ -1,5 +1,5 @@
-use common::layout::ast::{Node, RawNode};
 use diagnostics::DiagnosticResult;
+use syntax::ast::{Node, RawNode};
 
 use crate::Parser;
 

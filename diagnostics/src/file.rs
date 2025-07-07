@@ -20,4 +20,7 @@ impl DiagnosticsFile {
             None => panic!("Already took the diagnostics data!"),
         };
     }
+    pub fn insert(&mut self, diagnostic: DiagnosticData) {
+        self.diagnostics.push(diagnostic);
+    }
 }

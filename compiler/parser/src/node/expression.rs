@@ -1,8 +1,10 @@
-use common::{
-    layout::ast::{Node, RawNode},
-    lexer::token::{Token, TokenKind},
+use common::position::LocatedAt;
+use diagnostics::{DiagnosticData, DiagnosticResult};
+use lexer::token::{Token, TokenKind};
+use syntax::{
+    ast::{Node, RawNode},
+    operators::{ArithmeticOperator, CompareOperator, Operator},
 };
-use diagnostics::DiagnosticResult;
 
 use crate::Parser;
 
@@ -22,21 +24,24 @@ impl Parser {
         let info = self.next()?;
 
         let raw = match info.kind {
+            If => self.parse_condition()?,
             While => self.parse_while()?,
             Loop => self.parse_loop()?,
             Function => self.parse_function()?,
             Return => self.parse_return()?,
-            Break => self.parse_continue()?,
-            Continue => self.parse_break()?,
+            Break => self.parse_break()?,
+            Continue => self.parse_continue()?,
+            Use => self.parse_use()?,
             Var => self.parse_variable_decl()?,
             OpenCurlyBracket => self.parse_block()?,
             Integer => RawNode::Integer(info.string),
             Float => RawNode::Float(info.string),
-            Boolean => RawNode::Bool(info.string == "true"),
-            String => RawNode::String(info.string),
+            False => RawNode::Bool(false),
+            True => RawNode::Bool(true),
+            Text => RawNode::String(info.string),
             Minus => RawNode::Minus(self.expect_base_expression()?.into()),
             Identifier if self.peek().kind == DoubleColon => {
-                let mut path: Vec<Identifier> = vec![info.into()];
+                let mut path: Vec<LocatedAt<String>> = vec![info.into()];
                 while self.peek().kind == DoubleColon {
                     let ident = self.expect_identifier()?;
                     path.push(ident.into());
@@ -84,19 +89,14 @@ impl Parser {
     fn make_expression(&mut self, left: Node, right: Node, info: Token) -> RawNode {
         let kind = info.kind;
         let raw = match kind {
-            _ if kind.is_arithmetic_operator() => RawNode::ArithmethicOperation {
+            _ if kind.is_operator() => RawNode::Operation {
                 left: left.into(),
                 right: right.into(),
-                operator: kind.try_into().unwrap(),
-            },
-            _ if kind.is_compare_operator() => RawNode::CompareOperation {
-                left: left.into(),
-                right: right.into(),
-                operator: kind.try_into().unwrap(),
+                operator: kind_to_operator(&kind),
             },
             Dot => RawNode::Field(left.into(), right.into()),
             OpenParen => todo!(),
-            _ => todo!(),
+            _ => todo!("{kind:?}"),
         };
         raw
     }
@@ -160,7 +160,7 @@ impl BindingPower {
 pub fn binding_power(value: &TokenKind) -> BindingPower {
     use TokenKind::*;
 
-    match self {
+    match value {
         Dot => BindingPower::new(101, 100),
         Asterisk | ForwardSlash => BindingPower::new(70, 71),
         Plus | Minus => BindingPower::new(60, 61),
@@ -171,5 +171,28 @@ pub fn binding_power(value: &TokenKind) -> BindingPower {
         Compare | NotEquals => BindingPower::new(39, 40),
 
         t => panic!("Unkown operator: {:?}", t),
+    }
+}
+
+fn kind_to_operator(kind: &TokenKind) -> Operator {
+    use TokenKind::*;
+    match kind {
+        Plus => Operator::Arithmetic(ArithmeticOperator::Plus),
+        Minus => Operator::Arithmetic(ArithmeticOperator::Subtract),
+        ForwardSlash => Operator::Arithmetic(ArithmeticOperator::Division),
+        Asterisk => Operator::Arithmetic(ArithmeticOperator::Multiply),
+        Ampersand => Operator::Arithmetic(ArithmeticOperator::Remainder),
+        LeftBitshift => Operator::Arithmetic(ArithmeticOperator::LeftBitshift),
+        RightBitshift => Operator::Arithmetic(ArithmeticOperator::RightBitshift),
+
+        Compare => Operator::Compare(CompareOperator::Compare),
+        NotEquals => Operator::Compare(CompareOperator::NotEquals),
+        GreaterThan => Operator::Compare(CompareOperator::GreaterThan),
+        GreaterThanOrEquals => Operator::Compare(CompareOperator::GreaterThanOrEquals),
+        LessThan => Operator::Compare(CompareOperator::LessThan),
+        LessThanOrEquals => Operator::Compare(CompareOperator::LessThanOrEquals),
+        And => Operator::Compare(CompareOperator::And),
+        Or => Operator::Compare(CompareOperator::Or),
+        _ => unreachable!(),
     }
 }

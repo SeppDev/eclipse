@@ -1,9 +1,7 @@
-use common::{
-    layout::ast::{RawNode, UsePath},
-    lexer::token::TokenKind,
-    path::Path,
-};
+use common::position::LocatedAt;
 use diagnostics::DiagnosticResult;
+use lexer::token::TokenKind;
+use syntax::ast::RawNode;
 
 use crate::Parser;
 

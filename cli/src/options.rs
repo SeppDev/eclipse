@@ -1,5 +1,6 @@
+use common::exit::exit;
+
 use super::arguments::{Argument, Arguments};
-use crate::{common::exit::exit, compiler::CompilerCtx};
 use std::path::PathBuf;
 
 pub struct CommandLineOptions {
@@ -37,14 +38,5 @@ impl From<Arguments> for CommandLineOptions {
         }
 
         options
-    }
-}
-
-impl Into<CompilerCtx> for CommandLineOptions {
-    fn into(self) -> CompilerCtx {
-        CompilerCtx::builder()
-            .project_path(self.active_path.into())
-            .status(self.status)
-            .build()
     }
 }

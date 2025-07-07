@@ -1,6 +1,6 @@
-use TokenKind::*;
-use common::{layout::ast, lexer::token::TokenKind};
 use diagnostics::DiagnosticResult;
+use lexer::token::TokenKind::*;
+use syntax::ast;
 
 use crate::Parser;
 
@@ -31,6 +31,8 @@ impl Parser {
         })
     }
     pub fn expect_node(&mut self) -> DiagnosticResult<ast::Node> {
-        self.expect_expression()
+        let result = self.expect_expression();
+        self.skip_semicolons()?;
+        result
     }
 }

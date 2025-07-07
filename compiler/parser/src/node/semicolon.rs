@@ -1,12 +1,7 @@
-use common::{
-    layout::ast::{RawNode, UsePath},
-    lexer::token::TokenKind,
-    path::Path,
-};
 use diagnostics::DiagnosticResult;
+use lexer::token::TokenKind;
 
 use crate::Parser;
-
 
 impl Parser {
     pub fn skip_semicolons(&mut self) -> DiagnosticResult {

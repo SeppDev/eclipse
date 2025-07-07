@@ -1,12 +1,9 @@
-use common::{
-    layout::ast::{RawNode, UsePath},
-    lexer::token::TokenKind,
-    path::Path,
-};
-use diagnostics::DiagnosticResult;
+use common::position::LocatedAt;
+use diagnostics::{DiagnosticData, DiagnosticResult};
+use lexer::token::TokenKind::*;
+use syntax::ast::{RawType, Type};
 
 use crate::Parser;
-use TokenKind::*;
 
 impl Parser {
     pub fn expect_type(&mut self) -> DiagnosticResult<Type> {
@@ -86,7 +83,7 @@ impl Parser {
                     }
                     RawType::Other(path)
                 }
-                _ => RawType::Other(vec![Identifier::new(info.string, info.position)]),
+                _ => RawType::Other(vec![LocatedAt::<String>::new(info.string, info.position)]),
             },
         };
         Ok(Type::new(raw, info.position))

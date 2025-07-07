@@ -21,7 +21,9 @@ impl Analyzer {
     }
     pub fn expression(&self, node: &ast::Node) -> DiagnosticResult {
         use ast::RawNode::*;
+
         match &node.raw {
+            Integer(_) => Ok(()),
             _ => {
                 return DiagnosticData::error()
                     .title("Expected expression")

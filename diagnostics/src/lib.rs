@@ -33,6 +33,7 @@ pub struct DiagnosticData {
 }
 
 pub struct DiagnosticsFile {
+    // relative_path: Path,
     diagnostics: Vec<DiagnosticData>,
 }
 
@@ -45,10 +46,14 @@ impl Diagnostics {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn file(&mut self, relative_path: Path) -> &mut DiagnosticsFile {
+    pub fn file(&mut self, relative_path: &Path) -> &mut DiagnosticsFile {
         self.files
-            .insert(relative_path.clone(), DiagnosticsFile::new());
-        self.files.get_mut(&relative_path).unwrap()
+            .entry(relative_path.clone())
+            .or_insert_with(DiagnosticsFile::new)
+    }
+    pub fn insert(&mut self, relative_path: &Path, diagnostic: DiagnosticData) {
+        let file = self.file(relative_path);
+        file.insert(diagnostic);
     }
     pub fn display(&self) {
         println!(

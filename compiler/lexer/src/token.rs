@@ -1,6 +1,5 @@
-use common::position::PositionRange;
+use common::position::{LocatedAt, PositionRange};
 use syntax::operators::{ArithmeticOperator, CompareOperator};
-
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
 
@@ -103,9 +102,10 @@ pub enum TokenKind {
     MultiplyEquals,  // *=
     RemainderEquals, // %=
 
-    Boolean,    // boolean
+    False,      // false
+    True,       // true
     Character,  // char
-    String,     // string
+    Text,       // string
     Integer,    // int
     Float,      // float
     Identifier, // identifier
@@ -115,7 +115,7 @@ impl TokenKind {
         use TokenKind::*;
 
         match self {
-            Identifier | Float | Integer | String | Character | Boolean | SelfKeyword => true,
+            Identifier | Float | Integer | Text | Character | True | False | SelfKeyword => true,
             _ => false,
         }
     }
@@ -174,7 +174,8 @@ pub fn match_token(word: &String) -> Option<TokenKind> {
         "mut" => Mutable,
         "var" => Var,
 
-        "true" | "false" => Boolean,
+        "false" => False,
+        "true" => True,
 
         "super" => Super,
 
@@ -259,5 +260,14 @@ impl std::fmt::Display for Token {
             "Token: {:?}({:?}) : {}",
             self.kind, self.string, self.position
         )
+    }
+}
+
+impl From<Token> for LocatedAt<String> {
+    fn from(value: Token) -> Self {
+        Self {
+            position: value.position,
+            raw: value.string,
+        }
     }
 }

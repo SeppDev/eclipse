@@ -65,6 +65,14 @@ pub struct LocatedAt<T = ()> {
     pub position: PositionRange,
     pub raw: T,
 }
+impl<T> LocatedAt<T> {
+    pub fn value(value: T) -> LocatedAt<T> {
+        LocatedAt {
+            raw: value,
+            position: PositionRange::default(),
+        }
+    }
+}
 impl<T: Hash> Hash for LocatedAt<T> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.raw.hash(state);

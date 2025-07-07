@@ -1,8 +1,8 @@
-use common::{layout::ast::RawNode, lexer::token::TokenKind};
 use diagnostics::DiagnosticResult;
+use lexer::token::TokenKind;
+use syntax::ast::RawNode;
 
 use crate::Parser;
-
 
 impl Parser {
     pub fn parse_condition(&mut self) -> DiagnosticResult<RawNode> {

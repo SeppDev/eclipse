@@ -1,10 +1,9 @@
-use common::{layout::ast::{Parameter, RawNode, RawParameter}, lexer::token::TokenKind};
+use common::position::LocatedAt;
 use diagnostics::DiagnosticResult;
+use lexer::token::TokenKind::*;
+use syntax::ast::{Parameter, RawNode, RawParameter};
 
 use crate::Parser;
-
-
-use TokenKind::*;
 
 impl Parser {
     pub fn parse_function(&mut self) -> DiagnosticResult<RawNode> {
@@ -32,8 +31,15 @@ impl Parser {
             }
             let start = self.start();
 
-            let reference = self.next_if_eq(Ampersand)?;
-            let mutable = self.next_if_eq(Mutable)?;
+            let reference: Option<LocatedAt> = match self.next_if_eq(Ampersand)? {
+                Some(a) => Some(LocatedAt::new((), a.position)),
+                None => None,
+            };
+            let mutable: Option<LocatedAt> = match self.next_if_eq(Mutable)? {
+                Some(a) => Some(LocatedAt::new((), a.position)),
+                None => None,
+            };
+
             let name = self.expect_identifier()?.into();
             let data_type = self.expect_type()?;
 

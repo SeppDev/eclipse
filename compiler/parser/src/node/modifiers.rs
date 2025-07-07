@@ -1,12 +1,8 @@
-use common::{
-    layout::ast::{Modifier, RawModifier, RawNode},
-    lexer::token::TokenKind,
-};
 use diagnostics::{DiagnosticData, DiagnosticResult};
+use lexer::token::TokenKind::*;
+use syntax::ast::{Modifier, RawModifier, RawNode};
 
 use crate::Parser;
-
-use TokenKind::*;
 
 impl Parser {
     pub fn expect_modifiers_list(&mut self) -> DiagnosticResult<Vec<Modifier>> {
@@ -19,7 +15,7 @@ impl Parser {
                 Unsafe => RawModifier::Unsafe,
                 Static => RawModifier::Static,
                 Async => RawModifier::Async,
-                Extern => RawModifier::Extern(self.expect_single(String)?.into()),
+                Extern => RawModifier::Extern(self.expect_single(Text)?.into()),
                 _ => unreachable!(),
             };
             modifiers.push(self.located(raw, info.position.start))

@@ -5,7 +5,8 @@ use diagnostics::{DiagnosticData, DiagnosticResult};
 
 use crate::Parser;
 
-impl Parser<'_> {
+#[allow(unused)]
+impl Parser {
     pub fn resolve_import(
         &self,
         position: PositionRange,
@@ -29,11 +30,6 @@ impl Parser<'_> {
         for relative_path in &expected_paths {
             let mut relative_path = relative_path.to_owned();
             relative_path.set_extension(FILE_EXTENSION);
-
-            let full_path = self.resolve_path(&relative_path);
-            if full_path.exists() {
-                found.push(relative_path);
-            }
         }
 
         if found.len() > 1 {

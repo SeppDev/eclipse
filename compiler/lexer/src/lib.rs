@@ -24,7 +24,7 @@ pub fn tokenize(source: &str) -> DiagnosticResult<Vec<Token>> {
         };
         let token = match kind {
             LexerKind::String(position) => {
-                Token::new(position.raw, TokenKind::String, position.position)
+                Token::new(position.raw, TokenKind::Text, position.position)
             }
             LexerKind::Character(position) => {
                 Token::new(position.raw, TokenKind::Character, position.position)
@@ -140,6 +140,7 @@ impl TryFrom<&TokenKind> for ArithmeticOperator {
             Minus => ArithmeticOperator::Subtract,
             Asterisk => ArithmeticOperator::Multiply,
             ForwardSlash => ArithmeticOperator::Division,
+            Percent => ArithmeticOperator::Remainder,
             _ => return Err(ConversionError),
         };
 

@@ -1,16 +1,11 @@
-use common::{
-    layout::ast::{RawNode, UsePath},
-    lexer::token::TokenKind,
-    path::Path,
-};
 use diagnostics::DiagnosticResult;
+use lexer::token::{Token, TokenKind::*};
+use syntax::{ast::RawNode, operators::EqualsOperation};
 
 use crate::Parser;
 
-use TokenKind::*;
-
 impl Parser {
-    pub fn parse_set_operation(&mut self, name: TokenInfo) -> DiagnosticResult<RawNode> {
+    pub fn parse_set_operation(&mut self, name: Token) -> DiagnosticResult<RawNode> {
         let name = name.into();
         let info = self.expect(&vec![
             Equals,

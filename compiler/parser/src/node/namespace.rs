@@ -1,13 +1,9 @@
-use common::{
-    layout::ast::{RawNode, UsePath},
-    lexer::token::TokenKind,
-    path::Path,
-};
+use common::path::Path;
 use diagnostics::DiagnosticResult;
+use lexer::token::TokenKind::*;
+use syntax::ast::{RawNode, UsePath};
 
 use crate::Parser;
-
-use TokenKind::*;
 
 impl Parser {
     pub fn parse_use(&mut self) -> DiagnosticResult<RawNode> {

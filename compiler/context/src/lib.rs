@@ -1,10 +1,9 @@
+use common::path::Path;
 use common::status::Status;
 use diagnostics::Diagnostics;
 use resolver::{ModuleResolver, Resolver};
 
-pub type Path = common::path::Path;
-
-mod resolver;
+pub mod resolver;
 
 pub struct CompilerBuilder {
     status: bool,
@@ -56,14 +55,22 @@ impl CompilerCtx {
     pub fn builder() -> CompilerBuilder {
         CompilerBuilder::new()
     }
+    pub fn status(&self, message: String) {
+        let status = match &self.status {
+            Some(s) => s,
+            None => return,
+        };
+        status.message(message);
+    }
     pub fn read(&self, relative_path: &Path) -> Option<String> {
-        let path = self.project_path.clone().extend(&relative_path);
+        let path = self.resolve_path(relative_path);
         let pathbuf = path.as_path_buf();
         self.module_resolver.resolve_module(&pathbuf)
     }
     pub fn log(&mut self, message: impl ToString) {
         self.logs.push(message.to_string());
     }
+    #[inline]
     pub fn resolve_path(&self, relative_path: &Path) -> Path {
         self.project_path.clone().extend(relative_path)
     }

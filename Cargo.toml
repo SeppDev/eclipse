@@ -17,6 +17,4 @@ members = [
     "diagnostics",
 ]
 
-default-members = ["compiler", "cli"]
-
 [dependencies]

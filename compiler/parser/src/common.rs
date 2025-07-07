@@ -3,25 +3,10 @@ use std::borrow::Borrow;
 use common::position::{LocatedAt, Position, PositionRange};
 use diagnostics::{DiagnosticData, DiagnosticResult};
 use lexer::token::{Token, TokenKind};
-use syntax::ast;
 
 use crate::Parser;
 
-impl<'a> Parser<'a> {
-    pub fn parse(&mut self) -> DiagnosticResult<Vec<ast::Node>> {
-        let mut nodes = Vec::new();
-
-        loop {
-            if self.is_eof() {
-                break;
-            }
-
-            let node = self.top_level_expect()?;
-            nodes.push(node);
-        }
-
-        Ok(nodes)
-    }
+impl Parser {
     pub fn start(&self) -> Position {
         self.peek().position.start
     }

@@ -1,6 +1,6 @@
 use arguments::{Argument, Arguments};
 
-use crate::common::exit::exit;
+use common::exit::exit;
 pub mod arguments;
 pub mod options;
 

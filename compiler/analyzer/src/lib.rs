@@ -1,6 +1,5 @@
-use diagnostics::DiagnosticResult;
-
 mod semantics;
+#[allow(unused)]
 mod types;
 
 pub struct Analyzer {}

@@ -1,6 +1,6 @@
 use std::{env::Args, iter::Peekable, path::PathBuf};
 
-use crate::common::exit::exit;
+use common::exit::exit;
 
 pub enum Argument {
     Value(String),

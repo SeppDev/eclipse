@@ -8,9 +8,6 @@ pub struct FunctionType {
     // generics: Vec<String>,
     parameters: Vec<Parameter>,
     return_type: Type,
-
-
-
 }
 
 #[derive(Debug, Default)]
@@ -28,4 +25,3 @@ impl Types {
         Self::default()
     }
 }
-
