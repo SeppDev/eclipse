@@ -5,7 +5,7 @@ use diagnostics::DiagnosticResult;
 use kind::{LexerKind, LocatedString};
 use reader::{Character, Reader};
 
-use syntax::operators::{ArithmeticOperator, CompareOperator};
+use syntax::operators::{ArithmeticOperator, CompareOperator, Operator};
 use token::{MAX_OPERATOR_WIDTH, Token, TokenKind, match_token};
 
 pub mod token;
@@ -98,6 +98,7 @@ fn chars_to_string(chars: &Vec<Character>, range: Range<usize>) -> LocatedString
     LocatedString::new(body, PositionRange::from(start.position, end.position))
 }
 
+#[derive(Debug)]
 pub struct ConversionError;
 
 impl TryFrom<&TokenKind> for CompareOperator {
@@ -152,5 +153,21 @@ impl TryFrom<TokenKind> for ArithmeticOperator {
 
     fn try_from(value: TokenKind) -> Result<Self, Self::Error> {
         Self::try_from(&value)
+    }
+}
+
+impl TryFrom<TokenKind> for Operator {
+    type Error = ConversionError;
+
+    fn try_from(value: TokenKind) -> Result<Self, Self::Error> {
+        if let Ok(r) = ArithmeticOperator::try_from(value) {
+            return Ok(Operator::Arithmetic(r));
+        }
+
+        if let Ok(r) = CompareOperator::try_from(value) {
+            return Ok(Operator::Compare(r));
+        }
+
+        Err(ConversionError)
     }
 }

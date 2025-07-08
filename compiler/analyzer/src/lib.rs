@@ -1,8 +1,17 @@
+use context::CompilerCtx;
+use diagnostics::DiagnosticResult;
+
 mod semantics;
 #[allow(unused)]
 mod types;
 
-pub struct Analyzer {}
+pub struct Analyzer<'ctx> {
+    compiler: &'ctx mut CompilerCtx,
+}
+
+pub fn analyze(compiler: &mut CompilerCtx) -> DiagnosticResult {
+    Ok(())
+}
 
 // pub fn analyze(modules: &ASTModules) -> DiagnosticResult {
 //     let analyzer = Analyzer {};

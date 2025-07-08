@@ -7,6 +7,11 @@ mod common;
 mod imports;
 mod node;
 
+struct Parser {
+    tokens: Vec<Token>,
+    last_position: PositionRange,
+}
+
 pub fn parse(mut tokens: Vec<Token>) -> DiagnosticResult<Vec<ast::Node>> {
     tokens.reverse();
 
@@ -27,9 +32,4 @@ pub fn parse(mut tokens: Vec<Token>) -> DiagnosticResult<Vec<ast::Node>> {
     }
 
     Ok(nodes)
-}
-
-struct Parser {
-    tokens: Vec<Token>,
-    last_position: PositionRange,
 }

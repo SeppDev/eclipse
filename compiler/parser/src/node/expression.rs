@@ -1,10 +1,7 @@
 use common::position::LocatedAt;
 use diagnostics::{DiagnosticData, DiagnosticResult};
 use lexer::token::{Token, TokenKind};
-use syntax::{
-    ast::{Node, RawNode},
-    operators::{ArithmeticOperator, CompareOperator, Operator},
-};
+use syntax::ast::{Node, RawNode};
 
 use crate::Parser;
 
@@ -16,9 +13,9 @@ impl Parser {
     }
     pub fn get_expression(&mut self) -> DiagnosticResult<Option<Node>> {
         if self.peek().kind.is_expression_start() {
-            return Ok(None);
+            return Ok(Some(self.parse_expression(0)?));
         }
-        Ok(Some(self.parse_expression(0)?))
+        Ok(None)
     }
     fn expect_raw_base_expression(&mut self) -> DiagnosticResult<RawNode> {
         let info = self.next()?;
@@ -92,10 +89,9 @@ impl Parser {
             _ if kind.is_operator() => RawNode::Operation {
                 left: left.into(),
                 right: right.into(),
-                operator: kind_to_operator(&kind),
+                operator: kind.try_into().unwrap(),
             },
             Dot => RawNode::Field(left.into(), right.into()),
-            OpenParen => todo!(),
             _ => todo!("{kind:?}"),
         };
         raw
@@ -105,19 +101,13 @@ impl Parser {
 
         loop {
             let info = self.peek();
-            match info.kind {
-                Dot => {}
-                _ if info.kind.is_operator() => {}
+            let bp = match binding_power(&info.kind) {
+                Some(bp) if bp.left >= min_bp => bp,
                 _ => break,
-            }
+            };
 
-            let start = self.start();
+            let start = left.position.start.clone();
             let info = self.next()?;
-
-            let bp = binding_power(&info.kind);
-            if bp.left < min_bp {
-                break;
-            }
 
             let right = self.parse_expression(bp.right)?;
             let raw = self.make_expression(left, right, info);
@@ -157,11 +147,11 @@ impl BindingPower {
     }
 }
 
-pub fn binding_power(value: &TokenKind) -> BindingPower {
+pub fn binding_power(value: &TokenKind) -> Option<BindingPower> {
     use TokenKind::*;
 
-    match value {
-        Dot => BindingPower::new(101, 100),
+    let power = match value {
+        Dot => BindingPower::new(100, 101),
         Asterisk | ForwardSlash => BindingPower::new(70, 71),
         Plus | Minus => BindingPower::new(60, 61),
 
@@ -170,29 +160,8 @@ pub fn binding_power(value: &TokenKind) -> BindingPower {
         }
         Compare | NotEquals => BindingPower::new(39, 40),
 
-        t => panic!("Unkown operator: {:?}", t),
-    }
-}
+        _ => return None,
+    };
 
-fn kind_to_operator(kind: &TokenKind) -> Operator {
-    use TokenKind::*;
-    match kind {
-        Plus => Operator::Arithmetic(ArithmeticOperator::Plus),
-        Minus => Operator::Arithmetic(ArithmeticOperator::Subtract),
-        ForwardSlash => Operator::Arithmetic(ArithmeticOperator::Division),
-        Asterisk => Operator::Arithmetic(ArithmeticOperator::Multiply),
-        Ampersand => Operator::Arithmetic(ArithmeticOperator::Remainder),
-        LeftBitshift => Operator::Arithmetic(ArithmeticOperator::LeftBitshift),
-        RightBitshift => Operator::Arithmetic(ArithmeticOperator::RightBitshift),
-
-        Compare => Operator::Compare(CompareOperator::Compare),
-        NotEquals => Operator::Compare(CompareOperator::NotEquals),
-        GreaterThan => Operator::Compare(CompareOperator::GreaterThan),
-        GreaterThanOrEquals => Operator::Compare(CompareOperator::GreaterThanOrEquals),
-        LessThan => Operator::Compare(CompareOperator::LessThan),
-        LessThanOrEquals => Operator::Compare(CompareOperator::LessThanOrEquals),
-        And => Operator::Compare(CompareOperator::And),
-        Or => Operator::Compare(CompareOperator::Or),
-        _ => unreachable!(),
-    }
+    return Some(power);
 }

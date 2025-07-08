@@ -7,3 +7,4 @@ edition = "2024"
 common = { path = "../../common" }
 diagnostics = { path = "../../diagnostics" }
 syntax = { path = "../syntax" }
+context = {path = "../context"}

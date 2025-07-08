@@ -28,7 +28,7 @@ pub enum RawNode {
         condition: Box<Node>,
         body: Box<Node>,
         conditions: Vec<(Node, Node)>,
-        else_condition: Option<(Box<Node>, Box<Node>)>,
+        else_condition: Option<Box<Node>>,
     },
     Operation {
         left: Box<Node>,

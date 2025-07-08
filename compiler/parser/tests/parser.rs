@@ -87,6 +87,10 @@ mod tests {
     fn block(nodes: Vec<RawNode>) -> RawNode {
         Block(nodes.into_iter().map(|n| n.into()).collect())
     }
+    fn empty_block() -> RawNode {
+        Block(Vec::new())
+    }
+
     fn tuple(nodes: Vec<RawNode>) -> RawNode {
         RawNode::Tuple(nodes.into_iter().map(|n| n.into()).collect())
     }
@@ -112,6 +116,25 @@ mod tests {
             path: path.to_string().into(),
             operation,
             value: value.into(),
+        }
+    }
+    fn condition(
+        condition: RawNode,
+        body: RawNode,
+        conditions: Vec<(RawNode, RawNode)>,
+        else_condition: Option<RawNode>,
+    ) -> RawNode {
+        Conditional {
+            condition: condition.into(),
+            body: body.into(),
+            conditions: conditions
+                .into_iter()
+                .map(|(cond, body)| (cond.into(), body.into()))
+                .collect(),
+            else_condition: match else_condition {
+                Some(body) => Some(Box::new(body.into())),
+                None => None,
+            },
         }
     }
 
@@ -169,6 +192,16 @@ mod tests {
             Plus
         )
     );
+    parser_test!(
+        add_field_left,
+        "a + b.c",
+        arithmetic(identifier("a"), field(identifier("b"), "c"), Plus)
+    );
+    parser_test!(
+        add_field_right,
+        "a.b + c",
+        arithmetic(field(identifier("a"), "b"), identifier("c"), Plus)
+    );
 
     parser_test!(
         fields,
@@ -202,4 +235,26 @@ mod tests {
         tuple(vec![integer("1"), integer("2"), integer("3")])
     );
     parser_test!(integer_wrapped, "(1)", wrapped(integer("1")));
+
+    parser_test!(
+        if_condition,
+        "if true == true {}",
+        condition(
+            compare(Bool(true), Bool(true), CompareOperator::Compare),
+            empty_block(),
+            Vec::new(),
+            None
+        )
+    );
+
+    parser_test!(
+        if_condition_else,
+        "if true == true {} else {}",
+        condition(
+            compare(Bool(true), Bool(true), CompareOperator::Compare),
+            empty_block(),
+            Vec::new(),
+            Some(empty_block())
+        )
+    );
 }

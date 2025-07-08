@@ -54,6 +54,11 @@ mod tests {
     );
 
     lexer_test!(only_block, "{}", [OpenCurlyBracket, CloseCurlyBracket]);
+    lexer_test!(
+        block_comment,
+        "{} // this is a comment",
+        [OpenCurlyBracket, CloseCurlyBracket]
+    );
 
     lexer_test!(
         add_one,
