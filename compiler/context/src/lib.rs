@@ -1,4 +1,5 @@
-use common::path::Path;
+use std::path::PathBuf;
+
 use common::status::Status;
 use diagnostics::Diagnostics;
 use resolver::{ModuleResolver, Resolver};
@@ -7,7 +8,7 @@ pub mod resolver;
 
 pub struct CompilerBuilder {
     status: bool,
-    project_path: Option<Path>,
+    project_path: Option<PathBuf>,
     module_resolver: Option<Resolver>,
 }
 impl CompilerBuilder {
@@ -26,7 +27,7 @@ impl CompilerBuilder {
         self.status = enabled;
         self
     }
-    pub fn project_path(mut self, path: Path) -> Self {
+    pub fn project_path(mut self, path: PathBuf) -> Self {
         self.project_path = Some(path);
         self
     }
@@ -47,7 +48,7 @@ impl CompilerBuilder {
 pub struct CompilerCtx {
     status: Option<Status>,
     module_resolver: Resolver,
-    project_path: Path,
+    project_path: PathBuf,
     diagnostics: Diagnostics,
     logs: Vec<String>,
 }
@@ -62,17 +63,16 @@ impl CompilerCtx {
         };
         status.message(message);
     }
-    pub fn read(&self, relative_path: &Path) -> Option<String> {
+    pub fn read(&self, relative_path: &PathBuf) -> Option<String> {
         let path = self.resolve_path(relative_path);
-        let pathbuf = path.as_path_buf();
-        self.module_resolver.resolve_module(&pathbuf)
+        self.module_resolver.resolve_module(&path)
     }
     pub fn log(&mut self, message: impl ToString) {
         self.logs.push(message.to_string());
     }
     #[inline]
-    pub fn resolve_path(&self, relative_path: &Path) -> Path {
-        self.project_path.clone().extend(relative_path)
+    pub fn resolve_path(&self, relative_path: &PathBuf) -> PathBuf {
+        self.project_path.join(relative_path)
     }
     pub fn check_diagnostics(&self) {
         if !self.diagnostics.has_errors() {

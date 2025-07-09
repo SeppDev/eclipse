@@ -1,7 +1,7 @@
 use common::position::LocatedAt;
 use diagnostics::DiagnosticResult;
 use lexer::token::TokenKind::*;
-use syntax::ast::{Parameter, RawNode, RawParameter};
+use syntax::ast::{self, Parameter, RawNode, RawParameter};
 
 use crate::Parser;
 
@@ -9,14 +9,22 @@ impl Parser {
     pub fn parse_function(&mut self) -> DiagnosticResult<RawNode> {
         let name = self.expect_identifier()?.into();
         let parameters = self.expect_parameters()?;
-        let return_type = self.expect_type()?;
-        let node = Box::new(self.expect_node()?);
+
+        let return_type = if self.peek().kind.is_expression_start() {
+            self.expect_type()?
+        } else {
+            let position = self.last_position.end.to_range();
+
+            LocatedAt::new(ast::RawType::Void, position)
+        };
+
+        let body = Box::new(self.expect_node()?);
 
         let raw = RawNode::Function {
             name,
             parameters,
             return_type,
-            node,
+            body,
         };
 
         return Ok(raw);

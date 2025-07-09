@@ -4,6 +4,7 @@ use syntax::ast;
 
 use crate::Parser;
 
+mod attribute;
 mod block;
 mod condition;
 mod expression;

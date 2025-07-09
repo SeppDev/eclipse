@@ -1,5 +1,7 @@
+use std::path::PathBuf;
+
 use super::{DiagnosticData, DiagnosticLevel, DiagnosticResult, DiagnosticSpan};
-use common::{path::Path, position::PositionRange};
+use common::position::PositionRange;
 
 #[allow(unused)]
 impl DiagnosticData {
@@ -59,7 +61,7 @@ impl DiagnosticSpan {
         self.position = Some(position);
         self
     }
-    pub fn path(mut self, path: Path) -> Self {
+    pub fn path(mut self, path: PathBuf) -> Self {
         self.path = Some(path);
         self
     }

@@ -1,12 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use common::position::LocatedAt;
+    use common::position::{LocatedAt, PositionRange};
     use lexer::tokenize;
     use parser::parse;
     use syntax::ast::{
         Node,
         RawNode::{self, *},
-        RawType::*,
+        RawParameter,
+        RawType::{self, *},
         Type,
     };
     use syntax::operators::{
@@ -26,18 +27,6 @@ mod tests {
     }
 
     fn test_init(input: &'static str) -> Vec<Node> {
-        // let project_path = PathBuf::from("project");
-        // let mut resolver = MockResolver::new();
-
-        // let mut main_path = project_path.join("main");
-        // main_path.set_extension(FILE_EXTENSION);
-        // resolver.insert(main_path, input);
-
-        // let mut compiler = CompilerCtx::builder()
-        //     .project_path(project_path.into())
-        //     .resolver(resolver)
-        //     .build();
-
         let tokens = tokenize(input).unwrap();
         let nodes = parse(tokens).unwrap();
         nodes
@@ -97,6 +86,19 @@ mod tests {
     fn wrapped(node: RawNode) -> RawNode {
         RawNode::Wrapped(Some(node.into()))
     }
+    fn function(
+        name: &str,
+        parameters: Vec<RawParameter>,
+        return_type: RawType,
+        body: RawNode,
+    ) -> RawNode {
+        RawNode::Function {
+            name: name.to_string().into(),
+            parameters: parameters.into_iter().map(|param| param.into()).collect(),
+            return_type: return_type.into(),
+            body: body.into(),
+        }
+    }
 
     fn declare(
         mutable: bool,
@@ -137,9 +139,26 @@ mod tests {
             },
         }
     }
+    fn parameter(mutable: bool, name: &str, data_type: RawType) -> RawParameter {
+        RawParameter {
+            reference: None,
+            mutable: mutable.then_some(LocatedAt::default()),
+            name: name.to_string().into(),
+            data_type: data_type.into(),
+        }
+    }
 
     parser_test!(only_block, "{}", block(Vec::new()));
-
+    parser_test!(
+        main_function,
+        "func main() void {}",
+        function("main", vec![], RawType::Void, empty_block())
+    );
+    parser_test!(
+        main_function_no_type,
+        "func main() {}",
+        function("main", vec![], RawType::Void, empty_block())
+    );
     parser_test!(
         variable_declaration,
         "var x = 5",
@@ -156,9 +175,7 @@ mod tests {
         "x += 2",
         set_path("x", PlusEquals, integer("2"))
     );
-
     parser_test!(add, "1 + 2", arithmetic(integer("1"), integer("2"), Plus));
-
     parser_test!(
         order_of_operations,
         "1 * 2 + 3",
@@ -168,7 +185,6 @@ mod tests {
             Plus
         )
     );
-
     parser_test!(one_field, "a.b", field(identifier("a"), "b"));
     parser_test!(
         field_with_order,
@@ -202,25 +218,21 @@ mod tests {
         "a.b + c",
         arithmetic(field(identifier("a"), "b"), identifier("c"), Plus)
     );
-
     parser_test!(
         fields,
         "a.b.c.d",
         field(field(field(identifier("a"), "b"), "c"), "d")
     );
-
     parser_test!(
         identifier_add,
         "a + 2",
         arithmetic(identifier("a"), integer("2"), Plus)
     );
-
     parser_test!(
         compare_integer,
         "1 == 2",
         compare(integer("1"), integer("2"), Compare)
     );
-
     parser_test!(
         keyword_expression,
         "{continue return 1 + b}",
@@ -235,7 +247,6 @@ mod tests {
         tuple(vec![integer("1"), integer("2"), integer("3")])
     );
     parser_test!(integer_wrapped, "(1)", wrapped(integer("1")));
-
     parser_test!(
         if_condition,
         "if true == true {}",
@@ -246,7 +257,6 @@ mod tests {
             None
         )
     );
-
     parser_test!(
         if_condition_else,
         "if true == true {} else {}",

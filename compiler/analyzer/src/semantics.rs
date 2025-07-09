@@ -3,12 +3,12 @@ use syntax::ast;
 
 use super::Analyzer;
 
-impl Analyzer {
+impl Analyzer<'_> {
     pub fn semantics(&self, body: &Vec<ast::Node>) -> DiagnosticResult {
         for node in body {
             use ast::RawNode::*;
             match &node.raw {
-                Function { node, .. } => self.expression(node)?,
+                Function { body, .. } => self.expression(body)?,
                 Return(node) => match node {
                     Some(node) => self.expression(node)?,
                     None => continue,

@@ -1,11 +1,12 @@
-use std::fmt::{Debug, Display};
-
-use common::path::Path;
+use std::{
+    fmt::{Debug, Display},
+    path::PathBuf,
+};
 
 use super::{DiagnosticData, DiagnosticLevel, DiagnosticsFile};
 
 impl DiagnosticsFile {
-    pub fn display(&self, path: &Path) -> String {
+    pub fn display(&self, path: &PathBuf) -> String {
         self.diagnostics
             .iter()
             .map(|d| d.display(path))
@@ -15,7 +16,7 @@ impl DiagnosticsFile {
 }
 
 impl DiagnosticData {
-    fn display(&self, path: &Path) -> String {
+    fn display(&self, path: &PathBuf) -> String {
         let level = &self.level;
         let title = &self.title;
         let position = match &self.position {
@@ -33,12 +34,12 @@ impl DiagnosticData {
             .collect::<Vec<String>>()
             .join("\n");
 
-        format!("{level}: {title}\n\t--> {path}{position}\n{span}")
+        format!("{level}: {title}\n\t--> {path:?}{position}\n{span}")
     }
 }
 impl Debug for DiagnosticData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.display(&Path::single("?")))
+        write!(f, "{}", self.display(&PathBuf::from("/unkown")))
     }
 }
 

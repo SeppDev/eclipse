@@ -1,6 +1,5 @@
-use common::path::Path;
 use common::position::PositionRange;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 pub type DiagnosticResult<T = ()> = Result<T, Option<DiagnosticData>>;
 
@@ -19,7 +18,7 @@ pub enum DiagnosticLevel {
 
 #[derive(Default)]
 pub struct DiagnosticSpan {
-    path: Option<Path>,
+    path: Option<PathBuf>,
     position: Option<PositionRange>,
     message: String,
 }
@@ -39,19 +38,19 @@ pub struct DiagnosticsFile {
 
 #[derive(Default)]
 pub struct Diagnostics {
-    files: HashMap<Path, DiagnosticsFile>,
+    files: HashMap<PathBuf, DiagnosticsFile>,
 }
 
 impl Diagnostics {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn file(&mut self, relative_path: &Path) -> &mut DiagnosticsFile {
+    pub fn file(&mut self, relative_path: &PathBuf) -> &mut DiagnosticsFile {
         self.files
             .entry(relative_path.clone())
             .or_insert_with(DiagnosticsFile::new)
     }
-    pub fn insert(&mut self, relative_path: &Path, diagnostic: DiagnosticData) {
+    pub fn insert(&mut self, relative_path: &PathBuf, diagnostic: DiagnosticData) {
         let file = self.file(relative_path);
         file.insert(diagnostic);
     }

@@ -8,3 +8,5 @@ common = { path = "../../common" }
 diagnostics = { path = "../../diagnostics" }
 syntax = { path = "../syntax" }
 context = {path = "../context"}
+parser = {path="../parser"}
+lexer = {path="../lexer"}

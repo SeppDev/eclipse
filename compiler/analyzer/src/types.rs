@@ -1,6 +1,5 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
-use common::path::Path;
 use syntax::ast::{Parameter, Type};
 
 #[derive(Debug)]
@@ -18,7 +17,7 @@ pub struct ModuleTypes {
 
 #[derive(Debug, Default)]
 pub struct Types {
-    pub modules: HashMap<Path, ModuleTypes>,
+    pub modules: HashMap<PathBuf, ModuleTypes>,
 }
 impl Types {
     pub fn new() -> Self {

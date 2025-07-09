@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::operators::{EqualsOperation, Operator};
 
-use super::{Identifier, Location, Modifier, Node, Parameter, Type, UsePath};
+use super::{Attribute, Identifier, Location, Modifier, Node, Parameter, Type, UsePath};
 
 #[derive(Debug, PartialEq)]
 pub enum RawNode {
@@ -11,7 +11,7 @@ pub enum RawNode {
         name: Identifier,
         parameters: Vec<Parameter>,
         return_type: Type,
-        node: Box<Node>,
+        body: Box<Node>,
     },
     SetPath {
         path: Identifier,
@@ -39,6 +39,7 @@ pub enum RawNode {
         condition: Box<Node>,
         body: Box<Node>,
     },
+    Attribute(Attribute),
     Field(Box<Node>, Box<Node>),
     Call(Box<Node>, Vec<Node>),
     Return(Option<Box<Node>>),
@@ -65,6 +66,11 @@ pub enum RawNode {
     //     name: Identifier,
     //     fields: Vec<(Identifier, Type)>,
     // },
+}
+
+#[derive(Debug, PartialEq)]
+pub enum RawAttribute {
+    Simple(Identifier),
 }
 
 impl Display for RawNode {

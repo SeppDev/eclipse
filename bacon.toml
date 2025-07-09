@@ -7,6 +7,6 @@ need_stdout = false
 
 [jobs.test]
 command = [
-  "cargo", "test", "-p", "lexer", "-p", "parser", "--tests"
+  "cargo", "test", "-p", "lexer", "-p", "parser", "-p", "analyzer", "--tests"
 ]
 need_stdout = true

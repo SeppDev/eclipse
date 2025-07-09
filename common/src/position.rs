@@ -42,7 +42,7 @@ impl PositionRange {
             end: end.end,
         }
     }
-    pub fn _set_start(&mut self, position: Position) {
+    pub fn set_start(&mut self, position: Position) {
         self.start = position;
     }
     pub fn set_end(&mut self, position: Position) {

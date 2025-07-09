@@ -1,6 +1,8 @@
+mod module;
 mod node;
 mod types;
 
+pub use module::*;
 pub use node::*;
 pub use types::*;
 
@@ -9,9 +11,10 @@ use common::position::LocatedAt;
 pub type Node = LocatedAt<RawNode>;
 
 pub type Location = LocatedAt<()>;
-pub type Type = LocatedAt<RawType>;
+pub type Type = LocatedAt<types::RawType>;
 pub type Parameter = LocatedAt<RawParameter>;
 pub type Modifier = LocatedAt<RawModifier>;
+pub type Attribute = LocatedAt<RawAttribute>;
 
 pub type Identifier = LocatedAt<String>;
 
