@@ -1,10 +1,17 @@
 use diagnostics::DiagnosticResult;
-use syntax::ast::{Node, RawNode};
+use lexer::token::TokenKind::*;
+use syntax::ast::{RawAttribute, RawNode};
 
 use crate::Parser;
 
 impl Parser {
     pub fn parse_attribute(&mut self) -> DiagnosticResult<RawNode> {
-        Ok(RawNode::Return(self.expect_potential_value()?))
+        let start = self.start();
+        self.expect_single(OpenBracket)?;
+        let key = self.expect_identifier()?;
+        self.expect_single(CloseBracket)?;
+
+        let raw = RawAttribute::Simple(key.into());
+        Ok(RawNode::Attribute(self.located(raw, start)))
     }
 }

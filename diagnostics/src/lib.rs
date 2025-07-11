@@ -1,7 +1,7 @@
 use common::position::PositionRange;
 use std::{collections::HashMap, path::PathBuf};
 
-pub type DiagnosticResult<T = ()> = Result<T, Option<DiagnosticData>>;
+pub type DiagnosticResult<T = ()> = Result<T, DiagnosticData>;
 
 pub mod builder;
 mod display;
@@ -44,6 +44,13 @@ pub struct Diagnostics {
 impl Diagnostics {
     pub fn new() -> Self {
         Self::default()
+    }
+    pub fn check(&self) {
+        if !self.has_errors() {
+            return;
+        }
+        self.display();
+        std::process::exit(0)
     }
     pub fn file(&mut self, relative_path: &PathBuf) -> &mut DiagnosticsFile {
         self.files

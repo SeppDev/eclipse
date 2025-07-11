@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(unused)]
 mod tests {
     use std::path::PathBuf;
 
@@ -6,24 +7,59 @@ mod tests {
     use common::constants::FILE_EXTENSION;
     use context::{CompilerCtx, resolver::MockResolver};
 
-    #[test]
-    pub fn test() {
-        let input = "func main() void {}";
+    macro_rules! success_test {
+        ($name:ident, $input:expr) => {
+            #[test]
+            fn $name() {
+                success($input);
+            }
+        };
+    }
+    macro_rules! failed_test {
+        ($name:ident, $input:expr) => {
+            #[test]
+            fn $name() {
+                failed($input);
+            }
+        };
+    }
 
-        let project_path = PathBuf::from("test");
-        let mut resolver = MockResolver::new();
-
-        let src_path = project_path.join("src");
-        let mut main_path = src_path.join("main");
-        main_path.set_extension(FILE_EXTENSION);
-        resolver.insert(main_path.clone(), input);
-
+    pub fn init(input: &'static str) -> CompilerCtx {
         let mut compiler = CompilerCtx::builder()
             .project_path(PathBuf::new())
-            .resolver(resolver)
+            .resolver(MockResolver::new())
             .build();
 
-        let result = analyze(&mut compiler, main_path.into());
-        panic!("{result:#?}");
+        let src_path = PathBuf::from("src");
+        let mut main_path = src_path.join("main");
+        main_path.set_extension(FILE_EXTENSION);
+        compiler.write(&main_path, input);
+
+        analyze(&mut compiler, main_path.into());
+
+        compiler
     }
+
+    pub fn success(input: &'static str) {
+        let compiler = init(input);
+        let result = compiler.diagnostics.has_errors();
+        if !result {
+            return;
+        };
+
+        compiler.diagnostics.display();
+        panic!("Expected to not fail\nINPUT:\n{input:#?}")
+    }
+    pub fn failed(input: &'static str) {
+        let compiler = init(input);
+        let result = compiler.diagnostics.has_errors();
+        if result {
+            return;
+        };
+
+        panic!("Expected to fail\nINPUT:\n{input:#?}")
+    }
+
+    success_test!(main_function, "func main() {}");
+    failed_test!(wrong_type, "func main() { var x: i32 = false }");
 }

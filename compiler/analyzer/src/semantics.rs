@@ -1,7 +1,7 @@
 use diagnostics::{DiagnosticData, DiagnosticResult};
 use syntax::ast;
 
-use super::Analyzer;
+use crate::Analyzer;
 
 impl Analyzer<'_> {
     pub fn semantics(&self, body: &Vec<ast::Node>) -> DiagnosticResult {
@@ -19,11 +19,12 @@ impl Analyzer<'_> {
 
         Ok(())
     }
-    pub fn expression(&self, node: &ast::Node) -> DiagnosticResult {
+
+    fn expression(&self, node: &ast::Node) -> DiagnosticResult {
         use ast::RawNode::*;
 
         match &node.raw {
-            Integer(_) => Ok(()),
+            Integer(_) | Float(_) | Bool(_) | Block(_) => Ok(()),
             _ => {
                 return DiagnosticData::error()
                     .title("Expected expression")

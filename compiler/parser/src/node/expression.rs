@@ -21,6 +21,7 @@ impl Parser {
         let info = self.next()?;
 
         let raw = match info.kind {
+            NumberSign => self.parse_attribute()?,
             If => self.parse_condition()?,
             While => self.parse_while()?,
             Loop => self.parse_loop()?,

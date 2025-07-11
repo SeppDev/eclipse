@@ -45,7 +45,7 @@ impl DiagnosticData {
 }
 impl<T> Into<DiagnosticResult<T>> for DiagnosticData {
     fn into(self) -> DiagnosticResult<T> {
-        Err(Some(self))
+        Err(self)
     }
 }
 

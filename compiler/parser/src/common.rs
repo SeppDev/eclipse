@@ -18,14 +18,15 @@ impl Parser {
         self.peek().kind == TokenKind::EndOfFile
     }
     pub fn next(&mut self) -> DiagnosticResult<Token> {
-        let token = self.tokens.pop().unwrap();
-
-        if token.kind == TokenKind::EndOfFile {
+        let peeked = self.peek();
+        if peeked.kind == TokenKind::EndOfFile {
             return DiagnosticData::error()
                 .title("Expected token got <eof>")
-                .position(token.position)
+                .position(peeked.position)
                 .to_err();
         }
+
+        let token = self.tokens.pop().unwrap();
         self.last_position = token.position;
 
         Ok(token)

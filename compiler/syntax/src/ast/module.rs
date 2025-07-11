@@ -4,30 +4,24 @@ use super::Node;
 
 #[derive(Debug)]
 pub struct Module {
-    imports: Vec<PathBuf>,
-    body: Vec<Node>,
+    pub imports: Vec<PathBuf>,
+    pub nodes: Vec<Node>,
 }
 impl Module {
-    pub fn new(body: Vec<Node>) -> Self {
+    pub fn new(nodes: Vec<Node>) -> Self {
         Self {
-            body,
+            nodes,
             imports: Vec::new(),
         }
     }
 }
 
 #[derive(Debug, Default)]
-pub struct Modules {
-    files: HashMap<PathBuf, Module>,
+pub struct ModuleCollection {
+    pub modules: HashMap<PathBuf, Module>,
 }
-impl Modules {
+impl ModuleCollection {
     pub fn new() -> Self {
         Self::default()
-    }
-    pub fn insert(&mut self, path: PathBuf, module: Module) -> Option<Module> {
-        self.files.insert(path, module)
-    }
-    pub fn get(&self, path: &PathBuf) -> Option<&Module> {
-        self.files.get(path)
     }
 }

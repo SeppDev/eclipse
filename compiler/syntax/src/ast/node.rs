@@ -1,8 +1,6 @@
-use std::fmt::Display;
-
-use crate::operators::{EqualsOperation, Operator};
-
 use super::{Attribute, Identifier, Location, Modifier, Node, Parameter, Type, UsePath};
+use crate::operators::{EqualsOperation, Operator};
+use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
 pub enum RawNode {

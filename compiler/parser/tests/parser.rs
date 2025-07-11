@@ -1,10 +1,12 @@
 #[cfg(test)]
+#[allow(unused)]
 mod tests {
     use common::position::{LocatedAt, PositionRange};
+    use diagnostics::DiagnosticResult;
     use lexer::tokenize;
     use parser::parse;
     use syntax::ast::{
-        Node,
+        self, Node,
         RawNode::{self, *},
         RawParameter,
         RawType::{self, *},
@@ -21,26 +23,36 @@ mod tests {
         ($name:ident, $input:expr, $expected:expr) => {
             #[test]
             fn $name() {
-                test_parser_eq($input, $expected);
+                parser_eq($input, $expected);
+            }
+        };
+    }
+    macro_rules! parser_test_fail {
+        ($name:ident, $input:expr) => {
+            #[test]
+            fn $name() {
+                parser_neq($input);
             }
         };
     }
 
-    fn test_init(input: &'static str) -> Vec<Node> {
-        let tokens = tokenize(input).unwrap();
-        let nodes = parse(tokens).unwrap();
-        nodes
+    fn init(input: &'static str) -> DiagnosticResult<Vec<Node>> {
+        let tokens = tokenize(input)?;
+        parse(tokens)
     }
 
-    fn test_parser_eq(input: &'static str, expected: RawNode) {
+    fn parser_eq(input: &'static str, expected: RawNode) {
         let expected = expected.into();
-        let nodes = test_init(input);
+        let nodes = init(input).unwrap();
         let node = nodes.first().unwrap();
 
         assert!(
             node == &expected,
             "INPUT: {input}\n----------------------------\nEXPECTED: {expected:#?}\n----------------------------\nRESULT: {node:#?}\n----------------------------\nNODES: {nodes:#?}",
         );
+    }
+    fn parser_neq(input: &'static str) {
+        init(input).expect_err("Expected to fail!");
     }
 
     fn identifier(string: impl ToString) -> RawNode {
@@ -147,6 +159,14 @@ mod tests {
             data_type: data_type.into(),
         }
     }
+    fn attribute(key: &str) -> RawNode {
+        ast::RawNode::Attribute(ast::Attribute::new(
+            ast::RawAttribute::Simple(key.to_string().into()),
+            PositionRange::default(),
+        ))
+    }
+
+    parser_test_fail!(non_closing_block, "{");
 
     parser_test!(only_block, "{}", block(Vec::new()));
     parser_test!(
@@ -159,6 +179,7 @@ mod tests {
         "func main() {}",
         function("main", vec![], RawType::Void, empty_block())
     );
+    parser_test!(attributes, "#[test]", attribute("test"));
     parser_test!(
         variable_declaration,
         "var x = 5",
