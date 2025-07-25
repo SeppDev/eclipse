@@ -1,25 +1,22 @@
 use std::path::PathBuf;
 
-use common::status::Status;
+use common::{constants::FILE_EXTENSION, status::Status};
 use diagnostics::Diagnostics;
-use resolver::{ModuleResolver, Resolver};
+use files::{FileResolver, ResolveFile};
 
-pub mod resolver;
+pub mod files;
 
+#[derive(Default)]
 pub struct CompilerBuilder {
     status: bool,
     project_path: Option<PathBuf>,
-    module_resolver: Resolver,
+    module_resolver: FileResolver,
 }
 impl CompilerBuilder {
     pub fn new() -> Self {
-        Self {
-            status: false,
-            module_resolver: Resolver::default(),
-            project_path: None,
-        }
+        Self::default()
     }
-    pub fn resolver(mut self, resolver: impl Into<Resolver>) -> Self {
+    pub fn resolver(mut self, resolver: impl Into<FileResolver>) -> Self {
         self.module_resolver = resolver.into();
         self
     }
@@ -47,10 +44,10 @@ impl CompilerBuilder {
 
 pub struct CompilerCtx {
     status: Option<Status>,
-    module_resolver: Resolver,
+    module_resolver: FileResolver,
     project_path: PathBuf,
-    pub diagnostics: Diagnostics,
     logs: Vec<String>,
+    pub diagnostics: Diagnostics,
 }
 impl CompilerCtx {
     pub fn builder() -> CompilerBuilder {
@@ -74,9 +71,14 @@ impl CompilerCtx {
     pub fn log(&mut self, message: impl ToString) {
         self.logs.push(message.to_string());
     }
-    #[inline]
     pub fn resolve_path(&self, relative_path: &PathBuf) -> PathBuf {
         self.project_path.join(relative_path)
+    }
+    pub fn entry() -> PathBuf {
+        let src_path = PathBuf::from("src");
+        let mut main_path = src_path.join("main");
+        main_path.set_extension(FILE_EXTENSION);
+        main_path
     }
     pub fn finish(self) {
         if let Some(status) = &self.status {

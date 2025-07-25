@@ -7,7 +7,7 @@ use crate::Parser;
 impl Parser {
     pub fn expect_modifiers_list(&mut self) -> DiagnosticResult<Vec<Modifier>> {
         let start = self.start();
-        let mut modifiers = Vec::with_capacity(3);
+        let mut modifiers = Vec::with_capacity(5);
 
         while let Some(info) = self.next_if(|t| t.kind.is_modifier())? {
             let raw = match info.kind {
@@ -49,10 +49,4 @@ impl Parser {
             Box::new(self.expect_node()?),
         ))
     }
-    // pub fn expect_modifiers_expression(&mut self) -> DiagnosticResult<RawNode> {
-    //     Ok(RawNode::Modifiers(
-    //         self.expect_modifiers_list()?,
-    //         Box::new(self.expect_expression()?),
-    //     ))
-    // }
 }

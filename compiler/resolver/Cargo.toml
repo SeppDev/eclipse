@@ -1,11 +1,12 @@
 [package]
-name = "analyzer"
+name = "resolver"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+lexer = { path = "../lexer" }
+parser = { path = "../parser" }
 syntax = { path = "../syntax" }
 context = { path = "../context" }
-resolver = { path = "../resolver" }
 common = { path = "../../common" }
 diagnostics = { path = "../../diagnostics" }

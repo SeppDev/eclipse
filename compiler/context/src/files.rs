@@ -1,29 +1,30 @@
 use std::{collections::HashMap, path::PathBuf};
 
-pub trait ModuleResolver {
+pub trait ResolveFile {
     fn read(&self, path: &PathBuf) -> Option<String>;
     fn write(&mut self, path: &PathBuf, contents: &str);
 }
 
-pub enum Resolver {
+pub enum FileResolver {
     Mock(MockResolver),
     FileSystem(FileSystemResolver),
 }
-impl Default for Resolver {
+impl Default for FileResolver {
     fn default() -> Self {
         Self::FileSystem(FileSystemResolver::default())
     }
 }
-impl ModuleResolver for Resolver {
+
+impl ResolveFile for FileResolver {
     fn read(&self, path: &PathBuf) -> Option<String> {
-        use Resolver::*;
+        use FileResolver::*;
         match self {
             Mock(rs) => rs.read(path),
             FileSystem(rs) => rs.read(path),
         }
     }
     fn write(&mut self, path: &PathBuf, contents: &str) {
-        use Resolver::*;
+        use FileResolver::*;
         match self {
             Mock(rs) => rs.write(path, contents),
             FileSystem(rs) => rs.write(path, contents),
@@ -33,7 +34,7 @@ impl ModuleResolver for Resolver {
 
 #[derive(Default)]
 pub struct FileSystemResolver;
-impl ModuleResolver for FileSystemResolver {
+impl ResolveFile for FileSystemResolver {
     fn read(&self, path: &PathBuf) -> Option<String> {
         match std::fs::read_to_string(path) {
             Ok(s) => Some(s),
@@ -41,12 +42,14 @@ impl ModuleResolver for FileSystemResolver {
         }
     }
     fn write(&mut self, path: &PathBuf, contents: &str) {
-        let _ = std::fs::write(path, contents);
+        let parent = path.parent().unwrap();
+        std::fs::create_dir_all(parent).unwrap();
+        std::fs::write(path, contents).unwrap()
     }
 }
-impl From<FileSystemResolver> for Resolver {
+impl From<FileSystemResolver> for FileResolver {
     fn from(value: FileSystemResolver) -> Self {
-        Resolver::FileSystem(value)
+        FileResolver::FileSystem(value)
     }
 }
 
@@ -59,7 +62,7 @@ impl MockResolver {
         Self::default()
     }
 }
-impl ModuleResolver for MockResolver {
+impl ResolveFile for MockResolver {
     fn read(&self, path: &PathBuf) -> Option<String> {
         match self.files.get(path) {
             Some(s) => Some(s.to_string()),
@@ -70,8 +73,8 @@ impl ModuleResolver for MockResolver {
         self.files.insert(path.clone(), contents.to_string());
     }
 }
-impl From<MockResolver> for Resolver {
+impl From<MockResolver> for FileResolver {
     fn from(value: MockResolver) -> Self {
-        Resolver::Mock(value)
+        FileResolver::Mock(value)
     }
 }

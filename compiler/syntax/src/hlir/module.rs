@@ -4,7 +4,7 @@ use super::Node;
 
 #[derive(Debug)]
 pub struct Module {
-    pub imports: Vec<PathBuf>,
+    pub imports: Vec<String>,
     pub nodes: Vec<Node>,
 }
 impl Module {

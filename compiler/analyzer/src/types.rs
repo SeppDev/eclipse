@@ -1,6 +1,8 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use syntax::ast::{Parameter, Type};
+use syntax::ast::{Parameter, Type, Module};
+
+use crate::Analyzer;
 
 #[derive(Debug)]
 pub struct FunctionType {
@@ -22,5 +24,11 @@ pub struct Types {
 impl Types {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+impl Analyzer<'_> {
+    pub fn get_types(&self, module: &Module) {
+        
     }
 }
