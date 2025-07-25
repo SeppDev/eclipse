@@ -38,7 +38,7 @@ mod tests {
 
         let entry = main_path;
         let collection = resolve_modules(&mut compiler, &entry);
-        let hlir = analyze(&mut compiler, collection, &entry);
+        let hlir = analyze(&mut compiler, collection);
 
         compiler
     }

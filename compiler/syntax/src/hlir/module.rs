@@ -1,5 +1,3 @@
-use std::{collections::HashMap, path::PathBuf};
-
 use super::Node;
 
 #[derive(Debug)]
@@ -18,5 +16,5 @@ impl Module {
 
 #[derive(Debug, Default)]
 pub struct ModuleCollection {
-    pub modules: HashMap<PathBuf, Module>,
+    pub modules: Vec<Module>,
 }

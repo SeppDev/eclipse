@@ -1,9 +1,12 @@
 use syntax::{hlir, mir};
 
-pub fn lower(module: &hlir::ModuleCollection) -> mir::Module {
-    use hlir::Node;
+pub fn lower(collection: hlir::ModuleCollection) -> mir::Module {
+    let mut nodes = Vec::new();
 
-    let nodes = {};
+    for module in collection.modules {
+        let body = module.nodes.into_iter().map(|n| lower_node(n));
+        nodes.extend(body);
+    }
 
     mir::Module { nodes }
 }
@@ -28,4 +31,3 @@ fn lower_node(node: hlir::Node) -> mir::Node {
         r => todo!("{r:?}"),
     }
 }
- 

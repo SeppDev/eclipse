@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 use syntax::{ast, hlir};
 
@@ -6,15 +6,15 @@ use crate::Analyzer;
 
 impl Analyzer<'_> {
     pub fn analyze(&mut self, collection: ast::ModuleCollection) -> hlir::ModuleCollection {
-        let modules: HashMap<PathBuf, hlir::Module> = collection
+        let modules: Vec<hlir::Module> = collection
             .modules
             .into_iter()
-            .map(|(path, module)| (path, self.module(module)))
+            .map(|(path, module)| self.module(path, module))
             .collect();
 
         hlir::ModuleCollection { modules }
     }
-    fn module(&mut self, module: ast::Module) -> hlir::Module {
+    fn module(&mut self, relative_path: PathBuf, module: ast::Module) -> hlir::Module {
         let (imports, nodes) = self.extract_imports(module.nodes);
         let nodes = nodes.into_iter().map(|n| self.node(n)).collect();
         hlir::Module { imports, nodes }
