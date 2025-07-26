@@ -13,8 +13,8 @@ pub enum RawType {
 
     USize,
     ISize,
-    UInt(usize),
-    Int(usize),
+    UInt(u8),
+    Int(u8),
 
     Float32,
     Float64,
@@ -64,7 +64,7 @@ impl Display for RawType {
                         .map(|dt| format!("{}", dt.raw))
                         .collect::<Vec<std::string::String>>()
                         .join(", ")
-                )
+                );
             }
             Other(path) => {
                 return write!(
@@ -74,7 +74,7 @@ impl Display for RawType {
                         .map(|dt| format!("{}", dt.raw))
                         .collect::<Vec<std::string::String>>()
                         .join("::")
-                )
+                );
             }
             Array(data_type, amount) => return write!(f, "[{}; {}]", data_type.raw, amount.raw),
             Slice(data_type) => return write!(f, "[{}]", data_type.raw),

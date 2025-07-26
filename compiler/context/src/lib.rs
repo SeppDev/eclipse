@@ -42,6 +42,14 @@ impl CompilerBuilder {
     }
 }
 
+#[allow(non_camel_case_types)]
+pub enum Arch {
+    x86_64,
+    x86,
+    arm_64,
+    arm,
+}
+
 pub struct CompilerCtx {
     status: Option<Status>,
     module_resolver: FileResolver,

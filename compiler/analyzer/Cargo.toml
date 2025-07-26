@@ -8,4 +8,4 @@ syntax = { path = "../syntax" }
 context = { path = "../context" }
 resolver = { path = "../resolver" }
 common = { path = "../../common" }
-diagnostics = { path = "../../diagnostics" }
+diagnostics = { path = "../diagnostics" }

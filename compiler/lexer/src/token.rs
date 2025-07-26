@@ -128,15 +128,6 @@ impl TokenKind {
             _ => false,
         }
     }
-    // pub fn is_keyword(&self) -> bool {
-    //     use TokenKind::*;
-
-    //     match self {
-    //         Loop | Continue | Break | While | If | ElseIf | Else | Pub | Use | Enum | Struct
-    //         | Function | Unsafe | Return | Result | Var | SelfKeyword => true,
-    //         _ => false,
-    //     }
-    // }
     pub fn is_equals_operation(&self) -> bool {
         use TokenKind::*;
 

@@ -14,10 +14,12 @@ members = [
     "compiler/resolver",
     "compiler/context",
     "compiler/lowering",
+    "compiler/borrowcheck",
+    "compiler/diagnostics",
+    "compiler/codegen",
     "cli",
     "lsp",
     "common",
-    "diagnostics",
 ]
 
 [dependencies]

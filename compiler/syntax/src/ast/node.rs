@@ -9,7 +9,7 @@ pub enum RawNode {
         name: Identifier,
         parameters: Vec<Parameter>,
         return_type: Type,
-        body: Box<Node>,
+        node: Box<Node>,
     },
     SetPath {
         path: Identifier,

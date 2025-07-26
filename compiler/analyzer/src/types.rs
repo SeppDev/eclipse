@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use syntax::ast::{Parameter, Type, Module};
+use syntax::ast::{Module, Parameter, Type};
 
 use crate::Analyzer;
 
@@ -28,7 +28,5 @@ impl Types {
 }
 
 impl Analyzer<'_> {
-    pub fn get_types(&self, module: &Module) {
-        
-    }
+    pub fn get_types(&self, module: &Module) {}
 }

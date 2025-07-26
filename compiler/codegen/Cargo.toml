@@ -1,12 +1,9 @@
 [package]
-name = "resolver"
+name = "codegen"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-lexer = { path = "../lexer" }
-parser = { path = "../parser" }
 syntax = { path = "../syntax" }
 context = { path = "../context" }
 common = { path = "../../common" }
-diagnostics = { path = "../diagnostics" }

@@ -6,7 +6,7 @@ pub enum Node {
         name: String,
         parameters: Vec<Parameter>,
         return_type: Type,
-        body: Box<Node>,
+        node: Box<Node>,
     },
     DeclareVariable {
         name: String,
@@ -15,4 +15,5 @@ pub enum Node {
     },
     Block(Vec<Node>),
     Return(Option<Box<Node>>),
+    Integer(String),
 }

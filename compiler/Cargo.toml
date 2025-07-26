@@ -8,7 +8,9 @@ lexer = { path = "./lexer" }
 parser = { path = "./parser" }
 analyzer = { path = "./analyzer" }
 resolver = { path = "./resolver" }
+borrowcheck = { path = "./borrowcheck" }
 context = { path = "./context" }
 lowering = { path = "./lowering" }
-diagnostics = { path = "../diagnostics" }
+codegen = { path = "./codegen" }
+diagnostics = { path = "./diagnostics" }
 common = { path = "../common" }

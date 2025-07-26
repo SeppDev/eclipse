@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 syntax = { path = "../syntax" }
 common = { path = "../../common" }
-diagnostics = { path = "../../diagnostics" }
+diagnostics = { path = "../diagnostics" }

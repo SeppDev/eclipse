@@ -18,13 +18,13 @@ impl Parser {
             LocatedAt::new(ast::RawType::Void, position)
         };
 
-        let body = Box::new(self.expect_node()?);
+        let node = Box::new(self.expect_node()?);
 
         let raw = RawNode::Function {
             name,
             parameters,
             return_type,
-            body,
+            node,
         };
 
         return Ok(raw);

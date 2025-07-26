@@ -40,6 +40,7 @@ impl Analyzer<'_> {
         use ast::RawNode;
 
         match node.raw {
+            RawNode::Integer(i) => hlir::Node::Integer(i),
             RawNode::Return(_) => hlir::Node::Return(None),
             RawNode::Block(body) => {
                 hlir::Node::Block(body.into_iter().map(|n| self.node(n)).collect())
@@ -48,12 +49,12 @@ impl Analyzer<'_> {
                 name,
                 parameters,
                 return_type,
-                body,
+                node,
             } => hlir::Node::Function {
                 name: name.raw,
                 parameters: Vec::new(),
                 return_type: hlir::Type::Void,
-                body: Box::new(self.node(*body)),
+                node: Box::new(self.node(*node)),
             },
             r => todo!("{r:?}"),
         }

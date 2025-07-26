@@ -102,13 +102,13 @@ mod tests {
         name: &str,
         parameters: Vec<RawParameter>,
         return_type: RawType,
-        body: RawNode,
+        node: RawNode,
     ) -> RawNode {
         RawNode::Function {
             name: name.to_string().into(),
             parameters: parameters.into_iter().map(|param| param.into()).collect(),
             return_type: return_type.into(),
-            body: body.into(),
+            node: node.into(),
         }
     }
 

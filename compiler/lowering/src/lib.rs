@@ -1,6 +1,7 @@
+use context::CompilerCtx;
 use syntax::{hlir, mir};
 
-pub fn lower(collection: hlir::ModuleCollection) -> mir::Module {
+pub fn lower_to_mir(compiler: &CompilerCtx, collection: hlir::ModuleCollection) -> mir::Module {
     let mut nodes = Vec::new();
 
     for module in collection.modules {
@@ -21,13 +22,32 @@ fn lower_node(node: hlir::Node) -> mir::Node {
             name,
             parameters,
             return_type,
-            body,
+            node,
         } => mir::Node::Function {
             name,
             parameters: Vec::new(),
             return_type: mir::Type::Void,
-            body: Box::new(lower_node(*body)),
+            body: node_to_body(*node),
         },
         r => todo!("{r:?}"),
+    }
+}
+
+fn lower_expression(node: hlir::Node) -> mir::Expression {
+    use hlir::Node;
+    use mir::Expression;
+
+    match node {
+        Node::Integer(n) => Expression::Integer(n),
+        r => todo!("{r:?}"),
+    }
+}
+
+fn node_to_body(node: hlir::Node) -> Vec<mir::Node> {
+    use hlir::Node;
+
+    match node {
+        Node::Block(body) => body.into_iter().map(|n| lower_node(n)).collect(),
+        _ => vec![lower_node(node)],
     }
 }
