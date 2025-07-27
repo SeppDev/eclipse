@@ -5,12 +5,17 @@ env.CARGO_TERM_COLOR = "always"
 command = ["cargo", "check"]
 need_stdout = false
 
+[jobs.cli]
+command = [
+  "cargo", "run", "-p", "compiler"
+]
+need_stdout = true
+
 [jobs.compiler]
 command = [
   "cargo", "test", "-p", "compiler", "tests"
 ]
 need_stdout = true
-
 
 [jobs.test]
 command = [

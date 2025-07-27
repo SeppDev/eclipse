@@ -14,7 +14,7 @@ impl Argument {
             exit("Expected value got 'key:value'")
         }
     }
-    pub fn _into_key_value(self) -> (String, String) {
+    pub fn into_key_value(self) -> (String, String) {
         if let Self::KeyValue(key, value) = self {
             (key, value)
         } else {

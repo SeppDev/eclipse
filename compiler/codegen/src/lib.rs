@@ -9,7 +9,7 @@ mod llvm;
 pub fn generate(compiler: &CompilerCtx, module: Module) -> String {
     let mut source = String::new();
 
-    source.pushln("target triple = \"x86_64-pc-unix-unkown\"");
+    source.pushln("target triple = \"x86_64-unkown-linux-gnu\"");
 
     for node in module.nodes {
         node_to_string(node, &mut source);
@@ -69,6 +69,6 @@ fn expression_to_string(expression: Expression, source: &mut String) -> String {
     use Expression::*;
 
     match expression {
-        Integer(n) => todo!(),
+        Integer(data_type, n) => todo!(),
     }
 }

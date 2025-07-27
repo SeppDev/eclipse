@@ -38,7 +38,7 @@ fn lower_expression(node: hlir::Node) -> mir::Expression {
     use mir::Expression;
 
     match node {
-        Node::Integer(n) => Expression::Integer(n),
+        Node::Integer(n) => todo!(),
         r => todo!("{r:?}"),
     }
 }
