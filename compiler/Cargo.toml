@@ -14,4 +14,3 @@ lowering = { path = "./lowering" }
 codegen = { path = "./codegen" }
 diagnostics = { path = "./diagnostics" }
 common = { path = "../common" }
-cli = { path = "../cli" }

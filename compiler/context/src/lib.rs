@@ -8,9 +8,9 @@ pub mod files;
 
 #[derive(Default)]
 pub struct CompilerBuilder {
-    status: bool,
-    project_path: Option<PathBuf>,
-    module_resolver: FileResolver,
+    pub status: bool,
+    pub project_path: Option<PathBuf>,
+    pub module_resolver: FileResolver,
 }
 impl CompilerBuilder {
     pub fn new() -> Self {

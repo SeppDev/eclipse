@@ -1,3 +1,4 @@
+pub mod cmd;
 pub mod constants;
 pub mod exit;
 #[allow(unused)]

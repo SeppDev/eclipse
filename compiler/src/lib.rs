@@ -1,13 +1,15 @@
+use std::path::PathBuf;
+
 use analyzer::analyze;
 use borrowcheck::borrow_check;
 use build::to_binary;
-use context::CompilerCtx;
+pub use context::CompilerCtx;
 use lowering::lower_to_mir;
 use resolver::resolve_modules;
 
 mod build;
 
-pub fn compile(compiler: &mut CompilerCtx) {
+pub fn compile(compiler: &mut CompilerCtx) -> PathBuf {
     let entry = CompilerCtx::entry();
 
     let collection = resolve_modules(compiler, &entry);
@@ -17,7 +19,7 @@ pub fn compile(compiler: &mut CompilerCtx) {
     let module = lower_to_mir(compiler, collection);
     let source = codegen::generate(compiler, module);
 
-    println!("{source:#?}");
+    println!("{source}");
 
-    to_binary(compiler, source);
+    to_binary(compiler, source)
 }

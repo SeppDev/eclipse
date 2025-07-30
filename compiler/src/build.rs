@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
+use common::cmd::execute;
 use context::CompilerCtx;
 
-pub fn to_binary(compiler: &CompilerCtx, source: String) {
+pub fn to_binary(compiler: &CompilerCtx, source: String) -> PathBuf {
     let target = compiler.resolve_path(&PathBuf::from("target"));
     let build_file_path = target.join("build.ll");
     let final_path = target.join("build");
@@ -25,25 +26,6 @@ pub fn to_binary(compiler: &CompilerCtx, source: String) {
     if !output.status.success() {
         panic!("{}", String::from_utf8(output.stderr).unwrap());
     }
-}
 
-#[cfg(unix)]
-pub fn execute(command: String) -> std::process::Output {
-    use std::process::Command;
-
-    Command::new("sh")
-        .arg("-c")
-        .arg(&command)
-        .output()
-        .expect("failed to execute process")
-}
-
-#[cfg(windows)]
-pub fn execute(command: String) -> std::process::Output {
-    use std::process::Command;
-
-    Command::new("cmd")
-        .args(["/C", &command])
-        .output()
-        .expect("failed to execute process")
+    compiler.resolve_path(&final_path)
 }
