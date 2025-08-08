@@ -17,6 +17,8 @@ pub fn compile(compiler: &mut CompilerCtx) -> PathBuf {
     let collection = borrow_check(compiler, collection);
 
     let module = lower_to_mir(compiler, collection);
+    println!("{module:#?}");
+
     let source = codegen::generate(compiler, module);
 
     println!("{source}");

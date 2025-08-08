@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use diagnostics::DiagnosticResult;
 use syntax::{ast, hlir};
 
 use crate::Analyzer;
@@ -19,44 +20,50 @@ impl Analyzer<'_> {
         let nodes = nodes.into_iter().map(|n| self.node(n)).collect();
         hlir::Module { imports, nodes }
     }
-    fn extract_imports(&mut self, nodes: Vec<ast::Node>) -> (Vec<String>, Vec<ast::Node>) {
-        let mut imports = Vec::new();
-
-        let nodes = nodes
-            .into_iter()
-            .filter_map(|n| {
-                let path = match n.raw {
-                    ast::RawNode::Import(path) => path.raw,
-                    _ => return Some(n),
-                };
-                imports.push(path);
-                None
-            })
-            .collect();
-
-        (imports, nodes)
-    }
     fn node(&mut self, node: ast::Node) -> hlir::Node {
         use ast::RawNode;
 
         match node.raw {
             RawNode::Integer(i) => hlir::Node::Integer(i),
-            RawNode::Return(_) => hlir::Node::Return(None),
+            RawNode::Bool(value) => hlir::Node::Boolean(value),
+            // RawNode::Import(name) =>
+            RawNode::Return(expr) => match expr {
+                Some(expr) => {
+                    let expr = self.node(*expr);
+                    hlir::Node::Return(Some(Box::new(expr)))
+                }
+                None => hlir::Node::Return(None),
+            },
             RawNode::Block(body) => {
                 hlir::Node::Block(body.into_iter().map(|n| self.node(n)).collect())
             }
-            RawNode::Function {
+            RawNode::Declare {
+                mutable,
                 name,
-                parameters,
-                return_type,
+                data_type,
                 node,
-            } => hlir::Node::Function {
-                name: name.raw,
-                parameters: Vec::new(),
-                return_type: hlir::Type::Void,
-                node: Box::new(self.node(*node)),
-            },
+            } => {
+                let data_type = self.extract_data_type(&data_type, &node).unwrap();
+                let value = Box::new(self.node(*node));
+
+                todo!()
+            }
             r => todo!("{r:?}"),
         }
+    }
+    fn extract_data_type(
+        &self,
+        expected: &Option<ast::Type>,
+        node: &ast::Node,
+    ) -> DiagnosticResult<hlir::Type> {
+        use ast::RawNode;
+
+        let data_type = match &node.raw {
+            RawNode::Integer(_) => hlir::Type::Int(32),
+            RawNode::Bool(_) => hlir::Type::Boolean,
+            t => todo!("{t:#?}"),
+        };
+
+        Ok(data_type)
     }
 }

@@ -69,7 +69,7 @@ mod tests {
         main_function_return_with_expresion,
         "func main() { return 0 }"
     );
-    success_test!(type_inheritance, "func main() { var x: bool = false }");
+    success_test!(type_inheritance_bool, "func main() { var x = false }");
     success_test!(variable_type_boolean, "func main() { var x: bool = false }");
     success_test!(variable_type_integer, "func main() { var x: i32 = 42 }");
 

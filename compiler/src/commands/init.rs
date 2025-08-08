@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use crate::{cli::arguments::Arguments, FILE_EXTENSION};
+use crate::{FILE_EXTENSION, cli::arguments::Arguments};
 
 pub fn init(_arguments: Arguments) {
     todo!()

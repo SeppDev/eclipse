@@ -2,18 +2,12 @@ use super::{Expression, Parameter, Type};
 
 #[derive(Debug)]
 pub enum Node {
-    Function {
-        name: String,
-        parameters: Vec<Parameter>,
-        return_type: Type,
-        body: Vec<Node>,
-    },
-    DeclareVariable {
+    Set {
         name: String,
         data_type: Type,
         value: Expression,
     },
-    Block(Vec<Node>),
+    Goto(String),
     Allocate(Type),
     Return(Option<Expression>),
 }

@@ -21,3 +21,8 @@ command = [
   "cargo", "test", "-p", "lexer", "-p", "parser", "-p", "analyzer","--tests"
 ]
 need_stdout = true
+
+[jobs.install]
+command = [
+"cargo", "install", "--path", "."
+]

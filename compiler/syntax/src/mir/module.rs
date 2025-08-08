@@ -1,6 +1,6 @@
-use super::Node;
+use super::Function;
 
 #[derive(Debug)]
 pub struct Module {
-    pub nodes: Vec<Node>,
+    pub functions: Vec<Function>,
 }
