@@ -1,7 +1,7 @@
 #[cfg(test)]
 #[allow(unused)]
 mod tests {
-    use common::position::{LocatedAt, PositionRange};
+    use common::position::{PositionRange, Span};
     use diagnostics::DiagnosticResult;
     use lexer::tokenize;
     use parser::parse;
@@ -81,7 +81,7 @@ mod tests {
     fn field(node: RawNode, field: &'static str) -> RawNode {
         Field(
             Box::new(node.into()),
-            Box::new(LocatedAt::value(RawNode::Identifier(field.to_string()))),
+            Box::new(Span::value(RawNode::Identifier(field.to_string()))),
         )
     }
 
@@ -119,7 +119,7 @@ mod tests {
         value: RawNode,
     ) -> RawNode {
         Declare {
-            mutable: mutable.then_some(LocatedAt::from(())),
+            mutable: mutable.then_some(Span::from(())),
             name: name.to_string().into(),
             data_type,
             node: value.into(),
@@ -154,7 +154,7 @@ mod tests {
     fn parameter(mutable: bool, name: &str, data_type: RawType) -> RawParameter {
         RawParameter {
             reference: None,
-            mutable: mutable.then_some(LocatedAt::default()),
+            mutable: mutable.then_some(Span::default()),
             name: name.to_string().into(),
             data_type: data_type.into(),
         }

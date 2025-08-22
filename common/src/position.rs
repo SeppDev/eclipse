@@ -61,49 +61,49 @@ impl std::fmt::Display for PositionRange {
 }
 
 #[derive(Default, Clone)]
-pub struct LocatedAt<T = ()> {
+pub struct Span<T = ()> {
     pub position: PositionRange,
     pub raw: T,
 }
-impl<T> LocatedAt<T> {
-    pub fn value(value: T) -> LocatedAt<T> {
-        LocatedAt {
+impl<T> Span<T> {
+    pub fn value(value: T) -> Span<T> {
+        Span {
             raw: value,
             position: PositionRange::default(),
         }
     }
 }
-impl<T: Hash> Hash for LocatedAt<T> {
+impl<T: Hash> Hash for Span<T> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.raw.hash(state);
     }
 }
-impl<T> From<T> for LocatedAt<T> {
+impl<T> From<T> for Span<T> {
     fn from(value: T) -> Self {
-        LocatedAt::new(value, PositionRange::default())
+        Span::new(value, PositionRange::default())
     }
 }
-impl<T> Into<Option<T>> for LocatedAt<T> {
+impl<T> Into<Option<T>> for Span<T> {
     fn into(self) -> Option<T> {
         Some(self.raw)
     }
 }
-impl<T: PartialEq> PartialEq for LocatedAt<T> {
+impl<T: PartialEq> PartialEq for Span<T> {
     fn eq(&self, other: &Self) -> bool {
         self.raw == other.raw
     }
 }
-impl<T> LocatedAt<T> {
+impl<T> Span<T> {
     pub fn new(raw: T, position: PositionRange) -> Self {
         Self { raw, position }
     }
 }
-impl<T: Debug> Debug for LocatedAt<T> {
+impl<T: Debug> Debug for Span<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#?} ({})", self.raw, self.position)
     }
 }
-impl<T: Display> Display for LocatedAt<T> {
+impl<T: Display> Display for Span<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ({})", self.raw, self.position)
     }

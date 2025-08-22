@@ -1,5 +1,5 @@
 use context::CompilerCtx;
-use syntax::{ast, hlir};
+use syntax::{ast, hir};
 
 mod semantic;
 mod types;
@@ -11,7 +11,7 @@ struct Analyzer<'ctx> {
 pub fn analyze(
     compiler: &mut CompilerCtx,
     collection: ast::ModuleCollection,
-) -> hlir::ModuleCollection {
+) -> hir::ModuleCollection {
     let mut analyzer = Analyzer { compiler };
     analyzer.analyze(collection)
 }

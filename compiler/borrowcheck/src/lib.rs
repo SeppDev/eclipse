@@ -1,7 +1,7 @@
 use context::CompilerCtx;
-use syntax::hlir;
+use syntax::hir;
 
-pub fn borrow_check(compiler: &mut CompilerCtx, mut collection: hlir::ModuleCollection) -> hlir::ModuleCollection {
+pub fn borrow_check(compiler: &mut CompilerCtx, mut collection: hir::ModuleCollection) -> hir::ModuleCollection {
     
     collection
 }

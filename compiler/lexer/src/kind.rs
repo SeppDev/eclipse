@@ -1,8 +1,8 @@
-use common::position::LocatedAt;
+use common::position::Span;
 
 use super::reader::Character;
 
-pub type LocatedString = LocatedAt<String>;
+pub type LocatedString = Span<String>;
 
 #[derive(Debug)]
 pub enum LexerKind {

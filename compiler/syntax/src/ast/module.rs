@@ -4,15 +4,11 @@ use super::Node;
 
 #[derive(Debug)]
 pub struct Module {
-    pub imports: Vec<PathBuf>,
     pub nodes: Vec<Node>,
 }
 impl Module {
     pub fn new(nodes: Vec<Node>) -> Self {
-        Self {
-            nodes,
-            imports: Vec::new(),
-        }
+        Self { nodes }
     }
 }
 

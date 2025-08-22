@@ -6,22 +6,22 @@ pub use module::*;
 pub use node::*;
 pub use types::*;
 
-use common::position::LocatedAt;
+use common::position::Span;
 
-pub type Node = LocatedAt<RawNode>;
+pub type Node = Span<RawNode>;
 
-pub type Location = LocatedAt<()>;
-pub type Type = LocatedAt<types::RawType>;
-pub type Parameter = LocatedAt<RawParameter>;
-pub type Modifier = LocatedAt<RawModifier>;
-pub type Attribute = LocatedAt<RawAttribute>;
+pub type Location = Span<()>;
+pub type Type = Span<types::RawType>;
+pub type Parameter = Span<RawParameter>;
+pub type Modifier = Span<RawModifier>;
+pub type Attribute = Span<RawAttribute>;
 
-pub type Identifier = LocatedAt<String>;
+pub type Identifier = Span<String>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct RawParameter {
-    pub reference: Option<LocatedAt>,
-    pub mutable: Option<LocatedAt>,
+    pub reference: Option<Span>,
+    pub mutable: Option<Span>,
     pub name: Identifier,
     pub data_type: Type,
 }

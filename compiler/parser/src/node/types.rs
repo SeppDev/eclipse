@@ -1,4 +1,4 @@
-use common::position::LocatedAt;
+use common::position::Span;
 use diagnostics::{DiagnosticData, DiagnosticResult};
 use lexer::token::TokenKind::*;
 use syntax::ast::{RawType, Type};
@@ -83,7 +83,7 @@ impl Parser {
                     }
                     RawType::Other(path)
                 }
-                _ => RawType::Other(vec![LocatedAt::<String>::new(info.string, info.position)]),
+                _ => RawType::Other(vec![Span::<String>::new(info.string, info.position)]),
             },
         };
         Ok(Type::new(raw, info.position))

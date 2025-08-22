@@ -1,4 +1,4 @@
-use common::position::LocatedAt;
+use common::position::Span;
 use diagnostics::{DiagnosticData, DiagnosticResult};
 use lexer::token::{Token, TokenKind};
 use syntax::ast::{Node, RawNode};
@@ -39,7 +39,7 @@ impl Parser {
             Text => RawNode::String(info.string),
             Minus => RawNode::Minus(self.expect_base_expression()?.into()),
             Identifier if self.peek().kind == DoubleColon => {
-                let mut path: Vec<LocatedAt<String>> = vec![info.into()];
+                let mut path: Vec<Span<String>> = vec![info.into()];
                 while self.peek().kind == DoubleColon {
                     let ident = self.expect_identifier()?;
                     path.push(ident.into());

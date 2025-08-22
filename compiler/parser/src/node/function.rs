@@ -1,4 +1,4 @@
-use common::position::LocatedAt;
+use common::position::Span;
 use diagnostics::DiagnosticResult;
 use lexer::token::TokenKind::*;
 use syntax::ast::{self, Parameter, RawNode, RawParameter};
@@ -15,7 +15,7 @@ impl Parser {
         } else {
             let position = self.last_position.end.to_range();
 
-            LocatedAt::new(ast::RawType::Void, position)
+            Span::new(ast::RawType::Void, position)
         };
 
         let node = Box::new(self.expect_node()?);
@@ -39,12 +39,12 @@ impl Parser {
             }
             let start = self.start();
 
-            let reference: Option<LocatedAt> = match self.next_if_eq(Ampersand)? {
-                Some(a) => Some(LocatedAt::new((), a.position)),
+            let reference: Option<Span> = match self.next_if_eq(Ampersand)? {
+                Some(a) => Some(Span::new((), a.position)),
                 None => None,
             };
-            let mutable: Option<LocatedAt> = match self.next_if_eq(Mutable)? {
-                Some(a) => Some(LocatedAt::new((), a.position)),
+            let mutable: Option<Span> = match self.next_if_eq(Mutable)? {
+                Some(a) => Some(Span::new((), a.position)),
                 None => None,
             };
 
@@ -52,7 +52,7 @@ impl Parser {
             let data_type = self.expect_type()?;
 
             let parameter = RawParameter {
-                reference,
+                 reference,
                 mutable,
                 name,
                 data_type,

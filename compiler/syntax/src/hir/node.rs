@@ -1,4 +1,4 @@
-use super::{Parameter, Type};
+use super::Type;
 
 #[derive(Debug)]
 pub enum Node {

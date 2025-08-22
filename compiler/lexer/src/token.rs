@@ -1,4 +1,4 @@
-use common::position::{LocatedAt, PositionRange};
+use common::position::{PositionRange, Span};
 use syntax::operators::{ArithmeticOperator, CompareOperator};
 
 pub const MAX_OPERATOR_WIDTH: usize = 3;
@@ -254,7 +254,7 @@ impl std::fmt::Display for Token {
     }
 }
 
-impl From<Token> for LocatedAt<String> {
+impl From<Token> for Span<String> {
     fn from(value: Token) -> Self {
         Self {
             position: value.position,

@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use common::position::{LocatedAt, Position, PositionRange};
+use common::position::{Span, Position, PositionRange};
 use diagnostics::{DiagnosticData, DiagnosticResult};
 use lexer::token::{Token, TokenKind};
 
@@ -10,9 +10,9 @@ impl Parser {
     pub fn start(&self) -> Position {
         self.peek().position.start
     }
-    pub fn located<T>(&mut self, value: T, start: Position) -> LocatedAt<T> {
+    pub fn located<T>(&mut self, value: T, start: Position) -> Span<T> {
         let end = self.last_position.end;
-        return LocatedAt::new(value, PositionRange::new(start, end));
+        return Span::new(value, PositionRange::new(start, end));
     }
     pub fn is_eof(&self) -> bool {
         self.peek().kind == TokenKind::EndOfFile

@@ -1,41 +1,64 @@
 use std::path::PathBuf;
 
+use common::position::Span;
 use diagnostics::DiagnosticResult;
-use syntax::{ast, hlir};
+use syntax::{ast, hir};
 
 use crate::Analyzer;
 
 impl Analyzer<'_> {
-    pub fn analyze(&mut self, collection: ast::ModuleCollection) -> hlir::ModuleCollection {
-        let modules: Vec<hlir::Module> = collection
+    pub fn analyze(&mut self, collection: ast::ModuleCollection) -> hir::ModuleCollection {
+        let modules: Vec<hir::Module> = collection
             .modules
             .into_iter()
             .map(|(path, module)| self.module(path, module))
             .collect();
 
-        hlir::ModuleCollection { modules }
+        hir::ModuleCollection { modules }
     }
-    fn module(&mut self, relative_path: PathBuf, module: ast::Module) -> hlir::Module {
-        let (imports, nodes) = self.extract_imports(module.nodes);
-        let nodes = nodes.into_iter().map(|n| self.node(n)).collect();
-        hlir::Module { imports, nodes }
+    fn module(&mut self, relative_path: PathBuf, module: ast::Module) -> hir::Module {
+        use ast::RawNode;
+
+        for node in module.nodes {
+            match node.raw {
+                RawNode::Function {
+                    name,
+                    parameters,
+                    return_type,
+                    node,
+                } => self.function(name, parameters, return_type, *node),
+                r => todo!("{r:?}"),
+            };
+        }
+
+        todo!()
     }
-    fn node(&mut self, node: ast::Node) -> hlir::Node {
+    fn function(
+        &mut self,
+        name: Span<String>,
+        parameters: Vec<ast::Parameter>,
+        return_type: ast::Type,
+        body: ast::Node,
+    ) -> hir::Function {
+        use ast::RawNode;
+
+        todo!()
+    }
+    fn node(&mut self, node: ast::Node, expected: &Option<ast::Type>) -> hir::Node {
         use ast::RawNode;
 
         match node.raw {
-            RawNode::Integer(i) => hlir::Node::Integer(i),
-            RawNode::Bool(value) => hlir::Node::Boolean(value),
-            // RawNode::Import(name) =>
+            RawNode::Integer(i) => hir::Node::Integer(i),
+            RawNode::Bool(value) => hir::Node::Boolean(value),
             RawNode::Return(expr) => match expr {
                 Some(expr) => {
-                    let expr = self.node(*expr);
-                    hlir::Node::Return(Some(Box::new(expr)))
+                    let expr = self.node(*expr, &None);
+                    hir::Node::Return(Some(Box::new(expr)))
                 }
-                None => hlir::Node::Return(None),
+                None => hir::Node::Return(None),
             },
             RawNode::Block(body) => {
-                hlir::Node::Block(body.into_iter().map(|n| self.node(n)).collect())
+                hir::Node::Block(body.into_iter().map(|n| self.node(n, &None)).collect())
             }
             RawNode::Declare {
                 mutable,
@@ -44,7 +67,7 @@ impl Analyzer<'_> {
                 node,
             } => {
                 let data_type = self.extract_data_type(&data_type, &node).unwrap();
-                let value = Box::new(self.node(*node));
+                let value = Box::new(self.node(*node, &None));
 
                 todo!()
             }
@@ -55,12 +78,12 @@ impl Analyzer<'_> {
         &self,
         expected: &Option<ast::Type>,
         node: &ast::Node,
-    ) -> DiagnosticResult<hlir::Type> {
+    ) -> DiagnosticResult<hir::Type> {
         use ast::RawNode;
 
         let data_type = match &node.raw {
-            RawNode::Integer(_) => hlir::Type::Int(32),
-            RawNode::Bool(_) => hlir::Type::Boolean,
+            RawNode::Integer(_) => hir::Type::Int(32),
+            RawNode::Bool(_) => hir::Type::Boolean,
             t => todo!("{t:#?}"),
         };
 

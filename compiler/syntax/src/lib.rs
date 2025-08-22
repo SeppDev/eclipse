@@ -1,5 +1,5 @@
 pub mod ast;
-pub mod hlir;
+pub mod hir;
 pub mod mir;
 
 pub mod operators;

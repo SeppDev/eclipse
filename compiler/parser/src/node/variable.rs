@@ -1,4 +1,4 @@
-use common::position::LocatedAt;
+use common::position::Span;
 use diagnostics::DiagnosticResult;
 use lexer::token::TokenKind;
 use syntax::ast::RawNode;
@@ -9,7 +9,7 @@ impl Parser {
     pub fn parse_variable_decl(&mut self) -> DiagnosticResult<RawNode> {
         let mutable = self
             .next_if_eq(TokenKind::Mutable)?
-            .and_then(|i| Some(LocatedAt::new((), i.position)));
+            .and_then(|i| Some(Span::new((), i.position)));
 
         let name = self.expect_identifier()?.into();
         let data_type = if self.next_if_eq(TokenKind::Colon)?.is_some() {

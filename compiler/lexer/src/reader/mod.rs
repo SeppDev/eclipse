@@ -1,4 +1,4 @@
-use common::position::{LocatedAt, Position};
+use common::position::{Position, Span};
 
 pub mod comments;
 pub mod identifier;
@@ -13,7 +13,7 @@ pub struct Reader {
     chars: Vec<Character>,
 }
 
-pub type Character = LocatedAt<char>;
+pub type Character = Span<char>;
 
 impl Reader {
     pub fn new(source: &str) -> Self {

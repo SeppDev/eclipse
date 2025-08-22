@@ -1,5 +1,5 @@
 use context::CompilerCtx;
-use syntax::{hlir, mir};
+use syntax::{hir, mir};
 
 mod function;
 
@@ -7,21 +7,21 @@ struct Lowering {
     functions: Vec<mir::Function>,
 }
 
-pub fn lower_to_mir(compiler: &CompilerCtx, collection: hlir::ModuleCollection) -> mir::Module {
+pub fn lower_to_mir(compiler: &CompilerCtx, collection: hir::ModuleCollection) -> mir::Module {
     todo!()
 }
 
 impl Lowering {
-    fn lower_node(&mut self, node: hlir::Node) {
-        use hlir::Node;
+    fn lower_node(&mut self, node: hir::Node) {
+        use hir::Node;
 
         match node {
             r => todo!("{r:?}"),
         }
     }
 
-    fn lower_expression(&self, node: hlir::Node) -> mir::Expression {
-        use hlir::Node;
+    fn lower_expression(&self, node: hir::Node) -> mir::Expression {
+        use hir::Node;
         use mir::Expression;
 
         match node {
@@ -30,8 +30,8 @@ impl Lowering {
         }
     }
 
-    fn node_to_body(&self, node: hlir::Node) {
-        use hlir::Node;
+    fn node_to_body(&self, node: hir::Node) {
+        use hir::Node;
 
         match node {
             _ => todo!("{node:#?}"),

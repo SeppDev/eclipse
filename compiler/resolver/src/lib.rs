@@ -53,7 +53,7 @@ pub fn resolve_modules(compiler: &mut CompilerCtx, entry: &PathBuf) -> ast::Modu
 
         to_parse.extend(imports.clone().into_iter());
 
-        let module = ast::Module { imports, nodes };
+        let module = ast::Module { nodes };
         collection.modules.insert(relative_path, module);
     }
 
